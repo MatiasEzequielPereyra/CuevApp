@@ -1,7 +1,7 @@
 # CUEVA
 
-Fundación local de la aplicación del gimnasio. CUEVA-001A está en IN_PROGRESS;
-no hay integración, aceptación independiente ni despliegue.
+Fundación local de la aplicación del gimnasio. Ver el estado de CUEVA-001A en el
+checkpoint; no hay integración, aceptación independiente ni despliegue.
 
 ## Orden de lectura
 
@@ -16,4 +16,52 @@ no hay integración, aceptación independiente ni despliegue.
 Las instrucciones posteriores del usuario y el encargo acotado prevalecen sobre
 el contexto y el protocolo general. El ejecutor no publica, integra ni despliega.
 
-Las instrucciones de instalación se incorporarán con la fundación ejecutable.
+## Desarrollo local
+
+Usar Node 22.14.0 y npm 10.9.2. No se requiere `.env`, cuenta ni credenciales.
+
+```sh
+npm ci
+npm run dev
+```
+
+Abrir [http://127.0.0.1:3000](http://127.0.0.1:3000). `dev` y `start` escuchan
+solo en loopback. Para ejecutar el build de producción: `npm run build` y luego
+`npm start`. El puerto 3000 debe estar libre.
+
+## Verificación
+
+```sh
+npx playwright install chromium
+npm run verify
+npm audit --audit-level=critical
+npm run verify:sources
+```
+
+`verify` incluye lint, typecheck, build y pruebas. Ver
+[procedimiento y límites](docs/engineering/verification.md).
+La [comparación del logo](evidence/logo-comparison.html) se abre como HTML local.
+
+## Estructura
+
+- `src/app`: App Router, metadata, página y estilos globales con variables de tema.
+- `src/components/brand`: símbolo de marca accesible.
+- `src/components/theme` y `src/lib/theme.ts`: elección claro/oscuro/sistema,
+  inicialización antes del primer pintado y persistencia solo de apariencia.
+- `public/brand`: SVG provisional trazado del logo, sin controles de Instagram.
+- `tests`: integridad documental y navegador sobre el build de producción.
+- `.github/workflows`: verificación sin pasos de despliegue ni secretos.
+- `docs`: fuentes originales, procedencia, decisiones, backlog y checkpoint.
+- `evidence`: comparación y resultados de esta entrega; `runs/` es salida temporal.
+
+## Alcance y decisiones abiertas
+
+La pantalla informa que las funciones del gimnasio están en desarrollo. No hay
+cuentas, datos reales, administración, SQL, pagos, emails, videos operativos,
+manifest de instalación ni service worker. Solo se guarda la preferencia de tema
+en este navegador. Sin JavaScript el contenido se mantiene y el tema sigue al sistema.
+
+La paleta gris, el layout, CSS nativo y el SVG reconstruido son propuestas
+reversibles; requieren revisión independiente. Identidad DNI sin email, proveedor
+de correo, retención, límites de video y hosting se resolverán en sus tracks.
+No reintroducir QR/push/estadísticas avanzadas en V1.

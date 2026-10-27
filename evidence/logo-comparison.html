@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es-AR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CUEVA · Comparación del lettering</title>
+<style>
+  * { box-sizing: border-box }
+  body { margin: 0; padding: 36px; background: #efefed; color: #181819; font: 16px/1.6 Arial, sans-serif }
+  h1 { font-size: 28px; margin: 0 0 12px }
+  .comparison { display: flex; flex-wrap: wrap; gap: 32px; margin-top: 24px }
+  figure { margin: 0; width: 480px }
+  .reference { width: 480px; height: 480px; overflow: hidden; position: relative; border-radius: 50% }
+  .reference img { position: absolute; max-width: none; width: 727.58px; height: 1616.84px; left: -123.28px; top: -568px }
+  .vector { width: 480px; height: 480px; display: block }
+  figcaption { margin-top: 16px; font-weight: 700 }
+  p { max-width: 1000px }
+</style>
+<h1>Comparación visual del lettering</h1>
+<p>Izquierda: región del símbolo en la referencia original, presentada mediante una ventana CSS. Derecha: SVG de aplicación, reconstrucción provisional. No se identifica una fuente ni se afirma disponer del archivo maestro.</p>
+<div class="comparison">
+  <figure><div class="reference"><img src="../docs/brand/reference.jpeg" alt="Símbolo de CUEVA en la referencia original"></div><figcaption>Referencia proporcionada</figcaption></figure>
+  <figure><img class="vector" src="../public/brand/cueva-symbol.svg" alt="Reconstrucción vectorial de CUEVA"><figcaption>SVG provisional · CUEVA-001A</figcaption></figure>
+</div>
+<p>Conserva C y U rectilíneas, E con barra central separada, V angular y A sin travesaño, el espaciado y la silueta blanca sobre círculo negro. Los bordes del JPEG no permiten asegurar igualdad geométrica exacta. La fidelidad y el maestro definitivo quedan sujetos a revisión independiente.</p>
+</html>

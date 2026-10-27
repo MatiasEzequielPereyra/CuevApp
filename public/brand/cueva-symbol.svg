@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" fill="none">
+  <title>CUEVA</title>
+  <desc>Reconstrucción vectorial provisional del lettering de la referencia.</desc>
+  <circle cx="240" cy="240" r="240" fill="#000"/>
+  <g fill="#fff" transform="translate(44 192)">
+    <path d="M0 0H72V19H22V53H72V72H0Z"/>
+    <path d="M81 0H101V53H136V0H153V72H81Z"/>
+    <path d="M162 0H228V19H183V53H228V72H162Z M192 28H224V45H192Z"/>
+    <path d="M239 0H268L289 31L310 0H339L290 74Z"/>
+    <path d="M353 0L404 74H375L354 43L333 74H305Z"/>
+  </g>
+</svg>

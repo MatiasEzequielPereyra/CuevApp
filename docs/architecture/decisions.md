@@ -11,6 +11,7 @@ equivale a aceptarla.
 | D003 | PROPOSED | Lettering SVG geométrico trazado de la referencia, identificado como provisional. | Tipografía genérica (no cumple); recorte del original. | Comparación visual obligatoria; maestro vectorial aún no disponible. |
 | D004 | PROPOSED | Claro, oscuro y preferencia del sistema; persistir únicamente apariencia en el navegador. | Tema fijo; almacenamiento del lado servidor. | Sin datos personales ni credenciales; funcionamiento aun sin almacenamiento disponible. |
 | D005 | PROPOSED | Playwright sobre build de producción, axe y verificaciones documentales. | Pruebas solo de componentes. | Verifica recursos, navegación y responsive reales; no certifica móviles físicos. |
+| D006 | PROPOSED | TypeScript 6.0.3 y ESLint 9.39.5 para satisfacer los peers declarados de los plugins actuales. | TypeScript 7 / ESLint 10 exceden los peers de parte de la cadena; otro linter requiere nueva evaluación. | ESLint 9 ya figura fuera de soporte; limitación explícita para revisión. Auditoría de vulnerabilidades separada. |
 
 ## Contratos de producto preservados
 
