@@ -1,0 +1,7 @@
+* text=auto eol=lf
+# Preserve supplied sources byte for byte, including original line endings.
+docs/product/CUEVA-MASTER-PRODUCT-CONTEXT-V1.md -text -whitespace
+docs/engineering/ORCHESTRATOR-CUEVA-V2.md -text -whitespace
+docs/engineering/CUEVA-001A-task.md -text -whitespace
+*.jpeg binary
+*.png binary
