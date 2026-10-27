@@ -8,7 +8,7 @@ export function BrandMark({ size = 64, decorative = false }: { size?: number; de
       width={size}
       height={size}
       className="brand-mark"
-      priority
+      loading="eager"
     />
   );
 }
