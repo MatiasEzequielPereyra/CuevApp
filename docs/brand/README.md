@@ -15,7 +15,7 @@ píxeles ni disponibilidad del archivo maestro: es una **reconstrucción provisi
 
 Abrir [comparación lado a lado](../../evidence/logo-comparison.html). La ventana
 CSS limita la referencia al símbolo sin modificar el original. La evidencia
-renderizada se incorporará después de la verificación local.
+renderizada está en [comparación verificada](../../evidence/screenshots/logo-comparison.png).
 
 Revisar la C cuadrada abierta, U rectilínea, E con barra central separada, V
 angular y A sin travesaño; mantener proporciones, espacios, trazos y silueta.

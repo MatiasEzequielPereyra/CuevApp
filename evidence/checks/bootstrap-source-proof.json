@@ -1,0 +1,22 @@
+[
+  {
+    "path": "docs/product/CUEVA-MASTER-PRODUCT-CONTEXT-V1.md",
+    "sourceHash": "516aaee6647ea9277662a8e6bb886c81f82cc619e25d39b8740ac122c66b3743",
+    "bootstrapBlobMatches": true
+  },
+  {
+    "path": "docs/engineering/ORCHESTRATOR-CUEVA-V2.md",
+    "sourceHash": "ea78ad7da4c3f84b86f5a1f87cce415a3a4ec0575dca23cfa8cdd8c84e39e295",
+    "bootstrapBlobMatches": true
+  },
+  {
+    "path": "docs/engineering/CUEVA-001A-task.md",
+    "sourceHash": "af5ab6388e3e36d4235ff4bac0f77730da5dd11dcfeabc1dbd660e722a8ee253",
+    "bootstrapBlobMatches": true
+  },
+  {
+    "path": "docs/brand/reference.jpeg",
+    "sourceHash": "8d849057e321856284e87e1e92ba8d51d40c4018d31cba3fb261211efc517291",
+    "bootstrapBlobMatches": true
+  }
+]
