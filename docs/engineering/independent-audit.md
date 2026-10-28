@@ -90,3 +90,22 @@ NOT_VERIFIED; no se reintentó acceso ni se realizó escritura.
 
 Móviles físicos, Safari/Firefox, lector de pantalla manual, runtime remoto,
 PWA instalable/offline y recuperación de producción: NOT_RUN/NOT_VERIFIED.
+
+## Resultado de integración (2026-10-28)
+
+El plan anterior se ejecutó después de los checks. Publicación inicial de main
+con el bootstrap exacto; rama con auditoría en
+`b09817e59103bdde873a5715ccd0bcdac2a32554`.
+
+- CI push [40693656499](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/40693656499): SUCCESS.
+- CI PR [40693722190](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/40693722190): SUCCESS.
+- Ambas corridas verificaron el HEAD anterior: instalación, lint, typecheck,
+  build, pruebas, revisión de seguridad y npm audit aprobados.
+- Base y HEAD revalidados antes de merge; PR sin conflictos ni checks pendientes.
+- [PR #1](https://github.com/MatiasEzequielPereyra/CuevApp/pull/1): MERGED mediante squash a las 13:10:38Z.
+- MAIN_SHA_AFTER_FOUNDATION_MERGE: `064cbfaadc3c68145adb2411989584bbc32782c5`.
+- Fetch posterior y diff entre el HEAD revisado y origin/main: árboles idénticos.
+
+Dictamen final de CUEVA-001A: ACCEPTED y MERGED. Despliegue permanece BLOCKED,
+Supabase NOT_VERIFIED. Esta sección sustituye el estado previo de integración
+pendiente, sin alterar la evidencia ni los límites de la revisión.
