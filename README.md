@@ -1,7 +1,6 @@
 # CUEVA
 
-Fundación local de la aplicación del gimnasio. Ver el estado de CUEVA-001A en el
-checkpoint; no hay integración, aceptación independiente ni despliegue.
+Fundación de la aplicación del gimnasio. CUEVA-001A fue aceptada e integrada en el PR #1. El despliegue sigue bloqueado por infraestructura pendiente; ver el checkpoint para la evidencia y el siguiente encargo.
 
 ## Orden de lectura
 
@@ -9,7 +8,7 @@ checkpoint; no hay integración, aceptación independiente ni despliegue.
 2. [Encargo CUEVA-001A](docs/engineering/CUEVA-001A-task.md), complementado por la instrucción posterior de continuar localmente sin nuevos accesos a Supabase o Mozilla.
 3. [Contexto funcional maestro](docs/product/CUEVA-MASTER-PRODUCT-CONTEXT-V1.md).
 4. [Protocolo del Orchestrator](docs/engineering/ORCHESTRATOR-CUEVA-V2.md).
-5. [Decisiones técnicas propuestas](docs/architecture/decisions.md).
+5. [Decisiones técnicas y aceptación](docs/architecture/decisions.md).
 6. [Backlog](docs/engineering/backlog.md).
 7. [Procedencia y hashes](docs/engineering/source-manifest.json).
 
@@ -61,7 +60,6 @@ cuentas, datos reales, administración, SQL, pagos, emails, videos operativos,
 manifest de instalación ni service worker. Solo se guarda la preferencia de tema
 en este navegador. Sin JavaScript el contenido se mantiene y el tema sigue al sistema.
 
-La paleta gris, el layout, CSS nativo y el SVG reconstruido son propuestas
-reversibles; requieren revisión independiente. Identidad DNI sin email, proveedor
+La paleta gris, el layout, CSS nativo y el SVG reconstruido fueron aceptados para la fundación. El SVG sigue siendo una reconstrucción, no el maestro vectorial original. Identidad DNI sin email, proveedor
 de correo, retención, límites de video y hosting se resolverán en sus tracks.
 No reintroducir QR/push/estadísticas avanzadas en V1.
