@@ -1,0 +1,39 @@
+{
+  "width": 390,
+  "theme": "dark",
+  "pageStatus": 200,
+  "layout": {
+    "innerWidth": 390,
+    "scrollWidth": 390
+  },
+  "unloadedImages": [],
+  "browserErrors": [],
+  "externalRequests": [],
+  "axe": {
+    "violations": [],
+    "incomplete": [],
+    "passedRules": [
+      "aria-allowed-attr",
+      "aria-conditional-attr",
+      "aria-deprecated-role",
+      "aria-hidden-body",
+      "aria-hidden-focus",
+      "aria-prohibited-attr",
+      "aria-required-attr",
+      "aria-roles",
+      "aria-valid-attr-value",
+      "aria-valid-attr",
+      "button-name",
+      "bypass",
+      "color-contrast",
+      "document-title",
+      "duplicate-id-aria",
+      "html-has-lang",
+      "html-lang-valid",
+      "image-alt",
+      "link-name",
+      "meta-viewport",
+      "nested-interactive"
+    ]
+  }
+}

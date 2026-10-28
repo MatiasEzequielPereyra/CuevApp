@@ -1,0 +1,1 @@
+git diff --check emitted no output; exitCode 0 is recorded in checks/verification-run.json.

@@ -3,6 +3,9 @@
 El [contexto maestro](../product/CUEVA-MASTER-PRODUCT-CONTEXT-V1.md) define V1.
 Los tracks no equivalen a tareas aceptadas. Solo CUEVA-001A está autorizada ahora.
 
+CUEVA-001A: **REVIEW**. El track CUEVA-001 continúa IN_PROGRESS hasta su aceptación
+independiente; la implementación local no acepta ni habilita los tracks posteriores.
+
 | Track | Estado | Alcance que debe conservarse | Dependencias / aceptación futura |
 | --- | --- | --- | --- |
 | CUEVA-001 | IN_PROGRESS | Fundación, contexto, arquitectura propuesta, marca, temas y verificación local. CUEVA-001A es este incremento. | Auditoría del bootstrap y de la implementación; publicación de main por Orchestrator. |

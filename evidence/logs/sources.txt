@@ -1,0 +1,30 @@
+
+> cuevapp@0.1.0 verify:sources
+> node scripts/verify-sources.mjs
+
+[
+  {
+    "path": "docs/product/CUEVA-MASTER-PRODUCT-CONTEXT-V1.md",
+    "sha256": "516aaee6647ea9277662a8e6bb886c81f82cc619e25d39b8740ac122c66b3743",
+    "bytes": 34281,
+    "result": "PASS"
+  },
+  {
+    "path": "docs/engineering/ORCHESTRATOR-CUEVA-V2.md",
+    "sha256": "ea78ad7da4c3f84b86f5a1f87cce415a3a4ec0575dca23cfa8cdd8c84e39e295",
+    "bytes": 15038,
+    "result": "PASS"
+  },
+  {
+    "path": "docs/engineering/CUEVA-001A-task.md",
+    "sha256": "af5ab6388e3e36d4235ff4bac0f77730da5dd11dcfeabc1dbd660e722a8ee253",
+    "bytes": 7067,
+    "result": "PASS"
+  },
+  {
+    "path": "docs/brand/reference.jpeg",
+    "sha256": "8d849057e321856284e87e1e92ba8d51d40c4018d31cba3fb261211efc517291",
+    "bytes": 29016,
+    "result": "PASS"
+  }
+]
