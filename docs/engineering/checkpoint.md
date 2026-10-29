@@ -2,6 +2,14 @@
 
 Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Auditoría CUEVA-002B-LOCAL
+
+Investigación local **ACCEPTED** sobre HEAD del ejecutor
+`01072f5d3283cbf961fe6045ee86d71e78085b74`; ver [auditoría](CUEVA-002B-LOCAL-audit.md).
+E3 permanece **BLOCKED**, D007 **PROPOSED**; deduplicación, Supabase alojado,
+linking, RLS y revocación cruzada **NOT_RUN**. La aceptación no adopta un proveedor.
+La integración y despliegue posteriores se verifican por el PR y su handoff.
+
 - CUEVA-001A: **DEPLOYED**, fundación aceptada e integrada; smoke remoto verificado.
 - MVP: **IN_PROGRESS**. La fundación no implementa todavía funciones del gimnasio.
 - Despliegue: **READY**, https://cueva-gym.vercel.app, conectado a main de GitHub.
@@ -125,3 +133,18 @@ No se volvió a controlar Mozilla. No hubo SQL, cuentas ni cambios de permisos.
 salidas locales ignoradas. Los logs seleccionados están en `evidence/`.
 El siguiente paso es CUEVA-002A; el hosting ya está operativo.
 No marcar el MVP completo ni el despliegue aprobado por haber integrado código.
+
+## CUEVA-002B-LOCAL: investigación local
+
+El laboratorio desechable y su evidencia están en
+[experiments/cueva-002b-local](../../experiments/cueva-002b-local/README.md).
+Estado del ejecutor: REVIEW; revisión independiente e integración: pendientes.
+El flujo de cambio obligatorio fue observado localmente, pero E3 permanece BLOCKED
+por falta de correlación confiable entre reset, evento de cambio y sesión. Un refresh
+anterior sobrevivió al reset en el ensayo. D007 sigue PROPOSED. Supabase alojado,
+RLS, linking y revocación cruzada: NOT_RUN. Sin despliegue por esta tarea.
+
+La ampliación posterior completa un cambio real después de un reset administrativo
+y observa la sesión resultante; ver la evidencia del laboratorio. Coinciden `code_id`
+en los eventos de cambio/login y `sid` entre login/token en esa ejecución, sin
+quedar establecido un vínculo confiable con la generación del reset. E3 sigue BLOCKED.
