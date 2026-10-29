@@ -1,5 +1,10 @@
 # Backlog de CUEVA
 
+**Actualización 2026-10-29:** el usuario confirmó correo obligatorio para todos
+los alumnos y eliminó el acceso por DNI. Esta decisión reemplaza los requisitos
+anteriores de ingreso DNI/sin correo que aparecen abajo como historia; el alta
+sigue a cargo de administradores. Próximo encargo: [CUEVA-002C](CUEVA-002C-task.md).
+
 El [contexto maestro](../product/CUEVA-MASTER-PRODUCT-CONTEXT-V1.md) define V1.
 Los tracks no equivalen a tareas aceptadas ni autorizan implementar todo su alcance. CUEVA-001A: **DEPLOYED**, aceptación independiente e integración verificadas en PR #1. CUEVA-001 tiene su fundación desplegada; quedan las funciones de los tracks posteriores. El encargo actual es [CUEVA-002A](CUEVA-002A-task.md), **ACCEPTED** como investigación documental, sin Auth implementada ni mecanismo aceptado.
 
