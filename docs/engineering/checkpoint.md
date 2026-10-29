@@ -2,6 +2,14 @@
 
 Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## CUEVA-002C — Entrega local para revisión
+
+Vista previa estática del acceso por correo en `/ingresar`: campos y botón
+deshabilitados, sin envío de credenciales. [Evaluación de identidad](../architecture/email-auth-assessment.md).
+Auth real **BLOCKED**: alta cerrada, primer ingreso, recuperación, revocación y
+RLS no se han verificado; no se han modificado usuarios ni infraestructura remota.
+Esta entrega no demuestra el cierre de esos controles ni autoriza habilitar login.
+
 ## Decisión posterior de producto: acceso por correo
 
 El 2026-10-29 el usuario confirmó que el correo será obligatorio para todos los
