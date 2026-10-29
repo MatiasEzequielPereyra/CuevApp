@@ -1,15 +1,55 @@
 # Checkpoint CUEVA
 
-Actualizado: 2026-10-29, America/Buenos_Aires. Responsable: ORCHESTRATOR CUEVA.
+Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
 - CUEVA-001A: **DEPLOYED**, fundación aceptada e integrada; smoke remoto verificado.
 - MVP: **IN_PROGRESS**. La fundación no implementa todavía funciones del gimnasio.
 - Despliegue: **READY**, https://cueva-gym.vercel.app, conectado a main de GitHub.
 - Supabase: acceso al dashboard y API pública verificados; configuración pública preparada en Vercel. Cliente, Auth de la aplicación, tablas y RLS: NOT_IMPLEMENTED.
-- Siguiente encargo: [CUEVA-002A](CUEVA-002A-task.md), **READY**, investigación y
+- Supabase para el mecanismo de identidad de CUEVA-002A: **NOT_VERIFIED** por el
+  ejecutor; no se repitieron accesos. El antecedente de dashboard/API pública
+  del Orchestrator se preserva y no acredita Auth/RLS ni esta propuesta.
+- Encargo actual: [CUEVA-002A](CUEVA-002A-task.md), **ACCEPTED** como investigación documental, sin aprobar D007; investigación y
   diseño de identidad DNI/email; no autoriza implementar autenticación.
 
+## Auditoría CUEVA-002A
+
+HEAD entregado b7b98e3cf79089c6fcbc1edf69e4811f6194f027 auditado independientemente.
+Ver [dictamen](CUEVA-002A-audit.md): documentos aceptados; D007 sigue PROPOSED.
+Integración remota pendiente de CI en el momento de registrar esta decisión;
+el PR y handoff final identifican su resultado sin SHA autorreferencial.
+Siguiente: [CUEVA-002B-LOCAL](CUEVA-002B-LOCAL-task.md), laboratorio local acotado,
+sin Supabase alojado ni adopción de proveedor. El relato de entrega que sigue
+es histórico del ejecutor y no sustituye esta aceptación posterior.
+
 ## Identidad e integración
+
+Precheck CUEVA-002A: carpeta física y `.git` locales, árbol limpio y main local
+idéntico a origin/main después de `git fetch origin main`.
+BASE_SHA inicial de ejecución: `535ff7fade52aa1380f1769dbbd76afcb7b798fa`.
+El delta desde la fundación `064cbfaadc3c68145adb2411989584bbc32782c5` modifica
+solo README, decisiones, tarea 002A, backlog, checkpoint y auditoría; ningún cambio
+en runtime, dependencias, configuración o pruebas. Rama de ejecución:
+`codex/cueva-002a-identity-design`, creada desde origin/main verificado.
+El 2026-10-29 origin/main avanzó a `2423b14a4835b08ec8d3e487b03d606ef36f1f5e`
+durante el trabajo. El nuevo delta solo cambió README, backlog, checkpoint y el
+registro first-deployment. Se comunicó la divergencia y se rebasó la propuesta
+preservando esos antecedentes. **BASE_SHA final: `2423b14a4835b08ec8d3e487b03d606ef36f1f5e`.**
+No se repitió despliegue ni acceso Supabase. El diseño y
+sus fuentes están en [viabilidad de identidad](../architecture/identity-feasibility.md)
+y el [registro de verificación](CUEVA-002A-verification.md). D007 sigue PROPOSED;
+no se adoptó ni implementó un IdP.
+
+CUEVA-002A entrega diseño, fuentes, diagramas y matriz de 24 pruebas futuras.
+Verificación documental sobre `87ac5a1eedb38f2cca452e723b8bee7523f9d538`: tests
+documentales 2/2, fuentes 4/4, escaneo sin hallazgos y diff check PASS. El commit
+final solo registra evidencia/REVIEW, no aceptación. La viabilidad operativa no es
+PASS: E1–E6 sin prueba integrada; E3 bloqueado por falta de corroboración confiable
+del cambio temporal. Falta decisión de IdP/operador/costo y entrega/recuperación.
+CUEVA-002B es una propuesta condicionada de prueba aislada, no implementación
+general ni tarea autorizada. Esta rama no se publicó; PR NOT_CREATED_LOCAL_ONLY,
+integración y despliegue de CUEVA-002A NOT_RUN. El despliegue previo permanece
+registrado abajo y no se revalidó como parte de esta entrega.
 
 - Repositorio: https://github.com/MatiasEzequielPereyra/CuevApp
 - Ruta física verificada: `C:\Users\pereyram\Desktop\CuevApp`, sin enlace observado.
