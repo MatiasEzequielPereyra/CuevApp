@@ -125,3 +125,13 @@ No se volvió a controlar Mozilla. No hubo SQL, cuentas ni cambios de permisos.
 salidas locales ignoradas. Los logs seleccionados están en `evidence/`.
 El siguiente paso es CUEVA-002A; el hosting ya está operativo.
 No marcar el MVP completo ni el despliegue aprobado por haber integrado código.
+
+## CUEVA-002B-LOCAL: investigación local
+
+El laboratorio desechable y su evidencia están en
+[experiments/cueva-002b-local](../../experiments/cueva-002b-local/README.md).
+Estado del ejecutor: REVIEW; revisión independiente e integración: pendientes.
+El flujo de cambio obligatorio fue observado localmente, pero E3 permanece BLOCKED
+por falta de correlación confiable entre reset, evento de cambio y sesión. Un refresh
+anterior sobrevivió al reset en el ensayo. D007 sigue PROPOSED. Supabase alojado,
+RLS, linking y revocación cruzada: NOT_RUN. Sin despliegue por esta tarea.

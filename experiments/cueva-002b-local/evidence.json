@@ -1,0 +1,111 @@
+{
+  "date": "2026-10-29T15:05:33.384Z",
+  "image": "quay.io/keycloak/keycloak@sha256:3e1ac632e743660017b1e6bb4c3ffc800fd02c82cdd0db858cd03456a98a8dfc",
+  "results": [
+    {
+      "name": "fixture_without_email_phone",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "initial_temporary_blocks_code",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "temporary_reuse_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "new_password_session",
+      "status": "PASS",
+      "detail": "OIDC library validated state, nonce and PKCE; subject matched fixture."
+    },
+    {
+      "name": "event_observation",
+      "status": "OBSERVED",
+      "detail": "UPDATE_CREDENTIAL count=1; same subject=true; client=true; event session present=false; token sid present=true; session matches token=false. Does not alone prove reset correlation or replay resistance."
+    },
+    {
+      "name": "old_password_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "second_login_without_change",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "direct_grant_disabled",
+      "status": "PASS",
+      "detail": "HTTP 400"
+    },
+    {
+      "name": "admin_reset_event",
+      "status": "OBSERVED",
+      "detail": "matching resource path count=1; event id present=true; actor metadata present=true; no reset generation identifier linked to subsequent user event is established."
+    },
+    {
+      "name": "old_duplicate_event_observation",
+      "status": "OBSERVED",
+      "detail": "prior credential event still returned after reset=true; repeated read is not delivery or replay protection."
+    },
+    {
+      "name": "refresh_after_admin_reset",
+      "status": "OBSERVED",
+      "detail": "previous refresh accepted; Keycloak only, not Supabase."
+    },
+    {
+      "name": "sso_after_reset",
+      "status": "OBSERVED",
+      "detail": "prior browser SSO emitted callback=false; pending action page=true."
+    },
+    {
+      "name": "abandon_change",
+      "status": "PASS",
+      "detail": "Fresh browser left required action without callback."
+    },
+    {
+      "name": "admin_action_removal",
+      "status": "OBSERVED",
+      "detail": "Privileged IdP operator removed action; no claim about unprivileged users."
+    },
+    {
+      "name": "admin_removal_login",
+      "status": "OBSERVED",
+      "detail": "after privileged operator removes action, temporary credential yields consumer session=true; required action displayed=false."
+    },
+    {
+      "name": "refresh_after_admin_logout",
+      "status": "OBSERVED",
+      "detail": "refresh obtained after reset accepted after explicit user logout=false; access-token expiry and cross-provider revocation not tested."
+    },
+    {
+      "name": "reset_concurrent",
+      "status": "OBSERVED",
+      "detail": "fulfilled admin requests=1; rejected=ADMIN_API_PUT_400; credentials reaching mandatory change=1 of 2; no ordering or transaction guarantee inferred."
+    },
+    {
+      "name": "duplicate_event_delivery",
+      "status": "NOT_RUN",
+      "detail": "Repeated event query was observed; delivery, deduplication and a trusted correlation consumer do not exist in this lab."
+    },
+    {
+      "name": "E3_end_to_end",
+      "status": "BLOCKED",
+      "detail": "The event observation does not establish trusted correlation of reset generation, actor and authorized consumer session."
+    },
+    {
+      "name": "container_cleanup",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "network_cleanup",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}
