@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-29T16:07:29.389Z",
+  "date": "2026-10-29T16:12:04.013Z",
   "image": "quay.io/keycloak/keycloak@sha256:3e1ac632e743660017b1e6bb4c3ffc800fd02c82cdd0db858cd03456a98a8dfc",
   "results": [
     {
@@ -40,7 +40,7 @@
     {
       "name": "post_reset_admin_event",
       "status": "PASS",
-      "detail": "new matching reset events=1; ID present=true; actor present=true; path matches synthetic user=true by selection."
+      "detail": "new matching reset events=1; ID present=true; actor matches expected admin=true; path matches synthetic user=true."
     },
     {
       "name": "post_reset_required_before_session",

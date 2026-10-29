@@ -48,6 +48,9 @@ try {
     if (!r.ok) throw new Error(`ADMIN_API_${method}_${r.status}`);
     return r.status === 204 || r.status === 201 ? null : r.json();
   }
+  const adminUsers = await api(`/admin/realms/master/users?username=${encodeURIComponent(admin)}&exact=true`);
+  if (adminUsers.length !== 1 || !adminUsers[0].id) throw new Error('ADMIN_LOOKUP_FAILED');
+  const expectedAdminId = adminUsers[0].id;
   await api('/admin/realms', 'POST', { realm: 'cueva-lab', enabled: true, registrationAllowed: false, resetPasswordAllowed: false, loginWithEmailAllowed: true, duplicateEmailsAllowed: false, eventsEnabled: true, eventsListeners: ['jboss-logging'], adminEventsEnabled: true, adminEventsDetailsEnabled: false, passwordPolicy: 'passwordHistory(3)', clients: [{ clientId: 'cueva-client', enabled: true, publicClient: true, standardFlowEnabled: true, directAccessGrantsEnabled: false, implicitFlowEnabled: false, redirectUris: [callback], webOrigins: [base], attributes: { 'pkce.code.challenge.method': 'S256' } }] });
   // The default profile requests email/name after password change. Remove those requirements for this synthetic no-email realm.
   const profile = await api('/admin/realms/cueva-lab/users/profile');
@@ -114,8 +117,10 @@ try {
   stage = 'post_reset_admin_reset';
   await api(`/admin/realms/cueva-lab/users/${postUid}/reset-password`, 'PUT', { type: 'password', value: postTemporary, temporary: true });
   const postResetAdminEvents = await api('/admin/realms/cueva-lab/admin-events?max=100');
-  const newResetEvents = postResetAdminEvents.filter(e => e.id && !oldAdminEventIds.has(e.id) && e.resourcePath === `users/${postUid}/reset-password`);
-  note('post_reset_admin_event', newResetEvents.length === 1 ? 'PASS' : 'FAIL', `new matching reset events=${newResetEvents.length}; ID present=${newResetEvents.some(e => !!e.id)}; actor present=${newResetEvents.some(e => !!e.authDetails?.userId)}; path matches synthetic user=true by selection.`);
+  const newResetEvents = postResetAdminEvents.filter(e => !oldAdminEventIds.has(e.id) && e.resourcePath === `users/${postUid}/reset-password`);
+  const resetEvent = newResetEvents[0];
+  const resetEventPass = newResetEvents.length === 1 && !!resetEvent.id && resetEvent.authDetails?.userId === expectedAdminId && resetEvent.resourcePath === `users/${postUid}/reset-password`;
+  note('post_reset_admin_event', resetEventPass ? 'PASS' : 'FAIL', `new matching reset events=${newResetEvents.length}; ID present=${!!resetEvent?.id}; actor matches expected admin=${resetEvent?.authDetails?.userId === expectedAdminId}; path matches synthetic user=${resetEvent?.resourcePath === `users/${postUid}/reset-password`}.`);
   stage = 'post_reset_user_change';
   postFlow = await freshLogin(postTemporary, postUser);
   const postRequired = await p2.locator('#password-new').count() === 1 && callbackUrl === null;
@@ -128,9 +133,11 @@ try {
   const postClaims = postSession.claims();
   note('post_reset_new_session', postClaims?.sub === postUid && !!postSession.access_token && !!postClaims?.sid ? 'PASS' : 'FAIL', `subject matches fixture=${postClaims?.sub === postUid}; client validated by OIDC library=true; sid present=${!!postClaims?.sid}; initial and new sid differ=${!!initialPostSession.claims()?.sid && !!postClaims?.sid && initialPostSession.claims().sid !== postClaims.sid}.`);
   const postUserEvents = await api(`/admin/realms/cueva-lab/events?user=${encodeURIComponent(postUid)}&max=100`);
-  const postChanges = postUserEvents.filter(e => e.type === 'UPDATE_CREDENTIAL' && e.id && !oldUserEventIds.has(e.id));
+  const postChanges = postUserEvents.filter(e => e.type === 'UPDATE_CREDENTIAL' && !oldUserEventIds.has(e.id));
   const postLogins = postUserEvents.filter(e => e.type === 'LOGIN' && e.id && !oldUserEventIds.has(e.id));
-  note('post_reset_change_event', postChanges.length === 1 ? 'PASS' : 'FAIL', `new credential events=${postChanges.length}; subject matches=${postChanges.some(e => e.userId === postUid)}; client matches=${postChanges.some(e => e.clientId === 'cueva-client')}; event session present=${postChanges.some(e => !!e.sessionId)}; event session matches new token sid=${postChanges.some(e => !!e.sessionId && e.sessionId === postClaims?.sid)}; event detail keys=${[...new Set(postChanges.flatMap(e => Object.keys(e.details || {})))].sort().join(',') || 'none'}.`);
+  const changeEvent = postChanges[0];
+  const changeEventPass = postChanges.length === 1 && !!changeEvent.id && changeEvent.userId === postUid && changeEvent.clientId === 'cueva-client';
+  note('post_reset_change_event', changeEventPass ? 'PASS' : 'FAIL', `new credential events=${postChanges.length}; subject matches=${postChanges.some(e => e.userId === postUid)}; client matches=${postChanges.some(e => e.clientId === 'cueva-client')}; event session present=${postChanges.some(e => !!e.sessionId)}; event session matches new token sid=${postChanges.some(e => !!e.sessionId && e.sessionId === postClaims?.sid)}; event detail keys=${[...new Set(postChanges.flatMap(e => Object.keys(e.details || {})))].sort().join(',') || 'none'}.`);
   note('post_reset_login_event', 'OBSERVED', `new login events=${postLogins.length}; subject and client match=${postLogins.some(e => e.userId === postUid && e.clientId === 'cueva-client')}; event session present=${postLogins.some(e => !!e.sessionId)}; event session matches new token sid=${postLogins.some(e => !!e.sessionId && e.sessionId === postClaims?.sid)}.`);
   note('post_reset_code_id_comparison', 'OBSERVED', `change code_id present=${postChanges.some(e => !!e.details?.code_id)}; login code_id present=${postLogins.some(e => !!e.details?.code_id)}; same nonempty code_id=${postChanges.some(c => !!c.details?.code_id && postLogins.some(l => l.details?.code_id === c.details.code_id))}; equality is an observation, not a documented guarantee of reset-generation binding.`);
   note('post_reset_correlation', 'BLOCKED', 'The controlled sequence and new event IDs distinguish observations; no provider-supplied reset-generation link to the change and resulting session has been established.');
@@ -182,7 +189,7 @@ try {
 } catch (error) {
   // Only structural diagnostics; never output page contents, URLs, credentials or tokens.
   if (diagnosticPage) { try { note('diagnostic', 'OBSERVED', `stage=${stage}; password-new=${await diagnosticPage.locator('#password-new').count()}; username=${await diagnosticPage.locator('#username').count()}; email=${await diagnosticPage.locator('#email').count()}; firstName=${await diagnosticPage.locator('#firstName').count()}; alert=${await diagnosticPage.locator('.alert-error,.alert-danger').count()}; errorType=${error.name}`); } catch {} }
-  note('execution', 'BLOCKED', String(error.message).match(/^(?:KEYCLOAK_NOT_READY|USER_LOOKUP_FAILED|CALLBACK_NOT_RECEIVED|ADMIN_(?:TOKEN_HTTP|API_[A-Z]+)_\d+)$/)?.[0] || 'Unexpected error; diagnostic details deliberately withheld.');
+  note('execution', 'BLOCKED', String(error.message).match(/^(?:KEYCLOAK_NOT_READY|USER_LOOKUP_FAILED|ADMIN_LOOKUP_FAILED|CALLBACK_NOT_RECEIVED|ADMIN_(?:TOKEN_HTTP|API_[A-Z]+)_\d+)$/)?.[0] || 'Unexpected error; diagnostic details deliberately withheld.');
 } finally {
   if (browser) await browser.close().catch(() => {});
   if (server) await new Promise(resolve => server.close(resolve));
