@@ -135,3 +135,8 @@ El flujo de cambio obligatorio fue observado localmente, pero E3 permanece BLOCK
 por falta de correlación confiable entre reset, evento de cambio y sesión. Un refresh
 anterior sobrevivió al reset en el ensayo. D007 sigue PROPOSED. Supabase alojado,
 RLS, linking y revocación cruzada: NOT_RUN. Sin despliegue por esta tarea.
+
+La ampliación posterior completa un cambio real después de un reset administrativo
+y observa la sesión resultante; ver la evidencia del laboratorio. Coinciden `code_id`
+en los eventos de cambio/login y `sid` entre login/token en esa ejecución, sin
+quedar establecido un vínculo confiable con la generación del reset. E3 sigue BLOCKED.

@@ -93,6 +93,48 @@ try {
     await p2.goto(url.href); await p2.locator('#username').fill(loginUser); await p2.locator('#password').fill(password); await p2.locator('#kc-login').click(); await p2.waitForLoadState('domcontentloaded');
     return { verifier, state, nonce };
   }
+  // Independent fixture: establish a session, then perform a specific administrative reset
+  // and complete the required action as the user. Event IDs are compared in memory only.
+  stage = 'post_reset_fixture';
+  const postUser = `post-reset-${id}`;
+  const postInitial = secret(), postTemporary = secret(), postReplacement = secret();
+  await api('/admin/realms/cueva-lab/users', 'POST', { username: postUser, enabled: true, credentials: [{ type: 'password', value: postInitial, temporary: false }] });
+  const postUsers = await api(`/admin/realms/cueva-lab/users?username=${encodeURIComponent(postUser)}&exact=true`);
+  if (postUsers.length !== 1) throw new Error('USER_LOOKUP_FAILED');
+  const postUid = postUsers[0].id;
+  note('post_reset_fixture_without_email_phone', !postUsers[0].email && !postUsers[0].phone ? 'PASS' : 'FAIL');
+  let postFlow = await freshLogin(postInitial, postUser);
+  await p2.waitForURL(`${callback}*`);
+  const initialPostSession = await grant(postFlow);
+  note('post_reset_initial_session', initialPostSession.claims()?.sub === postUid && !!initialPostSession.access_token ? 'PASS' : 'FAIL');
+  const previousUserEvents = await api(`/admin/realms/cueva-lab/events?user=${encodeURIComponent(postUid)}&max=100`);
+  const previousAdminEvents = await api('/admin/realms/cueva-lab/admin-events?max=100');
+  const oldUserEventIds = new Set(previousUserEvents.map(e => e.id).filter(Boolean));
+  const oldAdminEventIds = new Set(previousAdminEvents.map(e => e.id).filter(Boolean));
+  stage = 'post_reset_admin_reset';
+  await api(`/admin/realms/cueva-lab/users/${postUid}/reset-password`, 'PUT', { type: 'password', value: postTemporary, temporary: true });
+  const postResetAdminEvents = await api('/admin/realms/cueva-lab/admin-events?max=100');
+  const newResetEvents = postResetAdminEvents.filter(e => e.id && !oldAdminEventIds.has(e.id) && e.resourcePath === `users/${postUid}/reset-password`);
+  note('post_reset_admin_event', newResetEvents.length === 1 ? 'PASS' : 'FAIL', `new matching reset events=${newResetEvents.length}; ID present=${newResetEvents.some(e => !!e.id)}; actor present=${newResetEvents.some(e => !!e.authDetails?.userId)}; path matches synthetic user=true by selection.`);
+  stage = 'post_reset_user_change';
+  postFlow = await freshLogin(postTemporary, postUser);
+  const postRequired = await p2.locator('#password-new').count() === 1 && callbackUrl === null;
+  note('post_reset_required_before_session', postRequired ? 'PASS' : 'FAIL');
+  await p2.locator('#password-new').fill(postReplacement);
+  await p2.locator('#password-confirm').fill(postReplacement);
+  await p2.locator('input[type=submit],button[type=submit]').first().click();
+  await p2.waitForURL(`${callback}*`);
+  const postSession = await grant(postFlow);
+  const postClaims = postSession.claims();
+  note('post_reset_new_session', postClaims?.sub === postUid && !!postSession.access_token && !!postClaims?.sid ? 'PASS' : 'FAIL', `subject matches fixture=${postClaims?.sub === postUid}; client validated by OIDC library=true; sid present=${!!postClaims?.sid}; initial and new sid differ=${!!initialPostSession.claims()?.sid && !!postClaims?.sid && initialPostSession.claims().sid !== postClaims.sid}.`);
+  const postUserEvents = await api(`/admin/realms/cueva-lab/events?user=${encodeURIComponent(postUid)}&max=100`);
+  const postChanges = postUserEvents.filter(e => e.type === 'UPDATE_CREDENTIAL' && e.id && !oldUserEventIds.has(e.id));
+  const postLogins = postUserEvents.filter(e => e.type === 'LOGIN' && e.id && !oldUserEventIds.has(e.id));
+  note('post_reset_change_event', postChanges.length === 1 ? 'PASS' : 'FAIL', `new credential events=${postChanges.length}; subject matches=${postChanges.some(e => e.userId === postUid)}; client matches=${postChanges.some(e => e.clientId === 'cueva-client')}; event session present=${postChanges.some(e => !!e.sessionId)}; event session matches new token sid=${postChanges.some(e => !!e.sessionId && e.sessionId === postClaims?.sid)}; event detail keys=${[...new Set(postChanges.flatMap(e => Object.keys(e.details || {})))].sort().join(',') || 'none'}.`);
+  note('post_reset_login_event', 'OBSERVED', `new login events=${postLogins.length}; subject and client match=${postLogins.some(e => e.userId === postUid && e.clientId === 'cueva-client')}; event session present=${postLogins.some(e => !!e.sessionId)}; event session matches new token sid=${postLogins.some(e => !!e.sessionId && e.sessionId === postClaims?.sid)}.`);
+  note('post_reset_code_id_comparison', 'OBSERVED', `change code_id present=${postChanges.some(e => !!e.details?.code_id)}; login code_id present=${postLogins.some(e => !!e.details?.code_id)}; same nonempty code_id=${postChanges.some(c => !!c.details?.code_id && postLogins.some(l => l.details?.code_id === c.details.code_id))}; equality is an observation, not a documented guarantee of reset-generation binding.`);
+  note('post_reset_correlation', 'BLOCKED', 'The controlled sequence and new event IDs distinguish observations; no provider-supplied reset-generation link to the change and resulting session has been established.');
+
   stage = 'old_password'; await freshLogin(temporary);
   note('old_password_rejected', await p2.locator('#password').count() === 1 && callbackUrl === null ? 'PASS' : 'FAIL');
   stage = 'repeat_login'; flow = await freshLogin(replacement); await p2.waitForURL(`${callback}*`); const second = await grant(flow);
@@ -149,5 +191,5 @@ try {
   const report = { date: new Date().toISOString(), image, results };
   await writeFile('results.json', JSON.stringify(report, null, 2) + '\n');
   console.log(JSON.stringify(report, null, 2));
-  if (results.some(r => ['FAIL', 'BLOCKED'].includes(r.status) && r.name !== 'E3_end_to_end')) process.exitCode = 1;
+  if (results.some(r => ['FAIL', 'BLOCKED'].includes(r.status) && !['E3_end_to_end', 'post_reset_correlation'].includes(r.name))) process.exitCode = 1;
 }
