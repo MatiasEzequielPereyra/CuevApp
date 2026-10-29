@@ -1,7 +1,6 @@
 # Checkpoint CUEVA
 
-Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad CUEVA-002A: CODEX EXECUTOR;
-la aceptación, integración y despliegue de CUEVA-001A pertenecen al ORCHESTRATOR.
+Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
 - CUEVA-001A: **DEPLOYED**, fundación aceptada e integrada; smoke remoto verificado.
 - MVP: **IN_PROGRESS**. La fundación no implementa todavía funciones del gimnasio.
@@ -10,8 +9,18 @@ la aceptación, integración y despliegue de CUEVA-001A pertenecen al ORCHESTRAT
 - Supabase para el mecanismo de identidad de CUEVA-002A: **NOT_VERIFIED** por el
   ejecutor; no se repitieron accesos. El antecedente de dashboard/API pública
   del Orchestrator se preserva y no acredita Auth/RLS ni esta propuesta.
-- Encargo actual: [CUEVA-002A](CUEVA-002A-task.md), **REVIEW**, investigación y
+- Encargo actual: [CUEVA-002A](CUEVA-002A-task.md), **ACCEPTED** como investigación documental, sin aprobar D007; investigación y
   diseño de identidad DNI/email; no autoriza implementar autenticación.
+
+## Auditoría CUEVA-002A
+
+HEAD entregado b7b98e3cf79089c6fcbc1edf69e4811f6194f027 auditado independientemente.
+Ver [dictamen](CUEVA-002A-audit.md): documentos aceptados; D007 sigue PROPOSED.
+Integración remota pendiente de CI en el momento de registrar esta decisión;
+el PR y handoff final identifican su resultado sin SHA autorreferencial.
+Siguiente: [CUEVA-002B-LOCAL](CUEVA-002B-LOCAL-task.md), laboratorio local acotado,
+sin Supabase alojado ni adopción de proveedor. El relato de entrega que sigue
+es histórico del ejecutor y no sustituye esta aceptación posterior.
 
 ## Identidad e integración
 
