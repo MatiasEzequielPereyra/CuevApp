@@ -1,11 +1,11 @@
 # Checkpoint CUEVA
 
-Actualizado: 2026-10-28, America/Buenos_Aires. Responsable: ORCHESTRATOR CUEVA.
+Actualizado: 2026-10-29, America/Buenos_Aires. Responsable: ORCHESTRATOR CUEVA.
 
-- CUEVA-001A: **MERGED**, con aceptación independiente documentada.
+- CUEVA-001A: **DEPLOYED**, fundación aceptada e integrada; smoke remoto verificado.
 - MVP: **IN_PROGRESS**. La fundación no implementa todavía funciones del gimnasio.
-- Despliegue: **BLOCKED**, infraestructura pendiente de configuración y validación.
-- Supabase: **NOT_VERIFIED**. Sin nuevas tentativas de acceso ni escrituras.
+- Despliegue: **READY**, https://cueva-gym.vercel.app, conectado a main de GitHub.
+- Supabase: acceso al dashboard y API pública verificados; configuración pública preparada en Vercel. Cliente, Auth de la aplicación, tablas y RLS: NOT_IMPLEMENTED.
 - Siguiente encargo: [CUEVA-002A](CUEVA-002A-task.md), **READY**, investigación y
   diseño de identidad DNI/email; no autoriza implementar autenticación.
 
@@ -53,27 +53,35 @@ El [informe del ejecutor](review-report.md) y la [galería](../../evidence/index
 conservan el estado REVIEW histórico. Este checkpoint y la auditoría registran la
 aceptación posterior; no se reescribe evidencia histórica.
 
-## Despliegue pendiente
+## Despliegue verificado
 
-La inspección no encontró un proyecto Vercel vinculado a CuevApp. El equipo
-accesible usa Hobby, limitado a uso personal no comercial según la fuente citada
-en la auditoría. Se requiere resolver hosting apropiado para el gimnasio.
-No se creó infraestructura, contrató plan ni introdujeron secretos.
+El usuario aclaró que es un proyecto personal no comercial y autorizó publicarlo
+con el plan Hobby existente. No se contrató ningún plan ni dominio pago.
+Ver [registro del primer despliegue](first-deployment.md).
 
-- DEPLOYMENT_URL: NOT_AVAILABLE.
-- DEPLOYMENT_STATUS: BLOCKED.
-- PRODUCTION_SHA_VERIFIED: NOT_VERIFIED.
-- POST_DEPLOY_SMOKE_TESTS: NOT_RUN.
-- ROLLBACK_READINESS: NOT_VERIFIED; no hay despliegue previo verificado.
+- DEPLOYMENT_URL: https://cueva-gym.vercel.app
+- DEPLOYMENT_STATUS: READY; producción técnica de Vercel, aplicación en desarrollo.
+- DEPLOYMENT_ID: dpl_A3dSnkuytkg85zaY9cirHyezUJFn
+- PRODUCTION_SHA_VERIFIED: 535ff7fade52aa1380f1769dbbd76afcb7b798fa
+- POST_DEPLOY_SMOKE_TESTS: PASS, HTTP 200 página/logo y tema en navegador.
+- ROLLBACK_READINESS: deployment inicial identificado como candidato de retorno;
+  procedimiento de rollback todavía NOT_RUN. No hay migraciones que revertir.
+
+GitHub está enlazado con producción en main. Los próximos merges aprobados disparan
+build/despliegue automáticamente; el Orchestrator debe verificar SHA, READY y smoke.
+No confundir creación de preview con publicación de producción: el primer deployment
+fue confirmado por la API con target production.
 
 ## Procedencia y continuidad
 
 Las fuentes originales y el logo se conservan íntegros; ver
 [manifest de fuentes](source-manifest.json). Mantener su precedencia según README.
-La instrucción de no reintentar Supabase/Mozilla continúa vigente; investigación
-con documentación pública no equivale a verificar ese proyecto remoto.
+El usuario autorizó posteriormente verificar las conexiones y abrió sesión en el
+navegador compatible. Supabase sigue denegando ambos conectores MCP, pero el dashboard
+correcto fue observado Healthy y Auth settings respondió HTTP 200 con la clave pública.
+No se volvió a controlar Mozilla. No hubo SQL, cuentas ni cambios de permisos.
 
 `node_modules/`, `.next/`, `next-env.d.ts`, `test-results/` y `evidence/runs/` son
 salidas locales ignoradas. Los logs seleccionados están en `evidence/`.
-Los siguientes pasos son el encargo CUEVA-002A y la resolución separada de hosting.
+El siguiente paso es CUEVA-002A; el hosting ya está operativo.
 No marcar el MVP completo ni el despliegue aprobado por haber integrado código.

@@ -1,6 +1,6 @@
 # CUEVA
 
-Fundación de la aplicación del gimnasio. CUEVA-001A fue aceptada e integrada en el PR #1. El despliegue sigue bloqueado por infraestructura pendiente; ver el checkpoint para la evidencia y el siguiente encargo.
+Fundación de la aplicación del gimnasio. CUEVA-001A fue aceptada e integrada en el PR #1. La página está publicada en [cueva-gym.vercel.app](https://cueva-gym.vercel.app). Ver el checkpoint para la evidencia y el siguiente encargo.
 
 ## Orden de lectura
 
