@@ -1,11 +1,11 @@
 # Backlog de CUEVA
 
 El [contexto maestro](../product/CUEVA-MASTER-PRODUCT-CONTEXT-V1.md) define V1.
-Los tracks no equivalen a tareas aceptadas ni autorizan implementar todo su alcance. CUEVA-001A: **MERGED**, aceptación independiente e integración verificadas en PR #1. CUEVA-001 continúa IN_PROGRESS por el despliegue pendiente. El siguiente encargo es [CUEVA-002A](CUEVA-002A-task.md), **READY**: investigar y documentar la solución segura de identidad DNI/email; implementación de Auth todavía no autorizada.
+Los tracks no equivalen a tareas aceptadas ni autorizan implementar todo su alcance. CUEVA-001A: **DEPLOYED**, aceptación independiente e integración verificadas en PR #1. CUEVA-001 tiene su fundación desplegada; quedan las funciones de los tracks posteriores. El siguiente encargo es [CUEVA-002A](CUEVA-002A-task.md), **READY**: investigar y documentar la solución segura de identidad DNI/email; implementación de Auth todavía no autorizada.
 
 | Track | Estado | Alcance que debe conservarse | Dependencias / aceptación futura |
 | --- | --- | --- | --- |
-| CUEVA-001 | IN_PROGRESS | Fundación, contexto, arquitectura propuesta, marca, temas y verificación local. CUEVA-001A es este incremento. | Auditoría e integración completadas; hosting y despliegue BLOCKED. |
+| CUEVA-001 | DEPLOYED | Fundación, contexto, arquitectura propuesta, marca, temas y verificación local. CUEVA-001A es este incremento. | Auditoría, integración y primer despliegue verificados; ver checkpoint. |
 | CUEVA-002 | READY | Alta administrativa DNI/email o ambos, identidad única, contraseña temporal individual y cambio obligatorio, perfiles y permisos del socio. | Investigar contrato DNI-only con Auth; autorización en servidor/RLS y denegaciones reales. |
 | CUEVA-003 | NOT_STARTED | Cuota mensual general, vencimiento individual, pagos parciales, movimientos idempotentes, saldos e historial económico. | CUEVA-002; Nico decide excepciones de renovación y mora; sin bloqueo universal por deuda. |
 | CUEVA-004 | NOT_STARTED | Comprobantes privados, validación de archivos, revisión pendiente/confirmado/rechazado, confirmación administrativa. | CUEVA-003; alumno no confirma; adjuntar no acredita dinero. |
