@@ -2,6 +2,18 @@
 
 Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Decisión posterior de producto: acceso por correo
+
+El 2026-10-29 el usuario confirmó que el correo será obligatorio para todos los
+alumnos y que se elimina el DNI como forma de acceso. Esta decisión prevalece
+sobre los requisitos anteriores de ingreso por DNI o sin correo, conservados
+como historia. No determina si se guarda DNI como dato administrativo.
+El alta permanece exclusivamente administrativa. Se mantiene la exigencia de
+primer acceso seguro y cambio de contraseña, pendiente de diseño y prueba.
+Se prioriza evaluar Supabase Auth nativo; no se adopta Keycloak ni se afirma que
+el bloqueo E3 del laboratorio anterior esté resuelto. Ver
+[CUEVA-002C](CUEVA-002C-task.md). Auth, roles, RLS y correo real siguen pendientes.
+
 ## Auditoría CUEVA-002B-LOCAL
 
 Investigación local **ACCEPTED** sobre HEAD del ejecutor
