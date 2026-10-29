@@ -10,7 +10,7 @@ la aceptación, integración y despliegue de CUEVA-001A pertenecen al ORCHESTRAT
 - Supabase para el mecanismo de identidad de CUEVA-002A: **NOT_VERIFIED** por el
   ejecutor; no se repitieron accesos. El antecedente de dashboard/API pública
   del Orchestrator se preserva y no acredita Auth/RLS ni esta propuesta.
-- Encargo actual: [CUEVA-002A](CUEVA-002A-task.md), **IN_PROGRESS**, investigación y
+- Encargo actual: [CUEVA-002A](CUEVA-002A-task.md), **REVIEW**, investigación y
   diseño de identidad DNI/email; no autoriza implementar autenticación.
 
 ## Identidad e integración
@@ -30,6 +30,17 @@ No se repitió despliegue ni acceso Supabase. El diseño y
 sus fuentes están en [viabilidad de identidad](../architecture/identity-feasibility.md)
 y el [registro de verificación](CUEVA-002A-verification.md). D007 sigue PROPOSED;
 no se adoptó ni implementó un IdP.
+
+CUEVA-002A entrega diseño, fuentes, diagramas y matriz de 24 pruebas futuras.
+Verificación documental sobre `87ac5a1eedb38f2cca452e723b8bee7523f9d538`: tests
+documentales 2/2, fuentes 4/4, escaneo sin hallazgos y diff check PASS. El commit
+final solo registra evidencia/REVIEW, no aceptación. La viabilidad operativa no es
+PASS: E1–E6 sin prueba integrada; E3 bloqueado por falta de corroboración confiable
+del cambio temporal. Falta decisión de IdP/operador/costo y entrega/recuperación.
+CUEVA-002B es una propuesta condicionada de prueba aislada, no implementación
+general ni tarea autorizada. Esta rama no se publicó; PR NOT_CREATED_LOCAL_ONLY,
+integración y despliegue de CUEVA-002A NOT_RUN. El despliegue previo permanece
+registrado abajo y no se revalidó como parte de esta entrega.
 
 - Repositorio: https://github.com/MatiasEzequielPereyra/CuevApp
 - Ruta física verificada: `C:\Users\pereyram\Desktop\CuevApp`, sin enlace observado.

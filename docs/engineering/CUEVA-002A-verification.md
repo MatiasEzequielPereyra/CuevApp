@@ -1,7 +1,7 @@
 # CUEVA-002A — Registro documental
 
 Fecha de preparación: 2026-10-28/29, America/Buenos_Aires.
-Estado: IN_PROGRESS. BASE_SHA real actualizado:
+Estado: **REVIEW**. BASE_SHA real actualizado:
 `2423b14a4835b08ec8d3e487b03d606ef36f1f5e`.
 Rama: `codex/cueva-002a-identity-design`.
 
@@ -30,7 +30,19 @@ aplicación, dependencias, configuración, pruebas, originales ni evidencia hist
 
 ## Comprobaciones requeridas
 
-Pendientes de ejecutar sobre el commit documental:
+Ejecutadas el 2026-10-29 sobre el commit documental limpio
+`87ac5a1eedb38f2cca452e723b8bee7523f9d538`, posterior al rebase.
+Windows, Node 22.14.0, npm 10.9.2. El [registro JSON](evidence/cueva-002a/checks.json)
+conserva comando, hora de inicio/fin, exit code y salida completa.
+
+| Comando | Resultado |
+| --- | --- |
+| `npm run test:docs` | PASS, 2/2; integridad de fuentes y enlaces locales mantenidos. |
+| `npm run verify:sources` | PASS, 4/4 fuentes con SHA-256 y longitud íntegros. |
+| `npm run verify:security` | PASS, 79 archivos en ese commit, cero coincidencias. |
+| `git diff --check BASE_SHA HEAD` | PASS, sin salida; sin errores de whitespace en el delta. |
+
+Para reproducir las comprobaciones sobre el HEAD de entrega:
 
 ```sh
 npm run test:docs
@@ -39,15 +51,36 @@ npm run verify:security
 git diff --check
 ```
 
-Además: diff completo contra BASE_SHA, igualdad de originales y evidencia
-histórica, y ausencia de archivos fuera de docs. No se afirma autenticación segura
-ni factibilidad operativa PASS. Supabase NOT_VERIFIED; acceso remoto NOT_RUN.
+Además se revisó el diff completo y se compararon contra BASE_SHA runtime,
+dependencias, configuración, pruebas, README/AGENTS, originales, auditoría previa,
+registro del despliegue y toda la evidencia histórica: sin diferencias. Los
+únicos cambios de esta tarea están en docs, incluido el registro de sus checks.
+No se afirma autenticación segura ni factibilidad operativa PASS. Supabase para
+este mecanismo: NOT_VERIFIED; acceso al proyecto por este ejecutor: NOT_RUN. El
+antecedente de dashboard/API pública del Orchestrator se conserva sin reinterpretar.
+
+El commit final añade el JSON de verificación y registra REVIEW en checkpoint,
+backlog y este informe. El diseño y las fuentes de arquitectura permanecen iguales
+al commit comprobado. Su SHA final se identifica en el handoff externo, evitando
+un SHA autorreferencial dentro de este documento. No es un commit de aceptación.
 
 Build, lint, typecheck y navegador: NOT_RUN en CUEVA-002A por alcance exclusivamente
 documental. La [auditoría de fundación](independent-audit.md) registra su evidencia
 anterior, que no certifica identidad ni se presenta como repetida hoy.
 
-## Condiciones para continuar después de REVIEW
+## Dictamen, riesgos y condiciones para continuar después de REVIEW
+
+La investigación documenta una vía candidata con IdP maduro y OIDC con email
+opcional. D007: PROPOSED. Falta acreditar E1–E6. E3 está técnicamente bloqueado:
+acciones requeridas vacías y consulta de credenciales no acreditan cambio por el
+alumno; falta demostrar la correlación confiable de operación, actor y sesión.
+También se identificó que una verificación de email pendiente puede detener el
+login DNI del candidato: cancelación segura y no obligatoriedad se prueban en E4.
+
+La revisión de fuentes se apoyó en un agente de investigación pública y se
+contrastaron los hallazgos con las guías/código fijados. No constituye auditoría
+independiente del Orchestrator ni prueba del servicio integrado. Las consultas de
+documentación fueron 2026-10-28/29; los hashes de tags se corroboraron públicamente.
 
 Revisión de D007, decisión de IdP/operación/costos y entrega/recuperación sin email,
 y entorno aislado autorizado. CUEVA-002B solo se propone con esos gates. E1–E6
