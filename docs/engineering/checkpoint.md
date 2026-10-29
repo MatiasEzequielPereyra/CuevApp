@@ -2,6 +2,22 @@
 
 Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Auditoría de vista previa CUEVA-002C
+
+Vista previa y evaluación documental **ACCEPTED** en HEAD ejecutor
+`78c715e85495c56b2da5bfd8a0aab3a667f5be68`; ver [auditoría](CUEVA-002C-audit.md).
+La autenticación real de CUEVA-002C continúa **BLOCKED**, sin cuentas, cliente
+Supabase, roles ni RLS implementados. La vista no recibe ni envía credenciales.
+El PR y handoff indican el resultado de integración y despliegue posteriores.
+
+## CUEVA-002C — Entrega local para revisión
+
+Vista previa estática del acceso por correo en `/ingresar`: campos y botón
+deshabilitados, sin envío de credenciales. [Evaluación de identidad](../architecture/email-auth-assessment.md).
+Auth real **BLOCKED**: alta cerrada, primer ingreso, recuperación, revocación y
+RLS no se han verificado; no se han modificado usuarios ni infraestructura remota.
+Esta entrega no demuestra el cierre de esos controles ni autoriza habilitar login.
+
 ## Decisión posterior de producto: acceso por correo
 
 El 2026-10-29 el usuario confirmó que el correo será obligatorio para todos los

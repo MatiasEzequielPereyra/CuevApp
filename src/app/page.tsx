@@ -1,5 +1,6 @@
 import { BrandMark } from "@/components/brand/brand-mark";
 import { ThemePicker } from "@/components/theme/theme-picker";
+import Link from "next/link";
 
 const nextSteps = [
   { number: "01", title: "Cuotas claras", text: "Pagos, saldos y comprobantes en un mismo lugar." },
@@ -25,6 +26,7 @@ export default function Home() {
             <p className="hero-description">El esfuerzo es tuyo.<br />El próximo paso lo construimos juntos.</p>
             <a className="primary-link" href="#proyecto">Conocé el proyecto <span aria-hidden="true">↗</span></a>
             <p className="hero-note">Estamos preparando el espacio digital del gimnasio.</p>
+            <Link className="access-preview-link" href="/ingresar">Ver el futuro acceso <span aria-hidden="true">→</span></Link>
           </div>
           <figure className="brand-stage">
             <div className="stage-topline"><span>FUERZA / CONSTANCIA</span><span aria-hidden="true">+</span></div>
