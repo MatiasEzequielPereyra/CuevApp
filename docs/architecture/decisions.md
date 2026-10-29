@@ -10,6 +10,7 @@ Propuestas: 2026-10-27. Aceptación por ORCHESTRATOR: 2026-10-28, según la [aud
 | D004 | ACCEPTED | Claro, oscuro y preferencia del sistema; persistir únicamente apariencia en el navegador. | Tema fijo; almacenamiento del lado servidor. | Sin datos personales ni credenciales; funcionamiento aun sin almacenamiento disponible. |
 | D005 | ACCEPTED | Playwright sobre build de producción, axe y verificaciones documentales. | Pruebas solo de componentes. | Verifica recursos, navegación y responsive reales; no certifica móviles físicos. |
 | D006 | ACCEPTED | TypeScript 6.0.3 y ESLint 9.39.5 para satisfacer los peers declarados de los plugins actuales. | TypeScript 7 / ESLint 10 exceden los peers de parte de la cadena; otro linter requiere nueva evaluación. | ESLint 9 fuera de soporte: deuda aceptada solo para esta fundación; revisar actualización antes de ampliar la cadena. Auditoría de vulnerabilidades separada. |
+| D007 | PROPOSED | Evaluar IdP maduro username/email y contraseña, candidato Keycloak, federado por Custom OIDC con email opcional a Supabase Auth. [Diseño CUEVA-002A](identity-feasibility.md). | Nativo + resolver no cubre DNI-only; Third-party JWT directo cambia sesión/modelo; emails inventados y contraseñas caseras no cumplen. | Viabilidad documental condicional, no PASS operativo. Requiere decisiones humanas, pruebas de alta cerrada, cambio temporal, vinculación y revocación; no implementa Auth ni aprueba un proveedor/plan. |
 
 ## Contratos de producto preservados
 
@@ -22,8 +23,9 @@ America/Argentina/Buenos_Aires; una nota principal por alumno con borrador y
 publicación; estructura opcional y resultados persistentes; videos reutilizables;
 PWA instalable y lectura offline de rutinas. Ninguno se implementa en CUEVA-001A.
 
-La integración de DNI sin email con Supabase Auth requiere investigación posterior:
-no se elige un mecanismo, no se fabrican emails ni directorios públicos de DNI.
+La investigación CUEVA-002A propone un mecanismo condicionado en D007; no hay
+mecanismo de identidad aceptado ni Auth implementada. No se fabrican emails ni
+directorios públicos de DNI. D001–D006 mantienen su aceptación para la fundación.
 
 ## Cambios de alcance
 
@@ -31,5 +33,8 @@ no se elige un mecanismo, no se fabrican emails ni directorios públicos de DNI.
   ambos temas y el backlog vigente. Sustituye las hipótesis del prompt histórico.
 - 2026-10-27: instrucción posterior del usuario: continuar CUEVA-001A localmente;
   Supabase NOT_VERIFIED y sin nuevas tentativas de acceso remoto al servicio.
+- 2026-10-28/29: CUEVA-002A investiga identidad conforme al encargo, exclusivamente
+  con documentación/código públicos. D007 permanece PROPOSED; adoptar un IdP,
+  costos, entrega/recuperación y el entorno de prueba requieren decisión separada.
 - Futuras modificaciones: agregar fecha, fuente, motivo y efecto sobre requisitos;
   nunca editar silenciosamente las copias originales.
