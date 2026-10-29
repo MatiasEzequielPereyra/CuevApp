@@ -2,6 +2,14 @@
 
 Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Auditoría CUEVA-002B-LOCAL
+
+Investigación local **ACCEPTED** sobre HEAD del ejecutor
+`01072f5d3283cbf961fe6045ee86d71e78085b74`; ver [auditoría](CUEVA-002B-LOCAL-audit.md).
+E3 permanece **BLOCKED**, D007 **PROPOSED**; deduplicación, Supabase alojado,
+linking, RLS y revocación cruzada **NOT_RUN**. La aceptación no adopta un proveedor.
+La integración y despliegue posteriores se verifican por el PR y su handoff.
+
 - CUEVA-001A: **DEPLOYED**, fundación aceptada e integrada; smoke remoto verificado.
 - MVP: **IN_PROGRESS**. La fundación no implementa todavía funciones del gimnasio.
 - Despliegue: **READY**, https://cueva-gym.vercel.app, conectado a main de GitHub.
