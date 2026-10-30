@@ -1,0 +1,186 @@
+{
+  "date": "2026-10-30T13:09:28.232Z",
+  "images": {
+    "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "mail": "public.ecr.aws/supabase/mailpit@sha256:37a38e48e9338cd7e89dfeb487f37b02ebfcd9cb23111bed2d345e79d37d6dd6",
+    "rest": "public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962"
+  },
+  "results": [
+    {
+      "name": "public_signup_closed",
+      "status": "PASS",
+      "detail": "status=422; code=signup_disabled"
+    },
+    {
+      "name": "admin_invite",
+      "status": "PASS",
+      "detail": "status=200; code=unknown"
+    },
+    {
+      "name": "invite_verified",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "name": "session_before_password",
+      "status": "OBSERVED",
+      "detail": "Verification issued an access token before password setup; the app must enforce onboarding independently."
+    },
+    {
+      "name": "initial_password_state",
+      "status": "OBSERVED",
+      "detail": "password_empty=false"
+    },
+    {
+      "name": "before_password_denied",
+      "status": "PASS",
+      "detail": "status=200; visible=0"
+    },
+    {
+      "name": "anonymous_data_denied",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "name": "editable_metadata_cannot_unlock",
+      "status": "PASS",
+      "detail": "metadata_status=200; visible=0"
+    },
+    {
+      "name": "private_gate_not_exposed",
+      "status": "PASS",
+      "detail": "status=404"
+    },
+    {
+      "name": "student_invite_rejected",
+      "status": "PASS",
+      "detail": "status=403"
+    },
+    {
+      "name": "anonymous_password_update_rejected",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "name": "direct_password_change_does_not_unlock",
+      "status": "PASS",
+      "detail": "status=200; visible=0"
+    },
+    {
+      "name": "concurrent_activation_once",
+      "status": "PASS",
+      "detail": "results=DONE,NOT_PENDING"
+    },
+    {
+      "name": "activation_replay_rejected",
+      "status": "PASS",
+      "detail": "result=NOT_PENDING"
+    },
+    {
+      "name": "gate_after_password",
+      "status": "OBSERVED",
+      "detail": "ready=true"
+    },
+    {
+      "name": "password_unlocks_only_own_row",
+      "status": "PASS",
+      "detail": "status=200; visible=1; owner_matches=true"
+    },
+    {
+      "name": "cross_user_insert_denied",
+      "status": "PASS",
+      "detail": "status=403"
+    },
+    {
+      "name": "password_login",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "name": "wrong_password_rejected",
+      "status": "PASS",
+      "detail": "status=400"
+    },
+    {
+      "name": "invite_replay_rejected",
+      "status": "PASS",
+      "detail": "status=403"
+    },
+    {
+      "name": "unprivileged_invite_rejected",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "name": "admin_change_must_not_complete_student_onboarding",
+      "status": "PASS",
+      "detail": "before=0; admin_status=200; after=0; cannot attribute change to student."
+    },
+    {
+      "name": "revoked_session_cannot_complete",
+      "status": "PASS",
+      "detail": "result=INVALID_SESSION; visible=0"
+    },
+    {
+      "name": "coordinated_reset_after_inflight_activation",
+      "status": "PASS",
+      "detail": "reset=RESET; completion=DONE; visible=0."
+    },
+    {
+      "name": "interrupted_activation_stays_closed",
+      "status": "PASS",
+      "detail": "interrupted=true; visible=0."
+    },
+    {
+      "name": "old_session_after_direct_reset",
+      "status": "PASS",
+      "detail": "visible=0; direct reset does not advance gate generation."
+    },
+    {
+      "name": "direct_operator_bypasses_coordinator",
+      "status": "OBSERVED",
+      "detail": "operator_status=200; new_session_visible=1; requires provider-admin authority."
+    },
+    {
+      "name": "interrupted_reset_stays_closed",
+      "status": "PASS",
+      "detail": "interrupted=true; visible=0."
+    },
+    {
+      "name": "provider_reset_failure_stays_closed",
+      "status": "PASS",
+      "detail": "result=PROVIDER_FAILED_CLOSED; visible=0."
+    },
+    {
+      "name": "hosted_ssr_and_production",
+      "status": "NOT_RUN",
+      "detail": "Isolated Auth/PostgREST/RLS experiment; not app integration or hosted configuration."
+    },
+    {
+      "name": "cleanup_rest",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_auth",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_db",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_network",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

@@ -2,6 +2,14 @@
 
 Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Investigación local CUEVA-002F
+
+La [prueba de coordinación](../../experiments/cueva-002f-local/README.md) observó
+resultados favorables en casos limitados de reset coordinado y concurrencia. Un
+operador con credencial directa del proveedor puede evitar esa coordinación.
+**REVIEW** de investigación; implementación, integración real y acceso **BLOCKED**.
+No se ha probado SSR, restricciones del operador ni Supabase alojado.
+
 ## Auditoría CUEVA-002E local
 
 Investigación local aceptada en HEAD `e4b8f3249d854abda8db3b3f52740ffe62d4deb8`;
