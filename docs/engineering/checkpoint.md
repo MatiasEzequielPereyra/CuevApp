@@ -2,6 +2,13 @@
 
 Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Auditoría CUEVA-002F local
+
+Investigación local aceptada en HEAD `de73e7cba9d9e4d0e536236cd0b1bea70e976795`;
+ver [auditoría](CUEVA-002F-audit.md). Los casos coordinados observados pasaron,
+pero el operador directo puede eludirlos. Acceso de producción **BLOCKED**;
+privilegios, caídas reales, pooling, SSR y Supabase alojado siguen sin verificar.
+
 ## Investigación local CUEVA-002F
 
 La [prueba de coordinación](../../experiments/cueva-002f-local/README.md) observó
