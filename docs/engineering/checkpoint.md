@@ -2,6 +2,15 @@
 
 Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Primer acceso por invitación
+
+Ante las alternativas de contraseña temporal o invitación, el usuario eligió la
+opción más sencilla el 2026-10-29. Se selecciona invitación por correo: el
+gimnasio inicia el alta y cada alumno establece su propia contraseña. Reemplaza
+la entrega de contraseña temporal, no la necesidad de un primer acceso seguro.
+La invitación y sus restricciones requieren implementación y pruebas reales;
+el acceso publicado sigue deshabilitado. No se autorizan altas públicas.
+
 ## Auditoría de vista previa CUEVA-002C
 
 Vista previa y evaluación documental **ACCEPTED** en HEAD ejecutor
