@@ -2,6 +2,22 @@
 
 Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Auditoría CUEVA-002D local
+
+Investigación local aceptada en HEAD `f2866a3bce03c83c40fefebd40887a3f74f0a204`;
+ver [auditoría](CUEVA-002D-audit.md). La invitación local, contraseña e ingreso
+pasaron; verificar la invitación emite una sesión antes de establecer contraseña.
+Protección de primer ingreso y datos **BLOCKED**; Supabase alojado, RLS, SSR y
+correo real **NOT_RUN**. No se habilitó ingreso real ni se crearon cuentas reales.
+
+## Investigación local CUEVA-002D
+
+La [prueba local de invitación](../../experiments/cueva-002d-local/README.md)
+completó el flujo básico tras corregir el search_path de la base descartable.
+La verificación de invitación emitió una sesión antes de elegir contraseña: el
+control de incorporación en servidor y datos sigue **BLOCKED**. La pantalla sigue
+deshabilitada; alta integral, SSR, RLS y correo alojado no se han validado.
+
 ## Primer acceso por invitación
 
 Ante las alternativas de contraseña temporal o invitación, el usuario eligió la
