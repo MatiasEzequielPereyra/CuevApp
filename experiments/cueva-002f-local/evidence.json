@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-30T13:09:28.232Z",
+  "date": "2026-10-30T13:12:29.038Z",
   "images": {
     "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
     "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
@@ -125,7 +125,7 @@
     {
       "name": "coordinated_reset_after_inflight_activation",
       "status": "PASS",
-      "detail": "reset=RESET; completion=DONE; visible=0."
+      "detail": "waiting=true; order=reset_attempt,reset_waiting,activation_committed,reset_acquired; reset=RESET; completion=DONE; visible=0."
     },
     {
       "name": "interrupted_activation_stays_closed",
@@ -143,14 +143,14 @@
       "detail": "operator_status=200; new_session_visible=1; requires provider-admin authority."
     },
     {
-      "name": "interrupted_reset_stays_closed",
-      "status": "PASS",
-      "detail": "interrupted=true; visible=0."
-    },
-    {
       "name": "provider_reset_failure_stays_closed",
       "status": "PASS",
-      "detail": "result=PROVIDER_FAILED_CLOSED; visible=0."
+      "detail": "before=1; result=PROVIDER_FAILED_CLOSED; after=0."
+    },
+    {
+      "name": "interrupted_reset_stays_closed",
+      "status": "PASS",
+      "detail": "before=1; interrupted=true; after=0."
     },
     {
       "name": "hosted_ssr_and_production",

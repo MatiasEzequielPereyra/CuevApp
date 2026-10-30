@@ -20,7 +20,7 @@ let networkCreated = false, stage = 'network';
 const note = (name, status, detail = '') => results.push({name, status, detail});
 const docker = (args, extraEnv = {}) => execFileSync('docker', args, {encoding:'utf8', stdio:['ignore','pipe','pipe'], env:{...process.env,...extraEnv}}).trim();
 const sql = input => { try { return execFileSync('docker', ['exec','-i',names.db,'psql','-U','postgres','-d','postgres','-v','ON_ERROR_STOP=1'], {input, encoding:'utf8', stdio:['pipe','pipe','pipe']}).trim(); } catch (error) { const match=String(error.stderr || '').match(/ERROR:\s*(function|role|schema|relation|permission|syntax)[^\n]{0,80}/i)?.[0] || 'DATABASE_SETUP_FAILED'; throw new Error(match); } };
-async function withLock(uid, run) {
+async function withLock(uid, run, hooks = {}) {
   if(!/^[0-9a-f-]{36}$/i.test(uid))throw new Error('BAD_FIXTURE_ID');
   const child=spawn('docker',['exec','-i',names.db,'psql','-X','-q','-t','-A','-U','postgres','-d','postgres','-v','ON_ERROR_STOP=1'],{stdio:['pipe','pipe','ignore']});
   const closed=new Promise(resolve=>child.once('close',resolve));
@@ -31,7 +31,14 @@ async function withLock(uid, run) {
     const output=[];
     while(true){const item=await lines.next(); if(item.done)throw new Error('LOCK_CONNECTION_CLOSED'); if(item.value===marker)return output.join('\n').trim(); output.push(item.value);}
   }
-  try { await query(`SELECT pg_advisory_lock(hashtextextended('${uid}', 42))`); return await run(query); }
+  try {
+    const backend=await query('SELECT pg_backend_pid()');
+    if(!/^\d+$/.test(backend))throw new Error('INVALID_BACKEND');
+    hooks.onAttempt?.(Number(backend));
+    await query(`SELECT pg_advisory_lock(hashtextextended('${uid}', 42))`);
+    hooks.onAcquired?.();
+    return await run(query);
+  }
   finally { child.stdin.end(); await closed; }
 }
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -115,7 +122,7 @@ try {
   note('private_gate_not_exposed',directGate.status===404 || directGate.status===401 || directGate.status===403?'PASS':'FAIL',`status=${directGate.status}`);
   // Local proof of concept: all authorized paths must take this per-user lock.
   // A real deployment needs bounded timeouts, least privilege and operator controls.
-  async function serverComplete(token, selectedPassword, beforeActivation = async () => {}) {
+  async function serverComplete(token, selectedPassword, beforeActivation = async () => {}, onActivated = () => {}) {
     const verified=await request(`${base}/user`,{token});
     if(!verified.ok)return 'INVALID_SESSION';
     const verifiedUser=await verified.json(); const verifiedUid=verifiedUser.id;
@@ -136,17 +143,18 @@ try {
     if(!stillValid.ok || (await stillValid.json()).id!==verifiedUid)return 'INVALID_SESSION';
     await beforeActivation();
     const updated=await query(`UPDATE private.onboarding SET ready=true WHERE user_id='${verifiedUid}' AND ready=false AND generation=${pending} AND EXISTS (SELECT 1 FROM auth.sessions WHERE id='${sid}' AND user_id='${verifiedUid}') RETURNING generation::text`);
+    if(updated===pending)onActivated();
     return updated===pending ? 'DONE' : 'NOT_PENDING';
     });
   }
-  async function coordinatedReset(uid, credential, newPassword, beforeProvider = async () => {}) {
+  async function coordinatedReset(uid, credential, newPassword, beforeProvider = async () => {}, hooks = {}) {
     return withLock(uid, async query => {
       const generation=await query(`UPDATE private.onboarding SET ready=false, generation=generation+1 WHERE user_id='${uid}' RETURNING generation::text`);
       if(!/^\d+$/.test(generation))return 'NO_GATE';
       await beforeProvider();
       const reset=await request(`${base}/admin/users/${uid}`,{method:'PUT',token:credential,body:{password:newPassword}});
       return reset.ok ? 'RESET' : 'PROVIDER_FAILED_CLOSED';
-    });
+    }, hooks);
   }
   const userInvite=await request(`${base}/invite`,{method:'POST',token:session.access_token,body:{email:strangerEmail}});
   note('student_invite_rejected',userInvite.status===401 || userInvite.status===403?'PASS':'FAIL',`status=${userInvite.status}`);
@@ -203,13 +211,24 @@ try {
   const secondLogin=await request(`${base}/token?grant_type=password`,{method:'POST',body:{email:secondEmail,password:operatorPassword}});
   if(!secondLogin.ok)throw new Error('SECOND_LOGIN_FAILED');
   const secondLoginSession=await secondLogin.json();
-  let resetPromise; const coordinatedPassword=`Ff4!${secret()}`;
+  let resetPromise, observedWaiting=false; const events=[]; const coordinatedPassword=`Ff4!${secret()}`;
+  let resolveAttempt; const attempted = new Promise(resolve=>{resolveAttempt=resolve;});
   const raced=await serverComplete(secondLoginSession.access_token,`Ee5!${secret()}`,async()=>{
-    resetPromise=coordinatedReset(secondUid,admin,coordinatedPassword);
-  });
+    resetPromise=coordinatedReset(secondUid,admin,coordinatedPassword,undefined,{
+      onAttempt: pid=>{events.push('reset_attempt');resolveAttempt(pid);},
+      onAcquired: ()=>events.push('reset_acquired'),
+    });
+    const pid=await attempted;
+    for(let i=0;i<100;i++){
+      await sleep(50);
+      const locks=sql(`SELECT EXISTS (SELECT 1 FROM pg_locks WHERE pid=${pid} AND locktype='advisory' AND NOT granted);`);
+      if(/\bt\b/.test(locks)){observedWaiting=true;events.push('reset_waiting');break;}
+    }
+  },()=>events.push('activation_committed'));
   const concurrentResetStatus=await resetPromise;
   const racedRows=await getRows(secondLoginSession.access_token);
-  note('coordinated_reset_after_inflight_activation',concurrentResetStatus==='RESET' && racedRows.status===200 && racedRows.data.length===0?'PASS':'FAIL',`reset=${concurrentResetStatus}; completion=${raced}; visible=${racedRows.data.length}.`);
+  const correctOrder=events.join(',')==='reset_attempt,reset_waiting,activation_committed,reset_acquired';
+  note('coordinated_reset_after_inflight_activation',observedWaiting && correctOrder && raced==='DONE' && concurrentResetStatus==='RESET' && racedRows.status===200 && racedRows.data.length===0?'PASS':'FAIL',`waiting=${observedWaiting}; order=${events.join(',')}; reset=${concurrentResetStatus}; completion=${raced}; visible=${racedRows.data.length}.`);
   const freshLogin=await request(`${base}/token?grant_type=password`,{method:'POST',body:{email:secondEmail,password:coordinatedPassword}});
   if(!freshLogin.ok)throw new Error('THIRD_LOGIN_FAILED');
   const freshSession=await freshLogin.json();
@@ -225,13 +244,16 @@ try {
   if(!directOperator.ok || !bypassLogin.ok)throw new Error('DIRECT_OPERATOR_TEST_FAILED');
   const bypassSession=await bypassLogin.json(); const bypassRows=await getRows(bypassSession.access_token);
   note('direct_operator_bypasses_coordinator','OBSERVED',`operator_status=${directOperator.status}; new_session_visible=${bypassRows.data.length}; requires provider-admin authority.`);
+  const failureReset=await coordinatedReset(uid,'invalid-test-token',`Gg3!${secret()}`);
+  const afterFailure=await getRows(bypassSession.access_token);
+  note('provider_reset_failure_stays_closed',bypassRows.status===200 && bypassRows.data.length===1 && failureReset==='PROVIDER_FAILED_CLOSED' && afterFailure.status===200 && afterFailure.data.length===0?'PASS':'FAIL',`before=${bypassRows.data.length}; result=${failureReset}; after=${afterFailure.data.length}.`);
+  // Privileged synthetic fixture setup, to start the separate interruption test open.
+  sql(`UPDATE private.onboarding SET ready=true WHERE user_id='${uid}';`);
+  const beforeInterruption=await getRows(bypassSession.access_token);
   let resetInterrupted=false;
   try { await coordinatedReset(uid,admin,`Jj0!${secret()}`,async()=>{throw new Error('SIMULATED_INTERRUPTION');}); } catch { resetInterrupted=true; }
   const afterInterruptedReset=await getRows(bypassSession.access_token);
-  note('interrupted_reset_stays_closed',resetInterrupted && bypassRows.data.length===1 && afterInterruptedReset.status===200 && afterInterruptedReset.data.length===0?'PASS':'FAIL',`interrupted=${resetInterrupted}; visible=${afterInterruptedReset.data.length}.`);
-  const failureReset=await coordinatedReset(uid,'invalid-test-token',`Gg3!${secret()}`);
-  const afterFailure=await getRows(bypassSession.access_token);
-  note('provider_reset_failure_stays_closed',failureReset==='PROVIDER_FAILED_CLOSED' && afterFailure.data.length===0?'PASS':'FAIL',`result=${failureReset}; visible=${afterFailure.data.length}.`);
+  note('interrupted_reset_stays_closed',resetInterrupted && beforeInterruption.status===200 && beforeInterruption.data.length===1 && afterInterruptedReset.status===200 && afterInterruptedReset.data.length===0?'PASS':'FAIL',`before=${beforeInterruption.data.length}; interrupted=${resetInterrupted}; after=${afterInterruptedReset.data.length}.`);
   if(!adminUpdate.ok || secondBefore.status!==200 || secondAfter.status!==200)throw new Error('ADMIN_CHANGE_TEST_FAILED');
   note('hosted_ssr_and_production','NOT_RUN','Isolated Auth/PostgREST/RLS experiment; not app integration or hosted configuration.');
 } catch (error) {

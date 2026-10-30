@@ -28,11 +28,15 @@ En la ejecución redactada, antes de elegir contraseña la sesión no vio regist
 modificar metadata no abrió el acceso. Al completar el flujo coordinado se vio
 solo la fila propia y una inserción con otro propietario fue rechazada. Dos
 activaciones concurrentes produjeron un único DONE y un NOT_PENDING; un replay
-secuencial se rechazó. El reset coordinado iniciado durante la activación esperó
-su turno y dejó la fila cerrada; el JWT anterior no vio registros. Una excepción
-simulada antes de activar y otra antes de llamar al proveedor durante reset
-dejaron el acceso cerrado. Una falla HTTP del proveedor en reset también lo dejó
-cerrado. [Resultados redactados](evidence.json).
+secuencial se rechazó. Se identificó la sesión PostgreSQL del reset y se observó
+en `pg_locks` una solicitud advisory no concedida mientras la activación mantenía
+el bloqueo. Entonces se permitió continuar: la activación terminó DONE antes de
+que el reset adquiriera el bloqueo, el reset terminó RESET y el JWT anterior no
+vio registros. Una excepción simulada antes de activar dejó el acceso cerrado.
+Para la falla HTTP del proveedor se comprobó que una sesión válida veía una fila
+antes de comenzar y ninguna después. La prueba separada de interrupción usa una
+reactivación privilegiada del fixture local y verifica el mismo antes y después.
+[Resultados redactados](evidence.json).
 
 Estas pruebas son un número limitado de secuencias: no acreditan toda carrera,
 un proceso terminado abruptamente, caídas de red ambiguas, recuperación tras un
