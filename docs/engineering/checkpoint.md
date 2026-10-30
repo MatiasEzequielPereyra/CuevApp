@@ -2,6 +2,14 @@
 
 Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Investigación local CUEVA-002D
+
+La [prueba local de invitación](../../experiments/cueva-002d-local/README.md)
+está **BLOCKED**: GoTrue rechazó el alta pública en el ensayo específico, pero
+la invitación devolvió error interno y no se estableció su causa. Ninguna sesión
+o cambio de contraseña se demostró. La pantalla sigue deshabilitada; no se han
+validado alta cerrada integral, SSR, RLS ni configuración o correo alojados.
+
 ## Primer acceso por invitación
 
 Ante las alternativas de contraseña temporal o invitación, el usuario eligió la
