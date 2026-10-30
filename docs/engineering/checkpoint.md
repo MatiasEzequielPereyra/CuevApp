@@ -2,6 +2,14 @@
 
 Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Prototipo local CUEVA-002G
+
+El [prototipo de acceso](../../experiments/cueva-002g-local/README.md) ejercita
+invitación, elección de contraseña y login con navegador y servicios locales.
+Es una entrega para revisión, no integración con Next.js ni acceso operativo.
+El bypass de operador directo y otras puertas permanecen abiertos: producción
+y login de CUEVA **BLOCKED**; Supabase alojado y correo real **NOT_RUN**.
+
 ## Auditoría CUEVA-002F local
 
 Investigación local aceptada en HEAD `de73e7cba9d9e4d0e536236cd0b1bea70e976795`;
