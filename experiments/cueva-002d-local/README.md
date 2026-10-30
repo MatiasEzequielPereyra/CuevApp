@@ -1,6 +1,6 @@
 # CUEVA-002D: prueba local de invitación
 
-Estado: **BLOCKED**, investigación parcial; no es una implementación de acceso.
+Estado: **BLOCKED para habilitar acceso**, investigación local parcial.
 La elección de producto es invitación por correo para establecer una contraseña,
 en lugar de entregar una temporal. El acceso de la aplicación permanece
 deshabilitado y no se realizaron cambios en servicios alojados.
@@ -10,13 +10,18 @@ deshabilitado y no se realizaron cambios en servicios alojados.
 En GoTrue v2.197.0, con `GOTRUE_DISABLE_SIGNUP=true`, un POST directo de alta
 de un usuario sintético respondió 422 con `signup_disabled`. Esta observación
 se limita a esa configuración y endpoint: no verifica todas las rutas de alta ni
-la configuración alojada. La invitación administrativa respondió HTTP 500 con
-`unexpected_failure`. La causa no se estableció; no se atribuye a la opción de
-cerrar altas. Por ello no se obtuvo correo, sesión ni prueba de establecer clave.
-Resultado completo y redactado: [evidence.json](evidence.json).
+la configuración alojada. Tras corregir el error de laboratorio detallado abajo,
+una invitación administrativa llegó al Mailpit local, el token fue verificado por
+API, el usuario estableció contraseña y luego inició sesión. El segundo uso del
+token fue rechazado; un usuario autenticado sin privilegios y una solicitud
+anónima no pudieron invitar, y una contraseña incorrecta fue rechazada. Resultado
+completo y redactado: [evidence.json](evidence.json).
 
-Sin pruebas reales de invitación, recuperación, SSR, RLS, autorización por rol,
-revocación, ni envío efectivo de correo a usuarios. No se afirma que un usuario
+La verificación de invitación **emitió un token de acceso antes de establecer la
+contraseña**. Por tanto la invitación por sí sola no impone la finalización del
+primer acceso en los datos: es imprescindible probar un control en servidor y RLS.
+Sin pruebas de recuperación, SSR, RLS, roles de la aplicación, revocación, flujo
+de enlace en navegador ni envío efectivo de correo a usuarios. No se afirma que un usuario
 sin sesión no pueda acceder a datos en Supabase alojado. La comprobación real de
 estos controles bloquea la habilitación del acceso.
 
@@ -53,12 +58,16 @@ de todos los secretos posibles. La sintaxis Node y `git diff --check` pasaron.
 
 En el primer intento una red interna no permitió verificar el mapeo; se cambió a
 bridge con bind loopback. Después faltaba el esquema `auth` en Postgres genérico;
-se agregó su creación solo dentro de la base desechable. Ninguno de esos intentos
-permitió concluir nada sobre Auth remoto. El fallo 500 persiste tras el ajuste.
+se agregó su creación solo dentro de la base desechable. GoTrue inició pero la
+invitación daba 500: el diagnóstico redactado identificó `relation users does not
+exist`. La base genérica carecía del `search_path` al esquema `auth`; configurar
+`auth, public` para su rol local eliminó el fallo en la prueba original. Este
+ajuste es exclusivo del laboratorio y no describe una modificación alojada.
+La prueba anterior se reprodujo antes de la corrección y el mismo escenario pasó
+después. Ninguno de esos intentos permite concluir nada sobre Auth remoto.
 
-La siguiente investigación debe diagnosticar el fallo sin exponer logs y verificar
-con GoTrue real: invitación con alta pública cerrada, validación del enlace una
-sola vez, selección de contraseña, acceso, recuperación y aislamiento de sesiones.
+La siguiente investigación debe verificar un control de incorporación en servidor
+y RLS, enlace de invitación en navegador, recuperación y aislamiento de sesiones.
 RLS y roles necesitan además un entorno de datos aislado real; pruebas con mocks
 no sustituyen esos controles. La clave administrativa y permisos de invitación
 deben quedar solo en un servidor autorizado.

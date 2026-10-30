@@ -5,10 +5,10 @@ Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHEST
 ## Investigación local CUEVA-002D
 
 La [prueba local de invitación](../../experiments/cueva-002d-local/README.md)
-está **BLOCKED**: GoTrue rechazó el alta pública en el ensayo específico, pero
-la invitación devolvió error interno y no se estableció su causa. Ninguna sesión
-o cambio de contraseña se demostró. La pantalla sigue deshabilitada; no se han
-validado alta cerrada integral, SSR, RLS ni configuración o correo alojados.
+completó el flujo básico tras corregir el search_path de la base descartable.
+La verificación de invitación emitió una sesión antes de elegir contraseña: el
+control de incorporación en servidor y datos sigue **BLOCKED**. La pantalla sigue
+deshabilitada; alta integral, SSR, RLS y correo alojado no se han validado.
 
 ## Primer acceso por invitación
 

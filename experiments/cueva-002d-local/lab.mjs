@@ -32,7 +32,7 @@ try {
   start(names.db,images.db,['--network-alias','db','-e','POSTGRES_PASSWORD'],{POSTGRES_PASSWORD:dbPassword});
   stage='db_ready';
   await waitFor(()=>{try{docker(['exec',names.db,'pg_isready','-U','postgres']);return true;}catch{return false;}});
-  docker(['exec',names.db,'psql','-U','postgres','-d','postgres','-v','ON_ERROR_STOP=1','-c','CREATE SCHEMA auth']);
+  docker(['exec',names.db,'psql','-U','postgres','-d','postgres','-v','ON_ERROR_STOP=1','-c','CREATE SCHEMA auth; ALTER ROLE postgres SET search_path = auth, public']);
   start(names.mail,images.mail,['--network-alias','mail','-p','127.0.0.1::8025'],{});
   stage='mail_port';
   const mailBase=`http://127.0.0.1:${port(names.mail,8025)}`;
@@ -67,10 +67,17 @@ try {
   if(!verify.ok)throw new Error('VERIFY_FAILED');
   const session=await verify.json();
   if(!session.access_token)throw new Error('SESSION_MISSING');
+  note('session_before_password','OBSERVED','Verification issued an access token before password setup; the app must enforce onboarding independently.');
+  const userInvite=await request(`${base}/invite`,{method:'POST',token:session.access_token,body:{email:strangerEmail}});
+  note('student_invite_rejected',userInvite.status===401 || userInvite.status===403?'PASS':'FAIL',`status=${userInvite.status}`);
+  const unauthedUpdate=await request(`${base}/user`,{method:'PUT',body:{password}});
+  note('anonymous_password_update_rejected',unauthedUpdate.status===401 || unauthedUpdate.status===403?'PASS':'FAIL',`status=${unauthedUpdate.status}`);
   const update=await request(`${base}/user`,{method:'PUT',token:session.access_token,body:{password}});
   note('set_password',update.ok?'PASS':'FAIL',`status=${update.status}`);
   const login=await request(`${base}/token?grant_type=password`,{method:'POST',body:{email:fixtureEmail,password}});
   note('password_login',login.ok?'PASS':'FAIL',`status=${login.status}`);
+  const wrongLogin=await request(`${base}/token?grant_type=password`,{method:'POST',body:{email:fixtureEmail,password:`Incorrect!${secret()}`}});
+  note('wrong_password_rejected',wrongLogin.status===400 || wrongLogin.status===401?'PASS':'FAIL',`status=${wrongLogin.status}`);
   const replay=await request(`${base}/verify`,{method:'POST',body:{token_hash:inviteToken,type:'invite'}});
   note('invite_replay_rejected',replay.status>=400?'PASS':'FAIL',`status=${replay.status}`);
   const anonInvite=await request(`${base}/invite`,{method:'POST',body:{email:strangerEmail}});
