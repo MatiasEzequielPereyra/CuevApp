@@ -2,6 +2,13 @@
 
 Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Auditoría CUEVA-002E local
+
+Investigación local aceptada en HEAD `e4b8f3249d854abda8db3b3f52740ffe62d4deb8`;
+ver [auditoría](CUEVA-002E-audit.md). Ambas alternativas de incorporación tienen
+fallas reproducidas; implementación y acceso real **BLOCKED**. La aceptación es
+solo del resultado de investigación, no del SQL ni del coordinador experimental.
+
 ## Investigación local CUEVA-002E
 
 La [prueba de incorporación y RLS](../../experiments/cueva-002e-local/README.md)
