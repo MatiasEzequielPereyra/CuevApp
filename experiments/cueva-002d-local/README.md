@@ -50,11 +50,12 @@ eliminar exclusivamente los recursos de esa ejecución. No reiniciar Docker ni
 alterar otros proyectos. La prueba fallida sale con código distinto de cero.
 
 La comprobación documental y las fuentes originales pasaron. El escáner de
-seguridad reporta `secret-assignment` en `lab.mjs`: corresponde a la URL de la
-base local construida con una contraseña generada aleatoriamente en memoria,
-no a una clave literal. Se conserva el resultado **FAIL** del escaneo por patrón;
-la revisión manual no sustituye un escaneo sin hallazgos ni demuestra ausencia
-de todos los secretos posibles. La sintaxis Node y `git diff --check` pasaron.
+seguridad detectó inicialmente `secret-assignment` en la construcción interpolada
+de una URL local con contraseña aleatoria. Se cambió a un objeto URL y asignación
+de propiedades en memoria; el escáner, sin cambios ni exclusiones, pasó en la
+ejecución posterior. La salida y evidencia solo contienen resultados redactados;
+la comprobación por patrones no demuestra ausencia de todos los secretos posibles.
+La sintaxis Node y `git diff --check` pasaron.
 
 En el primer intento una red interna no permitió verificar el mapeo; se cambió a
 bridge con bind loopback. Después faltaba el esquema `auth` en Postgres genérico;

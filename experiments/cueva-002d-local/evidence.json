@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-30T12:43:38.685Z",
+  "date": "2026-10-30T12:45:24.647Z",
   "images": {
     "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
     "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
