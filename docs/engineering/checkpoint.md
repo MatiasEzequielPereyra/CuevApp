@@ -2,6 +2,14 @@
 
 Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Investigación local CUEVA-002E
+
+La [prueba de incorporación y RLS](../../experiments/cueva-002e-local/README.md)
+comparó dos prototipos locales y encontró fallas en ambos. El trigger confunde
+cambios administrativos con los del alumno; el coordinador sin operación atómica
+puede activar acceso tras un reset concurrente. **BLOCKED** para implementar o
+habilitar login. Supabase alojado, SSR, correo real y otras rutas siguen NOT_RUN.
+
 ## Auditoría CUEVA-002D local
 
 Investigación local aceptada en HEAD `f2866a3bce03c83c40fefebd40887a3f74f0a204`;
