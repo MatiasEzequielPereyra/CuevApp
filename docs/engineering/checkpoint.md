@@ -2,6 +2,20 @@
 
 Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Supabase alojado — reconexión verificada
+
+Actualización 2026-11-02: acceso MCP al proyecto `vbkzoojkdkcugxhneyzi`
+verificado tras reconexión del usuario. Inventario: tablas public/private 0,
+migraciones 0, usuarios Auth 0, buckets 0, asesor de seguridad sin lints.
+El registro público se deshabilitó y se verificó tras recargar el panel;
+confirmación de correo sigue activa. Es un ajuste de alta administrativa,
+no evidencia de funcionamiento del acceso de CUEVA.
+
+El panel Emails indica SMTP personalizado sin configurar y plantillas por defecto.
+Correo real, URLs del producto, migración y permisos de aplicación siguen pendientes.
+No se crearon usuarios, tablas ni migraciones remotas. Próxima tarea candidata:
+[CUEVA-002I](CUEVA-002I-task.md), aún sin aceptación ni aplicación alojada.
+
 ## Auditoría CUEVA-002H local
 
 Actualización 2026-11-02: integración experimental en Next.js **ACCEPTED LOCAL**
