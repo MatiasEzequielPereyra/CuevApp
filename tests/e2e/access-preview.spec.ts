@@ -37,3 +37,10 @@ test("el laboratorio no se habilita en producción aunque exista la bandera", as
   expect((await request.get("/laboratorio/data")).status()).toBe(404);
   expect((await request.post("/laboratorio/action/login", { form: {} })).status()).toBe(404);
 });
+
+test("el acceso de producto permanece cerrado sin configuración", async ({ request }) => {
+  expect((await request.get("/aceptar-invitacion")).status()).toBe(404);
+  expect((await request.get("/crear-contrasena")).status()).toBe(404);
+  expect((await request.get("/cuenta")).status()).toBe(404);
+  expect((await request.post("/api/acceso/ingresar", { form: {} })).status()).toBe(404);
+});
