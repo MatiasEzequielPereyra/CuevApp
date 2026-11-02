@@ -2,6 +2,16 @@
 
 Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## CUEVA-002H local — entrega para revisión
+
+Integración de laboratorio en Next.js real, con dos alumnos sintéticos y
+servicios locales, en **REVIEW**; ver [informe](../../experiments/cueva-002h-local/README.md)
+y [evidencia](../../experiments/cueva-002h-local/evidence.json). La ruta de
+laboratorio requiere desarrollo y configuración loopback explícita y permanece
+deshabilitada en producción. El ingreso publicado no está activo. Reset
+coordinado de producto, Supabase alojado, correo real, HTTPS y operación de
+privilegios siguen **NOT_RUN**; no se acepta el SQL experimental para despliegue.
+
 ## Auditoría CUEVA-002G y siguiente incremento
 
 Actualización 2026-11-02: prototipo local **ACCEPTED** sobre HEAD ejecutor
