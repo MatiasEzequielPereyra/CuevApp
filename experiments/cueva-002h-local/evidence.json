@@ -1,0 +1,146 @@
+{
+  "date": "2026-11-02T15:05:11.250Z",
+  "images": {
+    "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "mail": "public.ecr.aws/supabase/mailpit@sha256:37a38e48e9338cd7e89dfeb487f37b02ebfcd9cb23111bed2d345e79d37d6dd6",
+    "rest": "public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962"
+  },
+  "results": [
+    {
+      "name": "authenticator_password_cannot_login_as_postgres",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "public_signup_closed",
+      "status": "PASS",
+      "detail": "status=422"
+    },
+    {
+      "name": "public_admin_invitation_rejected",
+      "status": "PASS",
+      "detail": "status=403"
+    },
+    {
+      "name": "coordinator_minimum_privilege",
+      "status": "PASS",
+      "detail": "read_denied=true; write_denied=true; no_superuser_or_bypass=true; authenticated_execute=false; narrow_function=true"
+    },
+    {
+      "name": "chunked_body_over_limit_rejected",
+      "status": "PASS",
+      "detail": "status=413; transfer=chunked; no Content-Length"
+    },
+    {
+      "name": "chunked_body_under_limit_processed",
+      "status": "PASS",
+      "detail": "status=303; transfer=chunked; no Content-Length"
+    },
+    {
+      "name": "multipart_content_type_preserved",
+      "status": "PASS",
+      "detail": "status=303"
+    },
+    {
+      "name": "anonymous_data_rejected",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "name": "browser_invitation_confirmed",
+      "status": "PASS",
+      "detail": "status=303; redirected_to_password=true"
+    },
+    {
+      "name": "before_password_data_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cross_origin_password_rejected",
+      "status": "PASS",
+      "detail": "status=403"
+    },
+    {
+      "name": "browser_password_and_private_data",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "local_session_cookies_http_only",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "logout_response",
+      "status": "OBSERVED",
+      "detail": "status=303; auth_cookie_count=0"
+    },
+    {
+      "name": "logout_data_rejected",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "name": "wrong_login_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "browser_login_after_setup",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "second_real_user_isolation",
+      "status": "PASS",
+      "detail": "before_password_denied=true; second_sees_only_own=true"
+    },
+    {
+      "name": "invalid_session_rejected",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "name": "invitation_replay_rejected",
+      "status": "PASS",
+      "detail": "status=400"
+    },
+    {
+      "name": "direct_operator_bypass",
+      "status": "OBSERVED",
+      "detail": "provider_admin_status=200; old_session_status=401; new_session_visible=true; requires provider-admin authority."
+    },
+    {
+      "name": "hosted_nextjs_and_real_email",
+      "status": "NOT_RUN",
+      "detail": "Local Next.js development server and translated fixture link; no hosted provider or actual email delivery."
+    },
+    {
+      "name": "cleanup_rest",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_auth",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_db",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_network",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}
