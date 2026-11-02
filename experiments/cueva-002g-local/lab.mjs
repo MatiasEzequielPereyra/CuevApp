@@ -15,7 +15,7 @@ const images = {
 const id = randomUUID().replaceAll('-', '').slice(0, 12);
 const names = { network: `cueva-002g-net-${id}`, db: `cueva-002g-db-${id}`, auth: `cueva-002g-auth-${id}`, mail: `cueva-002g-mail-${id}`, rest: `cueva-002g-rest-${id}` };
 const secret = () => randomBytes(32).toString('hex');
-const dbPassword = secret(), coordinatorPassword = secret(), jwtSecret = secret(), password = `Aa9!${secret()}`;
+const dbPassword = secret(), authenticatorPassword = secret(), coordinatorPassword = secret(), jwtSecret = secret(), password = `Aa9!${secret()}`;
 const created = [], results = [];
 let networkCreated = false, stage = 'network';
 const note = (name, status, detail = '') => results.push({name, status, detail});
@@ -54,8 +54,13 @@ try {
   for(let i=0;i<60;i++){if(docker(['inspect','--format','{{.State.Running}}',names.auth])!=='true')throw new Error('AUTH_EXIT'); try{if((await request(`${base}/health`)).ok)break;}catch{} if(i===59)throw new Error('READINESS_TIMEOUT'); await sleep(1000);}
   stage='database_setup'; sql(await readFile('experiment.sql','utf8'));
   stage='database_role';
-  sql(`ALTER ROLE authenticator PASSWORD '${dbPassword}'; ALTER ROLE cueva_coordinator PASSWORD '${coordinatorPassword}';`);
-  const restDb = new URL('postgres://db:5432/postgres'); restDb.username='authenticator'; restDb.password=dbPassword;
+  sql(`ALTER ROLE authenticator PASSWORD '${authenticatorPassword}'; ALTER ROLE cueva_coordinator PASSWORD '${coordinatorPassword}';`);
+  const dbPort=port(names.db,5432);
+  const wrongAdmin=new pg.Client({host:'127.0.0.1',port:dbPort,database:'postgres',user:'postgres',password:authenticatorPassword,connectionTimeoutMillis:5000});
+  let rejected=false;
+  try { await wrongAdmin.connect(); } catch (error) { rejected=error.code==='28P01'; } finally { await wrongAdmin.end(); }
+  note('authenticator_password_cannot_login_as_postgres',rejected?'PASS':'FAIL');
+  const restDb = new URL('postgres://db:5432/postgres'); restDb.username='authenticator'; restDb.password=authenticatorPassword;
   const restEnv={PGRST_DB_SCHEMAS:'public',PGRST_DB_ANON_ROLE:'anon',PGRST_JWT_SECRET:jwtSecret,PGRST_SERVER_HOST:'0.0.0.0',PGRST_SERVER_PORT:'3000'};
   restEnv.PGRST_DB_URI = restDb.href;
   stage='rest_start'; start(names.rest,images.rest,['-p','127.0.0.1::3000',...Object.keys(restEnv).flatMap(key=>['-e',key])],restEnv);
@@ -64,7 +69,7 @@ try {
   const admin=testJwt('service_role');
   stage='browser_flow';
   const { runBrowserFlow }=await import('./browser-test.mjs');
-  await runBrowserFlow({base,rest,mailBase,dbPort:port(names.db,5432),coordinatorPassword,admin,anon:testJwt('anon'),id,password,sql,request,note,launch,chromium,pg,secret});
+  await runBrowserFlow({base,rest,mailBase,dbPort,coordinatorPassword,admin,anon:testJwt('anon'),id,password,sql,request,note,launch,chromium,pg,secret});
 } catch (error) {
   if(created.includes(names.auth)) {
     const logs=spawnSync('docker',['logs',names.auth],{encoding:'utf8'}); const output=String(logs.stdout)+String(logs.stderr);

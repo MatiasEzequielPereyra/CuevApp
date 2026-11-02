@@ -58,6 +58,15 @@ ejecutados no habilitan la aplicación ni garantizan seguridad para producción.
 
 ## Reproducción y limpieza
 
+En la repetición posterior a la revisión, las contraseñas efímeras de PostgreSQL
+y del autenticador de PostgREST se generaron independientemente. Se comprobó que
+la contraseña del autenticador no permite conectarse como `postgres`. Después de
+elegir contraseña y tras el login, el navegador recibió exactamente el registro
+sintético propio (ID y contenido) y no el registro sintético ajeno. La segunda
+fila pertenece a un identificador distinto, no a una segunda sesión autenticada.
+Los resultados actuales y la limpieza figuran en `evidence.json`; esto no amplía
+los límites de producción descritos arriba.
+
 Con Node 22, npm, las dependencias de la raíz instaladas (`npm ci`), Chromium de
 Playwright y Docker ya disponibles, ejecutar desde esta carpeta
 `npm ci --ignore-scripts` y `node lab.mjs`. Los paquetes de este

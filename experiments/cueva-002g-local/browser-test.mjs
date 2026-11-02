@@ -38,6 +38,7 @@ export async function runBrowserFlow({base,rest,mailBase,dbPort,coordinatorPassw
     browser=await chromium.launch({headless:true});
     const context=await browser.newContext();
     const page=await context.newPage(); page.setDefaultTimeout(5000);
+    const onlyOwnRecord=async()=>await page.locator('li[data-record-id]').count()===1 && await page.locator('li[data-record-id="1"]').textContent()==='own fixture' && await page.locator('li[data-record-id="2"]').count()===0 && await page.getByText('other fixture',{exact:true}).count()===0;
     const anonymous=await page.goto(`${app.origin}/data`);
     note('anonymous_data_rejected',anonymous?.status()===401?'PASS':'FAIL',`status=${anonymous?.status()}`);
     const inviteUrl=`${app.origin}/invite?token_hash=${encodeURIComponent(token)}`;
@@ -53,7 +54,7 @@ export async function runBrowserFlow({base,rest,mailBase,dbPort,coordinatorPassw
     await page.goto(`${app.origin}/password`);
     await page.getByLabel('Contraseña').fill(password);
     await page.getByRole('button',{name:'Guardar contraseña'}).click();
-    note('browser_password_and_private_data',page.url().endsWith('/data') && await page.getByText('Registros visibles: 1').count()===1?'PASS':'FAIL');
+    note('browser_password_and_private_data',page.url().endsWith('/data') && await onlyOwnRecord()?'PASS':'FAIL');
     const cookieMeta=await context.cookies();
     note('local_session_cookies_http_only',cookieMeta.some(x=>x.name.startsWith('sb-') && x.httpOnly && x.sameSite==='Lax')?'PASS':'FAIL');
     await page.getByRole('button',{name:'Salir'}).click();
@@ -66,7 +67,7 @@ export async function runBrowserFlow({base,rest,mailBase,dbPort,coordinatorPassw
     await page.goto(`${app.origin}/login`);
     await page.getByLabel('Correo').fill(email); await page.getByLabel('Contraseña').fill(password);
     await page.getByRole('button',{name:'Ingresar'}).click();
-    note('browser_login_after_setup',page.url().endsWith('/data') && await page.getByText('Registros visibles: 1').count()===1?'PASS':'FAIL');
+    note('browser_login_after_setup',page.url().endsWith('/data') && await onlyOwnRecord()?'PASS':'FAIL');
     const duplicate=await context.request.post(`${app.origin}/invite`,{form:{token},headers:{origin:app.origin}});
     note('invitation_replay_rejected',duplicate.status()===400?'PASS':'FAIL',`status=${duplicate.status()}`);
     const directPassword=`Zz9!${secret()}`;
@@ -75,7 +76,7 @@ export async function runBrowserFlow({base,rest,mailBase,dbPort,coordinatorPassw
     await page.goto(`${app.origin}/login`);
     await page.getByLabel('Correo').fill(email); await page.getByLabel('Contraseña').fill(directPassword);
     await page.getByRole('button',{name:'Ingresar'}).click();
-    const directVisible=page.url().endsWith('/data') && await page.getByText('Registros visibles: 1').count()===1;
+    const directVisible=page.url().endsWith('/data') && await onlyOwnRecord();
     note('direct_operator_bypass','OBSERVED',`provider_admin_status=${directReset.status}; old_session_status=${oldSession?.status()}; new_session_visible=${directVisible}; requires provider-admin authority.`);
     if(!directReset.ok)throw new Error('DIRECT_OPERATOR_TEST_FAILED');
     note('hosted_nextjs_and_real_email','NOT_RUN','Local standalone server and translated fixture link; no hosted provider, actual Next.js integration or delivery.');

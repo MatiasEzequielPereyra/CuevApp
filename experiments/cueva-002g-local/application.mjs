@@ -48,7 +48,8 @@ export async function launch({authBase,restBase,anonKey,dbPort,dbPassword,diagno
         if(error || !user)return send(401,page('Ingresá para continuar',''));
         const result=await supabase.from('lab_records').select('id,content');
         if(result.error)return send(503,page('Datos no disponibles',''));
-        return send(200,page('Datos de prueba',`<p>Registros visibles: ${result.data.length}</p><form method="post" action="/logout"><button>Salir</button></form>`));
+        const records=result.data.map(record=>`<li data-record-id="${esc(record.id)}">${esc(record.content)}</li>`).join('');
+        return send(200,page('Datos de prueba',`<p>Registros visibles: ${result.data.length}</p><ul>${records}</ul><form method="post" action="/logout"><button>Salir</button></form>`));
       }
       if(req.method==='POST' && url.pathname==='/password'){
         const chosen=form.get('password')||''; if(chosen.length<8)return send(400,page('Contraseña inválida',''));
