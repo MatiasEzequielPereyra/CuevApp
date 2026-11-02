@@ -2,6 +2,20 @@
 
 Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Auditoría CUEVA-002H local
+
+Actualización 2026-11-02: integración experimental en Next.js **ACCEPTED LOCAL**
+sobre HEAD `f24b95f2230c19e53b5144b41f5d09443c8d25ba`; ver
+[auditoría](CUEVA-002H-audit.md). Repetición independiente del flujo con dos
+alumnos sintéticos PASS. El código solo opera en desarrollo opt-in loopback;
+en producción el laboratorio devuelve 404. Ingreso público, recuperación y
+configuración alojada siguen **BLOCKED/NOT_RUN**. No habilitar mediante una bandera.
+
+Observación remota solo lectura 2026-11-02: dashboard saludable, email y confirmación
+habilitados, pero altas públicas todavía permitidas. El conector MCP rechazó el
+acceso por permisos; no se modificó el proyecto alojado. Estas observaciones no
+acreditan Auth/RLS ni la configuración de entrega de correo.
+
 ## CUEVA-002H local — entrega para revisión
 
 Integración de laboratorio en Next.js real, con dos alumnos sintéticos y
