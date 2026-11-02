@@ -1,4 +1,5 @@
 // Uses real local Auth, PostgREST, Postgres and a headless browser.
+import http from 'node:http';
 export async function runBrowserFlow({base,rest,mailBase,dbPort,coordinatorPassword,admin,anon,id,password,sql,request,note,launch,chromium,pg,secret}) {
   const email=`student-${id}@example.com`;
   let app, browser;
@@ -47,6 +48,19 @@ export async function runBrowserFlow({base,rest,mailBase,dbPort,coordinatorPassw
     const nonPrivileged=role.rows[0]?.rolsuper===false && role.rows[0]?.rolbypassrls===false;
     note('coordinator_minimum_privilege',denied && writeDenied && nonPrivileged && grants.rows[0]?.allowed===false && capability.rows[0]?.generation==='1'?'PASS':'FAIL',`read_denied=${denied}; write_denied=${writeDenied}; no_superuser_or_bypass=${nonPrivileged}; authenticated_execute=${grants.rows[0]?.allowed}; narrow_function=${capability.rows[0]?.generation==='1'}`);
     app=await launch({authBase:base,restBase:rest,anonKey:anon,dbPort,dbPassword:coordinatorPassword,diagnostic:(name,detail)=>note(`diagnostic_${name}`,'OBSERVED',detail)});
+    const streamed=await new Promise((resolve,reject)=>{
+      const req=http.request(`${app.origin}/laboratorio/action/login`,{method:'POST',headers:{origin:app.origin,'content-type':'application/x-www-form-urlencoded','transfer-encoding':'chunked'}},res=>{res.resume();res.on('end',()=>resolve(res.statusCode));});
+      req.on('error',reject);req.write('email=');req.write('x'.repeat(8192));req.end();
+    });
+    note('chunked_body_over_limit_rejected',streamed===413?'PASS':'FAIL',`status=${streamed}; transfer=chunked; no Content-Length`);
+    const smallStream=await new Promise((resolve,reject)=>{
+      const req=http.request(`${app.origin}/laboratorio/action/login`,{method:'POST',headers:{origin:app.origin,'content-type':'application/x-www-form-urlencoded','transfer-encoding':'chunked'}},res=>{const location=res.headers.location;res.resume();res.on('end',()=>resolve({status:res.statusCode,location}));});
+      req.on('error',reject);req.write('email=');req.write('bad%40example.com&password=invalid');req.end();
+    });
+    note('chunked_body_under_limit_processed',smallStream.status===303 && smallStream.location===`${app.origin}/laboratorio/error`?'PASS':'FAIL',`status=${smallStream.status}; transfer=chunked; no Content-Length`);
+    const multipart = new FormData(); multipart.set('email','bad@example.com'); multipart.set('password','invalid');
+    const multipartResponse=await fetch(`${app.origin}/laboratorio/action/login`,{method:'POST',headers:{origin:app.origin},body:multipart,redirect:'manual'});
+    note('multipart_content_type_preserved',multipartResponse.status===303 && multipartResponse.headers.get('location')===`${app.origin}/laboratorio/error`?'PASS':'FAIL',`status=${multipartResponse.status}`);
     browser=await chromium.launch({headless:true});
     const context=await browser.newContext();
     const page=await context.newPage(); page.setDefaultTimeout(5000);

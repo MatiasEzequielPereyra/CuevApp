@@ -10,10 +10,31 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
   const cfg = config();
   if (!cfg) return fail(404, "No disponible");
   if (req.headers.get("origin") !== cfg.origin) return fail(403, "Acceso denegado");
-  const length = Number(req.headers.get("content-length") ?? "0");
-  if (!Number.isFinite(length) || length > 8192) return fail(413, "Solicitud demasiado grande");
+  const contentType = req.headers.get("content-type") ?? "";
+  if (!/^(application\/x-www-form-urlencoded|multipart\/form-data)(?:\s*;|\s*$)/i.test(contentType)) return fail(415, "Formato no admitido");
+  const declared = req.headers.get("content-length");
+  if (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > 8192)) return fail(413, "Solicitud demasiado grande");
+  const reader = req.body?.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  if (reader) {
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        total += value.byteLength;
+        if (total > 8192) { await reader.cancel().catch(() => {}); return fail(413, "Solicitud demasiado grande"); }
+        chunks.push(value);
+      }
+    } catch { return fail(400, "Solicitud inválida"); } finally { reader.releaseLock(); }
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
   const { operation } = await params;
-  const form = await req.formData();
+  let form: FormData;
+  try { form = await new Request(req.url, { method: "POST", headers: { "content-type": contentType }, body: bytes }).formData(); }
+  catch { return fail(400, "Solicitud inválida"); }
   const auth = await client();
   const redirect = (path: string) => NextResponse.redirect(new URL(path, cfg.origin), { status: 303, headers: { "Cache-Control": "no-store" } });
   if (operation === "invite") {

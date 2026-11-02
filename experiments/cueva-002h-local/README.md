@@ -27,6 +27,12 @@ clave errónea, replay de invitación y cierre de sesión. Cookies SSR observada
 HttpOnly y SameSite=Lax en HTTP local; HTTPS real no fue probado. La verificación
 de producción prueba que las rutas devuelven 404 aun al configurar la bandera.
 
+La ruta de mutación lee como máximo 8192 bytes reales antes de interpretar el
+formulario, preservando su tipo de contenido; al excederlos cancela la lectura
+y devuelve 413. Se ensayaron dos solicitudes `chunked` sin Content-Length: una
+mayor al límite fue rechazada y otra menor llegó al procesamiento de ingreso;
+un formulario multipart también llegó a dicho procesamiento.
+
 El primer ensayo encontró logout denegado por Origin ausente bajo `no-referrer`.
 El laboratorio usa ahora `strict-origin`: no comparte la ruta de invitación y
 conserva el Origin para verificar el POST. La repetición observó logout 303,
@@ -64,7 +70,7 @@ los contenedores están activos. Las imágenes y Chromium permanecen en caché.
 ## Verificaciones
 
 Laboratorio: PASS en las condiciones limitadas descritas; no habilita acceso.
-Lint, tipos, build, pruebas documentales y 23 pruebas de navegador existentes:
+Lint, tipos, build, pruebas documentales y 24 pruebas de navegador existentes:
 PASS. Prueba de bloqueo del laboratorio bajo producción: PASS. Fuentes 4/4 y
 escaneo por patrones: PASS; el escaneo no demuestra ausencia total de secretos.
 `npm audit` reportó 16 vulnerabilidades moderadas en la cadena de desarrollo
