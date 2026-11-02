@@ -2,6 +2,23 @@
 
 Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Auditoría CUEVA-002G y siguiente incremento
+
+Actualización 2026-11-02: prototipo local **ACCEPTED** sobre HEAD ejecutor
+`07af375978236a566bb39eaecb514147439013ce`; ver [auditoría](CUEVA-002G-audit.md).
+El Orchestrator repitió el flujo en Chromium con Auth/PostgREST reales locales.
+No es integración en Next ni verificación del proyecto alojado. El acceso real
+sigue **BLOCKED**. Siguiente: [CUEVA-002H](CUEVA-002H-task.md), integración local
+en la aplicación, sin activar ingreso público hasta auditoría y pruebas reales.
+
+## Prototipo local CUEVA-002G
+
+El [prototipo de acceso](../../experiments/cueva-002g-local/README.md) ejercita
+invitación, elección de contraseña y login con navegador y servicios locales.
+Es una entrega para revisión, no integración con Next.js ni acceso operativo.
+El bypass de operador directo y otras puertas permanecen abiertos: producción
+y login de CUEVA **BLOCKED**; Supabase alojado y correo real **NOT_RUN**.
+
 ## Auditoría CUEVA-002F local
 
 Investigación local aceptada en HEAD `de73e7cba9d9e4d0e536236cd0b1bea70e976795`;
