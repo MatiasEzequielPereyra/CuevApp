@@ -14,6 +14,15 @@ export default defineConfig({
     url: "http://127.0.0.1:3000",
     reuseExistingServer: false,
     timeout: 60_000,
-    env: { NEXT_TELEMETRY_DISABLED: "1" },
+    env: {
+      NEXT_TELEMETRY_DISABLED: "1",
+      CUEVA_LOCAL_AUTH: "1",
+      CUEVA_AUTH_URL: "http://127.0.0.1:3101",
+      CUEVA_REST_URL: "http://127.0.0.1:3102",
+      CUEVA_LAB_ORIGIN: "http://127.0.0.1:3000",
+      CUEVA_ANON_KEY: "synthetic-test-value",
+      CUEVA_DB_PORT: "3103",
+      CUEVA_DB_PASSWORD: "synthetic-test-value",
+    },
   },
 });

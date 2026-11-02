@@ -31,3 +31,9 @@ test("se puede ir y volver con teclado sin enviar credenciales", async ({ page }
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/$/);
 });
+
+test("el laboratorio no se habilita en producción aunque exista la bandera", async ({ request }) => {
+  expect((await request.get("/laboratorio/login")).status()).toBe(404);
+  expect((await request.get("/laboratorio/data")).status()).toBe(404);
+  expect((await request.post("/laboratorio/action/login", { form: {} })).status()).toBe(404);
+});
