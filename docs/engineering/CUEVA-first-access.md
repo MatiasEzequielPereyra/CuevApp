@@ -49,6 +49,12 @@ runtime/migración respecto a los candidatos I/J aceptados.
    pantalla y se indicó completar verificación, generar CUEVA Supabase y guardar
    la clave únicamente en SMTP. Generación/guardado efectivos pendientes; no se
    volvió a enviar por una simple confirmación de cambio de contraseña normal.
+9. Google rechazó la verificación de identidad. El usuario eligió correo integrado
+   de Supabase temporalmente. Team confirmó destinatario Owner. Al preparar el
+   cambio, el panel avisó que resetearía plantillas y deshabilitaría su edición.
+   Se canceló la confirmación y se verificó SMTP personalizado conservado. Es
+   necesario adaptar el callback estándar con las mismas puertas y guardarlo
+   como modo temporal solo propietario; task L. No se hizo otro envío.
 
 En cada operación privada, finally restauró buildCommand:null mediante la API.
 La UI comprobó Override desactivado después del primer check; la última

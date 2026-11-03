@@ -2,6 +2,20 @@
 
 Actualizado: 2026-11-03, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Decisión vigente: correo integrado solo para primera prueba
+
+Google bloqueó la verificación de identidad para generar la clave de aplicación,
+incluso tras informar el usuario activación de 2FA. El usuario eligió temporalmente
+correo de Supabase para el alta inicial autorizada. Team confirma el correo de
+Nico como Owner, destinatario permitido del remitente de prueba (2 correos/hora).
+
+El panel advirtió que volver al SMTP integrado restaura las plantillas estándar.
+Se canceló esa confirmación y se conservó SMTP personalizado: **aún no cambiado**.
+Siguiente implementación acotada [CUEVA-002L](CUEVA-002L-task.md): callback estándar
+solo para propietario, guardado por flag y misma incorporación segura. Sin alterar
+migración ni marcar ready a mano. Acceso apagado, cero cuentas; no reenviar hasta
+aceptar esta compatibilidad. Gmail para alumnos y operación general siguen pendientes.
+
 ## Primera prueba real autorizada
 
 El usuario autorizó expresamente cuenta de Nico, invitación única, prueba controlada
