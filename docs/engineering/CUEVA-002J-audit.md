@@ -10,6 +10,9 @@ envíos y promueve una sola cuenta activa con correo/UUID exactos. El advisory
 lock solo coordina ese script: requiere excluir otros escritores confiables.
 La promoción bloquea perfil, estado y usuario para verificar el correo en la misma
 transacción. No incorpora bootstrap web público ni cambios de runtime o migración.
+La revisión final precisó dos afirmaciones operativas: existencia de fila de sesión
+no acredita su expiración, y el script no valida el puerto. Se corrigió el texto
+para exigir verificación del puerto por operador y validación real por Auth.
 
 El Orchestrator repitió `node lab.mjs`: exit 0, 25 PASS y 1 NOT_RUN, incluyendo
 seis limpiezas. Las dos plantillas se renderizaron en GoTrue y el navegador abrió

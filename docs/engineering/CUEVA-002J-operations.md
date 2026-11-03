@@ -37,8 +37,10 @@ capturas o archivos con enlaces completos. El correo incluye capacidades de acce
 [access-operations.mjs](../../scripts/access-operations.mjs) es un script de
 operador confiable, fuera de la aplicación. Su CLI admite únicamente el proyecto
 `vbkzoojkdkcugxhneyzi`, el origen anterior y conexión directa TLS verificada a
-`db.vbkzoojkdkcugxhneyzi.supabase.co:5432/postgres`; no admite pooler ni otro
-proyecto por inferencia. Solo acepta credenciales y correo mediante entorno del
+`db.vbkzoojkdkcugxhneyzi.supabase.co/postgres`; no admite pooler ni otro
+proyecto por inferencia. El procedimiento requiere el puerto 5432; el validador
+del script comprueba host/protocolo/ruta, pero no restringe el puerto. El operador
+debe verificarlo antes de aplicar. Solo acepta credenciales y correo mediante entorno del
 proceso, sin archivos `.env`, contraseñas de argumentos ni valores en el repo.
 
 Comandos sin efectos de red por defecto:
@@ -83,8 +85,10 @@ Procedimiento:
 4. Nico acepta y elige contraseña. Verificar que su cuenta activa aún es alumno.
 5. Fijar UUID y correo esperado en entorno y revisar el dry-run de promoción.
    La promoción bloquea las filas pertinentes y exige una única cuenta/perfil,
-   rol alumno, gate activo, sin operación y una sesión vigente creada después
-   del corte. Cambia una sola fila a admin dentro de transacción; cualquier
+   rol alumno, gate activo, sin operación y una fila de sesión existente creada
+   después del corte. No comprueba expiración de esa fila ni acredita por sí sola
+   una sesión actualmente válida; eso se verifica mediante Auth y la prueba real.
+   Cambia una sola fila a admin dentro de transacción; cualquier
    precondición fallida revierte. Una repetición se rechaza, no duplica roles.
 6. Verificar sesión real y perfil admin. Conservar solo UUID, filas afectadas y
    resultado redactado, sin tokens ni contraseña. Terminar mantenimiento y retirar

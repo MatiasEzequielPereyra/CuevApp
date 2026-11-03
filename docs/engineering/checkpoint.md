@@ -2,6 +2,21 @@
 
 Actualizado: 2026-11-03, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Preparación alojada aplicada — acceso todavía apagado
+
+Migración I aplicada una sola vez, versión alojada `20261103133258`;
+RLS/catálogo/permisos y denegación HTTP anónima verificados. Site URL, allowlist
+y dos plantillas exactas guardadas y verificadas tras recargar. Cuentas Auth y
+perfiles en cero; no se enviaron correos reales. Ver [registro](CUEVA-002-hosted-setup.md).
+El único aviso de advisors es informativo por RLS sin policy de acceso directo
+en el estado privado, intencionalmente cerrado.
+
+La clave servidor de Vercel está guardada sin lectura/exportación y los dos
+opt-ins siguen en 0. Su validez, Gmail y flujo autenticado alojados aún pendientes.
+El dashboard no permite redirectTo en Invite; siguiente [CUEVA-002K](CUEVA-002K-task.md),
+operación privada puntual con el secreto ya configurado, sin endpoint público.
+Alta de Nico y prueba controlada no ejecutadas ni autorizadas por esta preparación.
+
 ## CUEVA-002J — paquete operativo aceptado localmente
 
 HEAD ejecutor `8caced7eba239135b6034e1903075afecb1024b7`: **ACCEPTED LOCAL**;
