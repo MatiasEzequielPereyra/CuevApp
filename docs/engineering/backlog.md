@@ -1,5 +1,7 @@
 # Backlog de CUEVA
 
+**Estado vigente 2026-11-03:** el acceso usa correo obligatorio e invitación con contraseña propia; el primer administrador está operativo. El correo integrado es temporal solo para el propietario; altas y recuperación de alumnos siguen bloqueadas. CUEVA-UI-001 prepara el panel visual; alumnos, pagos y comprobantes todavía no tienen datos operativos. Ver [checkpoint](checkpoint.md). Los estados contradictorios inferiores son históricos.
+
 **Actualización posterior:** CUEVA-002J ACCEPTED LOCAL; plantillas, bootstrap y
 procedimiento local comprobados. Preparación alojada con acceso apagado y primera
 prueba controlada pendientes; ver checkpoint. No se cambian proveedor ni requisitos.

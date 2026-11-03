@@ -420,3 +420,11 @@ La ampliación posterior completa un cambio real después de un reset administra
 y observa la sesión resultante; ver la evidencia del laboratorio. Coinciden `code_id`
 en los eventos de cambio/login y `sid` entre login/token en esa ejecución, sin
 quedar establecido un vínculo confiable con la generación del reset. E3 sigue BLOCKED.
+
+## CUEVA-UI-001 — entrega del ejecutor
+
+Panel administrador visual sobre la cuenta existente: **REVIEW**, pendiente de
+revisión independiente, integración y publicación. Ver [informe y capturas](CUEVA-UI-001-review.md).
+Datos del panel y operaciones de alumnos/pagos/comprobantes siguen pendientes;
+las capturas usan un usuario ficticio y no verifican una sesión real alojada.
+Sin cambios en autenticación, permisos, base de datos o correo por esta tarea.
