@@ -15,8 +15,9 @@ cambios pendientes el 2026-11-03. No se leyó ni guardó la contraseña. Entrega
 real, plantillas y alta de Nico pendientes. No hay cuentas reales creadas.
 Vercel tiene URL, clave publicable y origen del candidato, solo Production;
 ambas banderas CUEVA_PRODUCT_AUTH_ENABLED y CUEVA_EMAIL_TEMPLATE_READY están en 0.
-Se solicitó carga directa de CUEVA_SERVICE_KEY como Secret por el usuario;
-todavía no se verificó su guardado. Acceso de producto apagado.
+El usuario cargó CUEVA_SERVICE_KEY directamente. Metadatos verificados:
+tipo Secret (sensitive), solo Production; no se leyó su valor ni se probó aún.
+Acceso de producto apagado.
 Siguiente: [CUEVA-002J](CUEVA-002J-task.md), preparación operativa comprobable.
 [PR #15](https://github.com/MatiasEzequielPereyra/CuevApp/pull/15) MERGED,
 main `e264810408a3750cfb68a851d0810de5dd03cf94`, deployment
