@@ -15,9 +15,10 @@ Primer envío falló por rechazo de autenticación SMTP; inspección posterior c
 Segundo apply `dpl_69bJbXDMQGBMfxNR2RCpEVEQPdNM` también falló: SMTP rechazó
 autenticación; cero cuentas/perfiles/estados confirmado. Flags nuevamente en 0,
 deployment cerrado H8PwWox promovido y ruta de invitación404 verificada.
-Google confirmó verificación en dos pasos desactivada, por eso no ofrece App
-passwords para la cuenta del gimnasio. Usuario completando ese requisito; después
-debe generar una clave de aplicación real y guardarla únicamente en SMTP.
+Google confirmó inicialmente verificación en dos pasos desactivada. El usuario
+informó después haberla activado; al abrir App passwords Google pidió verificar
+identidad. Usuario completando verificación y generación de clave de aplicación
+real para guardarla únicamente en SMTP. No se leyó ni pidió la clave.
 No enviar otra vez hasta resolverlo ni volver a pedir autorización de primera cuenta.
 La contraseña y primer acceso reales requieren intervención del usuario; no usar
 contraseñas del historial. Los estados anteriores de abajo son historia.

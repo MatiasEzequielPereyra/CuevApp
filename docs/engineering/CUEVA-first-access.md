@@ -44,6 +44,11 @@ runtime/migración respecto a los candidatos I/J aceptados.
    complete esa configuración con su teléfono/autenticador. Después debe generar
    una contraseña de aplicación y guardarla solo en SMTP. No basta la contraseña
    normal de Google. No volver a enviar hasta resolver ese requisito concreto.
+8. El usuario informó haber activado la verificación en dos pasos. Google pidió
+   verificar identidad al abrir App passwords de la cuenta exacta; se dejó esa
+   pantalla y se indicó completar verificación, generar CUEVA Supabase y guardar
+   la clave únicamente en SMTP. Generación/guardado efectivos pendientes; no se
+   volvió a enviar por una simple confirmación de cambio de contraseña normal.
 
 En cada operación privada, finally restauró buildCommand:null mediante la API.
 La UI comprobó Override desactivado después del primer check; la última
