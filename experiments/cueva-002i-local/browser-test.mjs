@@ -231,9 +231,42 @@ export async function runBrowserFlow({base,rest,mailBase,dbPort,coordinatorPassw
     const usersResponse=await request(`${base}/admin/users`,{token:admin}); const users=await usersResponse.json();
     const fourthUid=users.users?.find(u=>u.email===fourthEmail)?.id;
     if(!/^[0-9a-f-]{36}$/i.test(fourthUid || ''))throw new Error('PRODUCT_TARGET_MISSING');
+    async function directRecovery(caseName, address, subject, expectVisible) {
+      const oldIds=new Set((await (await request(`${mailBase}/api/v1/messages`)).json()).messages.map(m=>m.ID));
+      const sent=await request(`${base}/recover`,{method:'POST',body:{email:address}});
+      if(!sent.ok){ note(`${caseName}_request`,'OBSERVED',`status=${sent.status}`); throw new Error('DIRECT_RECOVERY_SEND_FAILED'); }
+      let mail;
+      for(let i=0;i<30;i++){const list=await (await request(`${mailBase}/api/v1/messages`)).json();mail=list.messages?.find(m=>!oldIds.has(m.ID));if(mail)break;await new Promise(r=>setTimeout(r,500));}
+      if(!mail)throw new Error('DIRECT_RECOVERY_MAIL_MISSING');
+      const msg=await (await request(`${mailBase}/api/v1/message/${encodeURIComponent(mail.ID)}`)).json();
+      const link=(msg.HTML||'').match(/href="([^"]+)"/i)?.[1];
+      const token=link && new URL(link.replaceAll('&amp;','&')).searchParams.get('token');
+      if(!token)throw new Error('DIRECT_RECOVERY_TOKEN_MISSING');
+      const verify=await request(`${base}/verify`,{method:'POST',body:{token_hash:token,type:'recovery'}});
+      if(!verify.ok)throw new Error('DIRECT_RECOVERY_VERIFY_FAILED');
+      const session=await verify.json();
+      const claims=JSON.parse(Buffer.from(session.access_token.split('.')[1],'base64url').toString());
+      if(claims.sub!==subject || !/^[0-9a-f-]{36}$/i.test(claims.session_id || ''))throw new Error('DIRECT_RECOVERY_SESSION_MISMATCH');
+      const visible=await request(`${rest}/cueva_profiles?select=user_id,role`,{token:session.access_token});
+      if(!visible.ok)throw new Error('DIRECT_RECOVERY_PROFILE_FAILED');
+      const rows=await visible.json();
+      const attempt=await request(`${rest}/rpc/cueva_begin_operation`,{method:'POST',token:admin,body:{p_user:subject,p_operation:'66666666-6666-4666-8666-666666666666',p_kind:'activate',p_session:claims.session_id}});
+      const result=await attempt.json();
+      const accessOk=expectVisible?rows.length===1 && rows[0].user_id===subject:rows.length===0;
+      note(caseName,accessOk && attempt.ok && result===null?'PASS':'FAIL',`verify=${verify.status}; visible_rows=${rows.length}; activation_rejected=${result===null}; active_email_control=${expectVisible}`);
+    }
     const accessToken=async context=>{const cs=(await context.cookies()).filter(c=>c.name.startsWith('sb-') && c.name.includes('auth-token')).sort((a,b)=>a.name.localeCompare(b.name));const packed=cs.map(c=>c.value).join('');if(!packed.startsWith('base64-'))throw new Error('PRODUCT_COOKIE_FORMAT');return JSON.parse(Buffer.from(packed.slice(7),'base64url').toString()).access_token;};
     const [adminRows,studentRows]=await Promise.all([prodContext,fourthContext].map(async ctx=>{const r=await request(`${rest}/cueva_profiles?select=user_id,role`,{token:await accessToken(ctx)});if(!r.ok)throw new Error('PRODUCT_PROFILE_QUERY');return r.json();}));
     note('product_rls_bidirectional_profile_isolation',adminRows.length===1 && adminRows[0].user_id===thirdUid && adminRows[0].role==='admin' && studentRows.length===1 && studentRows[0].user_id===fourthUid && studentRows[0].role==='alumno'?'PASS':'FAIL');
+    await directRecovery('direct_recovery_active_account',fourthEmail,fourthUid,true);
+    const pendingEmail=`pending-${id}@example.com`;
+    const pendingInvite=await request(`${base}/invite`,{method:'POST',token:admin,body:{email:pendingEmail}});
+    if(!pendingInvite.ok)throw new Error('DIRECT_PENDING_INVITE_FAILED');
+    const pendingUser=await pendingInvite.json();
+    if(!/^[0-9a-f-]{36}$/i.test(pendingUser.id || ''))throw new Error('BAD_FIXTURE_ID');
+    sql(`SELECT cueva_private.prepare_invitation('${pendingUser.id}',repeat('d',64));`);
+    await directRecovery('direct_recovery_pending_invitation',pendingEmail,pendingUser.id,false);
+    await new Promise(resolve=>setTimeout(resolve,1500));
     const beforeRecovery=(await (await request(`${mailBase}/api/v1/messages`)).json()).messages.map(m=>m.ID);
     await prodPage.getByLabel('Identificador del alumno').fill(fourthUid);
     const [resetResponse]=await Promise.all([prodPage.waitForResponse(r=>new URL(r.url()).pathname==='/api/acceso/admin-recuperar' && r.request().method()==='POST'),prodPage.getByRole('button',{name:'Enviar recuperación'}).click()]);
@@ -278,6 +311,17 @@ export async function runBrowserFlow({base,rest,mailBase,dbPort,coordinatorPassw
     sql(`SELECT cueva_private.finish_operation('${fourthUid}','${hold}',3,NULL);`);
     const afterResult=await recoveryContext.request.post(`${app.origin}/api/acceso/invitacion`,{form:earlyForm,headers:{origin:app.origin},maxRedirects:0});
     note('product_recovery_early_retryable_same_token',earlyResult.status()===409 && afterResult.status()===303?'PASS':'FAIL',`before=${earlyResult.status()}; after=${afterResult.status()}`);
+    const resetEmail=`reset-direct-${id}@example.com`;
+    const resetFixture=await request(`${base}/admin/users`,{method:'POST',token:admin,body:{email:resetEmail,password:`Pp9!${secret()}`,email_confirm:true}});
+    if(!resetFixture.ok)throw new Error('DIRECT_RESET_FIXTURE_FAILED');
+    const resetUser=await resetFixture.json();
+    if(!/^[0-9a-f-]{36}$/i.test(resetUser.id || ''))throw new Error('BAD_FIXTURE_ID');
+    sql(`SELECT cueva_private.prepare_invitation('${resetUser.id}',repeat('e',64)); UPDATE cueva_private.access_state SET ready=true, nonce_hash=NULL WHERE user_id='${resetUser.id}';`);
+    await prodPage.getByLabel('Identificador del alumno').fill(resetUser.id);
+    const [adminResetFixture]=await Promise.all([prodPage.waitForResponse(r=>new URL(r.url()).pathname==='/api/acceso/admin-recuperar' && r.request().method()==='POST'),prodPage.getByRole('button',{name:'Enviar recuperación'}).click()]);
+    if(adminResetFixture.status()!==303)throw new Error('DIRECT_RESET_ADMIN_FAILED');
+    await new Promise(resolve=>setTimeout(resolve,1500));
+    await directRecovery('direct_recovery_after_admin_reset',resetEmail,resetUser.id,false);
     await recoveryContext.close();
     await fourthContext.close();
     await prodContext.close();

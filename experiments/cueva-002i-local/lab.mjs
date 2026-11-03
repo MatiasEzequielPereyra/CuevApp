@@ -47,6 +47,8 @@ try {
   db.password = dbPassword;
   const env={GOTRUE_DB_DRIVER:'postgres',GOTRUE_API_HOST:'0.0.0.0',GOTRUE_API_PORT:'9999',GOTRUE_SITE_URL:'http://127.0.0.1:9999',API_EXTERNAL_URL:'http://127.0.0.1:9999',GOTRUE_JWT_SECRET:jwtSecret,GOTRUE_JWT_ADMIN_ROLES:'service_role',GOTRUE_JWT_AUD:'authenticated',GOTRUE_JWT_DEFAULT_GROUP_NAME:'authenticated',GOTRUE_DISABLE_SIGNUP:'true',GOTRUE_EXTERNAL_EMAIL_ENABLED:'true',GOTRUE_MAILER_AUTOCONFIRM:'false',GOTRUE_SMTP_HOST:'mail',GOTRUE_SMTP_PORT:'1025',GOTRUE_SMTP_ADMIN_EMAIL:'admin@example.com',GOTRUE_SMTP_SENDER_NAME:'Cueva Lab'};
   env.GOTRUE_DB_DATABASE_URL = db.href;
+  // Exercise consecutive synthetic emails without waiting; hosted rate limits are NOT_RUN.
+  env.GOTRUE_SMTP_MAX_FREQUENCY = '1s';
   stage='auth_start';
   start(names.auth,images.auth,['-p','127.0.0.1::9999',...Object.keys(env).flatMap(key=>['-e',key])],env,true);
   stage='auth_ready';
@@ -79,7 +81,7 @@ try {
     const indicators=[['missing_database_url',/DATABASE_URL.*(missing|required)|missing.*DATABASE_URL/i],['missing_jwt',/JWT.*(missing|required)|missing.*JWT/i],['schema',/schema.*(does not exist|missing)/i],['database_connection',/failed to connect|connection refused/i],['jwt_configuration',/JWT.*(invalid|error)/i],['migrations',/migrat/i],['namespace',/namespace/i],['mail_failure',/smtp.*(error|fail|refused)|error.*smtp/i],['email_invalid',/email.*(invalid|not allowed)/i]].filter(([,pattern])=>pattern.test(output)).map(([label])=>label);
     note('auth_startup_diagnostic','OBSERVED',`categorías=${categories.join(',')||'unknown'}; indicadores=${indicators.join(',')||'unknown'}; logs descartados`);
   }
-  note('execution','BLOCKED',`Etapa ${stage}; causa=${stage==='database_setup' ? error.message : (['PORT_NOT_LOOPBACK','READINESS_TIMEOUT','INVITE_FAILED','INVITE_LINK_MISSING','INVITE_TOKEN_MISSING','VERIFY_FAILED','SESSION_MISSING'].includes(error.message)?error.message:'OTHER')}; detalles sensibles omitidos.`);
+  note('execution','BLOCKED',`Etapa ${stage}; causa=${stage==='database_setup' ? error.message : (/^(PORT_NOT_LOOPBACK|READINESS_TIMEOUT|INVITE_FAILED|INVITE_LINK_MISSING|INVITE_TOKEN_MISSING|VERIFY_FAILED|SESSION_MISSING|DIRECT_[A-Z_]+|BAD_FIXTURE_ID)$/.test(error.message)?error.message:'OTHER')}; detalles sensibles omitidos.`);
 }
 finally {
   for(const name of created.reverse()) { try { if(name===names.auth){docker(['rm','-f',name]);}else{docker(['stop','--time','5',name]);} note(`cleanup_${name.split('-')[2]}`,'PASS'); } catch { note(`cleanup_${name.split('-')[2]}`,'FAIL'); } }

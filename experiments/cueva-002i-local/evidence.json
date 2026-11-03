@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-02T15:34:45.995Z",
+  "date": "2026-11-03T13:15:14.189Z",
   "images": {
     "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
     "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
@@ -178,6 +178,16 @@
       "detail": ""
     },
     {
+      "name": "direct_recovery_active_account",
+      "status": "PASS",
+      "detail": "verify=200; visible_rows=1; activation_rejected=true; active_email_control=true"
+    },
+    {
+      "name": "direct_recovery_pending_invitation",
+      "status": "PASS",
+      "detail": "verify=200; visible_rows=0; activation_rejected=true; active_email_control=false"
+    },
+    {
       "name": "product_admin_reset_closes_gate",
       "status": "PASS",
       "detail": "status=303"
@@ -196,6 +206,11 @@
       "name": "product_recovery_early_retryable_same_token",
       "status": "PASS",
       "detail": "before=409; after=303"
+    },
+    {
+      "name": "direct_recovery_after_admin_reset",
+      "status": "PASS",
+      "detail": "verify=200; visible_rows=0; activation_rejected=true; active_email_control=false"
     },
     {
       "name": "hosted_nextjs_and_real_email",

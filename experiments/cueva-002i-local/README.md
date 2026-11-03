@@ -9,6 +9,24 @@ y pruebas alojadas. El entorno de desarrollo admite únicamente loopback.
 
 ## Pruebas y límites
 
+Ampliación de recuperación directa contra GoTrue: en tres cuentas sintéticas se
+solicitó correo y se verificó el OTP fuera del coordinador. Invitado sin activar:
+sesión emitida, cero perfiles visibles y activación rechazada sin sesión vinculada.
+Alumno tras reset administrativo: mismo resultado cerrado. Cuenta activa: sesión
+emitida y perfil propio visible; la activación no se inicia porque ya está activa.
+Esto último es compatible con el modelo de confianza del correo como mecanismo
+nativo de recuperación, no evidencia de un bypass del gate cerrado. El fixture del
+caso posterior a reset se preparó activo mediante SQL local privilegiado y luego
+se restableció mediante la ruta administrativa real; no representa bootstrap real.
+En estos tres casos directos no se ejecutaron el cambio de contraseña ni la
+revocación de sesiones anteriores: ambos controles permanecen **NOT_RUN** para
+esa vía directa del proveedor. No extender a ella los resultados del flujo coordinado.
+La frecuencia SMTP local se ajustó a un segundo para los correos sintéticos; no
+se probó el límite del proveedor alojado. El intento previo observó 429 al pedir
+dos mensajes inmediatos, y no se reintentó sobre la misma cuenta.
+
+Para plantillas y bootstrap, ver la [propuesta revisable](../../docs/engineering/CUEVA-002I-mail-bootstrap.md).
+
 `node lab.mjs` ejecuta Next.js y Auth, PostgREST, PostgreSQL y Mailpit locales,
 con imágenes fijadas por digest y datos sintéticos. Los resultados redactados se
 encuentran en `evidence.json`. La plantilla predeterminada del correo de prueba
