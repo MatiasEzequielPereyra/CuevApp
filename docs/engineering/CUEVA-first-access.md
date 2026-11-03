@@ -1,5 +1,25 @@
 # Primera prueba alojada — registro operativo
 
+## Resultado final
+
+Primera incorporación real completada. Con consentimiento explícito se activó
+correo integrado, se confirmó template estándar y se publicó L en PR19/main
+`0892ebea0b09bca308fdf5ecd2709d91904ef0f1`. Deployment privado
+`dpl_GajeQvGVJSPtVV4unxFE6FdRjxfy` READY, comando de invitación APPLIED y
+estado preparado verificado. El usuario recibió la invitación, eligió contraseña
+y confirmó Perfil alumno. Se promovió la cuenta exacta a admin en transacción,
+con comprobaciones de email confirmado, gate, sesión, generación y unicidad.
+Resultado leído: admin/ready=true, un único administrador. Sin guardar contraseña,
+token, enlace ni UUID personal en este documento público.
+
+Sigue activo el modo temporal owner-only; altas/reset de alumnos deshabilitados,
+correo general Gmail pendiente. El correo esperado servidor se conserva porque
+configura este modo. No invocar bootstrap otra vez. Se restauró buildCommand:null.
+El usuario pidió cerrar con las comprobaciones ya realizadas; no iniciar otra
+investigación ni repetir suites por esta actualización documental.
+
+## Historia de la ejecución
+
 2026-11-03, America/Buenos_Aires. El usuario autorizó explícitamente crear la
 cuenta inicial de Nico, enviar una invitación y activar una primera prueba;
 después de verificar su incorporación, asignarle administrador general. El correo
