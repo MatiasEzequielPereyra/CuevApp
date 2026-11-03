@@ -2,6 +2,19 @@
 
 Actualizado: 2026-11-03, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## L — compatibilidad default aceptada localmente
+
+Ejecutor `a18cd60bb9f23264f5a5e8d94606665230ba6e3c`, **ACCEPTED LOCAL**;
+[auditoría](CUEVA-002L-audit.md). Repetición independiente L22 PASS/1 NOT_RUN:
+enlace estándar, owner/OTP/nonce/sesión y contraseña propia, cookies solo post-bind.
+Modo temporal explícito y altas/reset de alumnos bloqueados. Sin nueva migración
+ni cambios de script K, dependencias o permisos. SMTP real aún no cambiado,
+cuentas 0 y flags apagadas; aplicación separada tras CI/merge según plan auditado.
+
+PR18 documental integrado en main `8bab2cb2f245da4919d9dc54d8b43e661c51b2ab`,
+production `dpl_8Uj4fqcesbqT4LtUjxk87NzHZYSN` READY y ruta de invitación404.
+La autorización del usuario para el primer alta y el correo temporal permanece.
+
 ## Decisión vigente: correo integrado solo para primera prueba
 
 Google bloqueó la verificación de identidad para generar la clave de aplicación,

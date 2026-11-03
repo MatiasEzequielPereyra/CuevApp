@@ -3,7 +3,7 @@
 **REVIEW local; no habilitado ni aplicado por este ejecutor.** Fallback limitado
 a la primera invitación de la cuenta propietaria verificada fuera del repositorio.
 No habilita incorporación ni recuperación general de alumnos y no cambia
-proveedor, migración, gate privado ni bootstrap K.
+proveedor de identidad, migración, gate privado ni bootstrap K.
 
 ## Configuración cerrada
 
