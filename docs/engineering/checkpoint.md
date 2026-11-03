@@ -2,6 +2,31 @@
 
 Actualizado: 2026-11-03, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Cierre vigente — primer administrador operativo
+
+**Nico incorporado y promovido a admin.** El usuario confirmó contraseña propia y
+pantalla Tu cuenta/Perfil alumno. Se verificaron cuenta exacta, correo confirmado,
+gate activo, generación1, sesión posterior al corte y ausencia de operación, con
+una única cuenta/perfil/estado. Promoción transaccional de una sola fila; lectura
+posterior confirmó role=admin, ready=true, admin_count=1. No se leyó su contraseña.
+
+L integrado en [PR19](https://github.com/MatiasEzequielPereyra/CuevApp/pull/19),
+main `0892ebea0b09bca308fdf5ecd2709d91904ef0f1`, árbol igual al revisado.
+CI19 SUCCESS. Production `dpl_GajeQvGVJSPtVV4unxFE6FdRjxfy` READY con ese SHA.
+Bootstrap privado APPLIED, invitación preparada y correo recibido según la
+incorporación confirmada por el usuario. buildCommand:null restaurado por API.
+
+Correo integrado de Supabase activado por elección expresa del usuario; templates
+estándar confirmados en el panel. PRODUCT_AUTH_ENABLED1, DEFAULT_MAIL_OWNER_TEST1,
+EMAIL_TEMPLATE_READY0 y correo esperado servidor: **modo temporal solo propietario**.
+Altas/reset de alumnos bloqueados. Gmail sigue pendiente de verificación Google;
+no reintentar ni crear cuentas de prueba adicionales. No hace falta pedir de nuevo
+permiso para la cuenta o promoción ya realizadas. Contexto previo debajo es histórico.
+
+Se cierra esta etapa sin otra implementación ni pruebas manuales repetidas, según
+la indicación del usuario. Acceso general de alumnos, pagos, rutinas y aceptación
+completa del MVP siguen pendientes; no declarar MVP terminado.
+
 ## L — compatibilidad default aceptada localmente
 
 Ejecutor `a18cd60bb9f23264f5a5e8d94606665230ba6e3c`, **ACCEPTED LOCAL**;
