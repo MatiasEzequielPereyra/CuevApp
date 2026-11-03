@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync, mkdirSync } from "node:fs";
@@ -21,12 +21,18 @@ const fixture = renderToStaticMarkup(React.createElement(AdminDashboard, {
   accountActions: React.createElement("p", null, "Las invitaciones y la recuperación de alumnos estarán disponibles cuando terminemos de configurar el correo del gimnasio."),
 }));
 
+async function loadDashboard(page: Page, theme: "light" | "dark" = "dark") {
+  // A blank document prevents pending Next hydration from changing the synthetic fixture.
+  await page.goto("about:blank");
+  await page.setContent(`<!doctype html><html lang="es-AR" data-theme="${theme}" data-preference="system"><head><title>CUEVA · Panel de administración</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>${fixture}</body></html>`);
+  await expect(page).toHaveTitle("CUEVA · Panel de administración");
+}
+
 for (const width of [360, 390, 768, 1440]) {
   for (const theme of ["light", "dark"] as const) {
     test(`panel admin sintético ${width}px / ${theme}`, async ({ page }) => {
       await page.setViewportSize({ width, height: 960 });
-      await page.goto("/");
-      await page.setContent(`<!doctype html><html lang="es-AR" data-theme="${theme}" data-preference="system"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>${fixture}</body></html>`);
+      await loadDashboard(page, theme);
       await expect(page.getByRole("heading", { name: /Hola, Alex/ })).toBeVisible();
       await expect(page.locator(".dash-role").getByText("Administrador", { exact: true })).toBeVisible();
       await expect(page.getByText("Sin datos aún")).toHaveCount(4);
@@ -41,8 +47,7 @@ for (const width of [360, 390, 768, 1440]) {
 }
 
 test("el panel permite navegar por teclado hasta cuenta y salir", async ({ page }) => {
-  await page.goto("/");
-  await page.setContent(`<!doctype html><html lang="es-AR" data-theme="dark" data-preference="system"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>${fixture}</body></html>`);
+  await loadDashboard(page);
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Saltar al contenido" })).toBeFocused();
   await page.keyboard.press("Enter");
@@ -56,8 +61,7 @@ test("el panel permite navegar por teclado hasta cuenta y salir", async ({ page 
 
 test("la navegación móvil llega a una sección por teclado", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
-  await page.setContent(`<!doctype html><html lang="es-AR" data-theme="dark" data-preference="system"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>${fixture}</body></html>`);
+  await loadDashboard(page);
   const link = page.getByRole("navigation", { name: "Navegación móvil" }).getByRole("link", { name: "Comprobantes" });
   await link.focus();
   await expect(link).toBeFocused();

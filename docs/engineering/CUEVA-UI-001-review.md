@@ -19,3 +19,9 @@ La composición está inspirada en el bloque de administrador del mockup, no en 
 ## Verificaciones del ejecutor
 
 `npm run verify`: lint, typecheck, build, documentos 2/2 y 34 pruebas de navegador PASS. Tras agregar el caso de teclado móvil, la suite específica del panel pasó 10/10. `verify:sources` 4/4, `verify:security` y `git diff --check` PASS. `npm audit --audit-level=critical` termina correctamente y reporta 16 vulnerabilidades moderadas en dependencias existentes; no se modificó el lockfile. Auditoría por patrones no demuestra ausencia absoluta de secretos.
+
+## Corrección de la muestra tras CI
+
+Los runs de CI `41700599610` y `41700758655` detectaron violaciones `document-title` de axe en la muestra sintética: su HTML no incluía título y se reemplazaba sobre una página Next ya cargada. La muestra ahora abre `about:blank`, monta un documento completo con título propio y comprueba ese título explícitamente, sin scripts de Next pendientes. Las comprobaciones axe siguen habilitadas sin exclusiones; los enlaces internos y el teclado se prueban sobre ese mismo documento aislado.
+
+Verificación posterior acotada: `npx playwright test tests/e2e/admin-dashboard.spec.ts`, **10/10 PASS**, una ejecución. Solo se modificaron pruebas y documentación; aplicación, autenticación, permisos y dependencias permanecen idénticos. Este resultado sigue siendo sintético; no acredita sesión ni logout alojados. El CI remoto posterior a esta corrección queda pendiente del Orchestrator.

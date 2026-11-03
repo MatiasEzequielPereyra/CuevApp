@@ -36,3 +36,9 @@ rápidas más compactas cuando existan funciones operativas.
 **Dictamen: ACCEPTED LOCAL.** Integración y despliegue sujetos al CI del PR.
 El resultado remoto y las comprobaciones alojadas se registrarán en el PR; no
 confundir estas pruebas locales con la aceptación general de alumnos o del MVP.
+
+## Corrección acotada de la muestra de pruebas
+
+Los runs de CI `41700599610` y `41700758655` fallaron en `document-title` de axe: el HTML sintético carecía de título y se montaba sobre una página Next previamente cargada. Se corrigió únicamente la fixture: navegación previa a `about:blank`, documento con título explícito y aserción del título. No se deshabilitó ninguna regla axe ni se agregaron rutas de bypass.
+
+La suite específica pasó **10/10** en una ejecución posterior, incluyendo anclas y teclado. No se modificó código de producción, Auth, configuración ni dependencias. Esta corrección no amplía la evidencia a una sesión real alojada. Integración continúa condicionada al CI remoto del nuevo commit.
