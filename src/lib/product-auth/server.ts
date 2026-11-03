@@ -1,0 +1,45 @@
+import "server-only";
+import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
+
+// Explicit opt-ins are required; no environment is enabled by default.
+export function productConfig() {
+  const local = process.env.NODE_ENV === "development" && process.env.CUEVA_PRODUCT_AUTH_LOCAL === "1";
+  if (!local && (process.env.CUEVA_PRODUCT_AUTH_ENABLED !== "1" || process.env.CUEVA_EMAIL_TEMPLATE_READY !== "1")) return null;
+  const { CUEVA_SUPABASE_URL: url, CUEVA_PUBLISHABLE_KEY: key, CUEVA_SERVICE_KEY: serviceKey, CUEVA_PRODUCT_ORIGIN: origin, CUEVA_AUTH_URL: auth, CUEVA_REST_URL: rest } = process.env;
+  if (!url || !key || !serviceKey || !origin || (local && (!auth || !rest))) return null;
+  try {
+    for (const value of [url, origin, ...(local && auth && rest ? [auth, rest] : [])]) {
+      const parsed = new URL(value);
+      if (parsed.origin !== value || parsed.username || parsed.password) return null;
+      if (local ? (parsed.protocol !== "http:" || parsed.hostname !== "127.0.0.1" || !parsed.port) : parsed.protocol !== "https:") return null;
+    }
+  } catch { return null; }
+  return { url, key, serviceKey, origin, auth, rest, local };
+}
+
+export function localFetch(cfg: NonNullable<ReturnType<typeof productConfig>>) {
+  return (input: RequestInfo | URL, init?: RequestInit) => {
+    const target = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url);
+    const prefix = target.pathname.startsWith("/auth/v1/") ? "/auth/v1" : target.pathname.startsWith("/rest/v1/") ? "/rest/v1" : null;
+    if (!prefix || target.origin !== cfg.url) throw new Error("Ruta inválida");
+    return fetch(`${prefix === "/auth/v1" ? cfg.auth : cfg.rest}${target.pathname.slice(prefix.length)}${target.search}`, init);
+  };
+}
+
+export async function userClient(readOnly = false) {
+  const cfg = productConfig();
+  if (!cfg) throw new Error("Acceso deshabilitado");
+  const jar = await cookies();
+  return createServerClient(cfg.url, cfg.key, { ...(cfg.local ? { global: { fetch: localFetch(cfg) } } : {}), cookies: {
+    getAll: () => jar.getAll(),
+    setAll: (items) => { if (!readOnly) for (const { name, value, options } of items) jar.set(name, value, { ...options, httpOnly: true, sameSite: "lax", secure: !cfg.local, path: "/" }); },
+  } });
+}
+
+export function serviceClient() {
+  const cfg = productConfig();
+  if (!cfg) throw new Error("Acceso deshabilitado");
+  return createClient(cfg.url, cfg.serviceKey, { ...(cfg.local ? { global: { fetch: localFetch(cfg) } } : {}), auth: { persistSession: false, autoRefreshToken: false } });
+}

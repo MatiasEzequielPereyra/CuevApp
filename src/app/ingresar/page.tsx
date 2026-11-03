@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { ThemePicker } from "@/components/theme/theme-picker";
+import { productConfig } from "@/lib/product-auth/server";
+
+export const dynamic = "force-dynamic";
 
 export default function SignInPreview() {
+  if (productConfig()) return <main><h1>Ingresar</h1><form method="post" action="/api/acceso/ingresar"><label>Correo electrónico <input name="email" type="email" required autoComplete="email"/></label><label>Contraseña <input name="password" type="password" required autoComplete="current-password"/></label><button>Ingresar</button></form></main>;
   return (
     <>
       <a className="skip-link" href="#contenido">Saltar al contenido</a>
