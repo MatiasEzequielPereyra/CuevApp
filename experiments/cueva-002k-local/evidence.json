@@ -1,0 +1,97 @@
+{
+  "date": "2026-11-03T13:49:22.898Z",
+  "images": {
+    "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "mail": "public.ecr.aws/supabase/mailpit@sha256:37a38e48e9338cd7e89dfeb487f37b02ebfcd9cb23111bed2d345e79d37d6dd6",
+    "rest": "public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962",
+    "templates": "public.ecr.aws/supabase/studio@sha256:32a293ffd7b081926b225f6503bf13730447e544041d1f37f0a5586578183e91"
+  },
+  "results": [
+    {
+      "name": "default_dry_run_no_network",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "service_inventory_check_empty_no_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wrong_production_build_rejected_before_network",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wrong_project_rejected_before_network",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "invitation_and_rpc_preparation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "duplicate_apply_rejected_no_resend",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "inventory_check_after_invite_no_mutation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "literal_rendered_link_has_capability",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "invited_account_chooses_password_and_activates_as_student",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_admin_promoted_by_build_script",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "hosted_build_secret_email_and_auth",
+      "status": "NOT_RUN",
+      "detail": "Synthetic loopback services only. No Vercel build, real email or hosted account created."
+    },
+    {
+      "name": "cleanup_rest",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_auth",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_templates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_db",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_network",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}
