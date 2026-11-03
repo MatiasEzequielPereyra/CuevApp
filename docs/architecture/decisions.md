@@ -1,5 +1,10 @@
 # Registro de decisiones técnicas
 
+## Estado vigente de acceso — 2026-11-03
+
+Por decisión posterior del usuario, el ingreso vigente es por correo obligatorio e invitación, con contraseña propia; DNI y contraseña temporal del contexto original no son el mecanismo vigente. El primer administrador fue incorporado y promovido según el [checkpoint](../engineering/checkpoint.md). El envío integrado es temporal para el propietario: invitaciones y recuperación de alumnos siguen bloqueadas. D007 y la investigación de Keycloak se conservan como antecedentes, no como decisión adoptada. Las fuentes originales permanecen intactas. CUEVA-UI-001 limita su alcance al panel visual, sin cambios de acceso, permisos o base de datos.
+
+
 Propuestas: 2026-10-27. Aceptación por ORCHESTRATOR: 2026-10-28, según la [auditoría independiente](../engineering/independent-audit.md), integrada en PR #1. D001–D005: **ACCEPTED** para la fundación. D006: **ACCEPTED** con la limitación de mantenimiento detallada abajo. Esta aceptación no cubre funciones futuras.
 
 | ID | Estado | Propuesta y motivo | Alternativas consideradas | Consecuencias |
