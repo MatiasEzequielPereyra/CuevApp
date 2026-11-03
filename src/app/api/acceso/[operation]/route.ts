@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { productConfig, serviceClient, userClient } from "@/lib/product-auth/server";
+import { pendingUserClient, productConfig, serviceClient, userClient } from "@/lib/product-auth/server";
 
 export const dynamic = "force-dynamic";
 const fail = (status: number) => new Response("No se pudo completar la solicitud", { status, headers: { "Cache-Control": "no-store" } });
@@ -25,6 +25,35 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
   let form: FormData;
   try { form = await new Request(req.url, { method: "POST", headers: { "content-type": contentType }, body: bytes }).formData(); } catch { return fail(400); }
   const { operation } = await params;
+  if (operation === "owner-invitacion") {
+    if (!cfg.ownerTest || !cfg.expectedOwner) return fail(404);
+    const accessToken = String(form.get("access_token") ?? ""), refreshToken = String(form.get("refresh_token") ?? "");
+    const nonce = String(form.get("nonce") ?? ""), gen = form.get("generation");
+    if (form.get("type") !== "invite" || gen !== "1" || !/^[0-9a-f]{64}$/i.test(nonce) || !accessToken || accessToken.length > 4096 || !refreshToken || refreshToken.length > 1024) return fail(400);
+    try {
+      const service = serviceClient();
+      const nonceHash = createHash("sha256").update(nonce).digest("hex");
+      const preflight = await service.rpc("cueva_preflight", { p_generation: 1, p_nonce_hash: nonceHash });
+      if (preflight.error || preflight.data !== true) return fail(409);
+      // Verify this exact JWT with Auth before reading its authentication method.
+      // The service client is stateless: rejected tokens never become SSR cookies.
+      const verified = await service.auth.getUser(accessToken);
+      if (verified.error || !verified.data.user || verified.data.user.email?.toLowerCase() !== cfg.expectedOwner) return fail(401);
+      let claims: { sub?: unknown; session_id?: unknown; amr?: unknown };
+      try { claims = JSON.parse(Buffer.from(accessToken.split(".")[1] ?? "", "base64url").toString()); } catch { return fail(401); }
+      if (claims.sub !== verified.data.user.id || !uuid(claims.session_id) || !Array.isArray(claims.amr) || claims.amr.length !== 1 || claims.amr[0]?.method !== "otp") return fail(401);
+      const pending = await pendingUserClient();
+      const established = await pending.auth.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      // Reject a refreshed/different JWT; never bind the incoming SID while saving
+      // a different normalized SDK session. No pending cookies have been published.
+      if (established.error || established.data.user?.id !== verified.data.user.id || established.data.user.email?.toLowerCase() !== cfg.expectedOwner || established.data.session?.access_token !== accessToken) return fail(401);
+      const bound = await service.rpc("cueva_bind_session", { p_user: verified.data.user.id, p_generation: 1, p_session: claims.session_id, p_nonce_hash: nonceHash });
+      if (bound.error) return fail(503);
+      if (bound.data !== true) return fail(409);
+      pending.commit();
+      return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+    } catch { return fail(503); }
+  }
   const auth = await userClient();
   const redirect = (path: string) => NextResponse.redirect(new URL(path, cfg.origin), { status: 303, headers: { "Cache-Control": "no-store" } });
   if (operation === "ingresar") {
@@ -34,6 +63,7 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
   if (operation === "salir") { const { error } = await auth.auth.signOut(); return error ? fail(503) : redirect("/ingresar"); }
   const service = serviceClient();
   if (operation === "admin-invitar" || operation === "admin-recuperar") {
+    if (cfg.ownerOnly) return fail(503);
     const current = await auth.auth.getUser();
     if (current.error || !current.data.user) return fail(401);
     const own = await auth.from("cueva_profiles").select("role").maybeSingle();
@@ -69,6 +99,7 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
     return done.error || done.data !== true ? fail(503) : redirect("/cuenta");
   }
   if (operation === "invitacion") {
+    if (cfg.ownerOnly) return fail(404);
     const token = String(form.get("token") ?? ""), nonce = String(form.get("nonce") ?? ""), gen = String(form.get("generation") ?? ""), type = form.get("type");
     if (!/^[0-9a-f]{64}$/i.test(nonce) || !/^[1-9]\d{0,14}$/.test(gen) || (type !== "invite" && type !== "recovery")) return fail(400);
     const nonceHash = createHash("sha256").update(nonce).digest("hex");

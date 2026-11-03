@@ -1,0 +1,127 @@
+{
+  "date": "2026-11-03T18:35:56.409Z",
+  "images": {
+    "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "mail": "public.ecr.aws/supabase/mailpit@sha256:37a38e48e9338cd7e89dfeb487f37b02ebfcd9cb23111bed2d345e79d37d6dd6",
+    "rest": "public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962",
+    "templates": "public.ecr.aws/supabase/studio@sha256:32a293ffd7b081926b225f6503bf13730447e544041d1f37f0a5586578183e91"
+  },
+  "results": [
+    {
+      "name": "password_amr_with_valid_owner_nonce_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "forged_otp_claim_rejected_by_real_auth_no_cookie",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "real_default_template_links_to_real_auth_loopback",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "provider_default_invite_amr_otp_observed",
+      "status": "PASS",
+      "detail": "Pinned GoTrue emits otp for default invite; not the invite string listed among possible documented methods."
+    },
+    {
+      "name": "fragment_removed_and_tokens_not_persisted_in_browser",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "nonce_generation_origin_rejected_before_cookie",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_real_otp_owner_rejected_no_cookie",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "bind_http503_discards_pending_cookies",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "bind_drop_discards_pending_cookies",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "default_owner_fragment_explicit_post_binds_session",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "owner_fragment_replay_rejected_no_cookie",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "data_denied_before_owner_chooses_password",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "owner_chooses_own_password_then_student_profile",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "owner_session_cookie_http_only",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "owner_only_admin_actions_hidden_and_server_blocked",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "temporary_owner_flag_off_rejects_callback",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "hosted_default_mail_owner_flow",
+      "status": "NOT_RUN",
+      "detail": "Synthetic local Auth/Mailpit only. No hosted SMTP settings, real account or email changed by executor."
+    },
+    {
+      "name": "cleanup_rest",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_auth",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_templates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_db",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_network",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}
