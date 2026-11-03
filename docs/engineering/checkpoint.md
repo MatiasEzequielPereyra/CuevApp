@@ -2,6 +2,16 @@
 
 Actualizado: 2026-11-03, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Integración J y candidato K
+
+J integrado en [PR16](https://github.com/MatiasEzequielPereyra/CuevApp/pull/16),
+main `10bc33ac324b47fbb1c6c12772342ad7490c4fce`, production READY con alias y
+HTTP200 /ingresar deshabilitado; ver [handoff](CUEVA-002J-release.md).
+K ejecutor `50d57839c5891b3567b22616fba81e937eba9b22` aceptado localmente;
+repetición independiente 16 PASS/1 NOT_RUN. [Auditoría](CUEVA-002K-audit.md) y
+[procedimiento privado](CUEVA-002K-bootstrap.md). Sin hook automático ni endpoint.
+Su check alojado y cualquier invitación todavía NOT_RUN. Acceso público apagado.
+
 ## Preparación alojada aplicada — acceso todavía apagado
 
 Migración I aplicada una sola vez, versión alojada `20261103133258`;
