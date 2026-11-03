@@ -13,9 +13,17 @@ esto no acredita Auth/RLS alojados. Migración versionada, todavía NO APLICADA.
 El usuario guardó SMTP de Gmail; el panel volvió a confirmar habilitado y sin
 cambios pendientes el 2026-11-03. No se leyó ni guardó la contraseña. Entrega
 real, plantillas y alta de Nico pendientes. No hay cuentas reales creadas.
-Vercel conserva solo las variables públicas previas: acceso de producto apagado.
+Vercel tiene URL, clave publicable y origen del candidato, solo Production;
+ambas banderas CUEVA_PRODUCT_AUTH_ENABLED y CUEVA_EMAIL_TEMPLATE_READY están en 0.
+Se solicitó carga directa de CUEVA_SERVICE_KEY como Secret por el usuario;
+todavía no se verificó su guardado. Acceso de producto apagado.
 Siguiente: [CUEVA-002J](CUEVA-002J-task.md), preparación operativa comprobable.
-El PR registra CI, integración y despliegue posteriores; no se presumen terminados.
+[PR #15](https://github.com/MatiasEzequielPereyra/CuevApp/pull/15) MERGED,
+main `e264810408a3750cfb68a851d0810de5dd03cf94`, deployment
+`dpl_6wfYf6Cba66DNHW9aQEawwiKa3Bo` READY y smoke HTTP PASS. Ver
+[handoff](CUEVA-002I-release.md). Código, configuración, migración y pruebas
+integrados coinciden con el árbol revisado. El squash duplicó un bloque histórico
+del checkpoint por ascendencia documental divergente; se retira aquí ese duplicado.
 
 ## Supabase alojado — reconexión verificada
 
@@ -28,20 +36,6 @@ no evidencia de funcionamiento del acceso de CUEVA.
 
 En aquella inspección el panel Emails indicaba SMTP sin configurar; el estado
 posterior de SMTP guardado se registra arriba. Plantillas por defecto al inspeccionar.
-Correo real, URLs del producto, migración y permisos de aplicación siguen pendientes.
-No se crearon usuarios, tablas ni migraciones remotas. Próxima tarea candidata:
-[CUEVA-002I](CUEVA-002I-task.md), aún sin aceptación ni aplicación alojada.
-
-## Supabase alojado — reconexión verificada
-
-Actualización 2026-11-02: acceso MCP al proyecto `vbkzoojkdkcugxhneyzi`
-verificado tras reconexión del usuario. Inventario: tablas public/private 0,
-migraciones 0, usuarios Auth 0, buckets 0, asesor de seguridad sin lints.
-El registro público se deshabilitó y se verificó tras recargar el panel;
-confirmación de correo sigue activa. Es un ajuste de alta administrativa,
-no evidencia de funcionamiento del acceso de CUEVA.
-
-El panel Emails indica SMTP personalizado sin configurar y plantillas por defecto.
 Correo real, URLs del producto, migración y permisos de aplicación siguen pendientes.
 No se crearon usuarios, tablas ni migraciones remotas. Próxima tarea candidata:
 [CUEVA-002I](CUEVA-002I-task.md), aún sin aceptación ni aplicación alojada.
