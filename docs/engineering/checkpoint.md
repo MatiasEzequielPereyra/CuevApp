@@ -1,6 +1,21 @@
 # Checkpoint CUEVA
 
-Actualizado: 2026-10-29, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
+Actualizado: 2026-11-03, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
+
+## CUEVA-002I — aceptación local y correo configurado
+
+HEAD ejecutor `da1de8b63e0e94d62014c5047b214912a90321b9`: **ACCEPTED LOCAL
+para integrar apagado**; ver [auditoría](CUEVA-002I-audit.md). Repetición independiente:
+lint/tipos/build, documentos 2, navegador 25 y laboratorio PASS. Alta administrativa,
+contraseña propia, perfiles y recuperación coordinada se probaron localmente;
+esto no acredita Auth/RLS alojados. Migración versionada, todavía NO APLICADA.
+
+El usuario guardó SMTP de Gmail; el panel volvió a confirmar habilitado y sin
+cambios pendientes el 2026-11-03. No se leyó ni guardó la contraseña. Entrega
+real, plantillas y alta de Nico pendientes. No hay cuentas reales creadas.
+Vercel conserva solo las variables públicas previas: acceso de producto apagado.
+Siguiente: [CUEVA-002J](CUEVA-002J-task.md), preparación operativa comprobable.
+El PR registra CI, integración y despliegue posteriores; no se presumen terminados.
 
 ## Supabase alojado — reconexión verificada
 
@@ -11,7 +26,8 @@ El registro público se deshabilitó y se verificó tras recargar el panel;
 confirmación de correo sigue activa. Es un ajuste de alta administrativa,
 no evidencia de funcionamiento del acceso de CUEVA.
 
-El panel Emails indica SMTP personalizado sin configurar y plantillas por defecto.
+En aquella inspección el panel Emails indicaba SMTP sin configurar; el estado
+posterior de SMTP guardado se registra arriba. Plantillas por defecto al inspeccionar.
 Correo real, URLs del producto, migración y permisos de aplicación siguen pendientes.
 No se crearon usuarios, tablas ni migraciones remotas. Próxima tarea candidata:
 [CUEVA-002I](CUEVA-002I-task.md), aún sin aceptación ni aplicación alojada.

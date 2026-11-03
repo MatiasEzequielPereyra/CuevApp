@@ -1,5 +1,10 @@
 # Backlog de CUEVA
 
+**Estado vigente 2026-11-03:** CUEVA-002I aceptada localmente para integrar apagada;
+Auth alojado aún pendiente. SMTP Gmail guardado, entrega no probada. Siguiente
+incremento: [CUEVA-002J](CUEVA-002J-task.md), plantillas reales y preparación
+operativa de bootstrap/reconciliación. Los estados antiguos de abajo son historia.
+
 **Actualización 2026-10-29:** el usuario confirmó correo obligatorio para todos
 los alumnos y eliminó el acceso por DNI. Esta decisión reemplaza los requisitos
 anteriores de ingreso DNI/sin correo que aparecen abajo como historia; el alta
