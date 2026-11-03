@@ -2,6 +2,26 @@
 
 Actualizado: 2026-11-03, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## Primera prueba real autorizada
+
+El usuario autorizó expresamente cuenta de Nico, invitación única, prueba controlada
+y posterior promoción tras verificar incorporación. No volver a solicitar esa misma
+autorización. [Registro operativo](CUEVA-first-access.md): check privado de Vercel
+PASS con inventario vacío; Secret válida para SDK sin leerla. Main actual
+`1a6aff046996527fadc835be3bbb3a7e7dfc9bd0`, PR17 integrado y CI PASS.
+
+Primer envío falló por rechazo de autenticación SMTP; inspección posterior confirmó
+0 cuentas/perfiles/estados y se cerró acceso. El usuario corrigió/guardó SMTP.
+Segundo apply `dpl_69bJbXDMQGBMfxNR2RCpEVEQPdNM` también falló: SMTP rechazó
+autenticación; cero cuentas/perfiles/estados confirmado. Flags nuevamente en 0,
+deployment cerrado H8PwWox promovido y ruta de invitación404 verificada.
+Google confirmó verificación en dos pasos desactivada, por eso no ofrece App
+passwords para la cuenta del gimnasio. Usuario completando ese requisito; después
+debe generar una clave de aplicación real y guardarla únicamente en SMTP.
+No enviar otra vez hasta resolverlo ni volver a pedir autorización de primera cuenta.
+La contraseña y primer acceso reales requieren intervención del usuario; no usar
+contraseñas del historial. Los estados anteriores de abajo son historia.
+
 ## Integración J y candidato K
 
 J integrado en [PR16](https://github.com/MatiasEzequielPereyra/CuevApp/pull/16),
