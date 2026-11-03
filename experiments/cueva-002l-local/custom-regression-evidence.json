@@ -1,0 +1,142 @@
+{
+  "date": "2026-11-03T18:33:22.245Z",
+  "images": {
+    "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "mail": "public.ecr.aws/supabase/mailpit@sha256:37a38e48e9338cd7e89dfeb487f37b02ebfcd9cb23111bed2d345e79d37d6dd6",
+    "rest": "public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962",
+    "templates": "public.ecr.aws/supabase/studio@sha256:32a293ffd7b081926b225f6503bf13730447e544041d1f37f0a5586578183e91"
+  },
+  "results": [
+    {
+      "name": "bootstrap_default_dry_run_no_effects",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "bootstrap_wrong_project_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "bootstrap_invitation_prepared",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "bootstrap_duplicate_stopped_without_resend",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "bootstrap_promotion_before_activation_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "rendered_invite_exact_template_and_parameters",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "bootstrap_invitation_own_password",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "bootstrap_wrong_email_promotion_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "bootstrap_exact_admin_promotion",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "bootstrap_repeat_promotion_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "rendered_invite_exact_template_and_parameters",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "rendered_student_invitation_completes",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "rendered_recovery_exact_template_and_parameters",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "rendered_recovery_completes",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "untrusted_redirect_not_preserved",
+      "status": "PASS",
+      "detail": "fallback_url_valid=false; product_capability_missing=true"
+    },
+    {
+      "name": "interrupted_operation_stays_closed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "local_quiescence_provider_stopped_and_backends_zero",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "controlled_reconciliation_closed_new_generation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "reconciliation_old_session_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "hosted_quiescence_and_email_delivery",
+      "status": "NOT_RUN",
+      "detail": "Local processes were stopped. Hosted Auth cannot be stopped by this lab; no real email or accounts used."
+    },
+    {
+      "name": "cleanup_rest",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_auth",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_templates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_db",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_network",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}
