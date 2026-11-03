@@ -2,6 +2,15 @@
 
 Actualizado: 2026-11-03, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## CUEVA-UI-001 — revisión independiente
+
+Candidato `635140403cf826f268f040325dde6350a4c7e264`: **ACCEPTED LOCAL**;
+[auditoría](CUEVA-UI-001-audit.md), Standards/Spec sin bloqueos y suite específica
+10/10 PASS. Integración y publicación pendientes de CI; consultar el PR de la rama
+`codex/cueva-ui-001` para el resultado remoto. El panel presenta funciones pendientes,
+sin datos ficticios; no amplía permisos, correo ni disponibilidad de alumnos.
+La entrega REVIEW al final de este documento se conserva como antecedente.
+
 ## Cierre vigente — primer administrador operativo
 
 **Nico incorporado y promovido a admin.** El usuario confirmó contraseña propia y
