@@ -1,5 +1,9 @@
 # Backlog de CUEVA
 
+**Actualización posterior:** CUEVA-002J ACCEPTED LOCAL; plantillas, bootstrap y
+procedimiento local comprobados. Preparación alojada con acceso apagado y primera
+prueba controlada pendientes; ver checkpoint. No se cambian proveedor ni requisitos.
+
 **Estado vigente 2026-11-03:** CUEVA-002I aceptada localmente para integrar apagada;
 Auth alojado aún pendiente. SMTP Gmail guardado, entrega no probada. Siguiente
 incremento: [CUEVA-002J](CUEVA-002J-task.md), plantillas reales y preparación

@@ -2,6 +2,17 @@
 
 Actualizado: 2026-11-03, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
+## CUEVA-002J — paquete operativo aceptado localmente
+
+HEAD ejecutor `8caced7eba239135b6034e1903075afecb1024b7`: **ACCEPTED LOCAL**;
+ver [auditoría](CUEVA-002J-audit.md) y [procedimiento](CUEVA-002J-operations.md).
+Repetición independiente 25 PASS/1 NOT_RUN: plantillas renderizadas, bootstrap
+sintético y reconciliación local. No cambia runtime ni la migración I.
+Correo real, primer admin real y aceptación alojada pendientes. El siguiente
+paso operativo es aplicar/configurar lo revisado con acceso apagado y luego
+acordar una primera prueba controlada; no otro cambio de proveedor de identidad.
+PR/CI y configuración remota se registran por separado tras su ejecución.
+
 ## CUEVA-002I — aceptación local y correo configurado
 
 HEAD ejecutor `da1de8b63e0e94d62014c5047b214912a90321b9`: **ACCEPTED LOCAL
