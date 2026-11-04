@@ -1,5 +1,13 @@
 # Checkpoint CUEVA
 
+## CUEVA-ALUMNOS-001 — correcciones para nueva revisión, 2026-11-04
+
+Se conserva estado **REVIEW**. Corregidas búsqueda literal, marco administrativo
+compartido con Alumnos activo y fecha inicial en Buenos Aires. Laboratorio local
+43/43 PASS, panel 10/10, build/tipos/lint/documentos/fuentes/seguridad PASS.
+Ver [informe actualizado](CUEVA-ALUMNOS-001-review.md). Migración alojada,
+integración y publicación pendientes; sin cambios en Auth, SMTP ni cuentas reales.
+
 Actualizado: 2026-11-03, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
 
 ## CUEVA-UI-001 — revisión independiente

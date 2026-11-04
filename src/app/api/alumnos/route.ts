@@ -25,7 +25,7 @@ export async function POST(req: Request) {
  const row={id:data.id,first_name,last_name,email,dni:dni||null,joined_on,active:data.active};
  const {id:studentId,...changes}=row;
  const result=data.edit===true?await client.from("cueva_students").update(changes).eq("id",studentId).select("id").maybeSingle():await client.from("cueva_students").insert(row).select("id").single();
- if(result.error){if(result.error.code==="23505")return reply("Ya existe una ficha con ese correo, DNI o identificador. Revisá el listado antes de volver a guardar.",409);return reply("No se pudo guardar. La gestión puede estar pendiente de habilitación. Conservamos tus datos para reintentar.",503);}
+ if(result.error){if(result.error.code==="23505")return reply("Ya existe una ficha con ese correo, DNI o identificador. Revisá el listado antes de volver a guardar.",409);return reply("No se pudo guardar. Conservamos tus datos para reintentar.",503);}
  if(!result.data)return reply("No se encontró la ficha o no tenés permiso.",404);
  return NextResponse.json({id:result.data.id},{headers:{"Cache-Control":"no-store"}});
 }

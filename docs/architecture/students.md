@@ -15,6 +15,10 @@ Servidor y RLS exigen administrador desde `cueva_profiles` y los controles de se
 
 La búsqueda muestra un máximo de 100 filas y pide refinar al superar ese límite. No se calcula un indicador de alumnos activos en el panel hasta definirlo; el panel ofrece acceso a fichas. DNI es administrativo y nunca identifica un inicio de sesión.
 
+La búsqueda conserva puntos, apóstrofos, comas, paréntesis, comillas y barras: escapa primero el patrón LIKE y después el literal entre comillas de PostgREST, sin eliminar caracteres ni pre-encodear la URL. [Gramática oficial y caracteres reservados](https://docs.postgrest.org/en/stable/references/api/url_grammar.html#reserved-characters). Se verifica contra PostgREST local real, incluyendo una cadena que imita filtros y no debe ampliar resultados.
+
+El listado, alta, ficha y edición comparten `AdminShell` con el panel: sidebar, navegación móvil con Alumnos activo, tema, identidad del usuario validado y controles de cuenta existentes. La fecha inicial de una ficha nueva se calcula en servidor para `America/Argentina/Buenos_Aires`; la edición conserva la fecha guardada. El error de carga/guardado se expresa para el usuario sin detalles de infraestructura.
+
 ## Reproducción local
 
 Desde `experiments/cueva-alumnos-local`: `node lab.mjs`, con dependencias del repositorio instaladas, Docker existente e imágenes fijadas del laboratorio I. Se reutiliza su lanzador Next y esquema auxiliar, pero se ejecuta únicamente el flujo de alumnos. Los usuarios sintéticos se crean confirmados localmente; no se ejecutan invitaciones/recuperaciones ni se toca correo real. Credenciales efímeras solo en memoria/entorno de procesos propios; salida redactada `results.json`. Al terminar se cierran navegador, Next y los contenedores/red exclusivos `cueva-alumnos-*`; nunca se modifica Docker ni recursos de Vendify. Las imágenes compartidas se conservan.

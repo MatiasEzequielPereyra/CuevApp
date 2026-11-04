@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-04T13:22:24.269Z",
+  "date": "2026-11-04T13:35:18.963Z",
   "images": {
     "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
     "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
@@ -9,6 +9,11 @@
   "results": [
     {
       "name": "authenticator_password_cannot_login_as_postgres",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "joined_on_buenos_aires_boundary",
       "status": "PASS",
       "detail": ""
     },
@@ -23,7 +28,47 @@
       "detail": ""
     },
     {
+      "name": "joined_on_edit_preserved",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
       "name": "search",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "literal_search_full_email",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "literal_search_dni",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "literal_search_punctuation_0",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "literal_search_punctuation_1",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "literal_search_punctuation_2",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "literal_search_punctuation_3",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "literal_search_no_filter_injection",
       "status": "PASS",
       "detail": ""
     },
@@ -93,6 +138,26 @@
       "detail": ""
     },
     {
+      "name": "shared_shell_list",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shared_shell_create",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shared_shell_detail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "shared_shell_edit",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
       "name": "layout_390_light",
       "status": "PASS",
       "detail": ""
@@ -109,6 +174,16 @@
     },
     {
       "name": "layout_1440_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "mobile_students_active",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "mobile_account_navigation",
       "status": "PASS",
       "detail": ""
     },
