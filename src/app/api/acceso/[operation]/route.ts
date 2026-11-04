@@ -1,3 +1,4 @@
+import { inviteStudent } from "@/lib/student-invitation/server";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { pendingUserClient, productConfig, serviceClient, userClient } from "@/lib/product-auth/server";
@@ -70,15 +71,13 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
     if (own.error || own.data?.role !== "admin") return fail(403);
     const nonce = randomBytes(32).toString("hex"), nonceHash = createHash("sha256").update(nonce).digest("hex");
     if (operation === "admin-invitar") {
-      const email = String(form.get("email") ?? "").trim();
+      const email = String(form.get("email") ?? "").trim().toLowerCase();
       if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail(400);
-      const url = new URL("/aceptar-invitacion", cfg.origin);
-      url.search = new URLSearchParams({ nonce, generation: "1", type: "invite" }).toString();
-      const invited = await service.auth.admin.inviteUserByEmail(email, { redirectTo: url.href });
-      if (invited.error || !invited.data.user || !uuid(invited.data.user.id)) return fail(503);
-      const prepared = await service.rpc("cueva_prepare_invitation", { p_user: invited.data.user.id, p_nonce_hash: nonceHash });
-      // Ambiguous failures require trusted reconciliation; never resend blindly.
-      return prepared.error || prepared.data !== true ? fail(503) : redirect("/cuenta");
+      const student = await auth.from("cueva_students").select("id").eq("email",email).maybeSingle();
+      if(student.error)return fail(503);
+      if(!student.data)return new Response("Primero registrá la ficha del alumno para enviar su invitación.",{status:409,headers:{"Cache-Control":"no-store"}});
+      await inviteStudent(auth,student.data.id);
+      return redirect(`/alumnos?id=${student.data.id}`);
     }
     const target = String(form.get("user_id") ?? "");
     if (!uuid(target)) return fail(400);
