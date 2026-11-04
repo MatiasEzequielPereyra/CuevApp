@@ -8,7 +8,22 @@ compartido con Alumnos activo y fecha inicial en Buenos Aires. Laboratorio local
 Ver [informe actualizado](CUEVA-ALUMNOS-001-review.md). Migración alojada,
 integración y publicación pendientes; sin cambios en Auth, SMTP ni cuentas reales.
 
-Actualizado: 2026-11-03, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
+Actualizado: 2026-11-04, America/Buenos_Aires. Continuidad y auditoría: ORCHESTRATOR CUEVA.
+
+## CUEVA-ALUMNOS-001 — aceptación local y coordinación
+
+Candidato corregido `27cf4e8aaf80c0027225349e0dd768d864512c42`: **ACCEPTED LOCAL**;
+[auditoría](CUEVA-ALUMNOS-001-audit.md). Tres P2 resueltos, revisión independiente
+final sin bloqueos y laboratorio acotado 43/43 PASS. Marco administrativo compartido.
+El estado de CI, migración alojada y publicación se registra en el PR de la rama
+`codex/cueva-alumnos-001`: verificar ese registro antes de afirmar estado remoto.
+Fichas administrativas independientes de Auth; correo general sigue pendiente.
+
+El panel UI-001 ya se integró en PR21/main
+`fa87f778287434dbad016435b28b7d895a05f90e`; las referencias inferiores a su revisión
+son historia. El usuario aprobó su apariencia. Ver el [roadmap paralelo](parallel-roadmap.md)
+y el [encargo de acceso](CUEVA-ACCESO-001-task.md), que no autorizan interferir con
+otro checkout ni dar implementaciones por terminadas.
 
 ## CUEVA-UI-001 — revisión independiente
 
