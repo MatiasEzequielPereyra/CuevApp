@@ -64,3 +64,10 @@ temporal. No autoriza proveedor remoto ni sustituye E6 de la prueba integrada.
 CUEVA-ALUMNOS-001 incorpora fichas separadas de las cuentas, correo obligatorio y
 DNI opcional exclusivamente administrativo. Alta/búsqueda/edición locales para
 revisión; migración alojada y publicación pendientes. Sin invitaciones ni pagos.
+
+## Cuotas y pagos — incremento administrativo
+
+CUEVA-003A en REVIEW local: configuración de precio, períodos mensuales explícitos,
+pagos parciales/completos y anulaciones trazables. Aplicación alojada e integración
+pendientes. Sin anticipos, cobros online, adjuntos, recordatorios ni acceso económico
+para alumnos. Ver [informe](CUEVA-003A-review.md).
