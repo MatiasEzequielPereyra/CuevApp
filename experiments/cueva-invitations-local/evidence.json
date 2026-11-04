@@ -1,0 +1,223 @@
+{
+  "date": "2026-11-04T15:25:05.340Z",
+  "scope": "CUEVA-ALUMNOS-001",
+  "images": {
+    "templates": "public.ecr.aws/supabase/studio@sha256:32a293ffd7b081926b225f6503bf13730447e544041d1f37f0a5586578183e91",
+    "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "mail": "public.ecr.aws/supabase/mailpit@sha256:37a38e48e9338cd7e89dfeb487f37b02ebfcd9cb23111bed2d345e79d37d6dd6",
+    "rest": "public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962"
+  },
+  "results": [
+    {
+      "name": "authenticator_password_cannot_login_as_postgres",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "default_checked",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "saved_and_invited",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "unique_explicit_link",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "parallel_retries_no_resend",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "account_action_uses_same_job",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "account_action_requires_student",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "one_message",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "actual_template_link",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "invitation_password_and_access",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_claim_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "anon_claim_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_invitation_rows_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "untrusted_finish_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "existing_account_not_adopted",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "email_change_guard",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "unchecked_no_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "explicit_retry",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "one_extra_message",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "save_retry_idempotent",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "save_retry_no_extra_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "layout_390_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "layout_390_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "layout_1440_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "layout_1440_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_http_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "owner_only_blocks_general_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "blocked_no_auth_create",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "blocked_state_persisted",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "blocked_retry_after_enabled",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "parallel_initial_save",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "parallel_initial_single_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "visitor_http_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "smtp_failure_review",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "uncertain_retry_no_duplicate",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "failure_preserves_student",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_rest",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_auth",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_templates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_db",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_network",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

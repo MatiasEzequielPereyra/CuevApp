@@ -71,3 +71,9 @@ CUEVA-003A en REVIEW local: configuración de precio, períodos mensuales explí
 pagos parciales/completos y anulaciones trazables. Aplicación alojada e integración
 pendientes. Sin anticipos, cobros online, adjuntos, recordatorios ni acceso económico
 para alumnos. Ver [informe](CUEVA-003A-review.md).
+
+## Invitaciones de alumnos
+
+Preparación de incorporación desde ficha con opción predeterminada y estado de
+invitación. Conservación de ficha y control de duplicados; migración/habilitación
+de correo alojadas requieren revisión del Orchestrator.

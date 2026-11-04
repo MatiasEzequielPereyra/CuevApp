@@ -1,3 +1,4 @@
+import {InvitationAction} from "@/components/students/invitation-action";
 import Link from "next/link";
 import { studentAdmin } from "@/lib/students/server";
 import { studentSearchFilter } from "@/lib/students/search";
@@ -27,6 +28,7 @@ export default async function Students({ searchParams }: { searchParams: Promise
   const rows = (data ?? []) as Student[];
   const student = rows[0];
   const defaultJoinedOn = buenosAiresDate();
+  const inviteStatus=id?await client.from("cueva_student_invitations").select("state").eq("student_id",id).maybeSingle():null;
   return <AdminShell displayName={displayName} email={email} role="Administrador" logo={<BrandMark size={42} />} themePicker={<ThemePicker />} active="alumnos" accountActions={<AdminAccountActions ownerOnly={productConfig()!.ownerOnly} />}>
     <Link href="/alumnos">← Alumnos</Link>
     <div className="dash-heading"><h1>{params.nuevo ? "Nuevo alumno" : id ? "Ficha del alumno" : "Alumnos"}</h1>{!id && !params.nuevo && <Link className="dash-role" href="/alumnos?nuevo=1">+ Nuevo alumno</Link>}</div>
@@ -34,7 +36,7 @@ export default async function Students({ searchParams }: { searchParams: Promise
       : params.nuevo ? <StudentForm defaultJoinedOn={defaultJoinedOn} />
       : id ? !student ? <p>No se encontró la ficha.</p>
         : params.editar ? <StudentForm student={student} defaultJoinedOn={defaultJoinedOn} />
-          : <section className="dash-account"><div><h2>{student.first_name} {student.last_name}</h2>{params.guardado && <p role="status">Ficha guardada correctamente.</p>}<p>{student.email}</p><p>DNI: {student.dni ?? "No informado"}</p><p>Fecha de alta: {student.joined_on}</p><p>Estado administrativo: {student.active ? "Activo" : "Inactivo"}</p><p>Acceso a la aplicación: no se vincula automáticamente con esta ficha.</p><Link href={`/alumnos?id=${id}&editar=1`}>Editar ficha</Link><p><Link href={`/pagos?alumno=${id}`}>Consultar cuotas y pagos</Link></p><p>Rutina y comprobantes: próximamente.</p></div></section>
+          : <section className="dash-account"><div><h2>{student.first_name} {student.last_name}</h2>{params.guardado && <p role="status">Ficha guardada correctamente.</p>}<p>{student.email}</p><p>DNI: {student.dni ?? "No informado"}</p><p>Fecha de alta: {student.joined_on}</p><p>Estado administrativo: {student.active ? "Activo" : "Inactivo"}</p><p>Invitación: {inviteStatus?.error?"estado no disponible":inviteStatus?.data?.state==="blocked"?"Pendiente de habilitar correo general":inviteStatus?.data?.state==="sent"?"Enviada":inviteStatus?.data?.state==="processing"?"En proceso; revisar si no finaliza":inviteStatus?.data?.state==="review"?"Requiere revisión antes de reenviar":inviteStatus?.data?.state==="failed"?"No enviada; se puede reintentar":"No solicitada"}</p>{params.invitacion==="blocked"&&<p role="status">Ficha guardada. El correo general todavía no está habilitado; invitación pendiente.</p>}{params.invitacion==="existing"&&<p role="status">Ya existe una cuenta con ese correo. No se vinculó automáticamente; requiere revisión.</p>}{["unavailable","failed","review"].includes(String(params.invitacion))&&<p role="status">Ficha guardada; la invitación no se confirmó. Consultá el estado antes de reintentar.</p>}<InvitationAction id={id} state={inviteStatus?.data?.state}/><Link href={`/alumnos?id=${id}&editar=1`}>Editar ficha</Link><p><Link href={`/pagos?alumno=${id}`}>Consultar cuotas y pagos</Link></p><p>Rutina y comprobantes: próximamente.</p></div></section>
       : <>
         <form className="student-search"><label>Buscar alumnos<input name="q" defaultValue={q} placeholder="Nombre, apellido, correo o DNI" /></label><button>Buscar</button></form>
         <p>{q ? "Resultados de búsqueda" : "Fichas administrativas"} · Estado independiente de los pagos.</p>

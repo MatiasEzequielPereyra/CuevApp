@@ -478,3 +478,11 @@ Entrega local **REVIEW**, pendiente de auditoría, migración alojada e integrac
 Precio versionado, períodos y movimientos exactos con anulación trazable;
 [modelo](../architecture/payments.md) e [informe](CUEVA-003A-review.md).
 No habilita consultas de alumnos ni correo. Aplicación alojada y publicación NOT_RUN.
+
+## Invitación desde ficha — entrega local REVIEW
+
+Invitación marcada por defecto al guardar una ficha, con registro persistente y
+reintentos seguros; ver [modelo](../architecture/student-invitations.md). El correo
+general permanece sujeto al control operativo vigente; no se alteran cuentas reales.
+
+Entrega de invitaciones: **REVIEW**, prueba local real y verificaciones completas PASS. [Informe y evidencias](CUEVA-ALUMNOS-INVITACION-review.md). Correo general alojado y migración siguen pendientes del Orchestrator; no confundir estado de proveedor aceptado con entrega real.

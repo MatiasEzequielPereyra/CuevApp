@@ -1,3 +1,4 @@
+import { inviteStudent } from "@/lib/student-invitation/server";
 import { NextResponse } from "next/server";
 import { productConfig } from "@/lib/product-auth/server";
 import { studentAdmin } from "@/lib/students/server";
@@ -25,7 +26,12 @@ export async function POST(req: Request) {
  const row={id:data.id,first_name,last_name,email,dni:dni||null,joined_on,active:data.active};
  const {id:studentId,...changes}=row;
  const result=data.edit===true?await client.from("cueva_students").update(changes).eq("id",studentId).select("id").maybeSingle():await client.from("cueva_students").insert(row).select("id").single();
- if(result.error){if(result.error.code==="23505")return reply("Ya existe una ficha con ese correo, DNI o identificador. Revisá el listado antes de volver a guardar.",409);return reply("No se pudo guardar. Conservamos tus datos para reintentar.",503);}
+ if(result.error){
+ if(result.error.code==="23505"&&data.edit!==true){const existing=await client.from("cueva_students").select("id,first_name,last_name,email,dni,joined_on,active").eq("id",row.id).maybeSingle();const record=existing.data; if(record&&Object.entries(row).every(([key,value])=>record[key as keyof typeof record]===value)){const invitation=data.invite===true?await inviteStudent(client,row.id):null;return NextResponse.json({id:row.id,invitation},{headers:{"Cache-Control":"no-store"}});}}
+ if(result.error.code==="23505")return reply("Ya existe una ficha con ese correo, DNI o identificador. Revisá el listado antes de volver a guardar.",409);
+ return reply(result.error.code==="P0001"?"La ficha tiene una invitación registrada; el cambio de correo requiere revisión administrativa.":"No se pudo guardar. Conservamos tus datos para reintentar.",503);
+ }
  if(!result.data)return reply("No se encontró la ficha o no tenés permiso.",404);
- return NextResponse.json({id:result.data.id},{headers:{"Cache-Control":"no-store"}});
+ const invitation=data.edit!==true&&data.invite===true?await inviteStudent(client,result.data.id):null;
+ return NextResponse.json({id:result.data.id,invitation},{headers:{"Cache-Control":"no-store"}});
 }
