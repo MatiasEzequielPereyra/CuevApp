@@ -77,3 +77,9 @@ para alumnos. Ver [informe](CUEVA-003A-review.md).
 Preparación de incorporación desde ficha con opción predeterminada y estado de
 invitación. Conservación de ficha y control de duplicados; migración/habilitación
 de correo alojadas requieren revisión del Orchestrator.
+
+Reconciliación de invitación SMTP 535: incremento local acotado
+[CUEVA-INVITACION-RECUPERACION-001](CUEVA-INVITACION-RECUPERACION-001-task.md),
+REVIEW; laboratorio nuevo 66/66 PASS. Recupera la identidad preparada exacta; no reabre altas, no implementa
+reconciliador general ni cambia proveedor. Estado remoto de PR25 prevalece sobre
+las notas históricas: migración aplicada, entrega/primer acceso de alumno sin verificar.
