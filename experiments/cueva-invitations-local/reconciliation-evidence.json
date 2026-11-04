@@ -1,0 +1,350 @@
+{
+  "date": "2026-11-04T18:43:21.922Z",
+  "scope": "CUEVA-INVITACION-RECUPERACION-001",
+  "images": {
+    "templates": "public.ecr.aws/supabase/studio@sha256:32a293ffd7b081926b225f6503bf13730447e544041d1f37f0a5586578183e91",
+    "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "mail": "public.ecr.aws/supabase/mailpit@sha256:37a38e48e9338cd7e89dfeb487f37b02ebfcd9cb23111bed2d345e79d37d6dd6",
+    "rest": "public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962"
+  },
+  "results": [
+    {
+      "name": "authenticator_password_cannot_login_as_postgres",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "initial_smtp_535_review_no_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "check_no_mutation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wrong_student",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wrong_job",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wrong_identity",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wrong_generation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wrong_email",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "acceptance_not_excluded",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "missing_rejection",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "original_pending",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_quiescent",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "missing_evidence_file",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "generation_exceeds_existing_callback_format",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "original_lease_cannot_be_reused",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "tampered_evidence_file",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "unrelated_rejection_record",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "confirmed_account",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "previous_login",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "auth_email_changed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wrong_profile",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "ready_gate",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "bound_session",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pending_job",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "smtp_already_accepted",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pending_access_operation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "existing_auth_session",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "negative_cases_no_send_or_reservation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_new_api_role_permissions",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "visitor_ledger_not_exposed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "authenticated_admin_ledger_not_exposed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "old_nonce_invalidated_before_smtp",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "reserved_generation_gate_closed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "concurrent_reset_cannot_acquire_gate",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "ordinary_finish_cannot_release_reservation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "recovery_cannot_replace_invitation_nonce",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "concurrent_one_dispatch",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "repaired_one_smtp_message",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "same_uuid_profile_fiche_preserved",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "accepted_replay_no_send",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "old_auth_link_rejected_by_application",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "real_invite_template_new_generation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "accepted_link_still_requires_password",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "own_password_enables_same_student",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "new_login_has_original_uuid",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "post_acceptance_replay_no_mutation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_cannot_mutate_or_read_private_ledger",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "anon_cannot_mutate_or_read_private_ledger",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "second_rejection_review_no_auto_retry",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "interruption_after_reservation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "interrupted_before_smtp_no_resume",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "lost_response_after_smtp_review",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "ambiguous_replay_no_resend",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "ambiguous_gate_remains_closed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "ambiguous_accepted_mail_cannot_create_app_session",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "interruption_after_smtp",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "interrupted_after_smtp_no_resume",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "provider_uuid_mismatch_never_opens_gate",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "new_attempt_cannot_bypass_existing",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "nonaccepted_gates_keep_reservations",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_rest",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_auth",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_templates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_db",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_network",
+      "status": "PASS",
+      "detail": ""
+    }
+  ],
+  "sourceHashes": {
+    "scripts/reconcile-student-invitation.mjs": "f9a0d9b06ca8eff1148c53fffb3a849d78ee62557977bece20eee71a7645f6c5",
+    "supabase/migrations/20261104182640_cueva_invitation_reconciliation.sql": "74c582712e869585c9085851cfceace764264e9b80d8dc3ff61f73d80feea2dc",
+    "experiments/cueva-invitations-local/lab.mjs": "aa51d9c1f84cbce8e8c24d0464a54fc7b6a87a416abf70136454b6fac7efabaa",
+    "experiments/cueva-invitations-local/reconciliation-test.mjs": "500a2ce171783a84fdd39ac5a83ed3afabccba221102f4c18b78ddfbac9f8e35",
+    "experiments/cueva-invitations-local/smtp-gate.mjs": "34dfdd797390cf020e405988153e875598e79a811bf787f74a1d9fbfa9962dba"
+  }
+}

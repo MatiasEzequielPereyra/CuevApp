@@ -1,5 +1,20 @@
 # Checkpoint CUEVA
 
+## CUEVA-INVITACION-RECUPERACION-001 — REVIEW local, 2026-11-04
+
+Base verificada `a0dabf081a82867eb93d9f177f42e3c3cceb1a41`, igual a origin/main.
+Rama `codex/cueva-invitacion-recuperacion-001`; checkout reutilizado limpio antes
+de comenzar. PR25 MERGED y registro remoto consultado: código/migración publicados,
+ensayo único rechazado 535, identidad preparada/review conservada; credencial SMTP
+posteriormente reemplazada, todavía no probada. Las notas previas sobre migración
+de invitaciones pendiente son históricas; prevalece [PR25](https://github.com/MatiasEzequielPereyra/CuevApp/pull/25).
+
+Herramienta privada acotada, sin endpoint ni nuevo permiso API; ver
+[encargo](CUEVA-INVITACION-RECUPERACION-001-task.md) y
+[operación/rollback](CUEVA-INVITACION-RECUPERACION-001-operations.md).
+Prueba nueva 66/66 PASS y lint/tipos/build/documentos/fuentes/seguridad PASS. Ver [entrega y evidencia](CUEVA-INVITACION-RECUPERACION-001-review.md). Migración/envío/primer acceso alojados
+NOT_RUN/NOT_VERIFIED por este ejecutor. No se modifican SMTP, flags ni cuentas reales.
+
 ## CUEVA-ALUMNOS-001 — correcciones para nueva revisión, 2026-11-04
 
 Se conserva estado **REVIEW**. Corregidas búsqueda literal, marco administrativo
