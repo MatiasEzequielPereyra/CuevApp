@@ -74,7 +74,7 @@ try {
   const admin=testJwt('service_role');
   stage='browser_flow';
   const { runBrowserFlow }=await import('./browser-test.mjs');
-  await runBrowserFlow({base,rest,mailBase,dbPort,coordinatorPassword,admin,anon:testJwt('anon'),id,password,sql,request,note,launch,chromium,pg,secret});
+  await runBrowserFlow({base,rest,mailBase,dbPort,coordinatorPassword,admin,anon:testJwt('anon'),id,password,sql,request,note,launch,chromium,pg,secret,accessIntegrationOnly:process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'});
 } catch (error) {
   if(created.includes(names.auth)) {
     const logs=spawnSync('docker',['logs',names.auth],{encoding:'utf8'}); const output=String(logs.stdout)+String(logs.stderr);
@@ -87,7 +87,7 @@ try {
 finally {
   for(const name of created.reverse()) { try { if(name===names.auth){docker(['rm','-f',name]);}else{docker(['stop','--time','5',name]);} note(`cleanup_${name.split('-')[2]}`,'PASS'); } catch { note(`cleanup_${name.split('-')[2]}`,'FAIL'); } }
   if(networkCreated){try{docker(['network','rm',names.network]);note('cleanup_network','PASS');}catch{note('cleanup_network','FAIL');}}
-  await writeFile('results.json',JSON.stringify({date:new Date().toISOString(),images,results},null,2)+'\n');
+  await writeFile('results.json',JSON.stringify({date:new Date().toISOString(),scope:process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'?'CUEVA-ACCESO-001-INTEGRACION':'CUEVA-ALUMNOS-001',images,results},null,2)+'\n');
   console.log(JSON.stringify({results},null,2));
   if(results.some(x=>['FAIL','BLOCKED'].includes(x.status)))process.exitCode=1;
 }
