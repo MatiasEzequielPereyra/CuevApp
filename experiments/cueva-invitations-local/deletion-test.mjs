@@ -53,8 +53,8 @@ export async function runBrowserFlow({base,rest,mailBase,admin,anon,id,password,
     await page.goto(`${app.origin}/alumnos?id=${plain.id}`);check('reload_no_record',await page.getByText('No se encontró la ficha.',{exact:true}).count()===1);
     check('replay_safe',(await post(context,plain)).ok());
     step='protection';
-    for(const state of ['blocked','failed']){const f=await fixture(state);await queue(f,state);check(`unprovisioned_${state}_deletable`,(await(await rpc(f)).json())==='deleted'&&!await exists(f.id)&&(await q('select count(*)::int as n from public.cueva_student_invitations where student_id=$1',[f.id]))[0].n===0);}
-    for(const state of ['processing','review','sent']){const f=await fixture(state);await queue(f,state);check(`${state}_protected`,(await(await rpc(f)).json())==='protected'&&await exists(f.id));}
+    const queued=await fixture('blocked');await queue(queued,'blocked');check('unprovisioned_blocked_deletable',(await(await rpc(queued)).json())==='deleted'&&!await exists(queued.id)&&(await q('select count(*)::int as n from public.cueva_student_invitations where student_id=$1',[queued.id]))[0].n===0);
+    for(const state of ['failed','processing','review','sent']){const f=await fixture(state);await queue(f,state);check(`${state}_protected`,(await(await rpc(f)).json())==='protected'&&await exists(f.id));}
     const account=await fixture('account');const created=await(await request(`${base}/admin/users`,{method:'POST',token:admin,body:{email:account.email,email_confirm:false}})).json();
     check('matching_account_blocks_without_association',(await(await rpc(account)).json())==='protected'&&await exists(account.id)&&(await q('select count(*)::int as n from auth.users where id=$1',[created.id]))[0].n===1);
     const linked=await fixture('linked');await queue(linked,'blocked',created.id);check('captured_uuid_protects_even_if_email_differs',(await(await rpc(linked)).json())==='protected'&&await exists(linked.id));
@@ -67,7 +67,8 @@ export async function runBrowserFlow({base,rest,mailBase,admin,anon,id,password,
     step='boundaries';const permitted=await fixture('boundaries');
     check('explicit_confirmation_required',(await post(context,permitted,{confirmed:false})).status()===400&&await exists(permitted.id));
     check('wrong_origin_denied',(await context.request.post(`${app.origin}/api/alumnos/eliminar`,{headers:{origin:'https://other.example.com'},data:{id:permitted.id,email:permitted.email,confirmed:true}})).status()===403);
-    check('oversized_request_denied',(await post(context,permitted,{junk:'x'.repeat(1024)})).status()===413);
+    check('oversized_request_denied',(await post(context,permitted,{junk:'x'.repeat(4096)})).status()===413);
+    const unicode=await fixture('unicode');unicode.email=`${'é'.repeat(230)}@example.com`;await db.query('update public.cueva_students set email=$2 where id=$1',[unicode.id,unicode.email]);check('long_unicode_email_deletable',(await post(context,unicode)).ok()&&!await exists(unicode.id));
     check('invalid_uuid_denied',(await post(context,permitted,{id:'wrong'})).status()===400);
     check('get_never_deletes',(await context.request.get(`${app.origin}/api/alumnos/eliminar`)).status()===405&&await exists(permitted.id));
     for(const [name,token] of [['pupil',users[1].token],['anon',anon]])check(`${name}_rpc_denied`,!(await rpc(permitted,true,token)).ok);

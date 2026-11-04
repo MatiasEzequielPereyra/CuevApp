@@ -6,7 +6,7 @@ Base main verificada `67d44e2d954bd09af0ea821b718a8151cd9af28a`, rama
 `codex/cueva-alumnos-eliminar`. El usuario autorizó agregar eliminación segura y
 mergear si queda revisada. Fichas sin historial/cuenta, confirmación explícita;
 no borra Auth ni cuotas/pagos. [Encargo](CUEVA-ALUMNOS-ELIMINAR-task.md) y
-[pruebas/operación](CUEVA-ALUMNOS-ELIMINAR-review.md). Laboratorio48/48 PASS;
+[pruebas/operación](CUEVA-ALUMNOS-ELIMINAR-review.md). Laboratorio 49/49 PASS;
 verificaciones completas, revisión independiente e integración en curso.
 Migración alojada y estado de publicación se registran aparte.
 

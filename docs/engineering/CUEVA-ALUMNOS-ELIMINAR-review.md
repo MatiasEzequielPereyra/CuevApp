@@ -10,7 +10,7 @@ Eliminar alumno aparece en el detalle. Confirma nombre y correo, inicia foco en
 Cancelar, mantiene Tab/Shift+Tab dentro del diálogo, permite Escape y deshabilita
 salida/envíos duplicados mientras está pendiente. Muestra errores sin ocultar el
 diálogo y tras éxito vuelve al listado con aviso; al recargar la ficha ya no existe.
-Se revisaron las capturas reales a390 oscuro y1440 claro, sin desbordamientos.
+Se revisaron las capturas reales a 390 oscuro y 1440 claro, sin desbordamientos.
 
 La API exige Origin exacto, JSON acotado, UUID, correo observado y confirmación
 true, con administración verificada antes de llamar RPC. No usa service_role.
@@ -20,7 +20,7 @@ y sesión/gate actuales; sin grant DELETE directo ni autorización por metadatos
 Usa el mismo advisory transaccional de pagos antes del lock de ficha; luego bloquea
 el trabajo de invitación. Comprueba períodos, cuenta por correo o UUID capturado y
 estados de envío. La coincidencia de correo únicamente impide borrar; no asocia ni
-modifica identidades. Borra solo el pedido blocked/failed sin provisión y la ficha.
+modifica identidades. Borra solo el pedido blocked sin provisión y la ficha.
 Las FK se conservan sin cascada; cualquier referencia inesperada hace rollback de
 toda la función y devuelve protegido. Repetir un UUID ya ausente es éxito idempotente.
 Si el correo cambió tras cargar el detalle, exige recarga antes de eliminar.
@@ -33,10 +33,10 @@ problema; jamás compensar borrando historial, cuentas o relaciones.
 
 ## Pruebas locales nuevas
 
-[Laboratorio48/48 PASS](../../experiments/cueva-invitations-local/deletion-evidence.json),
+[Laboratorio 49/49 PASS](../../experiments/cueva-invitations-local/deletion-evidence.json),
 incluidas seis comprobaciones de limpieza. Casos afectados: preview sin escritura,
 confirmación/cancelación/Escape/foco, estado posterior y replay; pedidos pendientes
-sin provisión; protección de cuota impaga/pago/anulación/cuenta/UUID/estados de envío;
+sin provisión; protección de cuota impaga/pago/anulación/cuenta/UUID/estados de envío, incluido failed sin UUID por posible creación ambigua;
 chequeo tras abrir diálogo y correo obsoleto; confirmación ausente, Origin, tamaño,
 UUID, método; alumno/visitante, denegación DELETE directo; borrado paralelo;
 concurrencia real con transacciones de cuota y reserva de invitación; ausencia de
@@ -52,7 +52,7 @@ Remove-Item Env:CUEVA_STUDENT_DELETION_ONLY
 ```
 
 Se reutiliza el laboratorio existente con imágenes fijadas, nombres/red exclusivos,
-puertos dinámicos ligados a127.0.0.1 y límites de recursos. Cierra Next/Chromium y
+puertos dinámicos ligados a 127.0.0.1 y límites de recursos. Cierra Next/Chromium y
 elimina solo sus contenedores/red. Sin reiniciar Docker ni tocar Vendify. No se
 repiten los laboratorios completos de identidad, invitación o pagos.
 

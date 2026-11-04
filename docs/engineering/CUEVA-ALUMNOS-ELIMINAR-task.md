@@ -13,8 +13,8 @@ checkout limpio reutilizado, rama `codex/cueva-alumnos-eliminar`.
 - Solo administración con sesión habilitada. Comprobar nuevamente en base de datos
   que no tenga períodos/cuotas, pagos ni identidad. Con historial, conservar todo e
   indicar Inactivo desde Editar ficha; no añadir archivo ni bloqueo de acceso nuevos.
-- Un pedido blocked/failed sin UUID, cuenta por ese correo ni envío en curso puede
-  eliminarse junto con la ficha. processing/review/sent o UUID capturado protegen.
+- Un pedido blocked sin UUID, cuenta por ese correo ni envío en curso puede
+  eliminarse junto con la ficha. failed/processing/review/sent o UUID capturado protegen.
 - No borrar ni modificar Auth, perfiles, pagos, cuotas, recuperación o invitaciones
   enviadas. Sin cascadas, eliminación masiva ni permisos DELETE directos.
 - Concurrencia con pagos/invitación y repeticiones deben mantener las relaciones.

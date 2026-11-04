@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-04T18:58:50.261Z",
+  "date": "2026-11-04T19:03:47.406Z",
   "scope": "CUEVA-ALUMNOS-ELIMINAR",
   "images": {
     "templates": "public.ecr.aws/supabase/studio@sha256:32a293ffd7b081926b225f6503bf13730447e544041d1f37f0a5586578183e91",
@@ -75,7 +75,7 @@
       "detail": ""
     },
     {
-      "name": "unprovisioned_failed_deletable",
+      "name": "failed_protected",
       "status": "PASS",
       "detail": ""
     },
@@ -141,6 +141,11 @@
     },
     {
       "name": "oversized_request_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "long_unicode_email_deletable",
       "status": "PASS",
       "detail": ""
     },

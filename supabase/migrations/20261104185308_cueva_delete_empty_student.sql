@@ -16,12 +16,13 @@ begin
  perform 1 from public.cueva_student_invitations where student_id=p_student for update;
  if exists(select 1 from public.cueva_periods where student_id=p_student)
    or exists(select 1 from public.cueva_student_invitations where student_id=p_student
-     and (user_id is not null or state not in ('blocked','failed')))
+     and (user_id is not null or state<>'blocked'))
    -- A match only blocks deletion; it never associates or mutates an Auth identity.
    or exists(select 1 from auth.users where lower(email)=s.email)
  then return 'protected'; end if;
  if not p_confirm then return 'eligible'; end if;
- delete from public.cueva_student_invitations where student_id=p_student and user_id is null and state in ('blocked','failed');
+ -- failed can hide a createUser request whose remote outcome is still unknown.
+ delete from public.cueva_student_invitations where student_id=p_student and user_id is null and state='blocked';
  delete from public.cueva_students where id=p_student;
  return 'deleted';
 exception when foreign_key_violation then

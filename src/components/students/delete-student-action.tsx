@@ -9,7 +9,7 @@ export function DeleteStudentAction({id,email,name,eligibility}:{id:string;email
   const eligible=eligibility==="eligible";
   return <div className="student-delete">
     <button type="button" className="dash-signout student-delete-trigger" disabled={!eligible} onClick={()=>{setMessage("");dialog.current?.showModal();cancel.current?.focus();}}>Eliminar alumno</button>
-    {!eligible&&<p>{eligibility==="protected"?"Esta ficha tiene historial, una invitación en curso o una cuenta asociada. No se puede eliminar; podés marcarla Inactiva desde Editar ficha.":"La eliminación no está disponible para esta ficha. Recargá antes de continuar."}</p>}
+    {!eligible&&<p>{eligibility==="protected"?"Esta ficha tiene historial, una invitación que debe conservarse o una cuenta asociada. No se puede eliminar; podés marcarla Inactiva desde Editar ficha.":"La eliminación no está disponible para esta ficha. Recargá antes de continuar."}</p>}
     <dialog ref={dialog} className="student-delete-dialog" aria-labelledby={`delete-title-${id}`} onCancel={event=>{if(busy.current)event.preventDefault();}} onKeyDown={event=>{
       if(event.key!=="Tab")return;
       if(busy.current){event.preventDefault();return;}
