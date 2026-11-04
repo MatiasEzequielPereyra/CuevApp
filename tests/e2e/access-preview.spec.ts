@@ -8,11 +8,11 @@ for (const width of [360, 768, 1440]) {
       await page.emulateMedia({ colorScheme: theme });
       const response = await page.goto("/ingresar");
       expect(response?.status()).toBe(200);
-      await expect(page.getByText("El acceso todavía no está disponible.")).toBeVisible();
+      await expect(page.getByText("El acceso no está disponible en este entorno.")).toBeVisible();
       await expect(page.getByLabel("Correo electrónico")).toBeDisabled();
       await expect(page.getByLabel("Contraseña")).toBeDisabled();
       await expect(page.getByRole("button", { name: "Ingresar" })).toBeDisabled();
-      await expect(page.locator("form")).toHaveCount(0);
+      await expect(page.locator("form")).toHaveAttribute("method", "post");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       const accessibility = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
       expect(accessibility.violations).toEqual([]);
@@ -20,16 +20,16 @@ for (const width of [360, 768, 1440]) {
   }
 }
 
-test("se puede ir y volver con teclado sin enviar credenciales", async ({ page }) => {
+test("la raíz redirige al ingreso sin bucle y la ayuda no promete correo", async ({ page, request }) => {
+  const root = await request.get("/", { maxRedirects: 0 });
+  expect(root.status()).toBe(307);
+  expect(root.headers().location).toBe("/ingresar");
   await page.goto("/");
-  const link = page.getByRole("link", { name: "Ver el futuro acceso" });
-  await link.focus();
-  await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/ingresar$/);
-  const back = page.getByRole("link", { name: "Volver al inicio" });
-  await back.focus();
-  await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/$/);
+  await page.getByRole("link", { name: "CUEVA, inicio" }).click();
+  await expect(page).toHaveURL(/\/ingresar$/);
+  await expect(page.getByText("Contactá al gimnasio", { exact: false })).toBeVisible();
+  await expect(page.getByRole("link", { name: /registro|recuperar|contraseña/i })).toHaveCount(0);
 });
 
 test("el laboratorio no se habilita en producción aunque exista la bandera", async ({ request }) => {

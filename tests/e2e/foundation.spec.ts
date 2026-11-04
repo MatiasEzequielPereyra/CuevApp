@@ -16,9 +16,9 @@ for (const width of [360, 390, 768, 1440]) {
       expect(response?.status()).toBe(200);
       await page.getByRole("button", { name: theme === "light" ? "Claro" : "Oscuro", exact: true }).click();
       await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
-      await expect(page).toHaveTitle("CUEVA · Un lugar para avanzar");
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText("Un lugarpara avanzar.");
-      await expect(page.getByText("El acceso a cuentas y las funciones del gimnasio todavía no están disponibles.", { exact: false })).toBeVisible();
+      await expect(page).toHaveTitle("Ingresar · CUEVA");
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText("Un lugar paraseguir avanzando.");
+      await expect(page.getByText("El acceso no está disponible en este entorno.", { exact: false })).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       const unloaded = await page.locator("img").evaluateAll((images) => images.filter((image) => !(image instanceof HTMLImageElement) || !image.complete || image.naturalWidth === 0).map((image) => image.getAttribute("src")));
       expect(unloaded).toEqual([]);
@@ -48,7 +48,7 @@ test("keyboard skip link moves focus to the main content", async ({ page }) => {
   await expect(page.getByRole("main")).toBeFocused();
 });
 
-test("keyboard reaches theme choices and project with visible focus", async ({ page }) => {
+test("keyboard reaches theme choices with visible focus", async ({ page }) => {
   await page.goto("/");
   await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");
@@ -68,12 +68,7 @@ test("keyboard reaches theme choices and project with visible focus", async ({ p
   });
   expect(focus).toEqual({ width: "3px", style: "solid", offset: "5px", matches: true });
   await page.screenshot({ path: "evidence/runs/keyboard-focus.png", fullPage: true });
-  await page.keyboard.press("Tab");
-  await page.keyboard.press("Tab");
-  const project = page.getByRole("link", { name: "Conocé el proyecto" });
-  await expect(project).toBeFocused();
-  await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/#proyecto$/);
+
 });
 
 test("theme survives reload, follows system and synchronizes across tabs", async ({ page, context }) => {
@@ -114,15 +109,15 @@ test("invalid saved theme falls back to system", async ({ page }) => {
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });
 
-test("no JavaScript: content and anchor navigation remain available", async ({ browser }) => {
+test("no JavaScript: controlled entry and system theme remain available", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false, colorScheme: "dark", viewport: { width: 360, height: 960 } });
   const page = await context.newPage();
   await page.goto("http://127.0.0.1:3000/");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  await expect(page.locator(".noscript-note")).toBeVisible();
+  await expect(page.getByText("El acceso no está disponible en este entorno.")).toBeVisible();
   await expect(page.getByRole("group", { name: "Elegir tema" })).toBeHidden();
-  await page.getByRole("link", { name: "Conocé el proyecto" }).click();
-  await expect(page).toHaveURL(/#proyecto$/);
+  await expect(page.getByLabel("Contraseña")).toBeDisabled();
+  await expect(page).toHaveURL(/\/ingresar$/);
   await context.close();
 });
 
@@ -130,7 +125,8 @@ test("zoom-equivalent reflow and local-only scope", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto("/");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await expect(page.locator("form, input, video, iframe")).toHaveCount(0);
+  await expect(page.locator("video, iframe")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Ingresar", exact: true })).toBeDisabled();
   expect(await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length)).toBe(0);
   const admin = await page.request.get("/admin");
   expect(admin.status()).toBe(404);
