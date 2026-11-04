@@ -1,0 +1,763 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/e2e/access-form.spec.ts"
+    ],
+    "configFile": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\playwright.config.ts",
+    "rootDir": "C:/Users/pereyram/.codex/worktrees/cueva-acceso-001/CuevApp/tests/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/pereyram/.codex/worktrees/cueva-acceso-001/CuevApp/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Users/pereyram/.codex/worktrees/cueva-acceso-001/CuevApp/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "chromium",
+        "testDir": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e",
+        "snapshotDir": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:3000",
+          "trace": "retain-on-failure",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "viewport": {
+            "width": 1280,
+            "height": 720
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "chromium"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 2,
+    "webServer": {
+      "command": "npm run start",
+      "url": "http://127.0.0.1:3000",
+      "reuseExistingServer": false,
+      "timeout": 60000,
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "CUEVA_LOCAL_AUTH": "1",
+        "CUEVA_AUTH_URL": "http://127.0.0.1:3101",
+        "CUEVA_REST_URL": "http://127.0.0.1:3102",
+        "CUEVA_LAB_ORIGIN": "http://127.0.0.1:3000",
+        "CUEVA_ANON_KEY": "synthetic-test-value",
+        "CUEVA_DB_PORT": "3103",
+        "CUEVA_DB_PASSWORD": "synthetic-test-value"
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "access-form.spec.ts",
+      "file": "access-form.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "formulario activo: identidad, temas, teclado y accesibilidad",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3217,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:27:20.354Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "69b0e838f55de35602af-bda12185b23d9851096e",
+          "file": "access-form.spec.ts",
+          "line": 34,
+          "column": 5
+        },
+        {
+          "title": "validación nativa evita envíos incompletos",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 317,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:27:25.631Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "69b0e838f55de35602af-9bbd4b4ea8db012d44e6",
+          "file": "access-form.spec.ts",
+          "line": 61,
+          "column": 5
+        },
+        {
+          "title": "Preview mantiene el formulario cerrado incluso con configuración",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1803,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:27:25.960Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "69b0e838f55de35602af-070536569f384051a45a",
+          "file": "access-form.spec.ts",
+          "line": 70,
+          "column": 5
+        },
+        {
+          "title": "un solo POST, estado pendiente y error genérico sin guardar contraseña",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 427,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:27:27.775Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "69b0e838f55de35602af-7848145e3d9a78fdc548",
+          "file": "access-form.spec.ts",
+          "line": 90,
+          "column": 5
+        },
+        {
+          "title": "fallo 403 permite reintentar sin exponer respuesta",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 305,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:27:28.211Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "69b0e838f55de35602af-e533603a3a3ed2ce2abe",
+          "file": "access-form.spec.ts",
+          "line": 122,
+          "column": 7
+        },
+        {
+          "title": "fallo 404 permite reintentar sin exponer respuesta",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 337,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:27:28.527Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "69b0e838f55de35602af-dc05aafc808ce3649c9a",
+          "file": "access-form.spec.ts",
+          "line": 122,
+          "column": 7
+        },
+        {
+          "title": "fallo 429 permite reintentar sin exponer respuesta",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 412,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:27:28.873Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "69b0e838f55de35602af-f409abcf26de2998339d",
+          "file": "access-form.spec.ts",
+          "line": 122,
+          "column": 7
+        },
+        {
+          "title": "fallo 503 permite reintentar sin exponer respuesta",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 400,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:27:29.306Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "69b0e838f55de35602af-28d696aa95d611d93fb0",
+          "file": "access-form.spec.ts",
+          "line": 122,
+          "column": 7
+        },
+        {
+          "title": "fallo network permite reintentar sin exponer respuesta",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 328,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:27:29.721Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "69b0e838f55de35602af-b05888ef06b451064356",
+          "file": "access-form.spec.ts",
+          "line": 122,
+          "column": 7
+        },
+        {
+          "title": "una respuesta 200 sin redirección no simula ingreso correcto",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 387,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:27:30.064Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "69b0e838f55de35602af-e041937cfb1f37b4f23b",
+          "file": "access-form.spec.ts",
+          "line": 134,
+          "column": 5
+        },
+        {
+          "title": "un tiempo de espera agotado permite reintentar",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 393,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:27:30.466Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "69b0e838f55de35602af-d322176e5bc597abd799",
+          "file": "access-form.spec.ts",
+          "line": 143,
+          "column": 5
+        },
+        {
+          "title": "redirección controlada continúa a cuenta real sin sesión ni bucle",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 438,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-04T13:27:30.874Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\pereyram\\.codex\\worktrees\\cueva-acceso-001\\CuevApp\\tests\\e2e\\access-form.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "69b0e838f55de35602af-971731f39272bd4cfda1",
+          "file": "access-form.spec.ts",
+          "line": 159,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-04T13:27:16.637Z",
+    "duration": 15037.085000000001,
+    "expected": 12,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

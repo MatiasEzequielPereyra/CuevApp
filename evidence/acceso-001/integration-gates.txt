@@ -1,0 +1,21 @@
+[WebServer] (node:19924) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:1496) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 2 workers
+
+(node:3520) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:23752) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:3520) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:23752) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [chromium] › tests\e2e\access-preview.spec.ts:23:5 › la raíz redirige al ingreso sin bucle y la ayuda no promete correo (498ms)
+  ok 3 [chromium] › tests\e2e\access-preview.spec.ts:41:5 › el acceso de producto permanece cerrado sin configuración (129ms)
+  ok 2 [chromium] › tests\e2e\access-form.spec.ts:70:5 › Preview mantiene el formulario cerrado incluso con configuración (1.8s)
+  ok 4 [chromium] › tests\e2e\access-form.spec.ts:159:5 › redirección controlada continúa a cuenta real sin sesión ni bucle (420ms)
+
+  4 passed (7.6s)

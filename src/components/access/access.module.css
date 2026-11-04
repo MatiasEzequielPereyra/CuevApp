@@ -1,0 +1,42 @@
+.page { --access-bg: #f5f5f8; --access-panel: #fff; --access-input: #f8f8fb; --access-text: #171720; --access-muted: #626273; --access-line: #e1e1e9; --access-accent: #5955ed; --access-soft: #edecff; min-height: 100svh; display: flex; flex-direction: column; background: var(--access-bg); color: var(--access-text); }
+:global(:root[data-theme="dark"]) .page { --access-bg: #101014; --access-panel: #1a1a20; --access-input: #1f1f26; --access-text: #f7f7fa; --access-muted: #b5b5c3; --access-line: #33333d; --access-accent: #aaa7ff; --access-soft: #292846; }
+@media (prefers-color-scheme: dark) { :global(:root:not([data-theme="light"]):not([data-theme="dark"])) .page { --access-bg: #101014; --access-panel: #1a1a20; --access-input: #1f1f26; --access-text: #f7f7fa; --access-muted: #b5b5c3; --access-line: #33333d; --access-accent: #aaa7ff; --access-soft: #292846; } }
+.header, .footer { width: min(1200px, calc(100% - 80px)); margin-inline: auto; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.header { min-height: 100px; border-bottom: 1px solid var(--access-line); }
+.brandLink { display: inline-flex; align-items: center; gap: 14px; text-decoration: none; }
+.brandLink span { color: var(--access-muted); font-size: 9px; font-weight: 700; letter-spacing: .12em; }
+.page :global(.theme-picker) { margin: 0; border-color: var(--access-line); background: var(--access-panel); }
+.page :global(.theme-picker button) { color: var(--access-muted); }
+.page :global(.theme-picker button[aria-pressed="true"]) { background: var(--access-soft); color: var(--access-accent); }
+.main { flex: 1; display: grid; grid-template-columns: 1fr minmax(0, 440px); align-items: center; gap: clamp(48px, 8vw, 120px); width: min(1040px, calc(100% - 80px)); margin: auto; padding-block: 56px; }
+.intro { min-width: 0; }
+.emblem { width: 224px; padding: 12px; margin-bottom: 32px; border: 1px solid var(--access-line); border-radius: 50%; background: var(--access-panel); box-shadow: 0 16px 55px #00000008; }
+.kicker { margin: 0 0 16px; color: var(--access-accent); font-size: 10px; line-height: 1.6; font-weight: 700; letter-spacing: .13em; }
+.intro h1 { font-size: clamp(34px, 3.8vw, 52px); line-height: 1.1; letter-spacing: -.05em; }
+.intro h1 span { color: var(--access-muted); }
+.description { color: var(--access-muted); margin: 22px 0 0; font-size: 15px; line-height: 1.8; }
+.card { min-width: 0; border: 1px solid var(--access-line); border-radius: 20px; padding: 36px; background: var(--access-panel); box-shadow: 0 20px 60px #00000006; }
+.lock { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: var(--access-soft); color: var(--access-accent); margin-bottom: 24px; }
+.lock svg { width: 22px; height: 22px; }
+.card .kicker { margin-bottom: 8px; font-size: 9px; }
+.card h2 { font-size: 27px; line-height: 1.2; letter-spacing: -.04em; }
+.subtitle { color: var(--access-muted); font-size: 13px; line-height: 1.6; margin: 12px 0 26px; }
+.form fieldset { display: flex; flex-direction: column; min-width: 0; margin: 0; padding: 0; border: 0; }
+.form label { font-size: 12px; font-weight: 700; margin-bottom: 9px; }
+.form input { width: 100%; min-width: 0; min-height: 49px; margin-bottom: 20px; padding: 12px 14px; border: 1px solid var(--access-line); border-radius: 8px; background: var(--access-input); color: var(--access-text); font: inherit; font-size: 16px; }
+.form input::placeholder { color: var(--access-muted); opacity: 1; }
+.form button { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 49px; border: 1px solid transparent; border-radius: 8px; padding: 12px 16px; background: #5955ed; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; }
+.form button:hover:enabled { background: #4540cf; }
+.form button:disabled, .form fieldset:disabled button { cursor: default; background: var(--access-soft); color: var(--access-muted); border-color: var(--access-line); }
+.form input:disabled { opacity: 1; cursor: default; }
+.notice, .error { margin: 0 0 22px; border: 1px solid var(--access-line); border-radius: 8px; padding: 12px; background: var(--access-input); color: var(--access-text); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.error { border-left: 3px solid var(--access-accent); }
+.emptyError { margin: 0; }
+.help { border-top: 1px solid var(--access-line); padding-top: 22px; margin-top: 26px; }
+.help h3 { margin: 0 0 8px; font-size: 12px; letter-spacing: 0; }
+.help p, .invitation { margin: 0; color: var(--access-muted); font-size: 12px; line-height: 1.7; }
+.invitation { margin-top: 22px; }
+.footer { border-top: 1px solid var(--access-line); min-height: 74px; padding-block: 20px; color: var(--access-muted); font-size: 10px; line-height: 1.6; }
+.footer span:first-child { font-size: 9px; letter-spacing: .1em; font-weight: 700; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+@media (max-width: 760px) { .main { grid-template-columns: 1fr; gap: 30px; width: min(440px, calc(100% - 40px)); padding-block: 32px 40px; }.header, .footer { width: calc(100% - 40px); }.header { min-height: 80px; gap: 12px; }.brandLink span { display: none; }.page :global(.theme-picker button) { padding-inline: 9px; font-size: 11px; }.intro { text-align: center; }.emblem { width: 116px; padding: 5px; margin: 0 auto 20px; }.intro .kicker { margin-bottom: 10px; font-size: 9px; }.intro h1 { font-size: 30px; }.description { display: none; }.card { padding: 26px; border-radius: 16px; }.lock { display: none; }.card h2 { font-size: 25px; }.footer { flex-wrap: wrap; gap: 8px; } }

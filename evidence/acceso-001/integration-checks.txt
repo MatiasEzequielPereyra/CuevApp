@@ -1,0 +1,41 @@
+
+> cuevapp@0.1.0 typecheck
+> next typegen && tsc --noEmit
+
+Generating route types...
+✓ Types generated successfully
+
+> cuevapp@0.1.0 build
+> next build
+
+▲ Next.js 16.4.3 (Turbopack)
+✓ Running next.config.ts took 46ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.4s
+  Running TypeScript ...
+  Finished TypeScript in 4.6s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/3) ...
+✓ Generating static pages using 7 workers (3/3) in 315ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /aceptar-invitacion
+├ ƒ /alumnos
+├ ƒ /api/acceso/[operation]
+├ ƒ /api/alumnos
+├ ƒ /crear-contrasena
+├ ƒ /cuenta
+├ ƒ /ingresar
+├ ƒ /laboratorio/[step]
+├ ƒ /laboratorio/action/[operation]
+└ ƒ /laboratorio/data
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand

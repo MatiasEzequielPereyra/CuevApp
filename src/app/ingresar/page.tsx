@@ -1,42 +1,47 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { ThemePicker } from "@/components/theme/theme-picker";
+import { SignInForm } from "@/components/access/sign-in-form";
 import { productConfig } from "@/lib/product-auth/server";
+import styles from "@/components/access/access.module.css";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Ingresar · CUEVA",
+  description: "Ingresá a tu cuenta de CUEVA con tu correo y contraseña.",
+};
 
-export default function SignInPreview() {
-  if (productConfig()) return <main><h1>Ingresar</h1><form method="post" action="/api/acceso/ingresar"><label>Correo electrónico <input name="email" type="email" required autoComplete="email"/></label><label>Contraseña <input name="password" type="password" required autoComplete="current-password"/></label><button>Ingresar</button></form></main>;
+export default function SignInPage() {
+  const enabled = process.env.VERCEL_ENV === "production" && !!productConfig();
   return (
-    <>
+    <div className={styles.page}>
       <a className="skip-link" href="#contenido">Saltar al contenido</a>
-      <header className="site-header shell">
-        <Link className="brand-link" href="/" aria-label="CUEVA, inicio"><BrandMark /></Link>
-        <span className="header-caption">EL ESPACIO DE TU ENTRENAMIENTO</span>
+      <header className={styles.header}>
+        <Link href="/ingresar" className={styles.brandLink} aria-label="CUEVA, inicio"><BrandMark size={44} /><span>EL ESPACIO DE TU ENTRENAMIENTO</span></Link>
         <ThemePicker />
       </header>
-      <main className="access-shell shell" id="contenido" tabIndex={-1}>
-        <div className="access-intro">
-          <p className="eyebrow"><span className="status-dot" aria-hidden="true" /> EN DESARROLLO</p>
-          <h1>Tu espacio,<br /><span>más cerca.</span></h1>
-          <p>Estamos preparando el acceso a tu cuenta de CUEVA.</p>
-          <Link href="/" className="access-back">← Volver al inicio</Link>
+      <main className={styles.main} id="contenido" tabIndex={-1}>
+        <div className={styles.intro}>
+          <div className={styles.emblem}><BrandMark size={280} /></div>
+          <p className={styles.kicker}>TU GIMNASIO. TU ESPACIO.</p>
+          <h1>Un lugar para<br /><span>seguir avanzando.</span></h1>
+          <p className={styles.description}>La misma fuerza de siempre.<br />Ahora, también en tu cuenta.</p>
         </div>
-        <section className="access-card" aria-labelledby="access-title" aria-describedby="access-status">
-          <p className="access-kicker">CUEVA / TU CUENTA</p>
-          <h2 id="access-title">Ingresar</h2>
-          <p id="access-status" className="access-status"><strong>El acceso todavía no está disponible.</strong><br />Esta es una vista previa. Te avisaremos cuando puedas ingresar.</p>
-          <fieldset disabled className="access-fields" aria-label="Vista previa del acceso">
-            <label htmlFor="preview-email">Correo electrónico</label>
-            <input id="preview-email" type="email" autoComplete="email" placeholder="tu@correo.com" />
-            <label htmlFor="preview-password">Contraseña</label>
-            <input id="preview-password" type="password" autoComplete="current-password" placeholder="Tu contraseña" />
-            <button type="button">Ingresar</button>
-          </fieldset>
-          <p className="access-footnote">Cuando esté habilitado, el gimnasio te indicará cómo acceder.</p>
+        <section className={styles.card} aria-labelledby="access-title">
+          <div className={styles.lock} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" /></svg></div>
+          <p className={styles.kicker}>CUEVA / TU CUENTA</p>
+          <h2 id="access-title">Ingresá a tu cuenta</h2>
+          <p className={styles.subtitle}>Usá tu correo y tu contraseña para continuar.</p>
+          <SignInForm enabled={enabled} />
+          <div className={styles.help}>
+            <h3>¿Olvidaste tu contraseña?</h3>
+            <p>Contactá al gimnasio para recibir ayuda con tu acceso. La recuperación por correo para alumnos todavía no está habilitada.</p>
+          </div>
+          <p className={styles.invitation}>¿Es tu primera vez? El gimnasio te indicará cómo acceder a tu cuenta.</p>
         </section>
       </main>
-      <footer className="site-footer shell"><BrandMark size={52} /><p>Hecha para el gimnasio.<br /><span className="muted">Paso a paso, con la misma fuerza.</span></p><span className="footer-status">VERSIÓN EN DESARROLLO</span></footer>
-    </>
+      <footer className={styles.footer}><span>HECHA PARA EL GIMNASIO.</span><span>CUEVA · Un lugar para avanzar</span></footer>
+    </div>
   );
 }

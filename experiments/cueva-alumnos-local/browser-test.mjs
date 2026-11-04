@@ -7,7 +7,7 @@ import ts from 'typescript';
 const dateModule = { exports: {} };
 const dateSource = readFileSync(new URL('../../src/lib/students/date.ts', import.meta.url), 'utf8');
 new Function('require', 'module', 'exports', ts.transpileModule(dateSource, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText)(createRequire(import.meta.url), dateModule, dateModule.exports);
-export async function runBrowserFlow({base,rest,admin,anon,id,password,sql,request,note,launch,chromium,dbPort,coordinatorPassword}) {
+export async function runBrowserFlow({base,rest,admin,anon,id,password,sql,request,note,launch,chromium,dbPort,coordinatorPassword,accessIntegrationOnly=false}) {
  let app,browser,step='fixtures';
  try{
  const { buenosAiresDate } = dateModule.exports;
@@ -17,6 +17,52 @@ export async function runBrowserFlow({base,rest,admin,anon,id,password,sql,reque
  const initialAuthCount=sql('select count(*) from auth.users');
  step='launch';app=await launch({authBase:base,restBase:rest,anonKey:anon,admin,dbPort,dbPassword:coordinatorPassword});browser=await chromium.launch({headless:true});const context=await browser.newContext();const page=await context.newPage();
  async function login(user){await context.clearCookies();await page.goto(`${app.origin}/ingresar`);await page.getByLabel('Correo electrónico').fill(user.email);await page.getByLabel('Contraseña',{exact:true}).fill(password);await page.getByRole('button',{name:'Ingresar',exact:true}).click();await page.waitForURL('**/cuenta');}
+ if(accessIntegrationOnly){
+  // Reuse the existing real stack, fixtures and login without rerunning CRUD,
+  // visual matrices, invitations, activation or recovery laboratories.
+  step='access_entry';
+  await page.goto(`${app.origin}/`);
+  await page.waitForURL('**/ingresar');
+  note('root_to_login',new URL(page.url()).pathname==='/ingresar'?'PASS':'FAIL');
+  note('login_enabled_with_explicit_test_production',await page.getByLabel('Correo electrónico').isEnabled()?'PASS':'FAIL');
+  step='access_admin_login';
+  await login(users[0]);
+  await page.getByRole('heading',{name:/Hola,/}).waitFor();
+  note('real_admin_login_account',await page.getByText(users[0].email,{exact:true}).count()>0?'PASS':'FAIL');
+  const authCookies=(await context.cookies()).filter(cookie=>cookie.name.startsWith('sb-')&&cookie.value);
+  note('server_session_http_only',authCookies.length>0&&authCookies.every(cookie=>cookie.httpOnly&&cookie.sameSite==='Lax')?'PASS':'FAIL');
+  step='access_students';
+  await page.getByRole('navigation',{name:'Navegación principal'}).getByRole('link',{name:'Alumnos',exact:true}).click();
+  await page.getByRole('heading',{name:'Alumnos',exact:true}).waitFor();
+  const active=page.getByRole('navigation',{name:'Navegación principal'}).getByRole('link',{name:'Alumnos',exact:true});
+  note('account_to_students',new URL(page.url()).pathname==='/alumnos'&&await active.getAttribute('aria-current')==='page'?'PASS':'FAIL');
+  note('students_list_operational',await page.getByRole('heading',{name:'Todavía no hay alumnos'}).count()===1&&await page.getByRole('link',{name:'+ Nuevo alumno'}).count()===1?'PASS':'FAIL');
+  const privatePage=await context.request.get(`${app.origin}/alumnos`);
+  note('students_private_no_store',privatePage.ok()&&(privatePage.headers()['cache-control']??'').includes('no-store')?'PASS':'FAIL');
+  step='access_logout';
+  const logout=page.waitForResponse(response=>response.url()===`${app.origin}/api/acceso/salir`&&response.request().method()==='POST');
+  await page.getByRole('button',{name:'Cerrar sesión'}).click();
+  await page.waitForURL('**/ingresar');
+  note('real_logout_to_login',(await logout).status()===303?'PASS':'FAIL');
+  note('logout_clears_auth_cookies',!(await context.cookies()).some(cookie=>cookie.name.startsWith('sb-')&&cookie.value)?'PASS':'FAIL');
+  step='access_after_logout';
+  await page.goto(`${app.origin}/cuenta`);
+  await page.getByRole('heading',{name:'Ingresá para continuar'}).waitFor();
+  note('account_closed_after_logout',await page.getByRole('button',{name:'Cerrar sesión'}).count()===0?'PASS':'FAIL');
+  const closed=await page.goto(`${app.origin}/alumnos`);
+  await page.getByRole('heading',{name:'Acceso restringido'}).waitFor();
+  note('students_closed_after_logout',closed.status()===200&&await page.getByRole('link',{name:'+ Nuevo alumno'}).count()===0?'PASS':'FAIL');
+  note('students_api_closed_after_logout',(await context.request.post(`${app.origin}/api/alumnos`,{headers:{origin:app.origin},data:{}})).status()===403?'PASS':'FAIL');
+  step='access_pupil_permissions';
+  await login(users[1]);
+  await page.getByRole('heading',{name:'Tu cuenta',exact:true}).waitFor();
+  const forbidden=await page.goto(`${app.origin}/alumnos`);
+  await page.getByRole('heading',{name:'Acceso restringido'}).waitFor();
+  note('pupil_students_denied',forbidden.status()===200&&await page.getByRole('link',{name:'+ Nuevo alumno'}).count()===0?'PASS':'FAIL');
+  note('pupil_students_api_denied',(await context.request.post(`${app.origin}/api/alumnos`,{headers:{origin:app.origin},data:{}})).status()===403?'PASS':'FAIL');
+  await context.close();
+  return;
+ }
  step='create';await login(users[0]);await page.goto(`${app.origin}/alumnos`);await page.getByRole('link',{name:'+ Nuevo alumno'}).click();
  await page.getByLabel('Nombre',{exact:true}).fill('Ana');await page.getByLabel('Apellido').fill('Prueba');await page.getByLabel('Correo electrónico').fill('ana@example.test');await page.getByLabel('DNI (opcional)').fill('12345678');await page.getByRole('button',{name:'Guardar ficha'}).click();await page.waitForURL('**/alumnos?id=**');
  const studentId=new URL(page.url()).searchParams.get('id');await page.reload();note('create_reload',await page.getByText('ana@example.test',{exact:true}).count()===1?'PASS':'FAIL');
