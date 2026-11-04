@@ -58,3 +58,9 @@ No bloquean esta fundación; no se resuelven por inferencia.
 
 [CUEVA-002B-LOCAL](CUEVA-002B-LOCAL-task.md): READY, laboratorio local de cambio
 temporal. No autoriza proveedor remoto ni sustituye E6 de la prueba integrada.
+
+## Gestión administrativa de alumnos
+
+CUEVA-ALUMNOS-001 incorpora fichas separadas de las cuentas, correo obligatorio y
+DNI opcional exclusivamente administrativo. Alta/búsqueda/edición locales para
+revisión; migración alojada y publicación pendientes. Sin invitaciones ni pagos.

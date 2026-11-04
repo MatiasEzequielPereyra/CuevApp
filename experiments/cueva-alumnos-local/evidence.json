@@ -1,0 +1,151 @@
+{
+  "date": "2026-11-04T13:22:24.269Z",
+  "images": {
+    "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "mail": "public.ecr.aws/supabase/mailpit@sha256:37a38e48e9338cd7e89dfeb487f37b02ebfcd9cb23111bed2d345e79d37d6dd6",
+    "rest": "public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962"
+  },
+  "results": [
+    {
+      "name": "authenticator_password_cannot_login_as_postgres",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "create_reload",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "edit",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "search",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "duplicate_preservation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "invalid_date",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "save_error_preserves_input",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "empty_search",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "keyboard_search",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "database_double_send",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "dni_unique",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "real_rls_pupil",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "real_privileges_anon",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "visitor_direct_write_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "visitor_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_detail_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_direct_write_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "layout_390_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "layout_390_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "layout_1440_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "layout_1440_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_auth_account_created",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "logout",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_rest",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_auth",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_db",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_network",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

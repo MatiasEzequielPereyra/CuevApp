@@ -15,7 +15,7 @@ function Icon({ name }: { name: IconName }) {
   return <svg className="dash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
 const areas: { id: string; name: string; label: string; description: string; icon: IconName }[] = [
-  { id: "alumnos", name: "Alumnos", label: "Alumnos activos", description: "La gestión de alumnos estará disponible próximamente.", icon: "users" },
+  { id: "alumnos", name: "Alumnos", label: "Alumnos activos", description: "Registrá, buscá y editá fichas administrativas.", icon: "users" },
   { id: "vencimientos", name: "Vencimientos", label: "Próximos vencimientos", description: "Acá vas a poder consultar los próximos vencimientos.", icon: "calendar" },
   { id: "pagos", name: "Pagos", label: "Pagos y cuotas", description: "El registro y seguimiento de pagos estará disponible próximamente.", icon: "wallet" },
   { id: "comprobantes", name: "Comprobantes", label: "Comprobantes pendientes", description: "Los comprobantes para revisar aparecerán acá.", icon: "file" },
@@ -28,7 +28,7 @@ export function AdminDashboard({ displayName, email, role, logo, themePicker, ac
       <div className="dash-nav-label">MENÚ PRINCIPAL</div>
       <nav className="dash-side-nav" aria-label="Navegación principal">
         <a href="#inicio" className="dash-nav-active" aria-current="page"><Icon name="home"/>Inicio</a>
-        {areas.map(area => <a href={`#${area.id}`} key={area.id}><Icon name={area.icon}/>{area.name}<span>Próximamente</span></a>)}
+        {areas.map(area => <a href={area.id === "alumnos" ? "/alumnos" : `#${area.id}`} key={area.id}><Icon name={area.icon}/>{area.name}{area.id !== "alumnos" && <span>Próximamente</span>}</a>)}
         <a href="#cuenta"><Icon name="user"/>Mi cuenta</a>
       </nav>
       <div className="dash-sidebar-bottom"><span className="dash-avatar" aria-hidden="true">{displayName.charAt(0).toUpperCase()}</span><div><strong>{displayName}</strong><small>{role}</small></div></div>
@@ -38,13 +38,13 @@ export function AdminDashboard({ displayName, email, role, logo, themePicker, ac
       <main className="dash-main" id="panel" tabIndex={-1}>
         <div className="dash-heading"><div><p className="dash-overline"><span/> TU ESPACIO DE GESTIÓN</p><h1>Hola, {displayName} <span aria-hidden="true">✳</span></h1><p>Todo lo importante de tu gimnasio, en un solo lugar.</p></div><span className="dash-role"><Icon name="spark"/>{role}</span></div>
         <div className="dash-section-heading"><div><p className="dash-kicker">TU GIMNASIO</p><h2>Resumen general</h2></div><span className="dash-live-label"><span/> PANEL DE ADMINISTRACIÓN</span></div>
-        <div className="dash-cards">{areas.map(area => <a href={`#${area.id}`} className="dash-card" key={area.id}><span className="dash-card-top"><span className={`dash-card-icon icon-${area.id}`}><Icon name={area.icon}/></span><Icon name="arrow"/></span><span className="dash-card-label">{area.label}</span><strong>Sin datos aún</strong><span className="dash-card-note">Disponible próximamente</span></a>)}</div>
+        <div className="dash-cards">{areas.map(area => <a href={area.id === "alumnos" ? "/alumnos" : `#${area.id}`} className="dash-card" key={area.id}><span className="dash-card-top"><span className={`dash-card-icon icon-${area.id}`}><Icon name={area.icon}/></span><Icon name="arrow"/></span><span className="dash-card-label">{area.label}</span><strong>{area.id === "alumnos" ? "Gestionar fichas" : "Sin datos aún"}</strong><span className="dash-card-note">{area.id === "alumnos" ? "Abrir listado de alumnos" : "Disponible próximamente"}</span></a>)}</div>
         <div className="dash-section-heading dash-areas-heading"><div><p className="dash-kicker">ORGANIZÁ TU DÍA</p><h2>Tu espacio de trabajo</h2><p>Estamos preparando las herramientas para acompañarte.</p></div></div>
-        <div className="dash-workspace">{areas.map(area => <section className="dash-area" id={area.id} key={area.id}><div className="dash-area-icon"><Icon name={area.icon}/></div><div><div className="dash-area-title"><h3>{area.name}</h3><span>PRÓXIMAMENTE</span></div><p>{area.description}</p></div></section>)}</div>
+        <div className="dash-workspace">{areas.map(area => <section className="dash-area" id={area.id} key={area.id}><div className="dash-area-icon"><Icon name={area.icon}/></div><div><div className="dash-area-title"><h3>{area.name}</h3>{area.id !== "alumnos" && <span>PRÓXIMAMENTE</span>}</div><p>{area.description}</p></div></section>)}</div>
         <section className="dash-account" id="cuenta"><div><p className="dash-kicker">TU CUENTA</p><h2>Tu perfil</h2><p>Sesión iniciada como <strong>{email}</strong></p><span className="dash-account-role">{role}</span></div><form method="post" action="/api/acceso/salir"><button type="submit" className="dash-signout">Cerrar sesión <Icon name="arrow"/></button></form>{accountActions && <div className="dash-account-actions">{accountActions}</div>}</section>
         <footer className="dash-footer"><span>CUEVA <i/> UN LUGAR PARA AVANZAR</span><span>Hecho para acompañar tu entrenamiento.</span></footer>
       </main>
     </div>
-    <nav className="dash-mobile-nav" aria-label="Navegación móvil"><a href="#inicio" aria-current="page"><Icon name="home"/><span>Inicio</span></a><a href="#alumnos"><Icon name="users"/><span>Alumnos</span></a><a href="#pagos"><Icon name="wallet"/><span>Pagos</span></a><a href="#comprobantes"><Icon name="file"/><span>Comprobantes</span></a><a href="#cuenta"><Icon name="user"/><span>Cuenta</span></a></nav>
+    <nav className="dash-mobile-nav" aria-label="Navegación móvil"><a href="#inicio" aria-current="page"><Icon name="home"/><span>Inicio</span></a><a href="/alumnos"><Icon name="users"/><span>Alumnos</span></a><a href="#pagos"><Icon name="wallet"/><span>Pagos</span></a><a href="#comprobantes"><Icon name="file"/><span>Comprobantes</span></a><a href="#cuenta"><Icon name="user"/><span>Cuenta</span></a></nav>
   </div>;
 }

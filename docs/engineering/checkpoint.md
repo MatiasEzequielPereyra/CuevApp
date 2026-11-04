@@ -437,3 +437,14 @@ revisión independiente, integración y publicación. Ver [informe y capturas](C
 Datos del panel y operaciones de alumnos/pagos/comprobantes siguen pendientes;
 las capturas usan un usuario ficticio y no verifican una sesión real alojada.
 Sin cambios en autenticación, permisos, base de datos o correo por esta tarea.
+
+## CUEVA-ALUMNOS-001
+
+Implementación local de fichas administrativas independiente de Auth. Migración
+alojada y publicación pendientes del Orchestrator. Ver [modelo e instrucciones](../architecture/students.md)
+y [encargo](CUEVA-ALUMNOS-001-task.md). No se habilitan invitaciones ni pagos.
+
+Entrega del ejecutor CUEVA-ALUMNOS-001: **REVIEW**; ver
+[informe y evidencias](CUEVA-ALUMNOS-001-review.md). Migración probada solo localmente,
+RLS real y flujo de fichas verificados. Aplicación alojada, revisión independiente
+y publicación pendientes. No se modificaron cuentas reales ni correo.
