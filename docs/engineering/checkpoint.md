@@ -1,5 +1,15 @@
 # Checkpoint CUEVA
 
+## CUEVA-ALUMNOS-ELIMINAR — ACCEPTED LOCAL, 2026-11-04
+
+Base main verificada `67d44e2d954bd09af0ea821b718a8151cd9af28a`, rama
+`codex/cueva-alumnos-eliminar`. El usuario autorizó agregar eliminación segura y
+mergear si queda revisada. Fichas sin historial/cuenta, confirmación explícita;
+no borra Auth ni cuotas/pagos. [Encargo](CUEVA-ALUMNOS-ELIMINAR-task.md) y
+[pruebas/operación](CUEVA-ALUMNOS-ELIMINAR-review.md). Laboratorio 49/49 PASS;
+verificaciones completas PASS y [revisión independiente sin bloqueos](CUEVA-ALUMNOS-ELIMINAR-audit.md). Integración en curso.
+Migración alojada y estado de publicación se registran aparte.
+
 ## CUEVA-INVITACION-RECUPERACION-001 — REVIEW local, 2026-11-04
 
 Base verificada `a0dabf081a82867eb93d9f177f42e3c3cceb1a41`, igual a origin/main.
