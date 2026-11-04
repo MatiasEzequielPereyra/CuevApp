@@ -1,6 +1,6 @@
 # CUEVA-ALUMNOS-ELIMINAR — verificación e integración
 
-Estado: IN_PROGRESS; revisión independiente e integración pendientes.
+Estado: ACCEPTED LOCAL; revisión independiente cerrada sin bloqueos; integración pendiente.
 Base `67d44e2d954bd09af0ea821b718a8151cd9af28a`, rama
 `codex/cueva-alumnos-eliminar`. [Encargo](CUEVA-ALUMNOS-ELIMINAR-task.md).
 
@@ -71,3 +71,7 @@ para esta capacidad. Las FK existentes mantienen protegidos los casos de ese tra
 Instalación alojada, PR/CI, merge y deployment: pendientes de registro al finalizar.
 No se elimina ningún alumno real como prueba. Acceso por cuenta, correo y recuperación
 conservan sus estados/limitaciones propios; esta tarea no los certifica.
+
+## Revisión y checks
+
+[Auditoría independiente](CUEVA-ALUMNOS-ELIMINAR-audit.md): Standards0 abiertos, Spec0 abiertos tras2 correcciones. Candidato4a221649951dcf1c88e28bf06e17e0d972156cd4. Laboratorio final49/49 PASS; lint, tipos, build y suite habitual47/47 PASS; documentos2/2, fuentes4/4 y seguridad PASS. npm audit crítico exit0, con8 avisos moderados preexistentes de la cadena ESLint. Sin cambios de dependencias/lockfile.
