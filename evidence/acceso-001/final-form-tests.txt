@@ -1,0 +1,25 @@
+[WebServer] (node:1140) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:11516) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 12 tests using 1 worker
+
+(node:2492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [chromium] › tests\e2e\access-form.spec.ts:34:5 › formulario activo: identidad, temas, teclado y accesibilidad (3.2s)
+  ok  2 [chromium] › tests\e2e\access-form.spec.ts:61:5 › validación nativa evita envíos incompletos (317ms)
+  ok  3 [chromium] › tests\e2e\access-form.spec.ts:70:5 › Preview mantiene el formulario cerrado incluso con configuración (1.8s)
+  ok  4 [chromium] › tests\e2e\access-form.spec.ts:90:5 › un solo POST, estado pendiente y error genérico sin guardar contraseña (427ms)
+  ok  5 [chromium] › tests\e2e\access-form.spec.ts:122:7 › fallo 403 permite reintentar sin exponer respuesta (305ms)
+  ok  6 [chromium] › tests\e2e\access-form.spec.ts:122:7 › fallo 404 permite reintentar sin exponer respuesta (337ms)
+  ok  7 [chromium] › tests\e2e\access-form.spec.ts:122:7 › fallo 429 permite reintentar sin exponer respuesta (412ms)
+  ok  8 [chromium] › tests\e2e\access-form.spec.ts:122:7 › fallo 503 permite reintentar sin exponer respuesta (400ms)
+  ok  9 [chromium] › tests\e2e\access-form.spec.ts:122:7 › fallo network permite reintentar sin exponer respuesta (328ms)
+  ok 10 [chromium] › tests\e2e\access-form.spec.ts:134:5 › una respuesta 200 sin redirección no simula ingreso correcto (387ms)
+  ok 11 [chromium] › tests\e2e\access-form.spec.ts:143:5 › un tiempo de espera agotado permite reintentar (393ms)
+  ok 12 [chromium] › tests\e2e\access-form.spec.ts:159:5 › redirección controlada continúa a cuenta real sin sesión ni bucle (438ms)
+
+  12 passed (15.0s)

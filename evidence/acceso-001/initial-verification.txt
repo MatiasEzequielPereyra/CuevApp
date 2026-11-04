@@ -1,0 +1,174 @@
+
+> cuevapp@0.1.0 verify
+> npm run lint && npm run typecheck && npm run build && npm test
+
+
+> cuevapp@0.1.0 lint
+> eslint . --max-warnings=0
+
+
+> cuevapp@0.1.0 typecheck
+> next typegen && tsc --noEmit
+
+Generating route types...
+✓ Types generated successfully
+
+> cuevapp@0.1.0 build
+> next build
+
+▲ Next.js 16.4.3 (Turbopack)
+✓ Running next.config.ts took 60ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.3s
+  Running TypeScript ...
+  Finished TypeScript in 6.9s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/3) ...
+✓ Generating static pages using 7 workers (3/3) in 294ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /aceptar-invitacion
+├ ƒ /api/acceso/[operation]
+├ ƒ /crear-contrasena
+├ ƒ /cuenta
+├ ƒ /ingresar
+├ ƒ /laboratorio/[step]
+├ ƒ /laboratorio/action/[operation]
+└ ƒ /laboratorio/data
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+> cuevapp@0.1.0 test
+> npm run test:docs && playwright test
+
+
+> cuevapp@0.1.0 test:docs
+> node --test tests/documents.test.mjs
+
+TAP version 13
+# Subtest: the four supplied sources retain their exact bytes and hashes
+ok 1 - the four supplied sources retain their exact bytes and hashes
+  ---
+  duration_ms: 3.9268
+  ...
+# Subtest: authored Markdown links resolve inside this repository
+ok 2 - authored Markdown links resolve inside this repository
+  ---
+  duration_ms: 45.0402
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 175.5634
+[WebServer] (node:23476) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:1436) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 45 tests using 2 workers
+
+(node:16268) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:5372) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:16268) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:5372) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  2 [chromium] › tests\e2e\access-preview.spec.ts:6:9 › vista previa no operativa a 360px / light (1.1s)
+  ok  3 [chromium] › tests\e2e\access-preview.spec.ts:6:9 › vista previa no operativa a 360px / dark (1.3s)
+  ok  4 [chromium] › tests\e2e\access-preview.spec.ts:6:9 › vista previa no operativa a 768px / light (1.5s)
+  ok  5 [chromium] › tests\e2e\access-preview.spec.ts:6:9 › vista previa no operativa a 768px / dark (1.1s)
+  ok  1 [chromium] › tests\e2e\access-form.spec.ts:33:5 › formulario activo: identidad, temas, teclado y accesibilidad (3.6s)
+  ok  7 [chromium] › tests\e2e\access-form.spec.ts:60:5 › validación nativa evita envíos incompletos (378ms)
+  ok  6 [chromium] › tests\e2e\access-preview.spec.ts:6:9 › vista previa no operativa a 1440px / light (1.2s)
+  x   8 [chromium] › tests\e2e\access-form.spec.ts:69:5 › un solo POST, estado pendiente y error genérico sin guardar contraseña (502ms)
+  -  10 [chromium] › tests\e2e\access-form.spec.ts:101:7 › fallo 403 permite reintentar sin exponer respuesta
+  -  11 [chromium] › tests\e2e\access-form.spec.ts:101:7 › fallo 404 permite reintentar sin exponer respuesta
+  -  12 [chromium] › tests\e2e\access-form.spec.ts:101:7 › fallo 429 permite reintentar sin exponer respuesta
+  -  13 [chromium] › tests\e2e\access-form.spec.ts:101:7 › fallo 503 permite reintentar sin exponer respuesta
+  -  14 [chromium] › tests\e2e\access-form.spec.ts:101:7 › fallo network permite reintentar sin exponer respuesta
+  -  15 [chromium] › tests\e2e\access-form.spec.ts:113:5 › una respuesta 200 sin redirección no simula ingreso correcto
+  -  16 [chromium] › tests\e2e\access-form.spec.ts:122:5 › redirección controlada continúa a cuenta real sin sesión ni bucle
+(node:9512) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:9512) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  9 [chromium] › tests\e2e\access-preview.spec.ts:6:9 › vista previa no operativa a 1440px / dark (1.6s)
+  ok 17 [chromium] › tests\e2e\access-preview.spec.ts:35:5 › el laboratorio no se habilita en producción aunque exista la bandera (717ms)
+  ok 19 [chromium] › tests\e2e\access-preview.spec.ts:41:5 › el acceso de producto permanece cerrado sin configuración (340ms)
+  ok 18 [chromium] › tests\e2e\access-preview.spec.ts:23:5 › la raíz redirige al ingreso sin bucle y la ayuda no promete correo (968ms)
+  ok 20 [chromium] › tests\e2e\admin-dashboard.spec.ts:33:9 › panel admin sintético 360px / light (1.3s)
+  ok 21 [chromium] › tests\e2e\admin-dashboard.spec.ts:33:9 › panel admin sintético 360px / dark (1.4s)
+  ok 22 [chromium] › tests\e2e\admin-dashboard.spec.ts:33:9 › panel admin sintético 390px / light (1.5s)
+  ok 23 [chromium] › tests\e2e\admin-dashboard.spec.ts:33:9 › panel admin sintético 390px / dark (1.5s)
+  ok 24 [chromium] › tests\e2e\admin-dashboard.spec.ts:33:9 › panel admin sintético 768px / light (1.8s)
+  ok 25 [chromium] › tests\e2e\admin-dashboard.spec.ts:33:9 › panel admin sintético 768px / dark (1.8s)
+  ok 26 [chromium] › tests\e2e\admin-dashboard.spec.ts:33:9 › panel admin sintético 1440px / light (1.7s)
+  ok 27 [chromium] › tests\e2e\admin-dashboard.spec.ts:33:9 › panel admin sintético 1440px / dark (1.7s)
+  ok 28 [chromium] › tests\e2e\admin-dashboard.spec.ts:49:5 › el panel permite navegar por teclado hasta cuenta y salir (531ms)
+  ok 29 [chromium] › tests\e2e\admin-dashboard.spec.ts:62:5 › la navegación móvil llega a una sección por teclado (535ms)
+  ok 30 [chromium] › tests\e2e\brand.spec.ts:4:5 › brand comparison loads exact source and application SVG without social controls (447ms)
+  ok 31 [chromium] › tests\e2e\foundation.spec.ts:7:9 › 360px / light: layout, assets, contrast and accessibility (2.0s)
+  ok 32 [chromium] › tests\e2e\foundation.spec.ts:7:9 › 360px / dark: layout, assets, contrast and accessibility (2.2s)
+  ok 33 [chromium] › tests\e2e\foundation.spec.ts:7:9 › 390px / light: layout, assets, contrast and accessibility (1.9s)
+  ok 34 [chromium] › tests\e2e\foundation.spec.ts:7:9 › 390px / dark: layout, assets, contrast and accessibility (1.7s)
+  ok 35 [chromium] › tests\e2e\foundation.spec.ts:7:9 › 768px / light: layout, assets, contrast and accessibility (2.0s)
+  ok 36 [chromium] › tests\e2e\foundation.spec.ts:7:9 › 768px / dark: layout, assets, contrast and accessibility (1.9s)
+  ok 37 [chromium] › tests\e2e\foundation.spec.ts:7:9 › 1440px / light: layout, assets, contrast and accessibility (1.7s)
+  ok 38 [chromium] › tests\e2e\foundation.spec.ts:7:9 › 1440px / dark: layout, assets, contrast and accessibility (1.6s)
+  ok 39 [chromium] › tests\e2e\foundation.spec.ts:41:5 › keyboard skip link moves focus to the main content (828ms)
+  ok 40 [chromium] › tests\e2e\foundation.spec.ts:51:5 › keyboard reaches theme choices with visible focus (1.2s)
+  ok 42 [chromium] › tests\e2e\foundation.spec.ts:93:5 › storage denied or corrupted does not prevent using appearance controls (944ms)
+  ok 41 [chromium] › tests\e2e\foundation.spec.ts:74:5 › theme survives reload, follows system and synchronizes across tabs (1.9s)
+  ok 43 [chromium] › tests\e2e\foundation.spec.ts:104:5 › invalid saved theme falls back to system (620ms)
+  ok 44 [chromium] › tests\e2e\foundation.spec.ts:112:5 › no JavaScript: controlled entry and system theme remain available (760ms)
+  ok 45 [chromium] › tests\e2e\foundation.spec.ts:124:5 › zoom-equivalent reflow and local-only scope (713ms)
+
+
+  1) [chromium] › tests\e2e\access-form.spec.ts:69:5 › un solo POST, estado pendiente y error genérico sin guardar contraseña
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('alert')
+    Expected substring: "Revisá tu correo y contraseña"
+    Error: strict mode violation: getByRole('alert') resolved to 2 elements:
+        1) <p role="alert" tabindex="-1" class="T546yG_emptyError"></p> aka getByRole('region', { name: 'Ingresá a tu cuenta' }).getByRole('alert')
+        2) <div role="alert" aria-live="assertive" id="__next-route-announcer__"></div> aka locator('[id="__next-route-announcer__"]')
+
+    Call log:
+      - Expect "toContainText" getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('alert')
+
+
+      87 |   await page.locator("form").evaluate(form => { if (form instanceof HTMLFormElement) { form.requestSubmit(); form.requestSubmit(); } });
+      88 |   release();
+    > 89 |   await expect(page.getByRole("alert")).toContainText("Revisá tu correo y contraseña");
+         |                                         ^
+      90 |   await expect(page.getByRole("alert")).toBeFocused();
+      91 |   await expect(page.getByLabel("Contraseña", { exact: true })).toHaveValue("");
+      92 |   await expect(page.getByText("INTERNAL_ACCOUNT_DETAIL")).toHaveCount(0);
+        at C:\Users\pereyram\.codex\worktrees\cueva-acceso-001\CuevApp\tests\e2e\access-form.spec.ts:89:41
+
+    Error Context: test-results\access-form-un-solo-POST-e-6371a-rico-sin-guardar-contraseña-chromium\error-context.md
+
+    Error Context: test-results\access-form-un-solo-POST-e-6371a-rico-sin-guardar-contraseña-chromium\error-context.md
+
+  1 failed
+    [chromium] › tests\e2e\access-form.spec.ts:69:5 › un solo POST, estado pendiente y error genérico sin guardar contraseña
+  7 did not run
+  37 passed (33.8s)
