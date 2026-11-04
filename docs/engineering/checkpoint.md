@@ -471,3 +471,10 @@ Entrega del ejecutor CUEVA-ALUMNOS-001: **REVIEW**; ver
 [informe y evidencias](CUEVA-ALUMNOS-001-review.md). Migración probada solo localmente,
 RLS real y flujo de fichas verificados. Aplicación alojada, revisión independiente
 y publicación pendientes. No se modificaron cuentas reales ni correo.
+
+## CUEVA-003A — cuotas y pagos administrativos
+
+Entrega local **REVIEW**, pendiente de auditoría, migración alojada e integración.
+Precio versionado, períodos y movimientos exactos con anulación trazable;
+[modelo](../architecture/payments.md) e [informe](CUEVA-003A-review.md).
+No habilita consultas de alumnos ni correo. Aplicación alojada y publicación NOT_RUN.

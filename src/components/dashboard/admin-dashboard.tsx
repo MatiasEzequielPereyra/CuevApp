@@ -17,16 +17,16 @@ function Icon({ name }: { name: IconName }) {
 const areas: { id: string; name: string; label: string; description: string; icon: IconName }[] = [
   { id: "alumnos", name: "Alumnos", label: "Alumnos activos", description: "Registrá, buscá y editá fichas administrativas.", icon: "users" },
   { id: "vencimientos", name: "Vencimientos", label: "Próximos vencimientos", description: "Acá vas a poder consultar los próximos vencimientos.", icon: "calendar" },
-  { id: "pagos", name: "Pagos", label: "Pagos y cuotas", description: "El registro y seguimiento de pagos estará disponible próximamente.", icon: "wallet" },
+  { id: "pagos", name: "Pagos", label: "Pagos y cuotas", description: "Registrá pagos, consultá saldos y conservá el historial.", icon: "wallet" },
   { id: "comprobantes", name: "Comprobantes", label: "Comprobantes pendientes", description: "Los comprobantes para revisar aparecerán acá.", icon: "file" },
 ];
 type AdminProps = { displayName: string; email: string; role: string; logo: ReactNode; themePicker: ReactNode; accountActions?: ReactNode };
 export function AdminAccountActions({ ownerOnly }: { ownerOnly: boolean }) {
   return ownerOnly ? <p>Las invitaciones y la recuperación de alumnos estarán disponibles cuando terminemos de configurar el correo del gimnasio.</p> : <><form method="post" action="/api/acceso/admin-invitar"><label>Correo del alumno <input name="email" type="email" required/></label><button>Invitar</button></form><form method="post" action="/api/acceso/admin-recuperar"><label>Identificador del alumno <input name="user_id" required/></label><button>Enviar recuperación</button></form></>;
 }
-export function AdminShell({ displayName, email, role, logo, themePicker, accountActions, active = "inicio", children }: AdminProps & { active?: "inicio" | "alumnos"; children: ReactNode }) {
+export function AdminShell({ displayName, email, role, logo, themePicker, accountActions, active = "inicio", children }: AdminProps & { active?: "inicio" | "alumnos" | "pagos"; children: ReactNode }) {
   const panelLink = active === "inicio" ? "#inicio" : "/cuenta";
-  const areaLink = (id: string) => id === "alumnos" ? "/alumnos" : `${active === "inicio" ? "" : "/cuenta"}#${id}`;
+  const areaLink = (id: string) => id === "alumnos" ? "/alumnos" : id === "pagos" ? "/pagos" : `${active === "inicio" ? "" : "/cuenta"}#${id}`;
   return <div className="dashboard" id="inicio">
     <a className="skip-link" href="#panel">Saltar al contenido</a>
     <aside className="dash-sidebar" aria-label="Barra lateral">
@@ -34,13 +34,13 @@ export function AdminShell({ displayName, email, role, logo, themePicker, accoun
       <div className="dash-nav-label">MENÚ PRINCIPAL</div>
       <nav className="dash-side-nav" aria-label="Navegación principal">
         <a href={panelLink} className={active === "inicio" ? "dash-nav-active" : undefined} aria-current={active === "inicio" ? "page" : undefined}><Icon name="home"/>Inicio</a>
-        {areas.map(area => <a href={areaLink(area.id)} key={area.id} className={active === area.id ? "dash-nav-active" : undefined} aria-current={active === area.id ? "page" : undefined}><Icon name={area.icon}/>{area.name}{area.id !== "alumnos" && <span>Próximamente</span>}</a>)}
+        {areas.map(area => <a href={areaLink(area.id)} key={area.id} className={active === area.id ? "dash-nav-active" : undefined} aria-current={active === area.id ? "page" : undefined}><Icon name={area.icon}/>{area.name}{!["alumnos", "pagos"].includes(area.id) && <span>Próximamente</span>}</a>)}
         <a href="#cuenta"><Icon name="user"/>Mi cuenta</a>
       </nav>
       <div className="dash-sidebar-bottom"><span className="dash-avatar" aria-hidden="true">{displayName.charAt(0).toUpperCase()}</span><div><strong>{displayName}</strong><small>{role}</small></div></div>
     </aside>
     <div className="dash-content">
-      <header className="dash-header"><div className="dash-mobile-brand">{logo}<span>CUEVA</span></div><div className="dash-breadcrumb">CUEVA <span>/</span> {active === "alumnos" ? "Alumnos" : "Panel de administración"}</div><div className="dash-header-actions">{themePicker}<a href="#cuenta" className="dash-profile-link" aria-label="Ir a mi cuenta"><Icon name="user"/></a></div></header>
+      <header className="dash-header"><div className="dash-mobile-brand">{logo}<span>CUEVA</span></div><div className="dash-breadcrumb">CUEVA <span>/</span> {active === "alumnos" ? "Alumnos" : active === "pagos" ? "Pagos" : "Panel de administración"}</div><div className="dash-header-actions">{themePicker}<a href="#cuenta" className="dash-profile-link" aria-label="Ir a mi cuenta"><Icon name="user"/></a></div></header>
       <main className="dash-main" id="panel" tabIndex={-1}>
         {children}
         <section className="dash-account" id="cuenta"><div><p className="dash-kicker">TU CUENTA</p><h2>Tu perfil</h2><p>Sesión iniciada como <strong>{email}</strong></p><span className="dash-account-role">{role}</span></div><form method="post" action="/api/acceso/salir"><button type="submit" className="dash-signout">Cerrar sesión <Icon name="arrow"/></button></form>{accountActions && <div className="dash-account-actions">{accountActions}</div>}</section>
@@ -54,8 +54,8 @@ export function AdminDashboard(props: AdminProps) {
   return <AdminShell {...props}>
         <div className="dash-heading"><div><p className="dash-overline"><span/> TU ESPACIO DE GESTIÓN</p><h1>Hola, {props.displayName} <span aria-hidden="true">✳</span></h1><p>Todo lo importante de tu gimnasio, en un solo lugar.</p></div><span className="dash-role"><Icon name="spark"/>{props.role}</span></div>
         <div className="dash-section-heading"><div><p className="dash-kicker">TU GIMNASIO</p><h2>Resumen general</h2></div><span className="dash-live-label"><span/> PANEL DE ADMINISTRACIÓN</span></div>
-        <div className="dash-cards">{areas.map(area => <a href={area.id === "alumnos" ? "/alumnos" : `#${area.id}`} className="dash-card" key={area.id}><span className="dash-card-top"><span className={`dash-card-icon icon-${area.id}`}><Icon name={area.icon}/></span><Icon name="arrow"/></span><span className="dash-card-label">{area.label}</span><strong>{area.id === "alumnos" ? "Gestionar fichas" : "Sin datos aún"}</strong><span className="dash-card-note">{area.id === "alumnos" ? "Abrir listado de alumnos" : "Disponible próximamente"}</span></a>)}</div>
+        <div className="dash-cards">{areas.map(area => <a href={area.id === "alumnos" ? "/alumnos" : area.id === "pagos" ? "/pagos" : `#${area.id}`} className="dash-card" key={area.id}><span className="dash-card-top"><span className={`dash-card-icon icon-${area.id}`}><Icon name={area.icon}/></span><Icon name="arrow"/></span><span className="dash-card-label">{area.label}</span><strong>{area.id === "alumnos" ? "Gestionar fichas" : area.id === "pagos" ? "Gestionar cuotas" : "Sin datos aún"}</strong><span className="dash-card-note">{area.id === "alumnos" ? "Abrir listado de alumnos" : area.id === "pagos" ? "Abrir pagos y períodos" : "Disponible próximamente"}</span></a>)}</div>
         <div className="dash-section-heading dash-areas-heading"><div><p className="dash-kicker">ORGANIZÁ TU DÍA</p><h2>Tu espacio de trabajo</h2><p>Estamos preparando las herramientas para acompañarte.</p></div></div>
-        <div className="dash-workspace">{areas.map(area => <section className="dash-area" id={area.id} key={area.id}><div className="dash-area-icon"><Icon name={area.icon}/></div><div><div className="dash-area-title"><h3>{area.name}</h3>{area.id !== "alumnos" && <span>PRÓXIMAMENTE</span>}</div><p>{area.description}</p></div></section>)}</div>
+        <div className="dash-workspace">{areas.map(area => <section className="dash-area" id={area.id} key={area.id}><div className="dash-area-icon"><Icon name={area.icon}/></div><div><div className="dash-area-title"><h3>{area.name}</h3>{!["alumnos", "pagos"].includes(area.id) && <span>PRÓXIMAMENTE</span>}</div><p>{area.description}</p></div></section>)}</div>
   </AdminShell>;
 }

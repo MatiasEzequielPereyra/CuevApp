@@ -1,0 +1,206 @@
+{
+  "date": "2026-11-04T14:57:47.119Z",
+  "images": {
+    "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "mail": "public.ecr.aws/supabase/mailpit@sha256:37a38e48e9338cd7e89dfeb487f37b02ebfcd9cb23111bed2d345e79d37d6dd6",
+    "rest": "public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962"
+  },
+  "results": [
+    {
+      "name": "authenticator_password_cannot_login_as_postgres",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "price_and_period_ui",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "partial_reload",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "concurrent_retry_same_operation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "same_key_changed_payload",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "concurrent_no_overpayment",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "reverse",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "reverse_audit_exact_balance",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "duplicate_period",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "new_price_future",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "new_period_price",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "historical_price_unchanged",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "overpay_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "invalid_date",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "invalid_amount",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wrong_student",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_direct_write_or_forged_actor",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_write_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "anon_write_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_rls_no_rows",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "error_preserves_input",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "keyboard_search",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "layout_390_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "layout_390_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "layout_1440_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "layout_1440_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "full_payment",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "exact_zero_balance",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "ui_reversal",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "unready_admin_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_ui_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_http_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "visitor_ui_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "visitor_http_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_rest",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_auth",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_db",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_network",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

@@ -34,7 +34,7 @@ export default async function Students({ searchParams }: { searchParams: Promise
       : params.nuevo ? <StudentForm defaultJoinedOn={defaultJoinedOn} />
       : id ? !student ? <p>No se encontró la ficha.</p>
         : params.editar ? <StudentForm student={student} defaultJoinedOn={defaultJoinedOn} />
-          : <section className="dash-account"><div><h2>{student.first_name} {student.last_name}</h2>{params.guardado && <p role="status">Ficha guardada correctamente.</p>}<p>{student.email}</p><p>DNI: {student.dni ?? "No informado"}</p><p>Fecha de alta: {student.joined_on}</p><p>Estado administrativo: {student.active ? "Activo" : "Inactivo"}</p><p>Acceso a la aplicación: no se vincula automáticamente con esta ficha.</p><Link href={`/alumnos?id=${id}&editar=1`}>Editar ficha</Link><p>Pagos, rutina y comprobantes: próximamente.</p></div></section>
+          : <section className="dash-account"><div><h2>{student.first_name} {student.last_name}</h2>{params.guardado && <p role="status">Ficha guardada correctamente.</p>}<p>{student.email}</p><p>DNI: {student.dni ?? "No informado"}</p><p>Fecha de alta: {student.joined_on}</p><p>Estado administrativo: {student.active ? "Activo" : "Inactivo"}</p><p>Acceso a la aplicación: no se vincula automáticamente con esta ficha.</p><Link href={`/alumnos?id=${id}&editar=1`}>Editar ficha</Link><p><Link href={`/pagos?alumno=${id}`}>Consultar cuotas y pagos</Link></p><p>Rutina y comprobantes: próximamente.</p></div></section>
       : <>
         <form className="student-search"><label>Buscar alumnos<input name="q" defaultValue={q} placeholder="Nombre, apellido, correo o DNI" /></label><button>Buscar</button></form>
         <p>{q ? "Resultados de búsqueda" : "Fichas administrativas"} · Estado independiente de los pagos.</p>
