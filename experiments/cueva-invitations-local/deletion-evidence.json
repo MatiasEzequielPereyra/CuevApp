@@ -1,0 +1,253 @@
+{
+  "date": "2026-11-04T18:58:50.261Z",
+  "scope": "CUEVA-ALUMNOS-ELIMINAR",
+  "images": {
+    "templates": "public.ecr.aws/supabase/studio@sha256:32a293ffd7b081926b225f6503bf13730447e544041d1f37f0a5586578183e91",
+    "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "mail": "public.ecr.aws/supabase/mailpit@sha256:37a38e48e9338cd7e89dfeb487f37b02ebfcd9cb23111bed2d345e79d37d6dd6",
+    "rest": "public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962"
+  },
+  "results": [
+    {
+      "name": "authenticator_password_cannot_login_as_postgres",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "preview_read_only",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "confirmation_names_student",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "initial_focus_cancel",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "keyboard_focus_trapped",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "escape_preserves_student",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cancel_preserves_student",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "dialog_no_overflow_390",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "dialog_no_overflow_1440",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "confirmed_delete_and_banner",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "reload_no_record",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "replay_safe",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "unprovisioned_blocked_deletable",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "unprovisioned_failed_deletable",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "processing_protected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "review_protected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "sent_protected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "matching_account_blocks_without_association",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "captured_uuid_protects_even_if_email_differs",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "unpaid_period_protects",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "payments_and_reversal_preserved",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "protected_button_disabled_with_explanation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "server_rechecks_after_dialog_open",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "stale_email_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "explicit_confirmation_required",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wrong_origin_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "oversized_request_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "invalid_uuid_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "get_never_deletes",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_rpc_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "anon_rpc_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "visitor_http_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_http_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "direct_delete_still_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "parallel_delete_idempotent",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "concurrent_period_wins_delete_refuses",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "concurrent_invitation_wins_delete_refuses",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "delete_wins",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "later_invite_cannot_create_orphan",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "lost_response_honest_no_automatic_retry",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "missing_capability_fails_closed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_real_auth_or_mail_operation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_rest",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_auth",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_templates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_db",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_network",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}
