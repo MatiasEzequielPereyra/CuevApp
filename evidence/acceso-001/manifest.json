@@ -1,6 +1,13 @@
 {
-  "task": "CUEVA-ACCESO-001",
-  "implementation_sha": "dedd835ff03e9f97b4057225f4d95e70b3ef97bd",
+  "task": "CUEVA-ACCESO-001-INTEGRACION",
+  "base_sha": "0751e2f8d95978cf88ee5587ac2242497347c021",
+  "audited_candidate_sha": "80e09ccf18b9450b25741efc147ccd1ce21c61aa",
+  "implementation_sha": "f899c48fc38497ac015cccff48be521db4bb1428",
+  "historical_evidence": {
+    "candidate_sha": "80e09ccf18b9450b25741efc147ccd1ce21c61aa",
+    "base_sha": "fa87f778287434dbad016435b28b7d895a05f90e",
+    "note": "Original visual captures and full/form test evidence retained without repeating the visual matrices."
+  },
   "files": [
     {
       "path": "src/app/page.tsx",
@@ -39,8 +46,8 @@
     },
     {
       "path": "docs/engineering/CUEVA-ACCESO-001-review.md",
-      "sha256": "003b7765304499c703be80004a5b1370266ae39fc17abda79de2a9c5f367dfc4",
-      "bytes": 8185
+      "sha256": "f02786f6cf17cef92d46234e7363a84690563bf88b3a926eec3dfa8fd5370239",
+      "bytes": 13274
     },
     {
       "path": "evidence/acceso-001/desktop-dark.png",
@@ -81,6 +88,41 @@
       "path": "evidence/acceso-001/mobile-light.png",
       "sha256": "18c418b13b4bd5d3b8ea7cc60235e513672f16531f106b316c429a9c64b8aed7",
       "bytes": 42715
+    },
+    {
+      "path": "experiments/cueva-002i-local/application.mjs",
+      "sha256": "d6ef40ed78c8cf84ac51db8633cbe5a544c9b55f2282ab67577f49680d3816ca",
+      "bytes": 1776
+    },
+    {
+      "path": "experiments/cueva-alumnos-local/lab.mjs",
+      "sha256": "2c900e976146374ed023bdef409566f73c9676f5305d4a56c18af78184480248",
+      "bytes": 9726
+    },
+    {
+      "path": "experiments/cueva-alumnos-local/browser-test.mjs",
+      "sha256": "e5d5e7e41466bf1c9bdd746dd3ce150549f5e7df1e01a118d6ace49244998597",
+      "bytes": 14741
+    },
+    {
+      "path": "evidence/acceso-001/integration-first-attempt.json",
+      "sha256": "1d389b0970267e95ff464498a670bbebd51739512fa8178bd2eb8c9c2b418c78",
+      "bytes": 889
+    },
+    {
+      "path": "evidence/acceso-001/integration-results.json",
+      "sha256": "71ad10f7962030029036091b693df7678420ba2b152239108a602f2342f2335f",
+      "bytes": 2618
+    },
+    {
+      "path": "evidence/acceso-001/integration-checks.txt",
+      "sha256": "fe160ef8700ec2b7baddfdec7d443d21680a7c53c14d734bdd749c15369dfed0",
+      "bytes": 948
+    },
+    {
+      "path": "evidence/acceso-001/integration-gates.txt",
+      "sha256": "38992faf8befc64178c99fa96fb32a8bef029d8d928aa60835f96af735179dc8",
+      "bytes": 1626
     }
   ]
 }

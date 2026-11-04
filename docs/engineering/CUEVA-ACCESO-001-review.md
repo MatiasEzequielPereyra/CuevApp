@@ -1,5 +1,86 @@
 # CUEVA-ACCESO-001 — entrada y login visual
 
+## Estado vigente — CUEVA-ACCESO-001-INTEGRACION
+
+**REVIEW**, 2026-11-04, America/Buenos_Aires. Compatibilidad local terminada;
+pendiente de revisión del Orchestrator. Este bloque prevalece sobre el registro
+histórico inferior. No implica integración en main ni despliegue.
+
+- BASE_SHA efectiva: `0751e2f8d95978cf88ee5587ac2242497347c021` (Alumnos integrado).
+- Candidato previo indicado por el Orchestrator: `80e09ccf18b9450b25741efc147ccd1ce21c61aa`.
+- Rebase local sobre origin/main, sin conflictos; Acceso conserva su árbol runtime.
+  Commits reescritos: `99c9c3699757a59c7f78214e4c3b15a2ce62a988` y
+  `436831808da0dd9e88145b3ee5216a82a2507bee`.
+- Candidato de código/pruebas verificado: `f899c48fc38497ac015cccff48be521db4bb1428`.
+  El HEAD posterior que agrega este informe/manifiesto se identifica en el handoff
+  final del chat, sin introducir un SHA autorreferencial en el documento.
+- Rama y worktree: `codex/cueva-acceso-001`,
+  `C:\Users\pereyram\.codex\worktrees\cueva-acceso-001\CuevApp`.
+
+### Cambio acotado
+
+`experiments/cueva-002i-local/application.mjs` asigna explícitamente
+`VERCEL_ENV=production` **solo al proceso hijo de pruebas**. Mantiene next dev,
+NODE_ENV development, los opt-ins locales, origen y servicios loopback existentes.
+No cambia el gate de `/ingresar`, productConfig, Auth, RLS, cookies o roles.
+No se modificaron archivos de entorno ni configuración alojada.
+
+`experiments/cueva-alumnos-local/lab.mjs` y `browser-test.mjs` admiten un modo
+`CUEVA_ACCESS_INTEGRATION_ONLY=1` que reutiliza stack, fixtures, helper de login y
+limpieza existentes y omite CRUD, matrices visuales y laboratorios de identidad.
+El recorrido completo previo de Alumnos sigue siendo el modo predeterminado.
+
+Comparación exacta contra la nueva base: cuenta, rutas/API de Alumnos, dashboard,
+componentes y librerías students, proxy, globals.css, product-auth, API de Auth,
+migraciones y dependencias **sin diferencias**. Login, CSS y componentes de Acceso
+son idénticos al candidato previo `80e09cc`. No se editaron checkpoint/backlog.
+
+### Resultados de esta integración
+
+| Comprobación afectada | Resultado |
+| --- | --- |
+| Recorrido real local con Next/Auth/PostgREST/PostgreSQL | 21/21 PASS: 14 del recorrido, 2 del setup reutilizado y 5 de limpieza |
+| Entrada con configuración ausente y Preview configurado | PASS; el formulario permanece cerrado |
+| Raíz sin bucle y continuación controlada sin sesión | PASS; suite seleccionada 4/4 |
+| Lint y sintaxis de scripts | PASS; revisión específica después de retirar diagnóstico temporal |
+| Tipos y build sobre la nueva base | PASS |
+| Documentos, escaneo de secretos y diff | PASS |
+| Matrices visuales y laboratorios completos de identidad/Alumnos | NOT_RUN en esta integración; se conserva la evidencia previa |
+| Sesión alojada, servicios alojados, push, PR, merge y deploy | NOT_RUN |
+
+Reproducción desde `experiments/cueva-alumnos-local`: en PowerShell asignar
+`$env:CUEVA_ACCESS_INTEGRATION_ONLY='1'` y ejecutar `node lab.mjs`.
+[Resultados locales redactados](../../evidence/acceso-001/integration-results.json).
+El login por formulario usó el POST sin interceptar y emitió una sesión real
+local de un administrador sintético. Se verificaron cuenta, navegación a Alumnos,
+listado vacío válido, nav activo y no-store; POST de salida con 303, cookies de
+Auth eliminadas y cuenta/Alumnos cerrados después del logout. Una segunda cuenta
+sintética de rol alumno pudo entrar a su cuenta y fue rechazada en Alumnos y su
+API. Las páginas de acceso restringido conservan HTTP 200; la API rechaza con 403,
+tal como implementa la base. No se alteraron permisos para hacer pasar el ensayo.
+
+Fixtures heredadas: cuentas locales confirmadas, perfiles y estado de acceso
+habilitado sembrados en la base desechable. Esto **no** prueba invitación,
+activación, recuperación, expiración, refresh o RLS completos; tampoco acredita
+sesión alojada. No se hicieron altas reales, correo real, capturas autenticadas,
+traces ni exportación de credenciales/cookies. Servicios y red desechables eliminados.
+
+Un [primer intento](../../evidence/acceso-001/integration-first-attempt.json) se
+detuvo en db_ready con causa OTHER, antes del login; cleanup 2/2 PASS. Una prueba
+mínima del arranque PostgreSQL y el segundo recorrido pasaron sin modificar el
+arranque de la base. La causa exacta del intento fallido queda NOT_VERIFIED.
+Diagnóstico temporal retirado; no cambia el camino exitoso verificado.
+
+[Tipos/build](../../evidence/acceso-001/integration-checks.txt) y
+[cuatro pruebas de entrada seleccionadas](../../evidence/acceso-001/integration-gates.txt)
+registran el resto de las comprobaciones. Se conservan las capturas previas
+aprobadas, sin volver a ejecutarlas ni presentarlas como evidencia de esta sesión.
+El [manifiesto actualizado](../../evidence/acceso-001/manifest.json) identifica la
+nueva base, el candidato verificado y hashes de código, scripts, informe y pruebas,
+con procedencia separada para la evidencia histórica.
+
+## Registro histórico — entrega original anterior a Alumnos
+
 Estado: **REVIEW**. 2026-11-04, America/Buenos_Aires. Implementación y
 autorrevisión locales; revisión independiente, integración y publicación pendientes.
 

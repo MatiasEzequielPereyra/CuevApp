@@ -1,0 +1,117 @@
+{
+  "date": "2026-11-04T13:56:14.105Z",
+  "scope": "CUEVA-ACCESO-001-INTEGRACION",
+  "images": {
+    "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "mail": "public.ecr.aws/supabase/mailpit@sha256:37a38e48e9338cd7e89dfeb487f37b02ebfcd9cb23111bed2d345e79d37d6dd6",
+    "rest": "public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962"
+  },
+  "results": [
+    {
+      "name": "authenticator_password_cannot_login_as_postgres",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "joined_on_buenos_aires_boundary",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "root_to_login",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "login_enabled_with_explicit_test_production",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "real_admin_login_account",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "server_session_http_only",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "account_to_students",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "students_list_operational",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "students_private_no_store",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "real_logout_to_login",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "logout_clears_auth_cookies",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "account_closed_after_logout",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "students_closed_after_logout",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "students_api_closed_after_logout",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_students_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_students_api_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_rest",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_auth",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_db",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_network",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}
