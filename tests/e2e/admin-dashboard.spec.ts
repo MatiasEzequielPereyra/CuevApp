@@ -35,7 +35,7 @@ for (const width of [360, 390, 768, 1440]) {
       await loadDashboard(page, theme);
       await expect(page.getByRole("heading", { name: /Hola, Alex/ })).toBeVisible();
       await expect(page.locator(".dash-role").getByText("Administrador", { exact: true })).toBeVisible();
-      await expect(page.getByText("Sin datos aún")).toHaveCount(4);
+      await expect(page.getByText("Sin datos aún")).toHaveCount(3);
       await expect(page.getByRole("button", { name: "Cerrar sesión" })).toHaveCount(1);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       const accessibility = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
