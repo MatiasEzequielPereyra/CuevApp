@@ -131,7 +131,7 @@ Se distinguen dos casos para evitar autoaprobaciones implícitas:
 La autorización de lectura/descarga debe seguir aplicándose en ambos casos. La etiqueta de estado del comprobante no reemplaza el estado ni el registro del movimiento financiero.
 
 
-## 6. Operaciones y transacciones
+## 7. Operaciones y transacciones
 
 Se recomienda separar operaciones acotadas:
 
@@ -146,7 +146,7 @@ El comprobante no proporciona por sí solo un dato financiero confiable para cre
 
 Por eso, antes de implementar confirmación hay que decidir y diseñar cómo el administrador introduce/verifica el importe y la fecha que se registrarán. No extraer automáticamente valores del archivo ni usar OCR como fuente de verdad. La operación final debe reutilizar las reglas de CUEVA-003A, incluida la idempotencia y el rechazo de importes superiores al saldo.
 
-## 7. Compatibilidad con CUEVA-003A
+## 8. Compatibilidad con CUEVA-003A
 
 - No modificar las tablas ni reglas existentes de precios, períodos, pagos y anulaciones salvo extensión mínima necesaria y revisada.
 - No duplicar el libro de pagos ni calcular saldos desde la tabla de comprobantes.
@@ -155,7 +155,7 @@ Por eso, antes de implementar confirmación hay que decidir y diseñar cómo el 
 - Si se rechaza, no se crea movimiento ni se altera el saldo.
 - Un período puede recibir presentaciones sucesivas a lo largo del tiempo, pero nunca más de una pendiente simultáneamente. La posibilidad de una nueva presentación tras una confirmación dependerá del saldo y de la regla de negocio final para pagos parciales; el límite aprobado es sobre pendientes simultáneos.
 
-## 8. Coordinación y archivos sensibles a conflictos
+## 9. Coordinación y archivos sensibles a conflictos
 
 - PR28 modifica scripts/documentación de reconciliación de invitaciones y checkpoint; no cambia el ledger, la API de pagos ni el esquema de comprobantes.
 - La rama de dashboards `codex/cueva-dashboard-002` está 9 commits detrás de `main`; su único commit propio es el encargo documental UI-002. No usarla como base.
@@ -164,7 +164,7 @@ Por eso, antes de implementar confirmación hay que decidir y diseñar cómo el 
 - Evitar modificar la pantalla de pagos administrativa salvo que el alcance de revisión administrativa lo requiera. No tocar dashboards de Mati.
 - No editar Auth, invitaciones, reconciliación SMTP ni configuración de transporte salvo dependencia demostrada.
 
-## 9. Pruebas requeridas antes de aceptar implementación
+## 10. Pruebas requeridas antes de aceptar implementación
 
 - JPG/JPEG, PNG y PDF válidos; 10 MB exactos y límite excedido.
 - Extensión/MIME falsificados, firma incorrecta, archivo vacío, truncado/corrupto y PDF/imagen no parseable.
