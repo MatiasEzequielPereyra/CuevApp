@@ -21,7 +21,12 @@
 - Puede existir como máximo **un comprobante pendiente de revisión por período y alumno**.
 - El rechazo exige un **motivo obligatorio y claro**, visible para el alumno.
 - Si un comprobante es rechazado, el alumno puede presentar otro para el mismo período.
-- Cada nueva presentación es independiente. La presentación rechazada anterior se conserva con su motivo y trazabilidad; no se sobrescribe ni elimina.
+- Si un comprobante fue confirmado pero el período conserva saldo pendiente, el alumno puede presentar otro para ese mismo período para informar otro pago parcial.
+- No se admite una nueva presentación si ya existe una presentación pendiente para ese alumno/período ni si el período está totalmente pagado.
+- Cada nueva presentación es independiente. Las presentaciones anteriores se conservan con su estado y trazabilidad; no se sobrescriben ni eliminan.
+- Al confirmar una presentación, el administrador debe ingresar/verificar manualmente el importe recibido, la fecha real del pago y el método de pago. No se utiliza OCR como fuente de verdad.
+- El importe debe ser positivo y no superar el saldo pendiente. La confirmación reutiliza las reglas financieras e idempotencia de CUEVA-003A.
+- Las correcciones de movimientos ya confirmados se realizan mediante el mecanismo financiero de corrección/reversión, no mediante una nueva presentación.
 - Los archivos deben ser privados y su acceso debe estar restringido mediante autorización del servidor y políticas de datos/storage.
 
 ## 2. Validación y mensajes al usuario
@@ -53,10 +58,12 @@ Los mensajes no deben revelar rutas internas, nombres de buckets, detalles de in
 3. Cliente y servidor validan el archivo; el servidor vuelve a comprobar autorización, tamaño, tipo real y legibilidad.
 4. Solo después de una carga y persistencia exitosas se crea la presentación en **Pendiente de revisión**.
 5. Un administrador autorizado consulta el comprobante y decide confirmar o rechazar. El administrador que presentó un comprobante sin registrar un pago no puede revisar su propia presentación.
-6. Si confirma, la integración con el libro de pagos debe registrar el pago de forma transaccional e idempotente, conforme a las reglas de CUEVA-003. No duplicar movimientos por reintentos.
-7. Si rechaza, el administrador debe ingresar un motivo obligatorio y no vacío; se conserva el motivo y la identidad/fecha de la decisión.
-8. No puede existir más de una presentación pendiente para el mismo alumno y período. El control debe ser efectivo también ante solicitudes simultáneas.
-9. Después del rechazo, el alumno puede presentar un nuevo comprobante para el mismo período. La nueva presentación no modifica el registro rechazado anterior y contiene exactamente un archivo.
+6. Para confirmar, el administrador verifica e ingresa manualmente el importe efectivamente recibido, la fecha real del pago y el método de pago. El archivo es evidencia de revisión; no se extraen esos datos automáticamente ni se utiliza OCR como fuente de verdad.
+7. El servidor valida que el importe sea positivo y no supere el saldo pendiente. La confirmación registra el movimiento mediante la operación financiera de CUEVA-003A, de forma transaccional e idempotente, sin duplicarlo por reintentos.
+8. Si rechaza, el administrador debe ingresar un motivo obligatorio y no vacío; se conserva el motivo y la identidad/fecha de la decisión.
+9. No puede existir más de una presentación pendiente para el mismo alumno y período. El control debe ser efectivo también ante solicitudes simultáneas.
+10. Después del rechazo, o de una confirmación que deje saldo pendiente, el alumno puede presentar un nuevo comprobante para el mismo período. Cada presentación es un registro independiente y no modifica las anteriores.
+11. No se permite una nueva presentación si el período está totalmente pagado. Cualquier corrección de un movimiento confirmado debe usar el mecanismo financiero de corrección/reversión.
 
 ## 4. Privacidad y seguridad
 
@@ -99,8 +106,13 @@ Los mensajes no deben revelar rutas internas, nombres de buckets, detalles de in
 - [ ] El rechazo conserva el motivo obligatorio, la identidad del administrador y la fecha de la decisión.
 - [ ] Un comprobante rechazado permanece consultable según permisos y no se sobrescribe.
 - [ ] El alumno puede presentar otro comprobante para el mismo período después del rechazo.
-- [ ] La nueva presentación es un registro separado y mantiene vínculo al mismo período.
-- [ ] Confirmar un comprobante registra el pago asociado una sola vez y actualiza el saldo según CUEVA-003.
+- [ ] Si una presentación fue confirmada y todavía queda saldo pendiente, el alumno puede presentar otro comprobante independiente para el mismo período.
+- [ ] No se permite una nueva presentación si ya existe una pendiente para el mismo alumno/período ni si el período está totalmente pagado.
+- [ ] Las presentaciones previas rechazadas o confirmadas permanecen consultables según permisos y no se sobrescriben.
+- [ ] Al confirmar, el administrador debe ingresar/verificar importe, fecha real del pago y método; OCR no es fuente de verdad.
+- [ ] El importe confirmado debe ser positivo y no superar el saldo pendiente calculado por CUEVA-003A.
+- [ ] La confirmación registra el pago asociado una sola vez y actualiza el saldo según CUEVA-003A.
+- [ ] Las correcciones de movimientos confirmados utilizan el mecanismo financiero de corrección/reversión, no un nuevo comprobante.
 - [ ] Adjuntar un comprobante nunca actualiza por sí solo el saldo como pago confirmado.
 - [ ] El registro manual de efectivo sigue funcionando sin adjunto.
 
@@ -131,9 +143,13 @@ Los mensajes no deben revelar rutas internas, nombres de buckets, detalles de in
 10. Administrador intenta rechazar sin motivo: la acción se bloquea; con motivo, el rechazo queda auditado y visible para el alumno.
 11. Mientras hay un comprobante pendiente, el alumno intenta enviar otro para el mismo período: se rechaza la segunda presentación, incluso con solicitudes concurrentes.
 12. Tras el rechazo, el alumno presenta un nuevo archivo único para el mismo período; ambos registros y su historial permanecen.
-13. Confirmación y creación del movimiento financiero ante fallo parcial/transacción/reintento.
-14. Pago en efectivo sin comprobante.
-15. Acceso a objeto privado por usuario no autorizado y expiración de URL temporal, si se utiliza.
+13. Tras confirmar un pago parcial, el alumno presenta otro comprobante para el mismo período porque aún hay saldo; ambos registros permanecen y solo existe un pendiente simultáneo.
+14. Con el período totalmente pagado, se rechaza una nueva presentación.
+15. Al confirmar, el administrador ingresa importe, fecha real y método; se bloquea importe cero/negativo y cualquier importe superior al saldo.
+16. Doble clic/reintento durante la confirmación no duplica el movimiento; la confirmación y el vínculo del comprobante son transaccionales.
+17. Una corrección de pago confirmado sigue el mecanismo de corrección/reversión y no crea una presentación sustitutiva.
+18. Pago en efectivo sin comprobante.
+19. Acceso a objeto privado por usuario no autorizado y expiración de URL temporal, si se utiliza.
 
 ## 7. Aspectos técnicos pendientes de definición
 
