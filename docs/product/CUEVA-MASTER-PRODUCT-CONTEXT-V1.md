@@ -425,9 +425,10 @@ Adjuntar un comprobante no equivale a recibir dinero ni crea por sí solo un mov
 4. El archivo supera las validaciones de formato, tamaño, legibilidad y antimalware.
 5. El comprobante queda pendiente de revisión.
 6. Nico o su socio verifican la operación.
-7. Un administrador confirma o rechaza el comprobante.
-8. Si confirma, el sistema registra el pago y actualiza el saldo.
-9. El alumno puede consultar el movimiento y el comprobante.
+7. Un administrador autorizado revisa el comprobante y verifica manualmente los datos del pago.
+8. Para confirmar, el administrador ingresa/verifica el importe, la fecha real del pago y el método de pago; no se utiliza OCR como fuente de verdad.
+9. El sistema valida que el importe sea positivo y no supere el saldo pendiente, y registra el movimiento mediante las reglas financieras de CUEVA-003.
+10. Si confirma, el sistema actualiza el saldo y el alumno puede consultar el movimiento y el comprobante.
 
 ### Administrador registra un pago y adjunta su comprobante
 
@@ -445,6 +446,23 @@ Adjuntar un comprobante no equivale a recibir dinero ni crea por sí solo un mov
 3. Una vez validado y escaneado, queda pendiente de revisión, igual que una presentación de alumno.
 4. El administrador que lo presentó no puede aprobarlo ni rechazarlo; debe resolverlo el otro administrador autorizado.
 5. La presentación no crea ni modifica un movimiento financiero hasta que un administrador la confirme.
+
+## CONFIRMACIÓN ADMINISTRATIVA
+
+Al confirmar una presentación, el administrador debe verificar e ingresar manualmente:
+- Importe efectivamente recibido.
+- Fecha real en que se realizó el pago.
+- Método de pago.
+
+El comprobante sirve como evidencia para la revisión, pero no se extraen automáticamente datos financieros ni se usa OCR como fuente de verdad. El importe debe ser positivo y no superar el saldo pendiente del período. La confirmación registra un movimiento mediante las reglas e idempotencia de CUEVA-003; se conserva el administrador y la fecha de revisión.
+
+## NUEVAS PRESENTACIONES Y PAGOS PARCIALES
+
+- Se permite una nueva presentación después de un rechazo, conservando la anterior.
+- Se permite una nueva presentación después de una confirmación si el período todavía tiene saldo pendiente, por ejemplo, cuando el pago confirmado fue parcial.
+- Se mantiene como máximo una presentación pendiente por alumno y período, independientemente de las presentaciones históricas ya rechazadas o confirmadas.
+- No se permite presentar otro comprobante cuando el período ya está totalmente pagado.
+- Una corrección de un pago ya confirmado debe tramitarse mediante el mecanismo financiero de corrección o reversión, no mediante un nuevo comprobante.
 
 ## ESTADOS
 
