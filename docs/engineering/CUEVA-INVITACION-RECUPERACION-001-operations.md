@@ -1,7 +1,8 @@
 # Reconciliación privada de una invitación rechazada por SMTP
 
-Estado del incremento: REVIEW local. No autoriza ejecutar este procedimiento
-alojado desde el ejecutor. [Encargo](CUEVA-INVITACION-RECUPERACION-001-task.md).
+Procedimiento de PR26 integrado; ampliación de transporte local para REVIEW.
+No autoriza ejecutar este procedimiento alojado desde el ejecutor.
+[Encargo original](CUEVA-INVITACION-RECUPERACION-001-task.md).
 
 ## Capacidad y precondiciones
 
@@ -34,11 +35,11 @@ Si solo hay un timeout, fallo genérico, aceptación o duda: NO ejecutar apply.
 
 1. Confirmar commit aprobado y base, guardar inventario privado de ese único caso.
    El antecedente remoto está en PR25; no copiar identificadores personales a Git.
-2. Aplicar íntegra y transaccionalmente la migración nueva
-   `20261104182640_cueva_invitation_reconciliation.sql`, después de acceso, alumnos
-   e invitaciones. Crea solo ledger privado con RLS/revocaciones y permite el nuevo
-   kind invite-resend en el gate. No editar las migraciones históricas ni reaplicar
-   la invitación anterior: su versión alojada difiere del nombre local, según PR25.
+2. Verificar la presencia de `20261104182640_cueva_invitation_reconciliation.sql`,
+   ya aplicada según el handoff de PR26. No modificarla ni reaplicarla para el cambio
+   de transporte. Su ledger privado con RLS/revocaciones y kind invite-resend se
+   conservan. Tampoco reaplicar la invitación anterior: su versión alojada difiere
+   del nombre local, según PR25.
 3. Verificar tabla privada sin grants API, constraint y datos preexistentes intactos.
    Conservar SMTP/flags cerrados para la operación general. La herramienta permite
    este único envío explícito sin abrir el formulario al público. Plantilla invite
@@ -48,8 +49,8 @@ Si solo hay un timeout, fallo genérico, aceptación o duda: NO ejecutar apply.
    CUEVA_SUPABASE_URL, CUEVA_PRODUCT_ORIGIN, CUEVA_SERVICE_KEY,
    CUEVA_OPERATIONS_DATABASE_URL, CUEVA_RECONCILIATION_REQUEST y
    CUEVA_RECONCILIATION_EVIDENCE (las dos últimas son rutas privadas).
-   La CLI fija el proyecto/origen reales, PostgreSQL directo TLS verificado y el
-   puerto 5432. No se desactiva TLS ni se permite apuntar a otro proyecto/pooler.
+   La CLI fija el proyecto/origen reales y TLS verificado. Admite PostgreSQL directo
+   o únicamente el Session pooler exacto descrito debajo; no cualquier pooler.
 5. Preparar JSON privado fuera del checkout, acceso restringido al operador. Campos:
    studentId, jobLease, authUserId, attemptId (nuevo UUID conservado para replay),
    generation (entero observado), expectedState="review", email (exacto normalizado),
@@ -76,6 +77,72 @@ Si solo hay un timeout, fallo genérico, aceptación o duda: NO ejecutar apply.
    incrementada exactamente una vez, gate ready=false y operación nula. El alumno
    usa el enlace real de invitación, elige contraseña y completa el gate existente.
    Recepción y primer acceso alojados siguen NOT_VERIFIED hasta observarlos.
+
+## Alternativa de sesión para una red IPv4
+
+Incremento local [TRANSPORTE-001](CUEVA-INVITACION-RECUPERACION-TRANSPORTE-001-task.md),
+para revisión del Orchestrator. Las observaciones de conectividad provienen de su
+handoff: directo resuelve IPv6 y falla TCP5432; Session oficial responde TCP5432.
+No se volvieron a medir ni se autenticó remotamente desde esta entrega.
+
+| Transporte admitido | Host exacto | Puerto | Usuario exacto | Base |
+| --- | --- | --- | --- | --- |
+| Directo | db.vbkzoojkdkcugxhneyzi.supabase.co | 5432 (también por defecto) | postgres | postgres |
+| Session IPv4 | aws-1-ca-central-1.pooler.supabase.com | 5432 explícito | postgres.vbkzoojkdkcugxhneyzi | postgres |
+
+Usar la cadena oficial de Connect en modo SESSION. No transaction6543, IP literal,
+otro proyecto/usuario/región/instancia ni host con sufijo añadido. Los esquemas
+postgres y postgresql son admitidos. No agregar query, fragmento, sslmode, ssl,
+sslrootcert, certificados por URL, host/port/user alternativos, options ni otros
+parámetros: pg puede reemplazar la configuración SSL al interpretar una URL.
+La contraseña debe codificarse como componente de URL en memoria, sin alterar
+host/usuario/base. No pegar una cadena con contraseña en terminal o chat.
+
+TLS permanece `rejectUnauthorized:true`, usando validación de cadena y nombre del
+host del driver. Un error de certificado detiene la operación: no usar no-verify,
+rejectUnauthorized:false ni desactivar la verificación global de Node. No hay
+fallback automático tras errores. El puerto directo omitido se normaliza a5432
+antes de crear el cliente, para que PGPORT no redirija la conexión.
+
+Se conserva un solo pg.Client desde connect hasta end. Un pg.Pool por sentencia,
+transaction pooling o liberar/reasignar conexión entre operaciones rompería el
+advisory lock de sesión: no sustituirlo. La comprobación local acredita este uso
+del cliente; no autentica ni certifica la afinidad del pooler alojado.
+
+## Credenciales solo en la ejecución privada del operador
+
+Se necesitan dos credenciales distintas y preexistentes:
+
+1. Contraseña de PostgreSQL del proyecto, para el usuario/endpoint de la tabla.
+2. Clave de servicio Supabase, para la llamada Auth ya existente.
+
+La contraseña de aplicación Gmail autentica SMTP y NO sirve para ninguno de esos
+dos usos. No resetear credenciales para resolver un error de transporte.
+
+El operador autorizado las aporta a un proceso privado efímero mediante su canal
+de ejecución seguro. Si se realiza captura interactiva en PowerShell, usar lectura
+enmascarada `Read-Host -AsSecureString` por separado para cada valor, sin transcript,
+trazas/debug ni herramientas que graben la sesión. La conversión necesaria se hace
+solo en memoria para construir la URI y el entorno del proceso hijo; si se usa BSTR,
+liberarlo con ZeroFreeBSTR en finally. No registrar entrada, salida ni excepciones
+de proveedores/controladores. No pasar secretos por argumentos ni interpolarlos en
+una línea que quede en historial. No guardar un .env, script temporal con valores,
+archivo de contraseña o captura de pantalla; tampoco usar el portapapeles del chat.
+
+El proceso hijo recibe CUEVA_OPERATIONS_DATABASE_URL y CUEVA_SERVICE_KEY en su entorno
+temporal. Las demás variables son las del procedimiento anterior; solicitud y
+evidencia privadas no incluyen credenciales. Ejecutar la CLI de check/apply con
+argumentos constantes ya documentados. Al terminar, cerrar ese proceso y limpiar
+referencias/variables temporales; no persistir con setx ni exportar globalmente.
+Las cadenas de JavaScript permanecen en memoria administrada hasta que el proceso
+termine: no se promete borrado físico garantizado de todas sus copias en memoria.
+
+Esta entrega no necesita ejecutar esa captura ni añade un nuevo capturador. El
+Orchestrator audita y utiliza su canal privado para la única operación autorizada.
+Si allí no dispone de ambas credenciales existentes, detener como bloqueo operativo.
+No pedirlas en chat ni exportar/descifrar la clave sensible guardada en Vercel.
+TCP abierto no demuestra credenciales válidas, handshake TLS, aceptación SMTP ni
+entrega. Autenticación/TLS/envío alojados permanecen NOT_RUN por este ejecutor.
 
 El callback de alumnos existente rechaza con 404 si ownerOnly sigue activo. Esta
 herramienta no cambia flags ni habilita ese callback: enviar no implica que ya pueda

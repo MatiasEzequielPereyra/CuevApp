@@ -9,6 +9,24 @@ const stop = code => { throw new ReconciliationStop(code); };
 const uuid = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 const project = 'vbkzoojkdkcugxhneyzi';
 
+export function reconciliationDatabaseOptions(database, local=false) {
+  let d,user;
+  try { d=new URL(database);user=decodeURIComponent(d.username);decodeURIComponent(d.password); }
+  catch { stop('DATABASE_INVALID'); }
+  if (!['postgres:','postgresql:'].includes(d.protocol) || d.pathname!=='/postgres' ||
+      d.search || d.hash || database.includes('?') || database.includes('#')) stop('DATABASE_INVALID');
+  if (local) {
+    if(d.hostname!=='127.0.0.1')stop('DATABASE_INVALID');
+  } else {
+    const direct=d.hostname===`db.${project}.supabase.co` && user==='postgres' && (!d.port||d.port==='5432');
+    const session=d.hostname==='aws-1-ca-central-1.pooler.supabase.com' && user===`postgres.${project}` && d.port==='5432';
+    if(!direct&&!session)stop('DATABASE_INVALID');
+    // Keep an omitted direct port from falling back to PGPORT in the driver.
+    d.port='5432';
+  }
+  return {connectionString:d.href,ssl:local?false:{rejectUnauthorized:true},connectionTimeoutMillis:10000};
+}
+
 function validate(config) {
   const r = config.request;
   if (!r || ![r.studentId,r.jobLease,r.authUserId,r.attemptId].every(uuid) || r.attemptId.toLowerCase() === r.jobLease.toLowerCase() ||
@@ -34,9 +52,7 @@ function validate(config) {
     if (config.local && (u.protocol !== 'http:' || u.hostname !== '127.0.0.1' || !u.port)) stop('LOCAL_TARGET_INVALID');
   }
   if (!config.local && (config.url !== `https://${project}.supabase.co` || config.site !== 'https://cueva-gym.vercel.app')) stop('PROJECT_MISMATCH');
-  const d = new URL(config.database);
-  if (!['postgres:','postgresql:'].includes(d.protocol) || d.pathname !== '/postgres' || d.search || d.hash ||
-      (config.local ? d.hostname !== '127.0.0.1' : d.hostname !== `db.${project}.supabase.co` || (d.port && d.port !== '5432'))) stop('DATABASE_INVALID');
+  return reconciliationDatabaseOptions(config.database,config.local);
 }
 
 // Lock in application order: fiche -> job -> gate -> profile -> Auth user.
@@ -55,11 +71,11 @@ async function snapshot(db, r) {
 }
 
 export async function reconcile(config, mode='check') {
-  validate(config);
+  const databaseOptions=validate(config);
   if (!['check','apply'].includes(mode)) stop('MODE_INVALID');
   const r = config.request;
   const evidenceHash = createHash('sha256').update(JSON.stringify(r)).digest('hex');
-  const db = new pg.Client({connectionString:config.database,ssl:config.local?false:{rejectUnauthorized:true},connectionTimeoutMillis:10000});
+  const db = new pg.Client(databaseOptions);
   let transaction = false, reserved = false, resultState;
   try {
     await db.connect();

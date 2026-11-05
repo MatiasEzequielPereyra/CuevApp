@@ -1,0 +1,90 @@
+{
+  "date": "2026-11-05T11:40:36.709Z",
+  "scope": "CUEVA-INVITACION-RECUPERACION-TRANSPORTE-001",
+  "images": {
+    "templates": "public.ecr.aws/supabase/studio@sha256:32a293ffd7b081926b225f6503bf13730447e544041d1f37f0a5586578183e91",
+    "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "mail": "public.ecr.aws/supabase/mailpit@sha256:37a38e48e9338cd7e89dfeb487f37b02ebfcd9cb23111bed2d345e79d37d6dd6",
+    "rest": "public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962"
+  },
+  "results": [
+    {
+      "name": "authenticator_password_cannot_login_as_postgres",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "actual_check_eligible_without_dispatch",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "one_client_one_backend_for_operation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "session_advisory_survives_transaction_rollback",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "session_lock_released_only_after_client_end",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "check_preserves_review_generation_nonce_gate",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_reservation_created",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_rest",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_auth",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_templates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_db",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_network",
+      "status": "PASS",
+      "detail": ""
+    }
+  ],
+  "unitTests": {
+    "command": "node --test tests/reconciliation-transport.test.mjs",
+    "tests": 48,
+    "pass": 48,
+    "fail": 0
+  },
+  "sourceHashes": {
+    "scripts/reconcile-student-invitation.mjs": "164cda6d1945dfb0121fbb88ba02f217dc7ef295afa1505f647c7e7c33808b9e",
+    "tests/reconciliation-transport.test.mjs": "b6c8e9356749dd0624b7401f1811fa8b36ea03783d90866f4ca11e74a29f760b",
+    "experiments/cueva-invitations-local/transport-test.mjs": "25cc0e1b5e877c8d6ebae0a86ac3da7d1be62b0764ae199131d268ee7a57407e",
+    "experiments/cueva-invitations-local/lab.mjs": "e541170e060d2ef9ce10f985b0a76a47d8a76f6a7d5ea35b0b230c6df7b18e62"
+  }
+}
