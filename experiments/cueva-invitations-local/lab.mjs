@@ -17,6 +17,7 @@ const images = {
 const id = randomUUID().replaceAll('-', '').slice(0, 12);
 const reconciliation = process.env.CUEVA_INVITATION_RECONCILIATION_ONLY === '1';
 const deletion = process.env.CUEVA_STUDENT_DELETION_ONLY === '1';
+const transport = process.env.CUEVA_INVITATION_TRANSPORT_ONLY === '1';
 const names = { templates:`cueva-invites-templates-${id}`, network: `cueva-invites-net-${id}`, db: `cueva-invites-db-${id}`, auth: `cueva-invites-auth-${id}`, mail: `cueva-invites-mail-${id}`, rest: `cueva-invites-rest-${id}` };
 const secret = () => randomBytes(32).toString('hex');
 const dbPassword = secret(), authenticatorPassword = secret(), coordinatorPassword = secret(), jwtSecret = secret(), password = `Aa9!${secret()}`;
@@ -72,7 +73,7 @@ try {
   if(deletion) sql(await readFile('../../supabase/migrations/20261104093000_cueva_billing.sql','utf8'));
   sql(await readFile('../../supabase/migrations/20261104120000_cueva_student_invitations.sql','utf8'));
   if(deletion) sql(await readFile('../../supabase/migrations/20261104185308_cueva_delete_empty_student.sql','utf8'));
-  if(reconciliation) sql(await readFile('../../supabase/migrations/20261104182640_cueva_invitation_reconciliation.sql','utf8'));
+  if(reconciliation||transport) sql(await readFile('../../supabase/migrations/20261104182640_cueva_invitation_reconciliation.sql','utf8'));
   stage='database_role';
   sql(`ALTER ROLE authenticator PASSWORD '${authenticatorPassword}'; ALTER ROLE cueva_coordinator PASSWORD '${coordinatorPassword}';`);
   const dbPort=port(names.db,5432);
@@ -88,7 +89,7 @@ try {
   stage='rest_ready'; await waitFor(async()=>(await request(`${rest}/`)).status<500);
   const admin=testJwt('service_role');
   stage='browser_flow';
-  const { runBrowserFlow }=await import(deletion?'./deletion-test.mjs':reconciliation?'./reconciliation-test.mjs':'./browser-test.mjs');
+  const { runBrowserFlow }=await import(transport?'./transport-test.mjs':deletion?'./deletion-test.mjs':reconciliation?'./reconciliation-test.mjs':'./browser-test.mjs');
   await runBrowserFlow({base,rest,mailBase,dbPort,dbPassword,gateBase:reconciliation?`http://127.0.0.1:${port(names.templates,8080)}`:null,coordinatorPassword,admin,anon:testJwt('anon'),id,password,sql,request,note,launch,chromium,pg,secret,stopMail:()=>{docker(['stop','--time','1',names.mail]);created.splice(created.indexOf(names.mail),1);note('cleanup_mail','PASS');},accessIntegrationOnly:process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'});
 } catch (error) {
   if(created.includes(names.auth)) {
@@ -102,7 +103,7 @@ try {
 finally {
   for(const name of created.reverse()) { try { if(name===names.auth){docker(['rm','-f',name]);}else{docker(['stop','--time','5',name]);} note(`cleanup_${name.split('-')[2]}`,'PASS'); } catch { note(`cleanup_${name.split('-')[2]}`,'FAIL'); } }
   if(networkCreated){try{docker(['network','rm',names.network]);note('cleanup_network','PASS');}catch{note('cleanup_network','FAIL');}}
-  await writeFile(deletion?'deletion-results.json':reconciliation?'reconciliation-results.json':'results.json',JSON.stringify({date:new Date().toISOString(),scope:deletion?'CUEVA-ALUMNOS-ELIMINAR':reconciliation?'CUEVA-INVITACION-RECUPERACION-001':process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'?'CUEVA-ACCESO-001-INTEGRACION':'CUEVA-ALUMNOS-001',images,results},null,2)+'\n');
+  await writeFile(transport?'transport-results.json':deletion?'deletion-results.json':reconciliation?'reconciliation-results.json':'results.json',JSON.stringify({date:new Date().toISOString(),scope:transport?'CUEVA-INVITACION-RECUPERACION-TRANSPORTE-001':deletion?'CUEVA-ALUMNOS-ELIMINAR':reconciliation?'CUEVA-INVITACION-RECUPERACION-001':process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'?'CUEVA-ACCESO-001-INTEGRACION':'CUEVA-ALUMNOS-001',images,results},null,2)+'\n');
   console.log(JSON.stringify({results},null,2));
   if(results.some(x=>['FAIL','BLOCKED'].includes(x.status)))process.exitCode=1;
 }

@@ -1,5 +1,19 @@
 # Checkpoint CUEVA
 
+## CUEVA-INVITACION-RECUPERACION-TRANSPORTE-001 — REVIEW, 2026-11-05
+
+Base efectiva main verificada `126e933de770f02b7060b095b8a77d0685f53c69`, que
+incluye PR26 `67d44e2d954bd09af0ea821b718a8151cd9af28a` y el candidato auditado
+`db0835bce40ad9604c0e1c45db0109c4b7846e9c`. Rama
+`codex/cueva-invitacion-transporte-001`; se reutiliza solo el checkout del ejecutor.
+[Encargo](CUEVA-INVITACION-RECUPERACION-TRANSPORTE-001-task.md): alternativa
+Session pooler exacta, pg.Client y TLS verificado, sin cambios del flujo previo.
+No conexión autenticada remota, envío ni migración. Operación alojada a cargo del
+Orchestrator; TCP observado por él no certifica TLS, credenciales o envío.
+Pruebas acotadas48/48 y laboratorio de sesión13/13 PASS; lint/tipos/documentos/
+fuentes/seguridad/diff PASS. Build no requerido; app/config/dependencias intactas.
+Ver [entrega y límites](CUEVA-INVITACION-RECUPERACION-TRANSPORTE-001-review.md).
+
 ## CUEVA-ALUMNOS-ELIMINAR — ACCEPTED LOCAL, 2026-11-04
 
 Base main verificada `67d44e2d954bd09af0ea821b718a8151cd9af28a`, rama
