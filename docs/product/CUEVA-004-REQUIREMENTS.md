@@ -10,6 +10,8 @@
 - El alumno puede adjuntar un comprobante asociado a un período de cuota.
 - Nico, su socio y los alumnos pueden adjuntar comprobantes, según permisos.
 - Solo un administrador puede confirmar o rechazar un comprobante.
+- Si un administrador registra un pago y adjunta su comprobante como respaldo, el archivo se vincula al movimiento sin requerir aprobación de otro administrador; el pago no se revierte si falla la carga opcional del archivo.
+- Si un administrador adjunta un comprobante sin registrar un pago, queda pendiente de revisión y no puede resolverlo el mismo administrador que lo presentó.
 - Adjuntar un archivo no confirma que el dinero haya sido recibido.
 - Un pago en efectivo puede registrarse manualmente sin archivo.
 - Estados mínimos: **Pendiente de revisión**, **Confirmado** y **Rechazado**.
@@ -50,7 +52,7 @@ Los mensajes no deben revelar rutas internas, nombres de buckets, detalles de in
 2. Adjunta JPG/JPEG, PNG o PDF de hasta 10 MB.
 3. Cliente y servidor validan el archivo; el servidor vuelve a comprobar autorización, tamaño, tipo real y legibilidad.
 4. Solo después de una carga y persistencia exitosas se crea la presentación en **Pendiente de revisión**.
-5. Un administrador autorizado consulta el comprobante y decide confirmar o rechazar.
+5. Un administrador autorizado consulta el comprobante y decide confirmar o rechazar. El administrador que presentó un comprobante sin registrar un pago no puede revisar su propia presentación.
 6. Si confirma, la integración con el libro de pagos debe registrar el pago de forma transaccional e idempotente, conforme a las reglas de CUEVA-003. No duplicar movimientos por reintentos.
 7. Si rechaza, el administrador debe ingresar un motivo obligatorio y no vacío; se conserva el motivo y la identidad/fecha de la decisión.
 8. No puede existir más de una presentación pendiente para el mismo alumno y período. El control debe ser efectivo también ante solicitudes simultáneas.
@@ -65,7 +67,10 @@ Los mensajes no deben revelar rutas internas, nombres de buckets, detalles de in
 - No exponer credenciales privilegiadas en el navegador.
 - No aceptar como válida una extensión o MIME aislados: comprobar contenido real.
 - Limitar tamaño tanto en cliente como en servidor y en la configuración de infraestructura aplicable.
-- Definir protección antimalware acorde a capacidades reales de la infraestructura. No afirmar que existe escaneo si no está implementado y probado; si no hay escáner disponible, documentar el control compensatorio y el riesgo antes de producción.
+- Analizar todos los archivos en una zona privada de cuarentena antes de habilitar su lectura/descarga o crear la presentación pendiente visible. Un resultado limpio es requisito para liberar el archivo.
+- Si el análisis detecta malware, bloquear el archivo, no crear una presentación pendiente y eliminar el objeto malicioso de acuerdo con un procedimiento seguro; registrar el evento sin almacenar contenido sensible en logs.
+- Si el escáner no está disponible o falla, mantener el archivo aislado, no liberarlo ni marcarlo como limpio y permitir reintento; no degradar silenciosamente a validación de extensión/MIME.
+- No enviar comprobantes a servicios públicos de análisis que puedan compartir muestras o conservarlas para análisis comunitario. Cualquier proveedor externo debe ofrecer garantías contractuales de privacidad, retención y tratamiento de datos.
 - Evitar registrar contenido del comprobante o URLs firmadas en logs.
 - Las URLs temporales, si se usan, deben generarse solo tras autorización y con expiración acotada.
 - Las operaciones deben ser auditables y resistentes a reintentos.
@@ -102,6 +107,11 @@ Los mensajes no deben revelar rutas internas, nombres de buckets, detalles de in
 ### Privacidad y robustez
 - [ ] Un usuario no autorizado no puede acceder al archivo mediante URL directa ni manipulando identificadores.
 - [ ] Los archivos no son públicamente accesibles.
+- [ ] Ningún archivo se puede consultar o descargar antes de obtener un resultado antimalware limpio.
+- [ ] Un archivo detectado como malicioso no crea una presentación pendiente ni queda accesible.
+- [ ] Si el escáner falla o no responde, el archivo permanece aislado y el usuario puede reintentar sin liberar el archivo.
+- [ ] Un administrador que adjunta un comprobante junto con el registro de un pago no necesita una segunda aprobación; un fallo del adjunto no duplica ni revierte el pago ya registrado.
+- [ ] Un administrador que solo presenta un comprobante no puede aprobar ni rechazar su propia presentación.
 - [ ] Las verificaciones de permisos se ejecutan en servidor.
 - [ ] Los reintentos no duplican presentaciones ni movimientos financieros.
 - [ ] La interfaz diferencia errores de validación de fallos transitorios y permite reintentar cuando corresponda.
@@ -129,7 +139,7 @@ Los mensajes no deben revelar rutas internas, nombres de buckets, detalles de in
 
 Las reglas funcionales de presentación están cerradas. Antes de implementar todavía debe resolverse, a partir de la arquitectura real:
 - Política concreta de conservación/eliminación de archivos y registros, respetando el historial financiero.
-- Mecanismo antimalware viable en la infraestructura disponible y control compensatorio si no existe. No afirmar que hay escaneo hasta implementarlo y probarlo.
+- Selección y despliegue del escáner antimalware compatible con la infraestructura; el diseño recomendado es cuarentena privada + worker aislado de análisis + liberación solo tras resultado limpio. No afirmar que hay escaneo hasta implementarlo y probarlo.
 - Reglas de idempotencia y vinculación transaccional con movimientos de CUEVA-003, verificadas contra el código integrado.
 - Diseño de concurrencia que garantice un único comprobante pendiente por alumno/período (por ejemplo, una restricción transaccional adecuada; no asumir mecanismo antes de inspeccionar el esquema).
 - Requisitos de accesibilidad y copy final de interfaz, sin alterar las reglas aprobadas.
