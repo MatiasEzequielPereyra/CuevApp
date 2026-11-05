@@ -23,7 +23,8 @@
 - Máximo un comprobante pendiente por alumno y período, incluso ante solicitudes concurrentes.
 - Rechazar exige un motivo obligatorio, no vacío y visible para el alumno.
 - Tras un rechazo se conserva el archivo, el motivo, el actor y la fecha. Se permite una nueva presentación para el mismo período, como un registro independiente.
-- Una presentación nueva no sobrescribe otra. Cada una contiene exactamente un archivo.
+- Tras una confirmación que deje saldo pendiente, se permite otra presentación independiente para el mismo período. No se permite si el período está totalmente pagado.
+- Una presentación nueva no sobrescribe otra. Cada una contiene exactamente un archivo; el máximo de una pendiente simultánea por alumno/período se mantiene.
 - Adjuntar no confirma dinero. Solo una confirmación administrativa crea el movimiento económico.
 - Pagos externos, sin pasarela, checkout ni cobro online.
 - Los pagos parciales y varios movimientos por período siguen siendo válidos según CUEVA-003A.
@@ -140,11 +141,18 @@ Se recomienda separar operaciones acotadas:
 3. **Rechazar:** operación administrativa que exige motivo no vacío, registra actor/fecha y cambia estado una sola vez. Reintentos idénticos deben ser idempotentes.
 4. **Confirmar:** operación administrativa que debe asociar la presentación con un único movimiento de `cueva_payments` y actualizar estado en una misma transacción. No implementar dos escrituras independientes desde el navegador.
 
-### Importe y fecha al confirmar
+### Datos financieros al confirmar
 
-El comprobante no proporciona por sí solo un dato financiero confiable para crear el movimiento. La implementación actual de `cueva_billing_write` requiere importe, fecha de pago y método; permite pagos parciales.
+El comprobante es evidencia para la revisión, no una fuente estructurada y confiable de datos financieros. La implementación actual de `cueva_billing_write` requiere importe, fecha de pago y método, y permite pagos parciales.
 
-Por eso, antes de implementar confirmación hay que decidir y diseñar cómo el administrador introduce/verifica el importe y la fecha que se registrarán. No extraer automáticamente valores del archivo ni usar OCR como fuente de verdad. La operación final debe reutilizar las reglas de CUEVA-003A, incluida la idempotencia y el rechazo de importes superiores al saldo.
+Al confirmar, la interfaz administrativa debe solicitar que el administrador ingrese o verifique manualmente:
+- **Importe efectivamente recibido**, positivo y no superior al saldo pendiente vigente del período.
+- **Fecha real del pago**, no la fecha de carga del comprobante ni la fecha de revisión.
+- **Método de pago**, utilizando los valores admitidos por el contrato financiero existente.
+
+No extraer automáticamente estos valores del archivo ni usar OCR como fuente de verdad. El servidor debe volver a validar los campos y el saldo inmediatamente antes de registrar el movimiento. La operación debe reutilizar `cueva_billing_write`, sus reglas de idempotencia y prevención de sobrepagos, y vincular el movimiento a la presentación en una única transacción. El actor y la fecha de revisión del comprobante se conservan por separado de la fecha real del pago.
+
+Si el importe ingresado ya no cabe en el saldo vigente (por ejemplo, por otra confirmación concurrente), la operación debe rechazarse sin crear movimiento ni marcar el comprobante como confirmado; el administrador debe revisar el saldo y resolver el caso.
 
 ## 8. Compatibilidad con CUEVA-003A
 
@@ -153,7 +161,8 @@ Por eso, antes de implementar confirmación hay que decidir y diseñar cómo el 
 - El comprobante confirmado referencia el movimiento financiero generado; no reemplaza al movimiento.
 - Si el pago es parcial, el saldo se calcula como ya lo hace CUEVA-003A.
 - Si se rechaza, no se crea movimiento ni se altera el saldo.
-- Un período puede recibir presentaciones sucesivas a lo largo del tiempo, pero nunca más de una pendiente simultáneamente. La posibilidad de una nueva presentación tras una confirmación dependerá del saldo y de la regla de negocio final para pagos parciales; el límite aprobado es sobre pendientes simultáneos.
+- Un período puede recibir presentaciones sucesivas después de rechazos o confirmaciones parciales, siempre que quede saldo pendiente y no exista otra presentación pendiente. El límite de una pendiente es simultáneo, no histórico.
+- No se admiten nuevas presentaciones cuando el período está totalmente pagado. Las correcciones de movimientos confirmados siguen el mecanismo financiero de corrección/reversión; no se resuelven con un nuevo comprobante.
 
 ## 9. Coordinación y archivos sensibles a conflictos
 
@@ -177,6 +186,10 @@ Por eso, antes de implementar confirmación hay que decidir y diseñar cómo el 
 - Admin puede revisar; alumno no puede resolver.
 - Confirmación crea un solo movimiento; doble clic/reintento no duplica; fallo transaccional no deja estado/pago desincronizados.
 - Pago parcial y saldo actualizado conforme al ledger.
+- Tras confirmación parcial, nueva presentación permitida para el mismo período; no se permite una segunda pendiente simultánea.
+- Período totalmente pagado bloquea nuevas presentaciones.
+- Importe cero/negativo o superior al saldo vigente se rechaza; se valida también ante confirmaciones concurrentes.
+- La fecha registrada es la fecha real del pago y el método/importe son ingresados o verificados manualmente; OCR no alimenta el ledger.
 - Rechazo no altera saldo.
 - Objeto privado inaccesible sin autorización y URLs firmadas expiradas.
 - Fallo de red/carga/DB y compensación de objeto huérfano.
@@ -185,9 +198,7 @@ Por eso, antes de implementar confirmación hay que decidir y diseñar cómo el 
 
 ## 11. Decisiones que permanecen pendientes antes del código
 
-1. **Importe y fecha al confirmar una presentación de alumno:** definir y aprobar la interacción administrativa para verificar/introducir los datos que exige `cueva_billing_write`.
-2. **Nueva presentación después de un comprobante confirmado:** decidir si se permite cuando queda saldo pendiente, en coherencia con pagos parciales. El límite de un pendiente simultáneo ya está aprobado.
-3. **Selección del escáner:** verificar opciones administradas compatibles y su privacidad/costo; si no hay una opción adecuada, evaluar worker aislado con ClamAV. La arquitectura de cuarentena y fail-closed queda recomendada, pero no se ha contratado ni desplegado infraestructura.
+1. **Selección del escáner:** verificar opciones administradas compatibles y su privacidad/costo; si no hay una opción adecuada, evaluar worker aislado con ClamAV. La arquitectura de cuarentena y fail-closed queda recomendada, pero no se ha contratado ni desplegado infraestructura.
 
 ## 12. Límites de esta propuesta
 
