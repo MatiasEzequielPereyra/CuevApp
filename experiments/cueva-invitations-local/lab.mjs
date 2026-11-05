@@ -1,6 +1,8 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { randomBytes, randomUUID, createHmac } from 'node:crypto';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdtemp, rm } from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join,resolve,sep} from 'node:path';
 import { chromium } from 'playwright';
 import { launch } from './application.mjs';
 import pg from 'pg';
@@ -18,11 +20,13 @@ const id = randomUUID().replaceAll('-', '').slice(0, 12);
 const reconciliation = process.env.CUEVA_INVITATION_RECONCILIATION_ONLY === '1';
 const deletion = process.env.CUEVA_STUDENT_DELETION_ONLY === '1';
 const transport = process.env.CUEVA_INVITATION_TRANSPORT_ONLY === '1';
+const reauthorization = process.env.CUEVA_SMTP_REAUTHORIZATION_ONLY === '1';
+const smtpFault=reconciliation||reauthorization;
 const names = { templates:`cueva-invites-templates-${id}`, network: `cueva-invites-net-${id}`, db: `cueva-invites-db-${id}`, auth: `cueva-invites-auth-${id}`, mail: `cueva-invites-mail-${id}`, rest: `cueva-invites-rest-${id}` };
 const secret = () => randomBytes(32).toString('hex');
 const dbPassword = secret(), authenticatorPassword = secret(), coordinatorPassword = secret(), jwtSecret = secret(), password = `Aa9!${secret()}`;
 const created = [], results = [];
-let networkCreated = false, stage = 'network';
+let networkCreated = false, stage = 'network',smtpCertDir;
 const note = (name, status, detail = '') => results.push({name, status, detail});
 const docker = (args, extraEnv = {}) => execFileSync('docker', args, {encoding:'utf8', stdio:['ignore','pipe','pipe'], env:{...process.env,...extraEnv}}).trim();
 const sql = input => { try { return execFileSync('docker', ['exec','-i',names.db,'psql','-U','postgres','-d','postgres','-v','ON_ERROR_STOP=1'], {input, encoding:'utf8', stdio:['pipe','pipe','pipe']}).trim(); } catch (error) { const match=String(error.stderr || '').match(/ERROR:\s*(function|role|schema|relation|permission|syntax)[^\n]{0,80}/i)?.[0] || 'DATABASE_SETUP_FAILED'; throw new Error(match); } };
@@ -33,7 +37,10 @@ async function request(url, {method='GET',token,body,redirect='follow'}={}) {
   return fetch(url, {method,redirect,headers:{...(token?{authorization:`Bearer ${token}`} : {}),...(body?{'content-type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(10000)});
 }
 async function waitFor(fn) { for(let i=0;i<60;i++){try{if(await fn())return;}catch{}await sleep(1000);}throw new Error('READINESS_TIMEOUT'); }
-function start(name, image, args, env, diagnostic=false) { docker(['run','-d',...(diagnostic?[]:['--rm']),'--name',name,'--network',reconciliation&&name===names.auth?'container:'+names.templates:names.network,'--memory','512m','--cpus','1','--log-driver',diagnostic?'local':'none',...args,image],env); created.push(name); }
+function start(name, image, args, env, diagnostic=false) {
+  try{docker(['run','-d',...(diagnostic?[]:['--rm']),'--name',name,'--network',smtpFault&&name===names.auth?'container:'+names.templates:names.network,'--memory','512m','--cpus','1','--log-driver',diagnostic?'local':'none',...args,image],env);created.push(name);}
+  catch(error){try{docker(['inspect','--format','{{.Name}}',name]);created.push(name);}catch{}throw error;}
+}
 function port(name, inner) { const ports=JSON.parse(docker(['inspect','--format','{{json .NetworkSettings.Ports}}',name])); const bindings=ports?.[`${inner}/tcp`]; if(!bindings || bindings.length!==1 || bindings[0].HostIp!=='127.0.0.1'){ note('port_diagnostic','OBSERVED',`mapping=${JSON.stringify(bindings ?? null)}`); throw new Error('PORT_NOT_LOOPBACK'); } return Number(bindings[0].HostPort); }
 try {
   docker(['network','create','--driver','bridge',names.network]); networkCreated=true;
@@ -58,13 +65,20 @@ try {
   const templatePath=fileURLToPath(new URL('../../supabase/templates/',import.meta.url));
   const templateServer="const http=require('http'),fs=require('fs');http.createServer((q,s)=>{if(q.url!='/invite.html'){s.writeHead(404);return s.end()}s.setHeader('Content-Type','text/html');s.end(fs.readFileSync('/templates/invite.html'))}).listen(8080,'0.0.0.0')";
   const gatePath=fileURLToPath(new URL('./',import.meta.url));
-  docker(['run','-d','--rm','--name',names.templates,'--network',names.network,'--network-alias','templates','--memory','128m','--cpus','1','--log-driver','none','--mount',`type=bind,source=${templatePath},target=/templates,readonly`,...(reconciliation?['--mount',`type=bind,source=${gatePath},target=/lab,readonly`,'-p','127.0.0.1::8080','-p','127.0.0.1::9999']:[]),'--entrypoint','node',images.templates,...(reconciliation?['/lab/smtp-gate.mjs']:['-e',templateServer])]);created.push(names.templates);
+  if(reauthorization){
+    smtpCertDir=await mkdtemp(join(tmpdir(),'cueva-smtp-test-'));
+    const openssl=process.platform==='win32'?'C:/Program Files/Git/usr/bin/openssl.exe':'openssl';
+    execFileSync(openssl,['req','-x509','-newkey','rsa:2048','-nodes','-keyout',join(smtpCertDir,'key.pem'),'-out',join(smtpCertDir,'cert.pem'),'-days','1','-subj','/CN=localhost','-addext','subjectAltName=DNS:localhost,IP:127.0.0.1'],{stdio:'ignore',env:{...process.env,MSYS_NO_PATHCONV:'1'}});
+  }
+  const toolsPath=fileURLToPath(new URL('../../tools/cueva-smtp/',import.meta.url));
+  docker(['run','-d','--rm','--name',names.templates,'--network',names.network,'--network-alias','templates','--memory','128m','--cpus','1','--log-driver','none','--mount',`type=bind,source=${templatePath},target=/templates,readonly`,...(smtpFault?['--mount',`type=bind,source=${gatePath},target=/lab,readonly`,'-p','127.0.0.1::8080','-p','127.0.0.1::9999']:[]),...(reauthorization?['--mount',`type=bind,source=${toolsPath},target=/smtp-tools,readonly`,'--mount',`type=bind,source=${smtpCertDir},target=/smtp-cert,readonly`,'-p','127.0.0.1::1025']:[]),'--entrypoint','node',images.templates,...(smtpFault?[reauthorization?'/lab/reauthorization-smtp-gate.mjs':'/lab/smtp-gate.mjs']:['-e',templateServer])]);created.push(names.templates);
   env.GOTRUE_MAILER_TEMPLATES_INVITE='http://templates:8080/invite.html';
-  if(reconciliation){env.GOTRUE_SMTP_HOST='localhost';env.GOTRUE_SMTP_USER='synthetic';env.GOTRUE_SMTP_PASS=secret();}
+  if(smtpFault){env.GOTRUE_SMTP_HOST='localhost';env.GOTRUE_SMTP_USER='synthetic';env.GOTRUE_SMTP_PASS=secret();}
+  if(reauthorization)env.SSL_CERT_FILE='/smtp-cert/cert.pem';
   stage='auth_start';
-  start(names.auth,images.auth,[...(reconciliation?[]:['-p','127.0.0.1::9999']),...Object.keys(env).flatMap(key=>['-e',key])],env,true);
+  start(names.auth,images.auth,[...(smtpFault?[]:['-p','127.0.0.1::9999']),...(reauthorization?['--mount',`type=bind,source=${smtpCertDir},target=/smtp-cert,readonly`]:[]),...Object.keys(env).flatMap(key=>['-e',key])],env,true);
   stage='auth_ready';
-  const base=`http://127.0.0.1:${port(reconciliation?names.templates:names.auth,9999)}`;
+  const base=`http://127.0.0.1:${port(smtpFault?names.templates:names.auth,9999)}`;
   for(let i=0;i<60;i++){if(docker(['inspect','--format','{{.State.Running}}',names.auth])!=='true')throw new Error('AUTH_EXIT'); try{if((await request(`${base}/health`)).ok)break;}catch{} if(i===59)throw new Error('READINESS_TIMEOUT'); await sleep(1000);}
   stage='database_setup'; sql(await readFile('../cueva-002i-local/experiment.sql','utf8'));
   sql('CREATE ROLE service_role NOLOGIN BYPASSRLS; GRANT service_role TO authenticator;');
@@ -73,7 +87,8 @@ try {
   if(deletion) sql(await readFile('../../supabase/migrations/20261104093000_cueva_billing.sql','utf8'));
   sql(await readFile('../../supabase/migrations/20261104120000_cueva_student_invitations.sql','utf8'));
   if(deletion) sql(await readFile('../../supabase/migrations/20261104185308_cueva_delete_empty_student.sql','utf8'));
-  if(reconciliation||transport) sql(await readFile('../../supabase/migrations/20261104182640_cueva_invitation_reconciliation.sql','utf8'));
+  if(reconciliation||transport||reauthorization) sql(await readFile('../../supabase/migrations/20261104182640_cueva_invitation_reconciliation.sql','utf8'));
+  if(reauthorization)sql(await readFile('../../supabase/migrations/20261105125521_cueva_invitation_reauthorization.sql','utf8'));
   stage='database_role';
   sql(`ALTER ROLE authenticator PASSWORD '${authenticatorPassword}'; ALTER ROLE cueva_coordinator PASSWORD '${coordinatorPassword}';`);
   const dbPort=port(names.db,5432);
@@ -89,8 +104,8 @@ try {
   stage='rest_ready'; await waitFor(async()=>(await request(`${rest}/`)).status<500);
   const admin=testJwt('service_role');
   stage='browser_flow';
-  const { runBrowserFlow }=await import(transport?'./transport-test.mjs':deletion?'./deletion-test.mjs':reconciliation?'./reconciliation-test.mjs':'./browser-test.mjs');
-  await runBrowserFlow({base,rest,mailBase,dbPort,dbPassword,gateBase:reconciliation?`http://127.0.0.1:${port(names.templates,8080)}`:null,coordinatorPassword,admin,anon:testJwt('anon'),id,password,sql,request,note,launch,chromium,pg,secret,stopMail:()=>{docker(['stop','--time','1',names.mail]);created.splice(created.indexOf(names.mail),1);note('cleanup_mail','PASS');},accessIntegrationOnly:process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'});
+  const { runBrowserFlow }=await import(reauthorization?'./reauthorization-test.mjs':transport?'./transport-test.mjs':deletion?'./deletion-test.mjs':reconciliation?'./reconciliation-test.mjs':'./browser-test.mjs');
+  await runBrowserFlow({base,rest,mailBase,dbPort,dbPassword,gateBase:smtpFault?`http://127.0.0.1:${port(names.templates,8080)}`:null,...(reauthorization?{smtpPort:port(names.templates,1025),smtpCa:await readFile(join(smtpCertDir,'cert.pem'),'utf8')}:{ }),coordinatorPassword,admin,anon:testJwt('anon'),id,password,sql,request,note,launch,chromium,pg,secret,stopMail:()=>{docker(['stop','--time','1',names.mail]);created.splice(created.indexOf(names.mail),1);note('cleanup_mail','PASS');},accessIntegrationOnly:process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'});
 } catch (error) {
   if(created.includes(names.auth)) {
     const logs=spawnSync('docker',['logs',names.auth],{encoding:'utf8'}); const output=String(logs.stdout)+String(logs.stderr);
@@ -103,7 +118,8 @@ try {
 finally {
   for(const name of created.reverse()) { try { if(name===names.auth){docker(['rm','-f',name]);}else{docker(['stop','--time','5',name]);} note(`cleanup_${name.split('-')[2]}`,'PASS'); } catch { note(`cleanup_${name.split('-')[2]}`,'FAIL'); } }
   if(networkCreated){try{docker(['network','rm',names.network]);note('cleanup_network','PASS');}catch{note('cleanup_network','FAIL');}}
-  await writeFile(transport?'transport-results.json':deletion?'deletion-results.json':reconciliation?'reconciliation-results.json':'results.json',JSON.stringify({date:new Date().toISOString(),scope:transport?'CUEVA-INVITACION-RECUPERACION-TRANSPORTE-001':deletion?'CUEVA-ALUMNOS-ELIMINAR':reconciliation?'CUEVA-INVITACION-RECUPERACION-001':process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'?'CUEVA-ACCESO-001-INTEGRACION':'CUEVA-ALUMNOS-001',images,results},null,2)+'\n');
+  if(smtpCertDir){const target=resolve(smtpCertDir),parent=resolve(tmpdir());if(!target.startsWith(parent+sep)||!target.slice(parent.length+1).startsWith('cueva-smtp-test-'))throw Error('UNSAFE_TEMP_PATH');await rm(target,{recursive:true,force:true});note('cleanup_synthetic_tls','PASS');}
+  await writeFile(reauthorization?'reauthorization-results.json':transport?'transport-results.json':deletion?'deletion-results.json':reconciliation?'reconciliation-results.json':'results.json',JSON.stringify({date:new Date().toISOString(),scope:reauthorization?'CUEVA-INVITACION-RECHAZO-SMTP-002':transport?'CUEVA-INVITACION-RECUPERACION-TRANSPORTE-001':deletion?'CUEVA-ALUMNOS-ELIMINAR':reconciliation?'CUEVA-INVITACION-RECUPERACION-001':process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'?'CUEVA-ACCESO-001-INTEGRACION':'CUEVA-ALUMNOS-001',images,results},null,2)+'\n');
   console.log(JSON.stringify({results},null,2));
   if(results.some(x=>['FAIL','BLOCKED'].includes(x.status)))process.exitCode=1;
 }

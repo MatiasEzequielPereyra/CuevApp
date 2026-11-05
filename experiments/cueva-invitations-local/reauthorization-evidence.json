@@ -1,0 +1,279 @@
+{
+  "date": "2026-11-05T13:21:31.162Z",
+  "scope": "CUEVA-INVITACION-RECHAZO-SMTP-002",
+  "images": {
+    "templates": "public.ecr.aws/supabase/studio@sha256:32a293ffd7b081926b225f6503bf13730447e544041d1f37f0a5586578183e91",
+    "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "mail": "public.ecr.aws/supabase/mailpit@sha256:37a38e48e9338cd7e89dfeb487f37b02ebfcd9cb23111bed2d345e79d37d6dd6",
+    "rest": "public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962"
+  },
+  "results": [
+    {
+      "name": "authenticator_password_cannot_login_as_postgres",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "exact_gen2_uncertain_pending_after_real_534",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "tls_auth_preflight_succeeds_without_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "untrusted_tls_fails_before_auth",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "tls_without_auth_is_not_repair_proof",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "wrong_smtp_credential_no_repair_proof",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "repair_absent",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "repair_tampered",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "rejection_tampered",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "http500_not_rejection",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "prior_acceptance_not_excluded",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "request_not_completed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_quiescent",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "different_identity",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "generation3_not_general_takeover",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "tls_proof_not_verified",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "synthetic_proof_cannot_be_used_remotely",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "previous_accepted_refused",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "previous_reserved_refused",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "previous_dispatching_refused",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "previous_authorization_hash_must_match",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "unfinished_previous_request_refused",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "unrecognized_pending_operation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "confirmed_identity_refused",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "negative_cases_preserve_old_ledger_and_no_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "check_eligible_no_archive",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "concurrent_one_new_reservation_and_send",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "prior_snapshot_complete_and_exact",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "history_closed_to_api_roles",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "same_uuid_profile_fiche_gen3_not_ready",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "old_nonce_invalidated",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "history_update_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "history_delete_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "old_authorization_cannot_replay",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "new_authorization_replay_no_send",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "different_id_even_with_new_auth_probe_cannot_bypass",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_duplicate_mail_after_replays",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "real_link_generation3",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "acceptance_still_not_ready",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "own_password_enables_same_identity",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "new_rejection_retained_no_retry",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "new_lost_response_retained_one_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "new_failures_keep_exact_pending_marker",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "history_kept_for_all_new_attempts",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_rest",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_auth",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_templates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_db",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_network",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_synthetic_tls",
+      "status": "PASS",
+      "detail": ""
+    }
+  ],
+  "sourceHashes": {
+    "scripts/reconcile-student-invitation.mjs": "93890c6b158da4ad88341a2485f47955f4f5642a302512cdd76f61a63b518970",
+    "scripts/smtp-repair-binding.mjs": "45ea8bc2f845cfbdf4667d169ad94263122d518fd3d895e37598fa46b40e4cd8",
+    "supabase/migrations/20261105125521_cueva_invitation_reauthorization.sql": "1e3e1da6fd0c37fd956f755efca54b01ee90cc1dd978b6d2c6dcd1737a883fc0",
+    "tools/cueva-smtp/preflight.mjs": "738c8bfdf187d286e2be6edbbae3ed0f78d2ab9b99f2368f17cc2fecc06ee2f9",
+    "tools/cueva-smtp/package.json": "8416fd3d54f8b20a39d38730b72ddb3c8c581681f37dc2dbeb6d03b090d7cc5b",
+    "tools/cueva-smtp/package-lock.json": "ec8f14b25771903fe3f6a040cba46fae236ea9b8a78062865f5907b0ff0b8b02",
+    "experiments/cueva-invitations-local/lab.mjs": "b012b1793b6f0e74372c1082ff246be73a286f8456a486564a8a82723932bfac",
+    "experiments/cueva-invitations-local/reauthorization-test.mjs": "916f47425f5c8dfefad9cc3e14a7d7222cd28b9ce478c684d89b154886b4cd59",
+    "experiments/cueva-invitations-local/reauthorization-smtp-gate.mjs": "0f6b1069d9998996d96026c90ff85385cdbfe2b48fa9fcd39848d3de1d7d1341"
+  }
+}
