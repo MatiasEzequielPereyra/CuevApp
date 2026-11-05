@@ -1,6 +1,6 @@
 # CUEVA-004 — Especificación funcional y criterios de aceptación
 
-**Estado:** definición funcional parcial aprobada; pendiente de cierre técnico y de decisiones restantes.  
+**Estado:** reglas funcionales de presentación y revisión aprobadas; pendiente de diseño técnico, revisión de arquitectura e implementación.  
 **Alcance:** adjuntar, revisar y conservar comprobantes de pagos realizados fuera de CUEVA.  
 **No incluye:** pasarela, checkout, cobros con tarjeta, débitos ni procesamiento de pagos online.
 
@@ -15,6 +15,9 @@
 - Estados mínimos: **Pendiente de revisión**, **Confirmado** y **Rechazado**.
 - Formatos permitidos: **JPG/JPEG, PNG y PDF**.
 - Tamaño máximo: **10 MB por archivo**.
+- Cada presentación admite **exactamente un archivo**.
+- Puede existir como máximo **un comprobante pendiente de revisión por período y alumno**.
+- El rechazo exige un **motivo obligatorio y claro**, visible para el alumno.
 - Si un comprobante es rechazado, el alumno puede presentar otro para el mismo período.
 - Cada nueva presentación es independiente. La presentación rechazada anterior se conserva con su motivo y trazabilidad; no se sobrescribe ni elimina.
 - Los archivos deben ser privados y su acceso debe estar restringido mediante autorización del servidor y políticas de datos/storage.
@@ -84,7 +87,10 @@ Los mensajes no deben revelar rutas internas, nombres de buckets, detalles de in
 - [ ] Un alumno no puede confirmar ni rechazar comprobantes.
 - [ ] Un administrador autorizado puede revisar y resolver comprobantes.
 - [ ] Un comprobante nuevo queda pendiente solo después de carga/persistencia exitosas.
-- [ ] Rechazar requiere conservar la decisión y su motivo (la obligatoriedad del motivo debe confirmarse antes de implementar).
+- [ ] No se admite una segunda presentación mientras exista otra pendiente para el mismo alumno y período, incluso ante solicitudes simultáneas o reintentos.
+- [ ] El administrador no puede rechazar sin ingresar un motivo no vacío; el motivo queda visible para el alumno.
+- [ ] Cada presentación admite exactamente un archivo; no se puede adjuntar un segundo archivo a la misma presentación.
+- [ ] El rechazo conserva el motivo obligatorio, la identidad del administrador y la fecha de la decisión.
 - [ ] Un comprobante rechazado permanece consultable según permisos y no se sobrescribe.
 - [ ] El alumno puede presentar otro comprobante para el mismo período después del rechazo.
 - [ ] La nueva presentación es un registro separado y mantiene vínculo al mismo período.
@@ -111,21 +117,21 @@ Los mensajes no deben revelar rutas internas, nombres de buckets, detalles de in
 7. Usuario A intenta leer/subir en período de usuario B.
 8. Alumno intenta invocar confirmación/rechazo directamente.
 9. Administrador confirma dos veces por doble clic/reintento.
-10. Administrador rechaza; alumno vuelve a presentar para el mismo período; ambos registros y su historial permanecen.
-11. Confirmación y creación del movimiento financiero ante fallo parcial/transacción/reintento.
-12. Pago en efectivo sin comprobante.
-13. Acceso a objeto privado por usuario no autorizado y expiración de URL temporal, si se utiliza.
+10. Administrador intenta rechazar sin motivo: la acción se bloquea; con motivo, el rechazo queda auditado y visible para el alumno.
+11. Mientras hay un comprobante pendiente, el alumno intenta enviar otro para el mismo período: se rechaza la segunda presentación, incluso con solicitudes concurrentes.
+12. Tras el rechazo, el alumno presenta un nuevo archivo único para el mismo período; ambos registros y su historial permanecen.
+13. Confirmación y creación del movimiento financiero ante fallo parcial/transacción/reintento.
+14. Pago en efectivo sin comprobante.
+15. Acceso a objeto privado por usuario no autorizado y expiración de URL temporal, si se utiliza.
 
-## 7. Decisiones todavía pendientes
+## 7. Aspectos técnicos pendientes de definición
 
-No asumir ni implementar estas decisiones hasta resolverlas:
-- Si puede existir más de un comprobante **Pendiente de revisión** simultáneo para el mismo período. Propuesta a evaluar: máximo uno pendiente por período; permitir una nueva presentación después de un rechazo.
-- Si el motivo de rechazo será obligatorio y qué catálogo/texto se mostrará al alumno.
-- Si se admiten adjuntos múltiples para una misma presentación o exactamente un archivo por presentación. El límite aprobado es 10 MB por archivo.
-- Política concreta de conservación/eliminación de archivos y registros, respetando historial financiero.
-- Mecanismo antimalware viable en la infraestructura real y control compensatorio si no existe.
-- Reglas de idempotencia y vinculación exacta con movimientos de CUEVA-003, que deben verificarse contra la implementación existente.
-- Requisitos de accesibilidad y copy final de interfaz pueden cerrarse durante el diseño sin alterar las reglas aprobadas.
+Las reglas funcionales de presentación están cerradas. Antes de implementar todavía debe resolverse, a partir de la arquitectura real:
+- Política concreta de conservación/eliminación de archivos y registros, respetando el historial financiero.
+- Mecanismo antimalware viable en la infraestructura disponible y control compensatorio si no existe. No afirmar que hay escaneo hasta implementarlo y probarlo.
+- Reglas de idempotencia y vinculación transaccional con movimientos de CUEVA-003, verificadas contra el código integrado.
+- Diseño de concurrencia que garantice un único comprobante pendiente por alumno/período (por ejemplo, una restricción transaccional adecuada; no asumir mecanismo antes de inspeccionar el esquema).
+- Requisitos de accesibilidad y copy final de interfaz, sin alterar las reglas aprobadas.
 
 ## 8. Restricciones de ejecución
 
