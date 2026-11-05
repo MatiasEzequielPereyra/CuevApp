@@ -344,15 +344,57 @@ Cuando cambia el precio:
 - Las deudas históricas conservan la información económica correspondiente.
 - El nuevo valor se aplica conforme a reglas explícitas para períodos posteriores.
 
-## VENCIMIENTOS
+## VENCIMIENTOS — REGLAS FUNCIONALES APROBADAS
 
-Cada alumno tiene un vencimiento individual.
+Cada alumno tiene un vencimiento individual y un calendario mensual propio.
 
-Inicialmente se vincula a su fecha de alta o renovación.
+### Día de referencia y meses cortos
 
-Si alguien paga después del vencimiento, **Nico decide caso por caso** si conserva la fecha original o establece una nueva.
+- El día original de vencimiento se conserva como referencia.
+- Si un mes no contiene ese día, el vencimiento será el último día calendario de ese mes.
+- En los meses siguientes se recupera el día original; el ajuste de un mes corto no desplaza permanentemente el calendario.
+- Ejemplo: día 31 → 28/29 de febrero → 31 de marzo → 30 de abril → 31 de mayo.
 
-No imponer automáticamente un único comportamiento.
+### Altas a mitad de mes
+
+- La fecha de alta determina inicialmente el día de referencia del vencimiento.
+- Ejemplo: alta el día 18 → primer vencimiento el día 18 del mes siguiente y, por defecto, el día 18 de los meses posteriores.
+- No se normaliza automáticamente el calendario de un alumno nuevo.
+- Un administrador puede normalizar individualmente el día de vencimiento. La nueva referencia se mantiene para los períodos futuros hasta que un administrador vuelva a cambiarla.
+
+### Pagos fuera de término y renovaciones
+
+- Un pago realizado después del vencimiento se registra con su fecha real y no desplaza automáticamente el calendario.
+- Por defecto se conserva el vencimiento original y el siguiente período mantiene el calendario existente.
+- Solo una decisión expresa del administrador puede cambiar la fecha de referencia.
+- Si el administrador establece una nueva referencia, esta persiste para los meses siguientes hasta otro cambio administrativo.
+- Un pago parcial no renueva ni salda el período: el saldo pendiente continúa bajo seguimiento.
+- No se aplican intereses ni recargos automáticos por mora. Cualquier tratamiento de mora es una decisión administrativa caso por caso.
+
+### Modificaciones manuales y alcance
+
+- Solo los administradores pueden modificar el vencimiento individual.
+- Por defecto, el cambio se aplica desde el próximo período todavía no iniciado.
+- Para modificar el vencimiento del período actual, el administrador debe elegir expresamente ese alcance y confirmar la acción.
+- Una modificación no altera pagos ni períodos históricos. No cambia retroactivamente un vencimiento ya comunicado salvo que el administrador confirme expresamente la modificación del período actual.
+- El cambio recalcula los recordatorios que todavía no fueron enviados para los períodos afectados. Los envíos ya procesados permanecen en sus registros y no se duplican.
+- La justificación/motivo es opcional.
+
+### Auditoría obligatoria
+
+Cada modificación debe generar un registro protegido y no editable/eliminable desde la interfaz. Debe conservar como mínimo:
+
+- Alumno afectado.
+- Administrador que realizó el cambio.
+- Fecha y hora del cambio.
+- Fecha/día anterior y nueva referencia.
+- Alcance: próximo período no iniciado o período actual.
+- Motivo, si el administrador decidió proporcionarlo.
+- Resultado de la operación.
+
+Ambos administradores pueden consultar los registros de auditoría. La auditoría no reemplaza el historial financiero ni modifica movimientos de pago.
+
+No modificar la fecha de vencimiento como efecto secundario automático del registro de un pago.
 
 ## MEDIOS DE PAGO
 
@@ -492,59 +534,70 @@ Nico puede registrar un pago manualmente sin obligar a adjuntar un archivo.
 
 Los administradores deben poder consultar los comprobantes necesarios para verificar los cobros.
 
-# 10. RECORDATORIOS AUTOMÁTICOS
+# 10. RECORDATORIOS AUTOMÁTICOS DE VENCIMIENTO
 
-Nico pidió específicamente un correo electrónico **un día antes del vencimiento**.
+Los recordatorios de vencimiento tienen dos instancias, ambas aprobadas:
 
-Decisión definitiva:
+- **Preventivo: 5 días antes del vencimiento.**
+- **Refuerzo: 1 día antes del vencimiento.**
 
-Un único recordatorio previo.
+No se agregan otras secuencias automáticas de avisos por deuda en V1 sin una decisión posterior.
 
-No implementar secuencias adicionales de avisos por deuda en V1.
+## HORARIO Y CONFIGURACIÓN
 
-## REGLAS
+- Horario predeterminado: **12:00 del mediodía**.
+- Zona horaria: `America/Argentina/Buenos_Aires`.
+- Un administrador puede modificar el horario desde Configuración.
+- El horario configurado es único y se aplica a ambos recordatorios.
+- Los alumnos no pueden modificar este ajuste.
+- Cada cambio debe registrar qué administrador lo realizó y cuándo.
+- El cambio se aplica a los recordatorios pendientes que todavía no fueron enviados; no duplica ni elimina envíos ya procesados.
 
-Enviar si:
+## CONDICIONES DE ENVÍO Y CANCELACIÓN
 
-- Existe un email válido y habilitado.
-- La cuota correspondiente está pendiente total o parcialmente.
-- El vencimiento es al día siguiente.
-- No se procesó exitosamente el mismo recordatorio para ese alumno y vencimiento.
+Para cada instancia, el período debe conservar saldo pendiente total o parcial en el momento de procesar el envío.
 
-No enviar si:
+- Si el período queda completamente pagado antes de una instancia, esa instancia se cancela y no se envía.
+- Si existe un pago parcial, se mantiene el seguimiento del saldo pendiente y puede enviarse el recordatorio que corresponda.
+- Si cambia el vencimiento, se cancelan las programaciones anteriores todavía pendientes y se recalculan ambas instancias con la nueva fecha.
+- Los recordatorios ya enviados permanecen registrados; un cambio posterior no los borra ni los vuelve a enviar.
+- Cada instancia se identifica de forma independiente por alumno, período/vencimiento y tipo de recordatorio (5 días o 1 día), con prevención de duplicados e idempotencia.
+- El correo es un canal obligatorio y no puede desactivarse desde las preferencias del alumno. Debe existir una dirección válida y habilitada para poder entregarlo.
+- El envío se ejecuta automáticamente, sin que Nico tenga que abrir la PWA.
 
-- El alumno no tiene email.
-- La cuota ya está completamente pagada.
-- El recordatorio ya fue procesado para ese vencimiento.
-- No corresponde el envío según el estado autorizado de la cuenta.
+## CANALES
 
-Utilizar zona horaria:
+Para cada recordatorio de vencimiento:
 
-`America/Argentina/Buenos_Aires`
+1. **Correo electrónico:** siempre se envía; no es configurable por el alumno.
+2. **Notificación interna:** siempre se crea y aparece en el perfil del alumno, independientemente de la preferencia push.
+3. **Notificación push:** activada por defecto; el alumno puede desactivarla. Solo puede entregarse si el navegador/dispositivo concede el permiso requerido y mantiene una suscripción válida. La preferencia de CUEVA no puede conceder permisos del sistema operativo por sí misma.
 
-## CONTENIDO DEL EMAIL
+## NOTIFICACIONES INTERNAS Y OTROS EVENTOS
 
-Debe incluir:
+- Las notificaciones internas no tendrán una vista de historial. El alumno podrá marcar cada notificación como leída; al marcarla como leída dejará de figurar entre las notificaciones pendientes/no leídas.
+- El estado de lectura debe persistir para que el aviso no vuelva a aparecer como no leído.
+- Una actualización/publicación de la rutina del alumno es otro evento aprobado que genera una notificación interna. También puede generar push si el alumno la tiene habilitada y concedió permiso.
+- No se establece el envío de correos para actualizaciones de rutina en esta decisión; el correo obligatorio aquí definido corresponde a los recordatorios de vencimiento.
+- No agregar otros eventos notificables sin definición funcional posterior.
 
-- Identidad de CUEVA.
-- Nombre del alumno.
-- Fecha de vencimiento.
-- Recordatorio de la cuota.
-- Información clara para consultar su situación.
+## FALLOS, REINTENTOS Y REGISTROS
 
-No incluir información personal innecesaria.
+- Registrar intentos, resultados y fallos por canal y por instancia de recordatorio.
+- Aplicar reintentos controlados para fallos transitorios, con límites y espera progresiva; evitar reintentos infinitos.
+- No considerar entregado un correo solo porque el proveedor aceptó la solicitud: distinguir aceptación del proveedor de entrega confirmada cuando el proveedor ofrezca esa señal.
+- Un fallo de push no debe impedir el correo ni la notificación interna.
+- Un fallo de correo debe quedar registrado y activar la política de reintentos; no marcar la instancia como enviada exitosamente hasta obtener el resultado definido por el proveedor.
+- La ejecución debe ser programada y confiable, independiente de que un administrador tenga abierta la PWA.
+- Proteger credenciales del proveedor y los endpoints/jobs; no exponer secretos en el cliente.
 
-## INFRAESTRUCTURA
+## CONTENIDO Y PRIVACIDAD DEL EMAIL
 
-- Envío automático programado.
-- Registro de intentos.
-- Manejo de fallos.
-- Reintentos razonables.
-- Prevención de correos duplicados.
-- Configuración segura del proveedor.
-- Distinción entre correo aceptado y correo efectivamente entregado.
+Debe incluir identidad de CUEVA, nombre del alumno, fecha de vencimiento, aviso correspondiente y una indicación para consultar su situación. No incluir información personal innecesaria ni detalles financieros sensibles que no sean necesarios.
 
-El sistema debe poder operar sin que Nico tenga que abrir la PWA para ejecutar los recordatorios.
+## NOTA DE ALCANCE
+
+Estas reglas funcionales están aprobadas; no implican que los jobs, el proveedor de correo, Web Push, las preferencias ni el centro de notificaciones estén implementados. La arquitectura y el código deben verificarse contra el estado real del repositorio antes de elegir tablas, funciones, proveedores o mecanismos concretos.
 
 ---
 
@@ -947,22 +1000,17 @@ Para V1 solo es necesario guardar correctamente los resultados de ejercicios est
 
 Los gráficos y métricas avanzadas quedan posteriores.
 
-## NOTIFICACIONES
+## NOTIFICACIONES — ALCANCE V1 ACTUALIZADO
 
-Inicialmente se decidió incorporar:
+La decisión posterior aprobada reemplaza la prioridad histórica que postergaba el sistema interno y push:
 
-- Notificaciones internas.
-- Notificaciones push.
-- Avisos automáticos.
-- Mensajes manuales de Nico.
+- Recordatorios de vencimiento por correo e internos obligatorios; push opcional para el alumno y activada por defecto (sujeta a permiso del navegador/dispositivo).
+- Notificaciones internas visibles en el perfil, sin historial, pero con posibilidad de marcar como leídas.
+- Actualización/publicación de una rutina: genera notificación interna y push cuando esté habilitada y autorizada.
+- El alumno no puede desactivar el correo de los recordatorios ni las notificaciones internas; solo puede desactivar push.
+- El horario de los recordatorios es configurable por administradores, con valor inicial 12:00 de Argentina.
 
-Después se priorizó específicamente el email recordatorio de cuotas.
-
-Por lo tanto:
-
-**Email recordatorio: V1.**
-
-**Sistema completo de notificaciones y push: posterior al MVP.**
+Los mensajes manuales de Nico y otros eventos no quedan automáticamente incluidos: requieren definición específica antes de implementarse.
 
 ## OTRAS FUNCIONES POSTERGADAS
 
