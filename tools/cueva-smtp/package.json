@@ -1,0 +1,15 @@
+{
+  "name": "cueva-private-smtp-preflight",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.14.0 <23"
+  },
+  "dependencies": {
+    "nodemailer": "10.3.1"
+  },
+  "devDependencies": {
+    "smtp-server": "3.21.3"
+  }
+}

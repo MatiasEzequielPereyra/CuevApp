@@ -1,5 +1,11 @@
 # Reconciliación privada de una invitación rechazada por SMTP
 
+Ampliación local posterior para REVIEW: [SMTP-002](CUEVA-INVITACION-RECHAZO-SMTP-002-operations.md)
+permite solo una nueva autorización del estado exacto gen2/uncertain/pending,
+con rechazo534/535 acreditado y reparación Brevo probada sin correo. No libera
+estados genéricos ni modifica la historia de PR26. Las restricciones siguientes
+siguen vigentes fuera de esa excepción auditada.
+
 Procedimiento de PR26 integrado; ampliación de transporte local para REVIEW.
 No autoriza ejecutar este procedimiento alojado desde el ejecutor.
 [Encargo original](CUEVA-INVITACION-RECUPERACION-001-task.md).

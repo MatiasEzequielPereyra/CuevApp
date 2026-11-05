@@ -1,5 +1,22 @@
 # Checkpoint CUEVA
 
+## CUEVA-INVITACION-RECHAZO-SMTP-002 — REVIEW local, 2026-11-05
+
+Base main verificada `31fcd33c100422ec9a1657ff34bd246f03908920`, rama
+`codex/cueva-invitacion-rechazo-smtp-002`; checkout del ejecutor limpio al comenzar.
+[Encargo íntegro](CUEVA-INVITACION-RECHAZO-SMTP-002-task.md) y
+[operación acotada](CUEVA-INVITACION-RECHAZO-SMTP-002-operations.md).
+Según el handoff del Orchestrator, transporte/credenciales y check reales pasaron;
+un único apply terminó retenido por SMTP534. Esa observación no se repitió aquí.
+Brevo configurado por el humano; autenticación/primer envío alojados no verificados.
+Se implementa autorización nueva solo para gen2/uncertain/pending con evidencia
+de rechazo y reparación, historial append-only y sustitución transaccional.
+Sin conexión autenticada remota, envío real, migración alojada ni cambios de flags.
+Matriz nueva51/51 PASS; lint/tipos/documentos/fuentes/seguridad/diff PASS, paquete
+SMTP aislado con audit sin vulnerabilidades. Build no requerido. Ver
+[informe y evidencia](CUEVA-INVITACION-RECHAZO-SMTP-002-review.md). No se repitieron
+66/66 ni48/13; integración y única operación alojada a cargo del Orchestrator.
+
 ## CUEVA-INVITACION-RECUPERACION-TRANSPORTE-001 — REVIEW, 2026-11-05
 
 Base efectiva main verificada `126e933de770f02b7060b095b8a77d0685f53c69`, que

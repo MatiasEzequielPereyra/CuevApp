@@ -3,6 +3,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import pg from 'pg';
+import {smtpRepairBinding} from './smtp-repair-binding.mjs';
 
 class ReconciliationStop extends Error {}
 const stop = code => { throw new ReconciliationStop(code); };
@@ -29,23 +30,41 @@ export function reconciliationDatabaseOptions(database, local=false) {
 
 function validate(config) {
   const r = config.request;
+  const reauthorize=r?.previousAttemptId!==undefined;
   if (!r || ![r.studentId,r.jobLease,r.authUserId,r.attemptId].every(uuid) || r.attemptId.toLowerCase() === r.jobLease.toLowerCase() ||
       !Number.isSafeInteger(r.generation) || r.generation < 1 || r.generation > 999999999999998 ||
       r.expectedState !== 'review' || typeof r.email !== 'string' || r.email !== r.email.trim().toLowerCase() ||
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email) || r.email.length > 254) stop('REQUEST_INVALID');
   const proof = r.priorRejection;
+  const diagnosticValid=proof&&(proof.smtpCode===535&&proof.diagnostic==='BadCredentials'||
+    reauthorize&&proof.smtpCode===534&&proof.diagnostic==='Application-specific password required');
   // Trusted operator attestation, not a claim that the SDK can prove SMTP delivery.
-  if (!proof || proof.smtpCode !== 535 || proof.diagnostic !== 'BadCredentials' ||
+  if (!diagnosticValid ||
       !/^[0-9a-f]{64}$/.test(proof.evidenceSha256 ?? '') || !Number.isFinite(Date.parse(proof.observedAt)) ||
       Date.parse(proof.observedAt) > Date.now() || r.requestsQuiescent !== true ||
       r.noSmtpAcceptance !== true || r.originalRequestCompleted !== true) stop('REJECTION_EVIDENCE_REQUIRED');
   if (typeof config.evidence !== 'string' || Buffer.byteLength(config.evidence)>16384 ||
       createHash('sha256').update(config.evidence).digest('hex') !== proof.evidenceSha256) stop('EVIDENCE_FILE_MISMATCH');
   const record = JSON.parse(config.evidence);
-  if (record.source !== 'operator-reviewed-smtp-rejection' || record.smtpCode !== 535 || record.diagnostic !== 'BadCredentials' ||
+  if (record.source !== 'operator-reviewed-smtp-rejection' || record.smtpCode !== proof.smtpCode || record.diagnostic !== proof.diagnostic ||
       record.studentId !== r.studentId || record.jobLease !== r.jobLease || record.authUserId !== r.authUserId ||
       record.email !== r.email || record.generation !== r.generation || record.observedAt !== proof.observedAt ||
       record.originalRequestCompleted !== true || record.noSmtpAcceptance !== true || record.requestsQuiescent !== true) stop('EVIDENCE_RECORD_MISMATCH');
+  if(reauthorize){
+    if(!uuid(r.previousAttemptId)||r.jobLease!==r.previousAttemptId||r.generation!==2||
+      !/^[0-9a-f]{64}$/.test(r.previousAuthorizationHash??'')||!/^[0-9a-f]{64}$/.test(r.smtpLoginSha256??'')||
+      r.supabaseSmtpConfigReviewed!==true||record.previousAttemptId!==r.previousAttemptId||
+      record.previousAuthorizationHash!==r.previousAuthorizationHash||!/^[0-9a-f]{64}$/.test(record.providerResponseSha256??'')||
+      record.smtpEnhancedCode!==(proof.smtpCode===534?'5.7.9':'5.7.8'))stop('REAUTHORIZATION_INVALID');
+    if(typeof config.repairEvidence!=='string'||Buffer.byteLength(config.repairEvidence)>16384||
+      createHash('sha256').update(config.repairEvidence).digest('hex')!==r.smtpRepairEvidenceSha256)stop('SMTP_REPAIR_EVIDENCE_REQUIRED');
+    const repair=JSON.parse(config.repairEvidence);
+    if(repair.source!=='cueva-smtp-auth-preflight-v1'||repair.provider!=='brevo'||repair.tlsVerified!==true||
+      repair.smtpAuthenticated!==true||repair.noMailCommands!==true||repair.supabaseSmtpConfigReviewed!==true||
+      repair.binding!==smtpRepairBinding(r)||repair.smtpLoginSha256!==r.smtpLoginSha256||
+      !Number.isFinite(Date.parse(repair.checkedAt))||Date.parse(repair.checkedAt)<Date.parse(proof.observedAt)||Date.parse(repair.checkedAt)>Date.now()||
+      (config.local?repair.localSynthetic!==true||repair.host!=='127.0.0.1':repair.localSynthetic!==false||repair.host!=='smtp-relay.brevo.com'||repair.port!==587))stop('SMTP_REPAIR_EVIDENCE_INVALID');
+  }
   for (const value of [config.url,config.site]) {
     const u = new URL(value);
     if (u.origin !== value || u.username || u.password) stop('ORIGIN_INVALID');
@@ -83,22 +102,43 @@ export async function reconcile(config, mode='check') {
     const lock = await db.query('select pg_try_advisory_lock(hashtextextended($1, 20261104)) as acquired',[r.studentId]);
     if (!lock.rows[0].acquired) return {mode:'NO_SEND',state:'busy'};
     const previous = (await db.query('select * from cueva_private.invitation_reconciliation where student_id=$1',[r.studentId])).rows[0];
-    if (previous) {
+    const reauthorize=r.previousAttemptId!==undefined;
+    if (previous && previous.attempt_id===r.attemptId) {
       if (previous.attempt_id !== r.attemptId || previous.source_lease !== r.jobLease || previous.user_id !== r.authUserId ||
-          previous.source_generation !== String(r.generation) || previous.evidence_hash !== evidenceHash) stop('ATTEMPT_ALREADY_EXISTS');
+          previous.source_generation !== String(r.generation) || previous.evidence_hash !== evidenceHash ||
+          (reauthorize&&previous.previous_attempt_id!==r.previousAttemptId)) stop('ATTEMPT_ALREADY_EXISTS');
       return {mode:'NO_SEND',state:previous.state};
     }
+    if(previous&&(!reauthorize||previous.attempt_id!==r.previousAttemptId))stop('ATTEMPT_ALREADY_EXISTS');
+    if(reauthorize&&!previous)stop('PREVIOUS_ATTEMPT_REQUIRED');
     await db.query('begin'); transaction = true;
     await db.query("set local lock_timeout='5s'");
     const current = await snapshot(db,r);
+    let prior;
+    if(reauthorize){
+      prior=(await db.query('select * from cueva_private.invitation_reconciliation where student_id=$1 for update',[r.studentId])).rows[0];
+      if(!prior||prior.attempt_id!==r.previousAttemptId||prior.evidence_hash!==r.previousAuthorizationHash||
+        prior.student_id!==r.studentId||prior.user_id!==r.authUserId||prior.email!==r.email||prior.state!=='uncertain'||
+        prior.source_generation!=='1'||prior.previous_attempt_id!==null||prior.finished_at===null||
+        r.attemptId===prior.source_lease)stop('PREVIOUS_ATTEMPT_NOT_ELIGIBLE');
+    }
     if (!current.safe || current.job.state !== r.expectedState || current.job.lease !== r.jobLease ||
-        current.gate.generation !== String(r.generation) || current.gate.operation_id !== null ||
-        current.gate.operation_kind !== null || !/^[0-9a-f]{64}$/.test(current.gate.nonce_hash ?? '')) stop('PRECONDITIONS_FAILED');
+        current.gate.generation !== String(r.generation) || current.gate.operation_id !== (reauthorize?r.previousAttemptId:null) ||
+        current.gate.operation_kind !== (reauthorize?'invite-resend':null) || !/^[0-9a-f]{64}$/.test(current.gate.nonce_hash ?? '')) stop('PRECONDITIONS_FAILED');
     if (Date.parse(r.priorRejection.observedAt) < new Date(current.job.requested_at).getTime()) stop('EVIDENCE_PREDATES_JOB');
     if (mode === 'check') { await db.query('rollback'); transaction = false; return {mode:'CHECKED_NO_SEND',state:'eligible'}; }
     if (!config.key) stop('SERVICE_KEY_REQUIRED');
     const nonce = randomBytes(32).toString('hex');
-    await db.query(`insert into cueva_private.invitation_reconciliation
+    if(reauthorize){
+      await db.query(`insert into cueva_private.invitation_reconciliation_history
+        (attempt_id,student_id,successor_attempt_id,authorization_hash,rejection_hash,repair_hash,prior_row)
+        select attempt_id,student_id,$2,$3,$4,$5,to_jsonb(r) from cueva_private.invitation_reconciliation r where student_id=$1 and attempt_id=$6`,
+        [r.studentId,r.attemptId,evidenceHash,r.priorRejection.evidenceSha256,r.smtpRepairEvidenceSha256,r.previousAttemptId]);
+      const replaced=await db.query(`update cueva_private.invitation_reconciliation set attempt_id=$2,source_lease=$3,
+        source_generation=$4,evidence_hash=$5,state='reserved',reserved_at=clock_timestamp(),finished_at=null,previous_attempt_id=$3
+        where student_id=$1 and attempt_id=$3 and state='uncertain'`,[r.studentId,r.attemptId,r.previousAttemptId,r.generation,evidenceHash]);
+      if(replaced.rowCount!==1)stop('RESERVATION_NOT_REPLACED');
+    }else await db.query(`insert into cueva_private.invitation_reconciliation
       (student_id,attempt_id,source_lease,user_id,source_generation,email,evidence_hash,state)
       values($1,$2,$3,$4,$5,$6,$7,'reserved')`,[r.studentId,r.attemptId,r.jobLease,r.authUserId,r.generation,r.email,evidenceHash]);
     await db.query(`update cueva_private.access_state set generation=generation+1,nonce_hash=$2,
@@ -152,8 +192,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const raw = await readFile(env.CUEVA_RECONCILIATION_REQUEST);
     if (raw.length>16384) stop('REQUEST_TOO_LARGE');
     const evidence = await readFile(env.CUEVA_RECONCILIATION_EVIDENCE,'utf8');
+    const request=JSON.parse(raw.toString('utf8'));
+    const repairEvidence=request.previousAttemptId!==undefined?await readFile(env.CUEVA_SMTP_REPAIR_EVIDENCE,'utf8'):undefined;
     const result = await reconcile({url:env.CUEVA_SUPABASE_URL,site:env.CUEVA_PRODUCT_ORIGIN,
-      database:env.CUEVA_OPERATIONS_DATABASE_URL,key:env.CUEVA_SERVICE_KEY,request:JSON.parse(raw.toString('utf8')),evidence,local:false},process.argv[2].slice(2));
+      database:env.CUEVA_OPERATIONS_DATABASE_URL,key:env.CUEVA_SERVICE_KEY,request,evidence,repairEvidence,local:false},process.argv[2].slice(2));
     console.log(JSON.stringify(result));
   } catch (error) {
     console.error(JSON.stringify({mode:'STOPPED',code:error instanceof ReconciliationStop?error.message:'INVALID_INPUT_OR_UNKNOWN_STATE'}));
