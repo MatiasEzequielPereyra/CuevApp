@@ -413,18 +413,38 @@ Decisión definitiva:
 
 **Nico, su socio y los alumnos pueden adjuntar comprobantes, pero solamente los administradores pueden confirmar pagos.**
 
-## FLUJO
+Adjuntar un comprobante no equivale a recibir dinero ni crea por sí solo un movimiento financiero.
 
-1. El alumno realiza una transferencia.
-2. Ingresa a CUEVA.
-3. Selecciona su cuota.
-4. Adjunta una foto o PDF.
+## FLUJOS
+
+### Alumno adjunta un comprobante
+
+1. El alumno realiza el pago fuera de CUEVA.
+2. Ingresa a CUEVA y selecciona el período correspondiente.
+3. Adjunta una foto o PDF.
+4. El archivo supera las validaciones de formato, tamaño, legibilidad y antimalware.
 5. El comprobante queda pendiente de revisión.
-6. Nico o su socio lo verifican.
+6. Nico o su socio verifican la operación.
 7. Un administrador confirma o rechaza el comprobante.
-8. Si confirma, el sistema registra el pago.
-9. Se actualiza el saldo correspondiente.
-10. El alumno puede consultar el movimiento y el comprobante.
+8. Si confirma, el sistema registra el pago y actualiza el saldo.
+9. El alumno puede consultar el movimiento y el comprobante.
+
+### Administrador registra un pago y adjunta su comprobante
+
+1. Nico o su socio registra el pago externo recibido, indicando los datos financieros requeridos por el sistema.
+2. Puede adjuntar un comprobante como respaldo documental.
+3. El archivo debe superar las mismas validaciones y el análisis antimalware.
+4. Si el archivo queda limpio y se vincula correctamente, se asocia al movimiento registrado sin requerir aprobación de otro administrador.
+5. El registro del pago conserva quién lo registró; el adjunto conserva quién lo cargó y cuándo.
+6. Si falla la carga o el análisis del archivo, el pago ya registrado no se revierte por ese motivo. El administrador recibe un error claro y puede reintentar adjuntar el respaldo sin duplicar el movimiento.
+
+### Administrador adjunta un comprobante sin registrar un pago
+
+1. El administrador selecciona el alumno y el período correspondiente.
+2. Adjunta el archivo como presentación documental.
+3. Una vez validado y escaneado, queda pendiente de revisión, igual que una presentación de alumno.
+4. El administrador que lo presentó no puede aprobarlo ni rechazarlo; debe resolverlo el otro administrador autorizado.
+5. La presentación no crea ni modifica un movimiento financiero hasta que un administrador la confirme.
 
 ## ESTADOS
 
@@ -434,7 +454,7 @@ Como mínimo:
 - Confirmado.
 - Rechazado.
 
-Un comprobante adjunto NO representa dinero confirmado.
+Un comprobante adjunto NO representa dinero confirmado. Cuando un administrador registra el pago y adjunta el respaldo, el comprobante queda vinculado al movimiento ya registrado, sin una segunda aprobación.
 
 ## PAGOS EN EFECTIVO
 
@@ -444,15 +464,15 @@ Nico puede registrar un pago manualmente sin obligar a adjuntar un archivo.
 
 - Archivos privados.
 - Acceso restringido.
-- Validación de formato.
-- Tamaños limitados.
-- Protección contra archivos maliciosos.
+- Validación de formato y tamaño.
+- Comprobación de firma y estructura real del archivo.
+- Análisis antimalware antes de habilitar la consulta o descarga.
+- Archivos pendientes de análisis aislados y no accesibles a alumnos ni administradores.
 - RLS y comprobaciones del servidor.
 - No permitir que un alumno confirme sus propios pagos.
+- No permitir que un administrador resuelva una presentación pendiente que él mismo adjuntó.
 
 Los administradores deben poder consultar los comprobantes necesarios para verificar los cobros.
-
----
 
 # 10. RECORDATORIOS AUTOMÁTICOS
 
