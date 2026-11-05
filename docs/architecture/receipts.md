@@ -18,6 +18,7 @@
 
 - Un alumno puede presentar un comprobante para uno de sus propios períodos.
 - Nico, su socio y los alumnos pueden adjuntar comprobantes según permisos; solo administradores confirman o rechazan.
+- Si un administrador registra un pago y adjunta el respaldo, el archivo se vincula al movimiento sin segunda aprobación. Si adjunta solo el archivo, queda pendiente y no puede resolver su propia presentación.
 - Un archivo por presentación, JPG/JPEG, PNG o PDF, máximo 10 MB.
 - Máximo un comprobante pendiente por alumno y período, incluso ante solicitudes concurrentes.
 - Rechazar exige un motivo obligatorio, no vacío y visible para el alumno.
@@ -73,11 +74,27 @@ Propuesta: bucket privado dedicado a comprobantes. El nombre final se decide al 
 - Si falla la persistencia de la fila tras subir el objeto, ejecutar compensación segura y verificable para evitar objetos huérfanos. Si la limpieza falla, registrar una incidencia técnica sin exponerla al usuario.
 - Los mensajes de error deben ser accionables y no revelar bucket, ruta, stack trace ni secretos.
 
-### Antimalware
+### Antimalware y liberación segura
 
-La documentación de Storage confirma bucket privado, políticas RLS y límites/MIME configurables; eso no demuestra que el proyecto tenga un escáner antimalware. No se debe afirmar que los archivos están escaneados.
+La validación de extensión, MIME, magic bytes y parseo detecta archivos inválidos, pero no sustituye un análisis antimalware. No se encontró evidencia de un escáner ya integrado; no afirmar que existe.
 
-Antes de habilitar cargas reales se debe elegir y probar un escáner o documentar expresamente el control compensatorio aceptado y el riesgo residual. El parseo de PDF/imagen y la validación de firma no sustituyen un escaneo antimalware.
+**Flujo recomendado: cuarentena privada + análisis aislado + liberación explícita.**
+
+1. Recibir el archivo en una ubicación privada de cuarentena, con nombre/ruta generados por servidor. No crear todavía una presentación pendiente visible ni generar una URL de descarga.
+2. Aplicar límites de tamaño, extensión, MIME, firma y parseo en servidor.
+3. Enviar el objeto a un worker/servicio de análisis aislado, sin credenciales de base de datos ni permisos generales sobre Storage.
+4. Actualizar firmas del motor antimalware y registrar versión del motor, fecha, resultado y hash del archivo; no registrar su contenido ni URLs firmadas.
+5. Si el resultado es limpio, mover/copiar de forma controlada al almacenamiento privado definitivo y recién entonces crear la presentación pendiente o asociar el respaldo al pago administrativo.
+6. Si se detecta malware, bloquear y eliminar el objeto de acuerdo con el procedimiento seguro; registrar el evento mínimo necesario y mostrar un mensaje que indique que el archivo no pudo aceptarse.
+7. Si el análisis falla, expira o el servicio no está disponible, mantener el archivo en cuarentena sin acceso de lectura/descarga y permitir reintento. No convertir un error del escáner en un resultado limpio.
+8. Definir expiración y limpieza de cuarentena para cargas abandonadas y objetos huérfanos, con métricas/alertas para fallos de análisis.
+
+**Selección tecnológica recomendada:** primero verificar si el hosting o proveedor de almacenamiento ofrece un escáner administrado compatible, con garantías contractuales de privacidad, retención limitada y no redistribución de archivos. Si no existe una opción adecuada o su costo no se justifica, utilizar ClamAV en un worker/contenedor aislado, con firmas actualizadas automáticamente y monitoreo de fallos. No ejecutar ClamAV dentro de una función serverless de la aplicación ni confiar en un proceso de análisis dentro de la petición HTTP de Vercel.
+
+No utilizar VirusTotal público ni servicios que puedan compartir muestras: los comprobantes pueden contener datos personales y financieros. Un proveedor externo solo es aceptable tras revisar tratamiento, región, retención, subprocesadores y condiciones de privacidad.
+
+El tamaño pequeño esperado del gimnasio permite empezar con un worker aislado y bajo volumen, pero la elección final depende de la infraestructura disponible, el costo y la operación de actualizaciones. No desplegar ni contratar un servicio pago sin revisar esos factores y obtener autorización cuando corresponda.
+
 
 ## 5. Identidad y autorización
 
@@ -92,12 +109,34 @@ Punto crítico de integración: no confiar en `student_id` enviado por el navega
 - No usar `service_role` en el navegador. Si una operación del servidor usa el cliente privilegiado existente, el servidor debe verificar identidad, rol, período y propiedad antes de cada operación; preferir sesión del usuario y políticas RLS cuando sea viable.
 - Mantener los endpoints fuera de cache y con respuestas `no-store`, validación de Origin y límites de cuerpo adecuados.
 
+## 6. Flujos de adjuntos administrativos
+
+Se distinguen dos casos para evitar autoaprobaciones implícitas:
+
+### A. Administrador registra un pago y adjunta respaldo
+
+- El administrador registra el movimiento mediante el flujo existente de CUEVA-003A.
+- El archivo se analiza antes de quedar disponible.
+- Si el análisis termina limpio, se vincula al movimiento como respaldo documental; no se crea una revisión pendiente ni se exige aprobación de otro administrador.
+- La carga del archivo es opcional y no debe formar parte de una transacción que revierta un pago válido ya registrado. Si falla el adjunto, el movimiento permanece y el administrador puede reintentar la carga sin duplicarlo.
+- Conservar actor y fecha de registro del pago, además de actor y fecha de carga del archivo.
+
+### B. Administrador adjunta solo un comprobante
+
+- Se crea una presentación pendiente después de validación, análisis limpio y persistencia.
+- El administrador que la presentó no puede confirmarla ni rechazarla.
+- El otro administrador autorizado debe resolverla con el mismo flujo y trazabilidad que una presentación de alumno.
+- Adjuntar el archivo no crea ni modifica un pago.
+
+La autorización de lectura/descarga debe seguir aplicándose en ambos casos. La etiqueta de estado del comprobante no reemplaza el estado ni el registro del movimiento financiero.
+
+
 ## 6. Operaciones y transacciones
 
 Se recomienda separar operaciones acotadas:
 
-1. **Presentar comprobante:** comprobar usuario/período, validar archivo, almacenar objeto privado y crear fila `pending`. La concurrencia se resuelve con la restricción única parcial. Una colisión devuelve un mensaje claro de que ya hay uno en revisión.
-2. **Consultar/listar:** alumno ve solo sus presentaciones; admin ve las que puede revisar. Los archivos se sirven solo tras autorización.
+1. **Presentar comprobante:** comprobar usuario/período, validar archivo, almacenar en cuarentena, analizar, liberar al almacenamiento privado definitivo y crear fila `pending` solo tras resultado limpio. La concurrencia se resuelve con la restricción única parcial. Una colisión devuelve un mensaje claro de que ya hay uno en revisión.
+2. **Consultar/listar:** alumno ve solo sus presentaciones; admin ve las que puede revisar. Los archivos se sirven solo tras autorización y solo después del resultado antimalware limpio.
 3. **Rechazar:** operación administrativa que exige motivo no vacío, registra actor/fecha y cambia estado una sola vez. Reintentos idénticos deben ser idempotentes.
 4. **Confirmar:** operación administrativa que debe asociar la presentación con un único movimiento de `cueva_payments` y actualizar estado en una misma transacción. No implementar dos escrituras independientes desde el navegador.
 
@@ -144,14 +183,13 @@ Por eso, antes de implementar confirmación hay que decidir y diseñar cómo el 
 - Regresión del registro manual de efectivo y del flujo administrativo actual de CUEVA-003A.
 - Teclado, lector de pantalla, móvil y estados de carga/error/éxito.
 
-## 10. Decisiones que deben cerrarse antes del código
+## 11. Decisiones que permanecen pendientes antes del código
 
-1. **Confirmación del importe:** el administrador debe introducir/verificar importe y fecha antes de crear el movimiento; confirmar si se adopta este flujo.
-2. **Comprobantes adjuntados por administradores:** definir si se crean como pendientes para revisión por otro administrador, o si se adjuntan directamente a un pago que el administrador registra/confirmó. Evitar autoaprobación implícita.
-3. **Antimalware:** verificar si existe un servicio disponible y aceptar explícitamente el control compensatorio si no existe.
-4. **Nueva presentación después de un comprobante confirmado:** aclarar si se permite cuando queda saldo pendiente, en coherencia con pagos parciales. El límite de un pendiente simultáneo ya está aprobado.
+1. **Importe y fecha al confirmar una presentación de alumno:** definir y aprobar la interacción administrativa para verificar/introducir los datos que exige `cueva_billing_write`.
+2. **Nueva presentación después de un comprobante confirmado:** decidir si se permite cuando queda saldo pendiente, en coherencia con pagos parciales. El límite de un pendiente simultáneo ya está aprobado.
+3. **Selección del escáner:** verificar opciones administradas compatibles y su privacidad/costo; si no hay una opción adecuada, evaluar worker aislado con ClamAV. La arquitectura de cuarentena y fail-closed queda recomendada, pero no se ha contratado ni desplegado infraestructura.
 
-## 11. Límites de esta propuesta
+## 12. Límites de esta propuesta
 
 - No se creó migración, tabla, bucket, endpoint, componente ni dependencia.
 - No se ejecutó SQL, no se modificó Supabase alojado, Storage, Auth, RLS, datos reales ni producción.
