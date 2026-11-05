@@ -52,8 +52,9 @@ Los mensajes no deben revelar rutas internas, nombres de buckets, detalles de in
 4. Solo después de una carga y persistencia exitosas se crea la presentación en **Pendiente de revisión**.
 5. Un administrador autorizado consulta el comprobante y decide confirmar o rechazar.
 6. Si confirma, la integración con el libro de pagos debe registrar el pago de forma transaccional e idempotente, conforme a las reglas de CUEVA-003. No duplicar movimientos por reintentos.
-7. Si rechaza, debe conservarse el motivo y la identidad/fecha de la decisión.
-8. El alumno puede presentar un nuevo comprobante para el mismo período. La nueva presentación no modifica el registro rechazado anterior.
+7. Si rechaza, el administrador debe ingresar un motivo obligatorio y no vacío; se conserva el motivo y la identidad/fecha de la decisión.
+8. No puede existir más de una presentación pendiente para el mismo alumno y período. El control debe ser efectivo también ante solicitudes simultáneas.
+9. Después del rechazo, el alumno puede presentar un nuevo comprobante para el mismo período. La nueva presentación no modifica el registro rechazado anterior y contiene exactamente un archivo.
 
 ## 4. Privacidad y seguridad
 
