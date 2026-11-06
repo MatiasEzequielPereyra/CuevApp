@@ -1,5 +1,5 @@
 begin;
-select plan(49);
+select plan(50);
 
 -- Pure date helper coverage.
 select is(cueva_private.monthly_due_date(1::smallint,date '2026-01-01'),date '2026-01-01','day 1');
@@ -98,8 +98,15 @@ select is(public.cueva_billing_write('ac000000-0000-4000-8000-000000000001',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
  'scope','next_period','reason','Change after payment reversal')),
  'ac000000-0000-4000-8000-000000000001'::uuid,'reversed payment is excluded from the paid balance');
+select is(public.cueva_billing_write('ad100000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','21',
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','next_period')),
+ 'ad100000-0000-4000-8000-000000000001'::uuid,'ordinary due-day change accepts an omitted reason');
+select is((select reason from public.cueva_due_date_audit where id='ad100000-0000-4000-8000-000000000001'),null,
+ 'omitted optional reason is stored as null');
 select is((select count(*)::integer from public.cueva_due_date_audit where student_id='a3000000-0000-4000-8000-000000000001'),
- 3,'only successfully applied due day changes are audited');
+ 4,'only successfully applied due day changes are audited');
 
 select is(public.cueva_billing_write('b1000000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','19',
@@ -122,9 +129,9 @@ select throws_ok(format($q$select public.cueva_billing_write('b1020000-0000-4000
  '22023',null,'due-day writer rejects day zero');
 select throws_ok(format($q$select public.cueva_billing_write('b1030000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','20',
- 'effective_month',%L,'scope','next_period','reason','  '))$q$,
+ 'effective_month',%L,'scope','next_period','reason','ab'))$q$,
  to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM')),
- '22023',null,'due-day writer requires a meaningful audit reason');
+ '22023',null,'due-day writer rejects a reason shorter than three characters');
 
 select throws_ok($$insert into public.cueva_due_schedules(id,student_id,due_day,effective_month,actor)
  values('b2000000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001',20,date '2026-01-01','a1000000-0000-4000-8000-000000000001')$$,
