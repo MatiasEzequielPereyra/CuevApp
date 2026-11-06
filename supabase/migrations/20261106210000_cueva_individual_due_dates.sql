@@ -27,7 +27,7 @@ create table public.cueva_due_date_audit (
  new_due_day smallint not null check(new_due_day between 1 and 31),
  effective_month date not null check(extract(day from effective_month)=1),
  scope text not null check(scope in ('current_period','next_period')),
- reason text not null check(length(btrim(reason)) between 3 and 300),
+ reason text check(reason is null or length(btrim(reason)) between 3 and 300),
  result text not null check(result in ('applied')),
  recorded_at timestamptz not null default clock_timestamp()
 );
@@ -144,8 +144,8 @@ begin
   if (scope_value='current_period' and effective<>date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date)
      or (scope_value='next_period' and effective<>(date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date+interval '1 month')::date)
   then raise exception 'El alcance no coincide con el mes de vigencia' using errcode='22023'; end if;
-  reason_value=btrim(coalesce(p->>'reason',''));
-  if length(reason_value) not between 3 and 300 then raise exception 'Indicá un motivo de entre 3 y 300 caracteres' using errcode='22023'; end if;
+  reason_value=nullif(btrim(coalesce(p->>'reason','')),'');
+  if reason_value is not null and length(reason_value) not between 3 and 300 then raise exception 'El motivo debe tener entre 3 y 300 caracteres' using errcode='22023'; end if;
   select d.due_day into old_day from public.cueva_due_schedules d
    where d.student_id=student and d.effective_month<=effective
    order by d.effective_month desc,d.recorded_at desc,d.id desc limit 1;
