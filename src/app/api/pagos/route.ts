@@ -12,7 +12,8 @@ export async function POST(req:Request){
  while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>4096){await reader.cancel();return reply("Solicitud demasiado extensa.",413);}chunks.push(value);}
  let data;try{data=JSON.parse(new TextDecoder().decode(Buffer.concat(chunks)));}catch{return reply("Datos inválidos.",400);}
  if(!data||typeof data.op!=="string"||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.op)||!data.p||typeof data.p!=="object")return reply("Datos inválidos.",400);
- const {error}=await client.rpc("cueva_billing_write",{op:data.op,p:data.p});
+ const {data:operationId,error}=await client.rpc("cueva_billing_write",{op:data.op,p:data.p});
+ if(!error&&operationId===null)return reply("La operación fue rechazada y no se aplicó. Revisá el historial antes de corregir los datos.",409);
  if(error){const known=error.code==="P0001";const duplicate=error.code==="23505";return reply(known?error.message:duplicate?"Ya existe ese período, precio o anulación. Revisá el historial.":"No se pudo guardar. Revisá los datos o intentá nuevamente; la migración puede estar pendiente.",known||duplicate?409:503);}
  return reply("Operación registrada.",200);
 }
