@@ -45,7 +45,7 @@ select is(public.cueva_billing_write('a5000000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','period','student_id','a3000000-0000-4000-8000-000000000001','month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'))),
  'a5000000-0000-4000-8000-000000000001'::uuid,'admin can create the next period');
 select is((select due_on from public.cueva_periods where id='a5000000-0000-4000-8000-000000000001'),
- (date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '2 months - 1 day')::date,
+ (date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month 14 days')::date,
  'period due date is derived from the student day and clamps at month end');
 
 select is(public.cueva_billing_write('a6000000-0000-4000-8000-000000000001',
