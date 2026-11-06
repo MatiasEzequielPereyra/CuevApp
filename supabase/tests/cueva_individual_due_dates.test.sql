@@ -1,5 +1,5 @@
 begin;
-select plan(64);
+select plan(70);
 
 -- Pure date helper coverage.
 select is(cueva_private.monthly_due_date(1::smallint,date '2026-01-01'),date '2026-01-01','day 1');
@@ -61,11 +61,11 @@ select is(public.cueva_billing_write('a6000000-0000-4000-8000-000000000001',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
  'scope','next_period','reason','Initial schedule adjustment')),
  'a6000000-0000-4000-8000-000000000001'::uuid,'identical operation retry is idempotent');
-select throws_ok(format($q$select public.cueva_billing_write('a6000000-0000-4000-8000-000000000001',
+select is(public.cueva_billing_write('a6000000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','16',
- 'effective_month',%L,'scope','next_period','reason','Changed retry payload'))$q$,
- to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM')),
- 'P0001',null,'same operation id with a different payload is rejected');
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','next_period','reason','Changed retry payload')),null::uuid,
+ 'same operation id with a different payload is rejected and audited');
 
 select is(public.cueva_billing_write('a7000000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','payment','student_id','a3000000-0000-4000-8000-000000000001',
@@ -93,11 +93,11 @@ select is(public.cueva_billing_write('a9000000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','payment','student_id','a3000000-0000-4000-8000-000000000001',
  'period_id','a5000000-0000-4000-8000-000000000001','cents','6000','paid_on',current_date::text,'method','transferencia')),
  'a9000000-0000-4000-8000-000000000001'::uuid,'remaining balance can be paid');
-select throws_ok(format($q$select public.cueva_billing_write('aa000000-0000-4000-8000-000000000001',
+select is(public.cueva_billing_write('aa000000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','17',
- 'effective_month',%L,'scope','next_period','reason','Must reject fully paid period'))$q$,
- to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM')),
- 'P0001',null,'fully paid period rejects due day change');
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','next_period','reason','Must reject fully paid period')),null::uuid,
+ 'fully paid period rejects due day change and is audited');
 select is(public.cueva_billing_write('ab000000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','reverse','student_id','a3000000-0000-4000-8000-000000000001',
  'payment_id','a9000000-0000-4000-8000-000000000001','reason','Reverse test payment')),
@@ -151,6 +151,14 @@ select is((select count(*)::integer from public.cueva_due_schedules where studen
 
 select is((select count(*)::integer from public.cueva_due_date_audit where student_id='a3000000-0000-4000-8000-000000000001'),
  4,'only successfully applied due day changes are audited');
+select is((select count(*)::integer from public.cueva_due_date_attempts where student_id='a3000000-0000-4000-8000-000000000001'),
+ 5,'all five rejected due-day attempts are retained separately');
+select is((select actor_email from public.cueva_due_date_audit where id='ad100000-0000-4000-8000-000000000001'),
+ 'due-date-admin@example.test','audit identifies the administrator by account email');
+select is((select actor_email from public.cueva_due_date_attempts where operation_id='b1020000-0000-4000-8000-000000000001'),
+ 'due-date-admin@example.test','failed attempt identifies the administrator by account email');
+select ok((select error_code='22023' and length(error_message)>0 from public.cueva_due_date_attempts where operation_id='b1020000-0000-4000-8000-000000000001'),
+ 'failed attempt stores the database error code and explanation');
 
 select is(public.cueva_billing_write('b1000000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','19',
@@ -161,21 +169,21 @@ select is((select due_day from public.cueva_due_schedules
  where student_id='a3000000-0000-4000-8000-000000000001'
  and effective_month=date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date),
  19::smallint,'current-period change becomes effective in the selected month');
-select throws_ok(format($q$select public.cueva_billing_write('b1010000-0000-4000-8000-000000000001',
+select is(public.cueva_billing_write('b1010000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','20',
- 'effective_month',%L,'scope','current_period','reason','Mismatched scope'))$q$,
- to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM')),
- '22023',null,'current-period scope cannot target the next month');
-select throws_ok(format($q$select public.cueva_billing_write('b1020000-0000-4000-8000-000000000001',
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','current_period','reason','Mismatched scope')),null::uuid,
+ 'current-period scope cannot target the next month and is audited');
+select is(public.cueva_billing_write('b1020000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','0',
- 'effective_month',%L,'scope','next_period','reason','Invalid day test'))$q$,
- to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM')),
- '22023',null,'due-day writer rejects day zero');
-select throws_ok(format($q$select public.cueva_billing_write('b1030000-0000-4000-8000-000000000001',
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','next_period','reason','Invalid day test')),null::uuid,
+ 'due-day writer rejects day zero and records the failure');
+select is(public.cueva_billing_write('b1030000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','20',
- 'effective_month',%L,'scope','next_period','reason','ab'))$q$,
- to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM')),
- '22023',null,'due-day writer rejects a reason shorter than three characters');
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','next_period','reason','ab')),null::uuid,
+ 'due-day writer rejects a reason shorter than three characters and records the failure');
 
 select throws_ok($$insert into public.cueva_due_schedules(id,student_id,due_day,effective_month,actor)
  values('b2000000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001',20,date '2026-01-01','a1000000-0000-4000-8000-000000000001')$$,
@@ -189,8 +197,11 @@ select throws_ok($$insert into public.cueva_due_date_audit(id,student_id,actor,o
  '42501',null,'admin cannot insert audit rows directly');
 select throws_ok($$update public.cueva_due_date_audit set reason='tampered' where id='a6000000-0000-4000-8000-000000000001'$$,
  '42501',null,'admin cannot edit audit history directly');
-select throws_ok($$delete from public.cueva_due_date_audit where id='a6000000-0000-4000-8000-000000000001'$$,
+select throws_ok($delete from public.cueva_due_date_audit where id='a6000000-0000-4000-8000-000000000001'$,
  '42501',null,'admin cannot delete audit history directly');
+select throws_ok($insert into public.cueva_due_date_attempts(operation_id,student_id,actor,actor_email,requested_due_day,effective_month,scope,error_code,error_message)
+ values('b2020000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001','spoof@example.test','20','2026-12','next_period','22023','spoof')$,
+ '42501',null,'admin cannot insert rejected-attempt audit rows directly');
 
 reset role;
 
@@ -209,6 +220,7 @@ set local role authenticated;
 
 select is((select count(*)::integer from public.cueva_due_schedules where student_id='a3000000-0000-4000-8000-000000000001'),0,'alumno cannot read administrative due schedules');
 select is((select count(*)::integer from public.cueva_due_date_audit where student_id='a3000000-0000-4000-8000-000000000001'),0,'alumno cannot read administrative due date audit');
+select is((select count(*)::integer from public.cueva_due_date_attempts where student_id='a3000000-0000-4000-8000-000000000001'),0,'alumno cannot read rejected administrative attempts');
 select throws_ok(format($q$select public.cueva_billing_write('af000000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','20',
  'effective_month',%L,'scope','next_period','reason','Alumno must not change rules'))$q$,
