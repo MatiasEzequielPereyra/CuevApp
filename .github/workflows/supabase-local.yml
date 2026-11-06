@@ -1,0 +1,38 @@
+name: Supabase local migrations
+
+on:
+  push:
+    paths:
+      - "supabase/**"
+      - ".github/workflows/supabase-local.yml"
+  pull_request:
+    paths:
+      - "supabase/**"
+      - ".github/workflows/supabase-local.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migrations:
+    name: Apply migrations to an isolated Supabase stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI v2
+        uses: supabase/setup-cli@v3
+        with:
+          version: v2.stable
+
+      - name: Report Supabase CLI version
+        run: supabase --version
+
+      - name: Start isolated Supabase and apply migrations
+        run: supabase start
+
+      - name: Verify applied migration history
+        run: supabase migration list --local
