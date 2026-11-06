@@ -1,5 +1,5 @@
 begin;
-select plan(38);
+select plan(49);
 
 -- Pure date helper coverage.
 select is(cueva_private.monthly_due_date(1::smallint,date '2026-01-01'),date '2026-01-01','day 1');
@@ -100,6 +100,46 @@ select is(public.cueva_billing_write('ac000000-0000-4000-8000-000000000001',
  'ac000000-0000-4000-8000-000000000001'::uuid,'reversed payment is excluded from the paid balance');
 select is((select count(*)::integer from public.cueva_due_date_audit where student_id='a3000000-0000-4000-8000-000000000001'),
  3,'only successfully applied due day changes are audited');
+
+select is(public.cueva_billing_write('b1000000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','19',
+ 'effective_month',to_char(date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date,'YYYY-MM'),
+ 'scope','current_period','reason','Explicit current period change')),
+ 'b1000000-0000-4000-8000-000000000001'::uuid,'explicit current-period change is accepted');
+select is((select due_day from public.cueva_due_schedules
+ where student_id='a3000000-0000-4000-8000-000000000001'
+ and effective_month=date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date),
+ 19::smallint,'current-period change becomes effective in the selected month');
+select throws_ok(format($q$select public.cueva_billing_write('b1010000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','20',
+ 'effective_month',%L,'scope','current_period','reason','Mismatched scope'))$q$,
+ to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM')),
+ '22023',null,'current-period scope cannot target the next month');
+select throws_ok(format($q$select public.cueva_billing_write('b1020000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','0',
+ 'effective_month',%L,'scope','next_period','reason','Invalid day test'))$q$,
+ to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM')),
+ '22023',null,'due-day writer rejects day zero');
+select throws_ok(format($q$select public.cueva_billing_write('b1030000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','20',
+ 'effective_month',%L,'scope','next_period','reason','  '))$q$,
+ to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM')),
+ '22023',null,'due-day writer requires a meaningful audit reason');
+
+select throws_ok($insert into public.cueva_due_schedules(id,student_id,due_day,effective_month,actor)
+ values('b2000000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001',20,date '2026-01-01','a1000000-0000-4000-8000-000000000001')$,
+ '42501',null,'admin cannot insert due schedules outside the audited RPC');
+select throws_ok($update public.cueva_due_schedules set due_day=21 where id='a6000000-0000-4000-8000-000000000001'$,
+ '42501',null,'admin cannot edit due schedules directly');
+select throws_ok($delete from public.cueva_due_schedules where id='a6000000-0000-4000-8000-000000000001'$,
+ '42501',null,'admin cannot delete due schedules directly');
+select throws_ok($insert into public.cueva_due_date_audit(id,student_id,actor,old_due_day,new_due_day,effective_month,scope,reason,result)
+ values('b2010000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001',19,20,date '2026-11-01','current_period','Manual audit','applied')$,
+ '42501',null,'admin cannot insert audit rows directly');
+select throws_ok($update public.cueva_due_date_audit set reason='tampered' where id='a6000000-0000-4000-8000-000000000001'$,
+ '42501',null,'admin cannot edit audit history directly');
+select throws_ok($delete from public.cueva_due_date_audit where id='a6000000-0000-4000-8000-000000000001'$,
+ '42501',null,'admin cannot delete audit history directly');
 
 reset role;
 
