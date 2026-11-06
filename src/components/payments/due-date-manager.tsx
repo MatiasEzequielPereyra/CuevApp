@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { operationForSubmission } from "@/lib/payments/operation-key";
 
 type AuditEntry = {
  id: string; actor: string; old_due_day: number; new_due_day: number;
@@ -41,7 +42,7 @@ export function DueDateManager({
  const [confirmed,setConfirmed]=useState(false);
  const [pending,setPending]=useState(false);
  const [message,setMessage]=useState("");
- const [historyChecked,setHistoryChecked]=useState(false);
+ const [operationRejected,setOperationRejected]=useState(false);
  const [operationPending,setOperationPending]=useState(false);
  const busy=useRef(false);
  const operation=useRef<{op:string;payload:string}|null>(null);
@@ -60,14 +61,14 @@ export function DueDateManager({
   try {
    const p={kind:"due_day",student_id:studentId,due_day:day,effective_month:effectiveMonth,scope,...(reason.trim()?{reason:reason.trim()}:{})};
    const payload=JSON.stringify(p);
-   if(operation.current&&operation.current.payload!==payload)throw new Error("Los datos cambiaron tras un intento. Revisá el historial antes de iniciar una nueva operación.");
-   if(!operation.current){operation.current={op:crypto.randomUUID(),payload};setOperationPending(true);setHistoryChecked(false);}
+   operation.current=operationForSubmission(operation.current,payload,operationRejected,()=>crypto.randomUUID());
+   setOperationPending(true);setOperationRejected(false);
    const response=await fetch("/api/pagos",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({op:operation.current.op,p})});
    const result=await response.json();
    setMessage(result.message??"No se pudo guardar.");
-   if(response.ok){operation.current=null;setOperationPending(false);setReason("");setConfirmed(false);setHistoryChecked(false);router.refresh();}
-   else setHistoryChecked(false);
-  } catch(error) {setMessage(error instanceof Error?error.message:"No se pudo conectar. Conservamos los datos.");setHistoryChecked(false);}
+   if(response.ok){operation.current=null;setOperationPending(false);setOperationRejected(false);setReason("");setConfirmed(false);router.refresh();}
+   else setOperationRejected(result.operation_not_applied===true);
+  } catch(error) {setOperationRejected(false);setMessage(error instanceof Error?error.message:"No se pudo conectar. Conservamos los datos.");}
   finally {busy.current=false;setPending(false);}
  }
  return <section className="due-date-manager" aria-labelledby="due-date-title">
@@ -90,8 +91,7 @@ export function DueDateManager({
    {scope==="current_period"&&<label className="due-date-confirm"><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/> Confirmo que quiero modificar el período actual.</label>}
    {message&&<p role="status">{message}</p>}
    <button type="submit" disabled={!canSave}>{pending?"Guardando…":"Guardar cambio de vencimiento"}</button>
-   {operationPending&&<label className="due-date-confirm"><input type="checkbox" checked={historyChecked} onChange={event=>setHistoryChecked(event.target.checked)}/> Revisé el historial y confirmé que el cambio anterior no se aplicó.</label>}
-   <button type="button" disabled={pending||!operationPending||!historyChecked} onClick={()=>{operation.current=null;setOperationPending(false);setHistoryChecked(false);setMessage("Nueva operación habilitada. Se generará una clave nueva al guardar.");}}>Nueva operación</button>
+   {operationPending&&operationRejected&&<p role="status">El servidor confirmó que el intento no se aplicó. Podés corregir los datos y volver a guardar.</p>}
   </form>
   <div className="due-date-history"><h3>Historial de cambios</h3>
    {!history.length?<p>Todavía no hay cambios administrativos de vencimiento.</p>:<ol>{history.map(item=><li key={item.id}>
