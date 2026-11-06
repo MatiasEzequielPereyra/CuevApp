@@ -1,5 +1,29 @@
 # Checkpoint CUEVA
 
+## Cierre alojado vigente — invitación y primer acceso, 2026-11-06
+
+**CUEVA-INVITACION-RECHAZO-SMTP-002 ACCEPTED y operativo.** PR29 MERGED,
+commit de implementación `963b402830391dbc9fa4f6728280272a76de5dba`.
+Producción `dpl_Ci6kCajPzJFKRV73rCETbqG4yEEF` READY con ese SHA y alias
+`cueva-gym.vercel.app`. Ver [cierre verificable](CUEVA-INVITACION-RECHAZO-SMTP-002-closeout.md)
+y [registro de integración](https://github.com/MatiasEzequielPereyra/CuevApp/pull/29).
+
+Brevo autenticó con TLS sin correo; check eligible y un único apply accepted.
+Un correo enviado/entregado según Brevo, sin rebotes. El usuario confirmó ingreso
+y contraseña propia; lectura alojada confirmó perfil alumno, correo confirmado,
+ready=true, sesión posterior al corte y ausencia de operación pendiente.
+Se conservaron ficha/UUID/perfil, historial anterior y administrador existente.
+
+Production: CUEVA_PRODUCT_AUTH_ENABLED=1, CUEVA_EMAIL_TEMPLATE_READY=1 y
+CUEVA_DEFAULT_MAIL_OWNER_TEST=0. Brevo está guardado como SMTP; finalizó el modo de correo
+solo propietario. Las altas siguen reservadas a administración. No se habilitaron
+Preview/Development ni se almacenaron claves en Git.
+
+Las secciones REVIEW/NOT_VERIFIED inferiores describen entregas locales e historia.
+No repetir los laboratorios de identidad, transporte o SMTP sin un fallo/cambio
+nuevo. Continuar con los módulos pendientes del backlog; este cierre no declara
+terminado el MVP ni verifica nuevos flujos de pagos/rutinas.
+
 ## CUEVA-INVITACION-RECHAZO-SMTP-002 — REVIEW local, 2026-11-05
 
 Base main verificada `31fcd33c100422ec9a1657ff34bd246f03908920`, rama
