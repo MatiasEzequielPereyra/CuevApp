@@ -1,11 +1,11 @@
 # CUEVA-003B — Vencimientos individuales y recurrencia
 
-**Estado:** TASK / implementación pendiente.  
+**Estado:** IMPLEMENTACIÓN UI / REVIEW local pendiente de verificación.  
 **TASK_ID:** CUEVA-003B  
 **BASE_SHA:** `7663e51f7b60c269a9bb7f13f0f69d26358b609d`  
 **BRANCH:** `feature/cueva-003b-vencimientos`  
 **SKILLS_SELECTED:** `cueva-feature-development`, `cueva-finance`, `cueva-supabase-security`.  
-**SKILLS_APPLIED:** lectura de instrucciones y contratos completada; implementación aún no iniciada.  
+**SKILLS_APPLIED:** contratos financiero, seguridad y desarrollo aplicados; interfaz administrativa integrada en `/pagos`, pendiente de pruebas y auditoría independiente.  
 **SKILL_SOURCES:** `.agents/skills/cueva-feature-development/SKILL.md`, `.agents/skills/cueva-finance/SKILL.md`, `.agents/skills/cueva-supabase-security/SKILL.md`.
 
 ## 1. Objetivo
@@ -107,4 +107,6 @@ Los administradores podrán modificar vencimientos según la especificación vig
 
 ## 8. Estado de ejecución
 
-Solo se verificó el repositorio y se creó la rama aislada. No se modificó código, SQL, datos, Supabase alojado ni producción. No se ejecutaron pruebas. La implementación comenzará después de disponer de un checkout local aislado y leer la documentación instalada de Next.js que exige `AGENTS.md`.
+La capa SQL de calendario individual y auditoría fue implementada y superó las 64 aserciones pgTAP, migraciones efímeras y verificación general/seguridad en CI (commit `b87c918`). La capa UI inicial se integra en la ficha económica administrativa `/pagos?alumno=<id>`: consulta calendario e historial bajo RLS, permite vista previa de fecha anterior/nueva, alcance próximo período (predeterminado) o período actual (confirmación explícita), motivo opcional e idempotencia de envío. Se conserva el marco visual administrativo existente.
+
+La UI todavía no está aceptada: faltan lint/typecheck/build/E2E sobre el nuevo diff, pruebas negativas de la operación desde UI y revisión independiente de la consulta de calendarios/historial. No se modificó Supabase alojado ni producción. No se creó scheduler, notificaciones, comprobantes ni acceso económico de alumnos.
