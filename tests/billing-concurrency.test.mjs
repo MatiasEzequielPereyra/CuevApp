@@ -57,6 +57,7 @@ try {
   assert.equal(priceResult.rows[0].operation_id, priceOperation, "fixture price is created");
 
   const periodPayload = { kind: "period", student_id: studentId, month };
+  await Promise.all(clients.map(client => client.query("select pg_sleep(0.05)")));
   const attempts = await Promise.allSettled(clients.map((client, index) =>
     client.query(
       "select public.cueva_billing_write($1::uuid,$2::jsonb) as operation_id",
