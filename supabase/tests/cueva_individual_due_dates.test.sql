@@ -1,5 +1,5 @@
 begin;
-select plan(63);
+select plan(64);
 
 -- Pure date helper coverage.
 select is(cueva_private.monthly_due_date(1::smallint,date '2026-01-01'),date '2026-01-01','day 1');
@@ -84,7 +84,7 @@ select is(public.cueva_billing_write('b1040000-0000-4000-8000-000000000001',
  'month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '2 months')::date,'YYYY-MM'))),
  'b1040000-0000-4000-8000-000000000001'::uuid,'period after the changed schedule is created');
 select is((select due_on from public.cueva_periods where id='b1040000-0000-4000-8000-000000000001'),
- (date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '2 months')::date+20,
+ (date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '2 months')::date+15,
  'future period uses the latest effective individual due day');
 select is((select cents from public.cueva_periods where id='b1040000-0000-4000-8000-000000000001'),
  10000::bigint,'future period preserves the applicable monthly price snapshot');
@@ -112,6 +112,9 @@ select is(public.cueva_billing_write('ad100000-0000-4000-8000-000000000001',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
  'scope','next_period')),
  'ad100000-0000-4000-8000-000000000001'::uuid,'ordinary due-day change accepts an omitted reason');
+select is((select due_on from public.cueva_periods where id='b1040000-0000-4000-8000-000000000001'),
+ (date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '2 months')::date+20,
+ 'later unpaid existing period is recalculated when effective schedule changes');
 select is((select reason from public.cueva_due_date_audit where id='ad100000-0000-4000-8000-000000000001'),null,
  'omitted optional reason is stored as null');
 select is((select actor from public.cueva_due_date_audit where id='ad100000-0000-4000-8000-000000000001'),
