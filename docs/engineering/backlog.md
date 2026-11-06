@@ -83,3 +83,19 @@ Reconciliación de invitación SMTP 535: incremento local acotado
 REVIEW; laboratorio nuevo 66/66 PASS. Recupera la identidad preparada exacta; no reabre altas, no implementa
 reconciliador general ni cambia proveedor. Estado remoto de PR25 prevalece sobre
 las notas históricas: migración aplicada, entrega/primer acceso de alumno sin verificar.
+
+
+## Especificación vigente: finanzas, comprobantes y notificaciones
+
+Las decisiones aprobadas posteriores para vencimientos individuales, auditoría de cambios, recordatorios de 5 y 1 día, canales, reintentos, recuperación, comprobantes, pagos administrativos, vinculación de archivos, retención y sección **Mi Membresía** están consolidadas en [CUEVA-FINANZAS-COMPROBANTES-NOTIFICACIONES-V1.md](../product/CUEVA-FINANZAS-COMPROBANTES-NOTIFICACIONES-V1.md). Ese documento prevalece sobre las reglas antiguas de este backlog y del contexto maestro cuando exista contradicción.
+
+### Tracks actualizados por la especificación
+
+| Track | Estado de referencia auditado | Trabajo pendiente |
+| --- | --- | --- |
+| CUEVA-003 — cuotas y vencimientos | Motor financiero base integrado; vencimiento individual parcial | Recurrencia mensual, calendario individual, cambios auditados, medios de pago finales y pruebas de límites de mes |
+| CUEVA-004 — comprobantes | Pendiente en la auditoría de infraestructura | Storage privado, validación, presentaciones, revisión, asociación con pagos, estados automáticos y retención |
+| CUEVA-005 — notificaciones | Pendiente en la auditoría de infraestructura | Scheduler, dos recordatorios, canales, configuración, reintentos, alertas y recuperación |
+| CUEVA-MEM — Mi Membresía | Requisito aprobado; pendiente | Consulta de cuota, saldo, vencimiento, historial y comprobantes |
+
+Los estados son observaciones de auditoría, no garantías de producción. Verificar nuevamente antes de implementar.
