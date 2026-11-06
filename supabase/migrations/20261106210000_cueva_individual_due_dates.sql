@@ -8,8 +8,7 @@ create table public.cueva_due_schedules (
  due_day smallint not null check (due_day between 1 and 31),
  effective_month date not null check (extract(day from effective_month)=1),
  actor uuid references auth.users(id),
- recorded_at timestamptz not null default clock_timestamp(),
- unique(student_id,effective_month)
+ recorded_at timestamptz not null default clock_timestamp()
 );
 alter table public.cueva_due_schedules enable row level security;
 revoke all on public.cueva_due_schedules from public,anon,authenticated,service_role;
@@ -125,7 +124,7 @@ begin
   if not exists(select 1 from public.cueva_students where id=student) then raise exception 'Alumno inexistente'; end if;
   select d.* into schedule from public.cueva_due_schedules d
    where d.student_id=student and d.effective_month<=month_date
-   order by d.effective_month desc limit 1;
+   order by d.effective_month desc,d.recorded_at desc limit 1;
   if not found then raise exception 'No existe una regla de vencimiento para ese mes'; end if;
   date_value:=cueva_private.monthly_due_date(schedule.due_day,month_date);
   select * into price from public.cueva_prices where effective_month<=month_date order by effective_month desc limit 1;
@@ -144,13 +143,13 @@ begin
   scope_value:=p->>'scope';
   if scope_value not in ('current_period','next_period') then raise exception 'Alcance inválido' using errcode='22023'; end if;
   if (scope_value='current_period' and effective<>date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date)
-     or (scope_value='next_period' and effective<=date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date)
+     or (scope_value='next_period' and effective<>(date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date+interval '1 month')::date)
   then raise exception 'El alcance no coincide con el mes de vigencia' using errcode='22023'; end if;
   reason_value=btrim(coalesce(p->>'reason',''));
   if length(reason_value) not between 3 and 300 then raise exception 'Indicá un motivo de entre 3 y 300 caracteres' using errcode='22023'; end if;
   select d.due_day into old_day from public.cueva_due_schedules d
-   where d.student_id=student and d.effective_month<effective
-   order by d.effective_month desc limit 1;
+   where d.student_id=student and d.effective_month<=effective
+   order by d.effective_month desc,d.recorded_at desc limit 1;
   if old_day is null then raise exception 'No existe una regla anterior para ese alumno'; end if;
   select t.* into period from public.cueva_periods t where t.student_id=student and t.month=effective for update;
   if found then
