@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 type AuditEntry = {
@@ -44,7 +44,7 @@ export function DueDateManager({
  const validDay=/^(?:[1-9]|[12][0-9]|3[01])$/.test(day);
  const validReason=!reason.trim()||(reason.trim().length>=3&&reason.trim().length<=300);
  const canSave=validDay&&validReason&&!pending&&(scope!=="current_period"||confirmed);
- async function submit(event:React.FormEvent<HTMLFormElement>) {
+ async function submit(event:FormEvent<HTMLFormElement>) {
   event.preventDefault();
   if(busy.current||!canSave)return;
   busy.current=true;setPending(true);setMessage("");
