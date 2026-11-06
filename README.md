@@ -2,6 +2,13 @@
 
 Fundación de la aplicación del gimnasio. CUEVA-001A fue aceptada e integrada en el PR #1. La página está publicada en [cueva-gym.vercel.app](https://cueva-gym.vercel.app). Ver el checkpoint para la evidencia y el siguiente encargo.
 
+Incremento local vigente: [CUEVA-006A — Rutinas](docs/engineering/CUEVA-006A-task.md),
+con [modelo](docs/architecture/routines.md) y
+[reproducción, resultados y límites](docs/engineering/CUEVA-006A-review.md).
+Los estados de la fundación conservados más abajo son históricos; prevalece
+el cierre vigente del checkpoint. Este incremento no está aplicado ni validado
+en el servicio alojado.
+
 ## Orden de lectura
 
 1. [Checkpoint y límites actuales](docs/engineering/checkpoint.md).

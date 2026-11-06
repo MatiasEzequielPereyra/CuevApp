@@ -29,7 +29,7 @@ export function DeleteStudentAction({id,email,name,eligibility}:{id:string;email
       }}>
         <h2 id={`delete-title-${id}`}>¿Eliminar a {name}?</h2>
         <p>{email}</p><p>Se eliminará definitivamente esta ficha creada por error. Esta acción no se puede deshacer.</p>
-        <p>Solo se permite si no tiene cuotas, pagos ni cuenta. Se volverá a comprobar al confirmar.</p>
+        <p>Solo se permite si no tiene cuotas, pagos, rutinas ni cuenta. Se volverá a comprobar al confirmar.</p>
         {message&&<p role="alert">{message}</p>}
         <div className="student-delete-buttons"><button ref={cancel} type="button" className="dash-signout" disabled={pending} onClick={()=>dialog.current?.close()}>Cancelar</button><button ref={confirm} type="submit" className="dash-signout student-delete-trigger" disabled={pending}>{pending?"Eliminando…":"Eliminar definitivamente"}</button></div>
       </form>

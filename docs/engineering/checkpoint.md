@@ -1,5 +1,19 @@
 # Checkpoint CUEVA
 
+## CUEVA-006A — REVIEW local, 2026-11-06
+
+Base efectiva `fb801dd557a8cb45b25d12cffc0170bd7e1ff79c`, igual a origin/main
+verificado. Rama `codex/cueva-006a-rutinas`; checkout del ejecutor reutilizado
+limpio, sin alterar el checkout del Orchestrator. [Encargo](CUEVA-006A-task.md)
+y [modelo](../architecture/routines.md). Rutinas de texto libre, borradores CAS,
+publicación explícita, plantillas independientes y consulta del alumno.
+Laboratorio nuevo 104/104 PASS; lint/tipos/build/documentos/fuentes/seguridad/diff
+PASS. Ocho capturas, teclado, axe y temas; eliminación protegida. Ocho moderadas
+preexistentes en dependencias dev, sin altas/críticas ni cambios de lockfile.
+[Informe y reproducción](CUEVA-006A-review.md). Árbol limpio al entregar mediante
+commit identificado en handoff. Revisión independiente, integración y migración
+alojada pendientes del Orchestrator. Sin operaciones alojadas, push, PR, merge ni deploy.
+
 ## Cierre alojado vigente — invitación y primer acceso, 2026-11-06
 
 **CUEVA-INVITACION-RECHAZO-SMTP-002 ACCEPTED y operativo.** PR29 MERGED,

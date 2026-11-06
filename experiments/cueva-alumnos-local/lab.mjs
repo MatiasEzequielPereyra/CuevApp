@@ -6,6 +6,7 @@ import { launch } from '../cueva-002i-local/application.mjs';
 import pg from 'pg';
 
 // Isolated test-only stack. All keys and accounts are synthetic and ephemeral.
+const routinesOnly = process.env.CUEVA_ROUTINES_ONLY === '1';
 const images = {
   db: 'postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24',
   auth: 'public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b',
@@ -13,14 +14,15 @@ const images = {
   rest: 'public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962',
 };
 const id = randomUUID().replaceAll('-', '').slice(0, 12);
-const names = { network: `cueva-alumnos-net-${id}`, db: `cueva-alumnos-db-${id}`, auth: `cueva-alumnos-auth-${id}`, mail: `cueva-alumnos-mail-${id}`, rest: `cueva-alumnos-rest-${id}` };
+const prefix = routinesOnly ? 'cueva-rutinas' : 'cueva-alumnos';
+const names = { network: `${prefix}-net-${id}`, db: `${prefix}-db-${id}`, auth: `${prefix}-auth-${id}`, mail: `${prefix}-mail-${id}`, rest: `${prefix}-rest-${id}` };
 const secret = () => randomBytes(32).toString('hex');
 const dbPassword = secret(), authenticatorPassword = secret(), coordinatorPassword = secret(), jwtSecret = secret(), password = `Aa9!${secret()}`;
 const created = [], results = [];
 let networkCreated = false, stage = 'network';
 const note = (name, status, detail = '') => results.push({name, status, detail});
 const docker = (args, extraEnv = {}) => execFileSync('docker', args, {encoding:'utf8', stdio:['ignore','pipe','pipe'], env:{...process.env,...extraEnv}}).trim();
-const sql = input => { try { return execFileSync('docker', ['exec','-i',names.db,'psql','-U','postgres','-d','postgres','-v','ON_ERROR_STOP=1'], {input, encoding:'utf8', stdio:['pipe','pipe','pipe']}).trim(); } catch (error) { const match=String(error.stderr || '').match(/ERROR:\s*(function|role|schema|relation|permission|syntax)[^\n]{0,80}/i)?.[0] || 'DATABASE_SETUP_FAILED'; throw new Error(match); } };
+const sql = input => { try { return execFileSync('docker', ['exec','-i',names.db,'psql','-U','postgres','-d','postgres','-v','ON_ERROR_STOP=1',...(routinesOnly?['-At']:[])], {input, encoding:'utf8', stdio:['pipe','pipe','pipe']}).trim(); } catch (error) { const match=String(error.stderr || '').match(/ERROR:\s*(function|role|schema|relation|permission|syntax)[^\n]{0,80}/i)?.[0] || 'DATABASE_SETUP_FAILED'; throw new Error(match); } };
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const enc = value => Buffer.from(JSON.stringify(value)).toString('base64url');
 function testJwt(role) { const value = `${enc({alg:'HS256',typ:'JWT'})}.${enc({role, aud:'authenticated', exp:Math.floor(Date.now()/1000)+300})}`; return `${value}.${createHmac('sha256',jwtSecret).update(value).digest('base64url')}`; }
@@ -28,7 +30,10 @@ async function request(url, {method='GET',token,body,redirect='follow'}={}) {
   return fetch(url, {method,redirect,headers:{...(token?{authorization:`Bearer ${token}`} : {}),...(body?{'content-type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(10000)});
 }
 async function waitFor(fn) { for(let i=0;i<60;i++){try{if(await fn())return;}catch{}await sleep(1000);}throw new Error('READINESS_TIMEOUT'); }
-function start(name, image, args, env, diagnostic=false) { docker(['run','-d',...(diagnostic?[]:['--rm']),'--name',name,'--network',names.network,'--memory','512m','--cpus','1','--log-driver',diagnostic?'local':'none',...args,image],env); created.push(name); }
+function start(name, image, args, env, diagnostic=false) {
+  try { docker(['run','-d',...(diagnostic?[]:['--rm']),'--name',name,'--network',names.network,'--memory','512m','--cpus','1','--log-driver',diagnostic?'local':'none',...args,image],env); created.push(name); }
+  catch { try { docker(['inspect',name]); created.push(name); } catch {} throw new Error('OWN_CONTAINER_START_FAILED'); }
+}
 function port(name, inner) { const ports=JSON.parse(docker(['inspect','--format','{{json .NetworkSettings.Ports}}',name])); const bindings=ports?.[`${inner}/tcp`]; if(!bindings || bindings.length!==1 || bindings[0].HostIp!=='127.0.0.1'){ note('port_diagnostic','OBSERVED',`mapping=${JSON.stringify(bindings ?? null)}`); throw new Error('PORT_NOT_LOOPBACK'); } return Number(bindings[0].HostPort); }
 try {
   docker(['network','create','--driver','bridge',names.network]); networkCreated=true;
@@ -58,6 +63,11 @@ try {
   sql('CREATE ROLE service_role NOLOGIN BYPASSRLS; GRANT service_role TO authenticator;');
   sql(await readFile('../../supabase/migrations/20261102151526_cueva_product_access.sql','utf8'));
   sql(await readFile('../../supabase/migrations/20261104090000_cueva_students.sql','utf8'));
+  if (routinesOnly) {
+    for (const migration of ['20261104093000_cueva_billing.sql','20261104120000_cueva_student_invitations.sql','20261104185308_cueva_delete_empty_student.sql','20261106142345_cueva_routines.sql']) {
+      sql(await readFile(`../../supabase/migrations/${migration}`,'utf8'));
+    }
+  }
   stage='database_role';
   sql(`ALTER ROLE authenticator PASSWORD '${authenticatorPassword}'; ALTER ROLE cueva_coordinator PASSWORD '${coordinatorPassword}';`);
   const dbPort=port(names.db,5432);
@@ -73,7 +83,7 @@ try {
   stage='rest_ready'; await waitFor(async()=>(await request(`${rest}/`)).status<500);
   const admin=testJwt('service_role');
   stage='browser_flow';
-  const { runBrowserFlow }=await import('./browser-test.mjs');
+  const { runBrowserFlow }=await import(routinesOnly ? '../cueva-routines-local/browser-test.mjs' : './browser-test.mjs');
   await runBrowserFlow({base,rest,mailBase,dbPort,coordinatorPassword,admin,anon:testJwt('anon'),id,password,sql,request,note,launch,chromium,pg,secret,accessIntegrationOnly:process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'});
 } catch (error) {
   if(created.includes(names.auth)) {
@@ -87,7 +97,7 @@ try {
 finally {
   for(const name of created.reverse()) { try { if(name===names.auth){docker(['rm','-f',name]);}else{docker(['stop','--time','5',name]);} note(`cleanup_${name.split('-')[2]}`,'PASS'); } catch { note(`cleanup_${name.split('-')[2]}`,'FAIL'); } }
   if(networkCreated){try{docker(['network','rm',names.network]);note('cleanup_network','PASS');}catch{note('cleanup_network','FAIL');}}
-  await writeFile('results.json',JSON.stringify({date:new Date().toISOString(),scope:process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'?'CUEVA-ACCESO-001-INTEGRACION':'CUEVA-ALUMNOS-001',images,results},null,2)+'\n');
+  await writeFile(routinesOnly?'../cueva-routines-local/results.json':'results.json',JSON.stringify({date:new Date().toISOString(),scope:routinesOnly?'CUEVA-006A':process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'?'CUEVA-ACCESO-001-INTEGRACION':'CUEVA-ALUMNOS-001',images,results},null,2)+'\n');
   console.log(JSON.stringify({results},null,2));
   if(results.some(x=>['FAIL','BLOCKED'].includes(x.status)))process.exitCode=1;
 }
