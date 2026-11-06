@@ -1,0 +1,10 @@
+export type Exercise = { id: string; name: string; revision: number; active: boolean };
+export type Target = { id: string; exercise_id: string; name: string; sets: number; reps: string; weight_kg: number | null; note: string };
+export type Block = { id: string; name: string; exercises: Target[] };
+export type Plan = { version: 1; blocks: Block[] };
+export type Note = { content: string; revision: number; title?: string; plan?: Plan | null };
+export type Template = Note & { id: string; title: string };
+export type Publication = { id: string; content: string; plan?: Plan | null; draft_revision: number; published_at: string };
+export const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const planKey = (plan?: Plan | null) => JSON.stringify(plan?.blocks.map(b => [b.id, b.name, b.exercises.map(e => [e.id, e.exercise_id, e.name, e.sets, e.reps, e.weight_kg, e.note])]) ?? null);
+export const hasExercises = (plan?: Plan | null) => !!plan?.blocks.some(b => b.exercises.length > 0);

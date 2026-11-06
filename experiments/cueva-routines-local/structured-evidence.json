@@ -1,0 +1,523 @@
+{
+  "date": "2026-11-06T15:14:21.458Z",
+  "scope": "CUEVA-006B",
+  "images": {
+    "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "mail": "public.ecr.aws/supabase/mailpit@sha256:37a38e48e9338cd7e89dfeb487f37b02ebfcd9cb23111bed2d345e79d37d6dd6",
+    "rest": "public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962"
+  },
+  "results": [
+    {
+      "name": "authenticator_password_cannot_login_as_postgres",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "legacy_seed_draft",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "legacy_seed_publication",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "legacy_seed_template",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "migration_legacy_content_preserved",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "migration_legacy_template_preserved",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalog_starts_empty",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "old_writer_fails_closed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalog_ui_create_stable_id",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalog_normalized_duplicate_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalog_ui_search",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "legacy_editor_not_converted",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "inline_creation_keeps_latest_plan",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "same_exercise_independent_targets",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "exercise_order_persisted",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "keyboard_block_order_persisted",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "remove_block",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "remove_exercise",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "structure_reload_persisted",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "draft_private_previous_publication_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_order_targets_zero_and_null",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "publication_server_author_date",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "publication_same_revision_deduplicated",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "publish_unsaved_structure_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "error_retains_structure",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "conflict_keeps_local_structure",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "conflict_explicit_resolution",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "edits_leave_publication_unchanged",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "structured_template_created",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "template_copies_all_targets",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "template_and_source_independent",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "template_edit_does_not_update_copy",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalog_rename_deactivate_same_identity",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalog_does_not_rewrite_publication",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalog_does_not_rewrite_draft",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalog_concurrent_duplicate_one_winner",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalog_concurrent_edit_conflict",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "existing_inactive_reference_can_save",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "new_inactive_reference_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "inactive_template_new_assignment_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "database_validation_sets",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "database_validation_range",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "database_validation_negative_weight",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "database_validation_precision",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "database_validation_duplicate_item",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "database_validation_shape",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "invalid_writes_preserve_revision",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_catalog_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_drafts_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_templates_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_routine_write_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_catalog_write_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_catalog_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_drafts_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_templates_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_routine_write_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_catalog_write_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_ready_catalog_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_ready_drafts_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_ready_templates_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_ready_routine_write_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_ready_catalog_write_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_publication_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_ready_publication_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "anon_catalog_no_privilege",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "admin_no_direct_catalog_write",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_http_catalog_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "visitor_http_catalog_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "visitor_routine_write_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "structured_draft_prevents_deletion",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "builder_layout_390_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_layout_390_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "builder_layout_390_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_layout_390_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "builder_layout_1440_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_layout_1440_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "builder_layout_1440_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_layout_1440_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "axe_builder",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "axe_pupil",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "publication_history_retained",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalog_text_fixture",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "structured_text_saved",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "structured_text_published",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "structured_publication_exact_retry",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "publication_operation_plan_binding",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "structured_names_notes_are_text",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_rest",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_auth",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_db",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_network",
+      "status": "PASS",
+      "detail": ""
+    }
+  ],
+  "base_sha": "8060032f4f299fc306a28baab213ee61737d1935",
+  "audit_base_sha": "2ca0d519bbf188bcf09b1982ec08f632b8b44b9b",
+  "continuation_sha": "fd315ca0bd6a9db3131449b2cd58ae6eb43b8759",
+  "sourceHashes": {
+    "experiments/cueva-alumnos-local/lab.mjs": "718f3c955f98b223eda8095d79b23694b2635007781fa61db00d209503e9314b",
+    "experiments/cueva-routines-local/structured-test.mjs": "838b892a6d97e22de886527dd11545319ce9fc0842b643718792bddff0255456",
+    "package-lock.json": "5d0fc9e6ce28eec7777005b181104ec1a6c6f231e092688d4ef8f5c7ddb9fbfd",
+    "package.json": "538c787dd019c92014aa92f1b982699666fc8e2084587edeab1232864df1c0ad",
+    "src/app/api/ejercicios/route.ts": "d62927b3cc75f9e63b0d588185cb12bc57e63dd51c2da7702be68099b7e5996b",
+    "src/app/api/rutinas/route.ts": "ebf9d4387fb77e355ee746c8fc89669771f4a9155d9cc91eea92e66143d50609",
+    "src/app/ejercicios/page.tsx": "fa0916f01b55b7aba42619610d23a3e67299d772e1c953c2442949cd58a07fb9",
+    "src/app/globals.css": "605133dec125cea630c3c168086fc18995d59a7aa90540a35e8f6276112048ec",
+    "src/app/mi-rutina/page.tsx": "a79b54514b285de8eb33b211a2cb450ff8f81f23e7eb38011498e590f2bf4fd7",
+    "src/app/rutinas/page.tsx": "eef1c9679f1add3113890924e9d6dfd8ae84145897e1d6751e2a4038a75f8cce",
+    "src/app/rutinas/plantillas/page.tsx": "09126cc2e30488a9cbea45263f23153bc599d21b18a79d93d4c5e85469978ce5",
+    "src/components/routines/exercise-catalog.tsx": "877585f7251e1ca56d8c0ed1b8ffaa063987d8c3cec92c8dc6b03e0c85034e7b",
+    "src/components/routines/note-editor.tsx": "98b6483a4cea2f50915d7b09ca4ab638c95a0b0b67d32eb8834af6eac32a6c61",
+    "src/components/routines/plan-builder.tsx": "fdd0184f7fc3cb3d46a9148c829621fd0fc99a8982ed9c360d59cccad5fc7076",
+    "src/components/routines/plan-view.tsx": "d51ca9736801f44e4c262ee98d1c1e5dfc45cfa998434e3cc7677a9a28657e4c",
+    "src/lib/routines/request.ts": "67eab037e5a2e270a0c99713f3060188060356294110539a8a6f369b21d8c7c6",
+    "src/lib/routines/types.ts": "851d45ee86915fcac80705d0ab1b35d6632d0dcc5c642881b79ca39b13224c69",
+    "src/proxy.ts": "4d175892673ec0dcab86e4e96f202d70475d35a784fec0fbe6849b2f87cb5b6d",
+    "supabase/migrations/20261106145843_cueva_structured_routines.sql": "8643120ef206bd20d40cfafd6a54727c7a8573d6f35a32e7c6660b7db5b6faea"
+  },
+  "captures": {
+    "evidence/CUEVA-006B/builder-1440-dark.png": "5414d6ec4087707f1024cd9a154e7d703e7141a4a5db57b9ae20d8b12b576151",
+    "evidence/CUEVA-006B/builder-1440-light.png": "7a029a61840caa6a75e094d6dd48b77a8c180999c22d59889356f164897cd791",
+    "evidence/CUEVA-006B/builder-390-dark.png": "0dd53e3d5a9ee9a1f479959a85c089b2f80b07132172c7f192393e115aee77f5",
+    "evidence/CUEVA-006B/builder-390-light.png": "1c79bfed31bd8f3d0df9a91b165b396052cb5b50513a68d3568fec0baced2eba",
+    "evidence/CUEVA-006B/catalog-desktop.png": "0aad426f416ce53808cd5d235ac97ab1c226856087c8c0218818cfb08d615057",
+    "evidence/CUEVA-006B/pupil-1440-dark.png": "79aaebda16678e2d526fc1b953cad3f9e633b6ad294b7da044b728f6618d4588",
+    "evidence/CUEVA-006B/pupil-1440-light.png": "19de65c31c6805735265f2dc40a729a392c6ba7e56017b34e923f16ccbffb9c3",
+    "evidence/CUEVA-006B/pupil-390-dark.png": "7dff1cdf098098d2f302acd2df820b54132fb4e708479d6db6f43a97ebfc2afd",
+    "evidence/CUEVA-006B/pupil-390-light.png": "a420bf01d7ba1357c323622dd6f642308e0bb225e4e8fdfe19bf7cc37ec61850"
+  },
+  "checks": {
+    "documents": "PASS",
+    "build": "PASS",
+    "npm_audit": {
+      "critical": 0,
+      "high": 0,
+      "moderate": 8,
+      "dependencies_changed": false
+    },
+    "security": "PASS",
+    "sources": "PASS",
+    "diff": "PASS",
+    "lint": "PASS",
+    "types": "PASS"
+  },
+  "hosted": "NOT_RUN"
+}

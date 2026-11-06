@@ -3,6 +3,8 @@ import { productConfig, userClient } from "@/lib/product-auth/server";
 import { AdminAccountActions, AdminDashboard } from "@/components/dashboard/admin-dashboard";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { ThemePicker } from "@/components/theme/theme-picker";
+import { StudentShell } from "@/components/routines/student-shell";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 export default async function AccountPage() {
@@ -13,7 +15,7 @@ export default async function AccountPage() {
   if (error || !user) return <main><h1>Ingresá para continuar</h1></main>;
   const profile = await auth.from("cueva_profiles").select("role").maybeSingle();
   if (profile.error || !profile.data) return <main><h1>Acceso no disponible</h1></main>;
-  if (profile.data.role !== "admin") return <main><h1>Tu cuenta</h1><p>Perfil: {profile.data.role}</p><form method="post" action="/api/acceso/salir"><button>Salir</button></form></main>;
+  if (profile.data.role !== "admin") return <StudentShell><div className="dash-heading"><div><p className="dash-overline">BIENVENIDO A CUEVA</p><h1>Tu cuenta</h1><p>{user.email}</p></div><span className="dash-role">Alumno</span></div><section className="dash-account"><div><h2>Tu entrenamiento</h2><p>Consultá la planificación publicada por el gimnasio.</p><Link className="routine-account-link" href="/mi-rutina">Mi rutina →</Link></div></section></StudentShell>;
   const fullName = user.user_metadata?.full_name;
   const email = user.email ?? "Cuenta de CUEVA";
   const displayName = typeof fullName === "string" && fullName.trim() ? fullName.trim() : email;

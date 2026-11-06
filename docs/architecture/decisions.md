@@ -1,5 +1,27 @@
 # Registro de decisiones técnicas
 
+## D009 — Constructor principal (producto CONFIRMED; técnica PROPOSED)
+
+2026-11-06, instrucción explícita [CUEVA-006B](../engineering/CUEVA-006B-task.md):
+seleccionar ejercicios y organizar bloques reemplaza la nota principal de D008.
+Autoguardado, conflictos, instantáneas y publicación explícita se conservan.
+Catálogo estable y JSON versionado con nombres/objetivos copiados; alternativas,
+límites y compatibilidad en [modelo](structured-routines.md). No se interpretan
+notas anteriores ni se declaran aceptadas las entregas 006A/006B antes de auditoría.
+
+## D008 — Rutinas de texto y publicación (PROPOSED, CUEVA-006A)
+
+Implementación local para revisión: separar borrador CAS de publicaciones
+inmutables, conservar historial y copiar plantillas como texto independiente.
+Evita exponer ediciones incompletas y perder cambios entre administradores.
+Alternativas: escritura sin revisión (pierde cambios) y una sola fila publicada
+mutable (pierde historial). Se reutiliza la serialización de eliminación/pagos
+para no introducir carreras al eliminar fichas. Coste: guardados transaccionales
+breves serializados y resolución explícita de conflictos, adecuada a 50–150
+alumnos. [Modelo, permisos y límites](routines.md). No se adopta estructura por
+ejercicio, resultados, biblioteca ni offline en este incremento. No modifica
+la decisión vigente de acceso por correo/invitación ni el cierre alojado.
+
 ## Estado vigente de acceso — 2026-11-03
 
 Por decisión posterior del usuario, el ingreso vigente es por correo obligatorio e invitación, con contraseña propia; DNI y contraseña temporal del contexto original no son el mecanismo vigente. El primer administrador fue incorporado y promovido según el [checkpoint](../engineering/checkpoint.md). El envío integrado es temporal para el propietario: invitaciones y recuperación de alumnos siguen bloqueadas. D007 y la investigación de Keycloak se conservan como antecedentes, no como decisión adoptada. Las fuentes originales permanecen intactas. CUEVA-UI-001 limita su alcance al panel visual, sin cambios de acceso, permisos o base de datos.

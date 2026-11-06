@@ -1,5 +1,25 @@
 # Backlog de CUEVA
 
+## Cambio vigente — CUEVA-006B, 2026-11-06
+
+REVIEW local: catálogo básico y constructor principal por bloques/ejercicios.
+El usuario reemplaza expresamente la nota principal de 006A por estructura;
+las notas previas quedan como observaciones sin conversión. Plantillas estructuradas
+y consulta de objetivos; registro de resultados, videos, imágenes, archivos y
+offline siguen pendientes. [Encargo](CUEVA-006B-task.md). 006A continúa REVIEW;
+no confundir su evidencia anterior con pruebas nuevas de este incremento.
+
+## Incremento vigente — CUEVA-006A, 2026-11-06
+
+REVIEW local: rutinas libres, una nota por ficha, borrador autoguardado en
+base con revisión, publicación explícita e historial, plantillas copiadas y
+consulta de la última publicación por el alumno vinculado. [Encargo](CUEVA-006A-task.md)
+y [modelo](../architecture/routines.md). Integración, migración y validación
+alojadas pendientes del Orchestrator. Ejercicios estructurados, videos, resultados
+de entrenamiento y lectura offline continúan pendientes; CUEVA-006 completo
+no se declara terminado. El cierre de acceso vigente del checkpoint prevalece
+sobre estados históricos de identidad/correo que se conservan debajo.
+
 **Estado vigente 2026-11-03:** el acceso usa correo obligatorio e invitación con contraseña propia; el primer administrador está operativo. El correo integrado es temporal solo para el propietario; altas y recuperación de alumnos siguen bloqueadas. CUEVA-UI-001 prepara el panel visual; alumnos, pagos y comprobantes todavía no tienen datos operativos. Ver [checkpoint](checkpoint.md). Los estados contradictorios inferiores son históricos.
 
 **Actualización posterior:** CUEVA-002J ACCEPTED LOCAL; plantillas, bootstrap y

@@ -1,0 +1,580 @@
+{
+  "date": "2026-11-06T14:49:56.277Z",
+  "scope": "CUEVA-006A",
+  "images": {
+    "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "mail": "public.ecr.aws/supabase/mailpit@sha256:37a38e48e9338cd7e89dfeb487f37b02ebfcd9cb23111bed2d345e79d37d6dd6",
+    "rest": "public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962"
+  },
+  "results": [
+    {
+      "name": "authenticator_password_cannot_login_as_postgres",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "draft_rpc",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "draft_author_server",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_no_drafts",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_no_templates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "before_publish_empty",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "search_select_existing_student",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fiche_routine_navigation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "publish_disabled_pending_save",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "autosave_reload_persisted",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "publication_server_author_date",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_real_session_own_publication",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "editing_preserves_previous_publication",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "inflight_not_claimed_saved",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "old_response_never_overwrites_new_typing",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "inflight_reverted_text_navigation_warns",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "inflight_revert_persists_final_intent",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "error_preserves_local_text",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "error_no_false_saved",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "save_recovery",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "lost_save_response_recovered_without_loss",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "two_admin_conflict_preserves_both",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "explicit_conflict_resolution",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "template_created",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "template_replacement_requires_confirmation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "template_update_real",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "template_copy_independent",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_student_edits_independent",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "template_never_auto_publishes",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "new_template_reload_same_note",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "template_ui_create_list_edit_persist",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "template_conflict_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "stale_publication_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "unsaved_publication_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "publication_concurrent_deduplicated",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "publication_history_preserved",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_latest_only",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "publication_retry_same_id",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "operation_rebound_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "save_retry_idempotent",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cas_concurrent_one_winner",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "content_text_not_html",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_write_rpc_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_template_rpc_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_drafts_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_templates_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_write_rpc_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_template_rpc_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_drafts_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_templates_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_ready_write_rpc_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_ready_template_rpc_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_ready_drafts_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_ready_templates_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_own_empty",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_ready_publications_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "visitor_http_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_http_write_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_http_draft_get_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "origin_mismatch_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "malformed_request_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "oversized_text_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "anonymous_rest_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "anonymous_rpc_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_direct_drafts_writes",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_direct_templates_writes",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_direct_publications_writes",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pending_session_ui_closed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pending_session_http_closed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_cannot_choose_owner",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "private_response_no_store",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "blank_draft_protects_eligibility",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "blank_draft_prevents_delete",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "unlinked_publication_protects_eligibility",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "unlinked_publication_prevents_delete",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "publication_protects_delete",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "empty_fiche_deletion_preserved",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "history_retained_after_delete_attempt",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "published_history_immutable",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "debt_fixture_real",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "debt_does_not_block_routine",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "admin_layout_390_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_layout_390_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "admin_layout_390_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_layout_390_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "admin_layout_1440_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_layout_1440_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "admin_layout_1440_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_layout_1440_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "admin_mobile_routines_active",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "keyboard_edit_save_focus",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "keyboard_skip_content",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "axe_admin_no_violations",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "axe_pupil_no_violations",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "system_theme_preserved",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "billing_still_available",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "students_invitation_unchanged",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "publishing_sends_no_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "logout_closes_routine",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_rest",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_auth",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_db",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_network",
+      "status": "PASS",
+      "detail": ""
+    }
+  ],
+  "base_sha": "fb801dd557a8cb45b25d12cffc0170bd7e1ff79c",
+  "sourceHashes": {
+    "experiments/cueva-alumnos-local/lab.mjs": "6f7d6d62175eb2288382adb89059a6225a5c0c08683b96c8b9d06cba8c4260a7",
+    "experiments/cueva-routines-local/browser-test.mjs": "f07f48febb1f45be4d27df10ff38e7c9d2c8ea5fcc3caa796f008a18b4fa9a8c",
+    "package-lock.json": "5d0fc9e6ce28eec7777005b181104ec1a6c6f231e092688d4ef8f5c7ddb9fbfd",
+    "package.json": "538c787dd019c92014aa92f1b982699666fc8e2084587edeab1232864df1c0ad",
+    "src/app/alumnos/page.tsx": "1d67c127f047355d72d91b251346d295bff9aefb7c77f580a94af5cf616f1e84",
+    "src/app/api/rutinas/route.ts": "b434bc18d766d187194d97507e91fccb6da0001280bbfac7ed16fdc1562a8589",
+    "src/app/cuenta/page.tsx": "0ab129aa16b683f0c9d4f0d5a84b7dd527d9f830b0ec6b1e7fccfcf5102bd248",
+    "src/app/globals.css": "0cbce3a981f57492a94bcadddb940334fca6e0924f9510a255cdaf10d4e6351b",
+    "src/app/mi-rutina/page.tsx": "8a6187439f4af55d2b5d7b2e2faebfaa56c1f13018aecbad47f06f55b3bea123",
+    "src/app/rutinas/page.tsx": "1955894549ee495d7124bbb0ec96c166737d9ab9d2a4b46fa726f2c6a2f1d8a5",
+    "src/app/rutinas/plantillas/page.tsx": "3477a90d7ae77a5cfda8d1132ea0e908f5074ed730838c951fc09bdbc4d67bed",
+    "src/components/dashboard/admin-dashboard.tsx": "d1102cc4455bb6301b6cf549a71276a6656268a56c13257391c957819f98d6ea",
+    "src/components/routines/note-editor.tsx": "4f181a63cc06b566533bb67f4fc240860f5084ff2f42c5e40f75bb0ce62f129c",
+    "src/components/routines/routine-shell.tsx": "1f1f8785761d751aae91c0f87ad1350326eabc863303b64c56292d4fb785d9c4",
+    "src/components/routines/student-shell.tsx": "3923813342130f7b4e994d354a7750f14bdbf124eea503f3513e92a81089728e",
+    "src/components/students/delete-student-action.tsx": "cc8744fd8089a21314ab7457b506d07d797865cad40ad928184959b34739834b",
+    "src/lib/routines/types.ts": "eeef1788fdd2005bd0b5531cec5f3d0fab00388a7bd8155382c719610fa19695",
+    "src/proxy.ts": "d779f76d0848c6346932d6f3fdfc644bbf9ee037267a3d9e44f0d7ead46244a3",
+    "supabase/migrations/20261106142345_cueva_routines.sql": "51917cee907fcaea3994ef48fd58b84d5dadf31b2ea01fc023c697436466a411"
+  },
+  "captures": {
+    "evidence/CUEVA-006A/admin-1440-dark.png": "d5ab2140649633597c3a06d0019c4601e13d1e9af830fe8a852d600aaf11cd1e",
+    "evidence/CUEVA-006A/admin-1440-light.png": "69de2d1a4b68b72b1bc2acbd38e6c31790fa56ebb76106c76e1fc1d375decd26",
+    "evidence/CUEVA-006A/admin-390-dark.png": "88399a3b5136c61a126fc6167b876ab45d5b8511f9f77a81626240a95f350dda",
+    "evidence/CUEVA-006A/admin-390-light.png": "5d1ae57d41cfbd4e55ba31c39febaade5eebd0f0a85f20fbc91591f7df7c4594",
+    "evidence/CUEVA-006A/pupil-1440-dark.png": "fe7819c94dcc1f766973caf5fd8e93f8ccf88cacc5d4a5744246f4beab6d4f22",
+    "evidence/CUEVA-006A/pupil-1440-light.png": "d57f5b70937ffdf570cd707de6da2e9cb3a12f18434ec1e633d8b63c234e08d2",
+    "evidence/CUEVA-006A/pupil-390-dark.png": "90f2ba206bd9bfad8ca07e9631ebc4824bbc2c79f2f78af114abf428d6a06225",
+    "evidence/CUEVA-006A/pupil-390-light.png": "9f59052ff2c21ea2a296679ecc75986483d15c7d2e5d63a2cd44c7a0e48cdb0e"
+  },
+  "checks": {
+    "sources": "PASS",
+    "build": "PASS",
+    "types": "PASS",
+    "lint": "PASS",
+    "documents": "PASS",
+    "npm_audit": {
+      "dependencies_changed": false,
+      "high": 0,
+      "moderate": 8,
+      "critical": 0
+    },
+    "security": "PASS",
+    "diff": "PASS"
+  },
+  "hosted": "NOT_RUN"
+}
