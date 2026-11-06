@@ -13,8 +13,10 @@ const periodOperations = [randomUUID(), randomUUID()];
 const clients = [new Client({ connectionString }), new Client({ connectionString })];
 
 let month;
+let adminConnected = false;
 try {
   await admin.connect();
+  adminConnected = true;
   await admin.query("select 1");
   ({ rows: [{ month }] } = await admin.query(`
     select to_char(date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires'),'YYYY-MM') as month
@@ -76,7 +78,7 @@ try {
   process.stdout.write("PASS: concurrent same-student/month period creation is serialized and unique.\n");
 } finally {
   await Promise.all(clients.map(client => client.end().catch(() => undefined)));
-  if (admin._connected) {
+  if (adminConnected) {
     try {
       await admin.query("delete from public.cueva_periods where student_id=$1", [studentId]);
       await admin.query("delete from public.cueva_students where id=$1", [studentId]);
