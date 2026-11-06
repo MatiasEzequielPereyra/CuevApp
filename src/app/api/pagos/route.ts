@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { studentAdmin } from "@/lib/students/server";
 import { productConfig } from "@/lib/product-auth/server";
+import { isDefinitiveDatabaseError } from "@/lib/payments/operation-key";
 export async function POST(req:Request){
- const reply=(message:string,status:number)=>NextResponse.json({message,operation_not_applied:true},{status,headers:{"Cache-Control":"no-store"}});
+ const reply=(message:string,status:number,operationNotApplied=true)=>NextResponse.json({message,operation_not_applied:operationNotApplied},{status,headers:{"Cache-Control":"no-store"}});
  const cfg=productConfig();if(!cfg)return reply("Acceso no disponible.",404);
  if(req.headers.get("origin")!==cfg.origin)return reply("Solicitud no permitida.",403);
  const client=await studentAdmin();if(!client)return reply("Acceso restringido.",403);
@@ -14,6 +15,6 @@ export async function POST(req:Request){
  if(!data||typeof data.op!=="string"||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.op)||!data.p||typeof data.p!=="object")return reply("Datos inválidos.",400);
  const {data:operationId,error}=await client.rpc("cueva_billing_write",{op:data.op,p:data.p});
  if(!error&&operationId===null)return reply("La operación fue rechazada y no se aplicó. Revisá el historial antes de corregir los datos.",409);
- if(error){const known=error.code==="P0001";const duplicate=error.code==="23505";return reply(known?error.message:duplicate?"Ya existe ese período, precio o anulación. Revisá el historial.":"No se pudo guardar. Revisá los datos o intentá nuevamente; la migración puede estar pendiente.",known||duplicate?409:503);}
+ if(error){const known=error.code==="P0001";const duplicate=error.code==="23505";return reply(known?error.message:duplicate?"Ya existe ese período, precio o anulación. Revisá el historial.":"No se pudo guardar. Si el resultado no aparece, reintentá sin modificar los datos.",known||duplicate?409:503,isDefinitiveDatabaseError(error.code));}
  return reply("Operación registrada.",200);
 }
