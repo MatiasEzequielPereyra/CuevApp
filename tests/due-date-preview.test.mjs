@@ -33,3 +33,30 @@ test("date preview labels the date in Spanish without timezone day shifts", () =
   assert.match(label, /febrero/);
   assert.match(label, /2026/);
 });
+
+
+test("operation retries preserve the idempotency key while the result is uncertain", async () => {
+  const { operationForSubmission } = await loadOperationKey();
+  const first = operationForSubmission(null, "same-payload", false, () => "op-1");
+  const retry = operationForSubmission(first, "same-payload", false, () => "op-2");
+  assert.equal(retry.op, "op-1");
+  assert.throws(() => operationForSubmission(first, "changed-payload", false, () => "op-2"), /resultado anterior sigue siendo incierto/);
+});
+
+test("a definitive server rejection allows a corrected payload to receive a new key", async () => {
+  const { operationForSubmission } = await loadOperationKey();
+  const first = operationForSubmission(null, "invalid-payload", false, () => "op-1");
+  const corrected = operationForSubmission(first, "corrected-payload", true, () => "op-2");
+  assert.equal(corrected.op, "op-2");
+  assert.equal(corrected.payload, "corrected-payload");
+});
+
+async function loadOperationKey() {
+  const source = fs.readFileSync("src/lib/payments/operation-key.ts", "utf8");
+  const output = ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  const unit = { exports: {} };
+  new Function("require", "module", "exports", output)(load, unit, unit.exports);
+  return unit.exports;
+}
