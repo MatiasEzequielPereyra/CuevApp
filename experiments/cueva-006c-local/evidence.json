@@ -1,0 +1,628 @@
+{
+  "date": "2026-11-06T22:56:07.155Z",
+  "scope": "CUEVA-006C",
+  "images": {
+    "storage": "supabase/storage-api@sha256:b93ea65dad8eee7af34ab57d062915fcf085d4eb1a647f38f3bcea25d99850b1",
+    "db": "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "mail": "public.ecr.aws/supabase/mailpit@sha256:37a38e48e9338cd7e89dfeb487f37b02ebfcd9cb23111bed2d345e79d37d6dd6",
+    "rest": "public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962"
+  },
+  "results": [
+    {
+      "name": "authenticator_password_cannot_login_as_postgres",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "legacy_catalog_Sentadilla",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "legacy_catalog_Plancha",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "legacy_v1_draft",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "legacy_v1_publication",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "legacy_v1_template",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "migration_publication_byte_equivalent",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "migration_draft_and_template_preserved",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalog_extended_write",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalog_visible_without_search",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalog_pagination_complete",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalog_literal_search",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "legacy_ui_readable",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "legacy_mixed_sets_split_without_loss",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "conversion_keeps_publication",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "routines_is_template_catalog",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "browser_request_failure",
+      "status": "OBSERVED",
+      "detail": "GET /rutinas/plantillas net::ERR_ABORTED"
+    },
+    {
+      "name": "template_multiday_multiblock",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "multiselect_order_and_mode",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_per_exercise_sets",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "switch_time_to_weight_clears_hidden_targets",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "switch_weight_to_time_clears_hidden_targets",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "keyboard_exercise_reorder",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "day_block_reorder_persists",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "copies_renew_all_ids",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "three_copies_independent",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "draft_hidden_until_publish",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_all_blocks_common_rounds_time",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "subsequent_edits_keep_snapshot",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "publish_rpc",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "publish_exact_retry",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "publish_same_revision_deduplicates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "publish_operation_bound",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cas_conflict_keeps_local",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "explicit_conflict_resolution",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "browser_console_error",
+      "status": "OBSERVED",
+      "detail": "BROWSER_ERROR"
+    },
+    {
+      "name": "failed_save_keeps_local",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_reject_rounds_zero",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_reject_independent_sets",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_reject_hidden_reps",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_reject_time_zero",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_reject_time_unit",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_reject_duplicate_day",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_reject_duplicate_block",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_reject_duplicate_occurrence",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_reject_negative_weight",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_reject_weight_precision",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_reject_reverse_reps",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_reject_unknown_exercise",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_reject_empty_day_name",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_reject_shape",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "invalid_writes_no_revision_change",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_authorized_video_resource",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "youtube_server_validated_redirect",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_reject_video_destination_javascript:alert(1)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_reject_video_destination_https://youtube.com.",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_reject_video_destination_https://www.youtube.",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "resource_without_video_honest",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "gallery_association_private_path",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "gallery_authorized_signed_redirect",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "gallery_real_bytes_downloaded",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "private_bucket_no_public_download",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "oversize_upload_http_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "nonvideo_upload_http_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cross_exercise_storage_binding_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "missing_object_binding_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "storage_direct_oversize_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "storage_rejected_upload_no_object",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "storage_direct_mime_rejected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalog_normalized_concurrent_duplicate_one_winner",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalog_concurrent_edit_one_winner",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalog_deactivate",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "existing_inactive_occurrence_retained",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "new_inactive_occurrence_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "legacy_v1_write_still_supported",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "empty_v2_publication_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "own_pupil_cueva_exercises_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "own_pupil_cueva_routine_templates_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "own_pupil_cueva_routine_drafts_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "own_pupil_routine_rpc_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "own_pupil_catalog_rpc_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_cueva_exercises_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_cueva_routine_templates_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_cueva_routine_drafts_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_routine_rpc_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_catalog_rpc_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_ready_cueva_exercises_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_ready_cueva_routine_templates_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_ready_cueva_routine_drafts_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_ready_routine_rpc_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "not_ready_catalog_rpc_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "unauthorized_resource_3",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "unauthorized_resource_4",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "own_pupil_unassigned_resource_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_upload_http_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_catalog_http_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "visitor_video_http_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "visitor_upload_http_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "anon_resource_rpc_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "own_pupil_storage_upload_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "own_pupil_storage_sign_authorization",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_storage_upload_denied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "other_pupil_storage_sign_authorization",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "admin_no_direct_exercise_write",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "storage_bucket_limit_in_database",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "publication_history_preserved",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "builder_layout_390_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_layout_390_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "builder_layout_390_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_layout_390_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "builder_layout_1440_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_layout_1440_light",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "builder_layout_1440_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pupil_layout_1440_dark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "axe_builder",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "axe_pupil",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "axe_catalog",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_storage",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_rest",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_auth",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_mail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_db",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cleanup_network",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

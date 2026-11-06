@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { PlanBuilder } from "@/components/routines/plan-builder";
 import { PlanView } from "@/components/routines/plan-view";
-import { planKey, hasExercises } from "@/lib/routines/types";
+import { planKey, hasExercises, copyPlan } from "@/lib/routines/types";
 import type { Note, Publication, Template } from "@/lib/routines/types";
 
 type Status = "clean" | "dirty" | "saving" | "saved" | "error" | "conflict";
@@ -20,6 +20,9 @@ export function NoteEditor({ id, initial, template = false, templates = [], publ
   const [published, setPublished] = useState(publication);
   const [publishing, setPublishing] = useState(false);
   const [selected, setSelected] = useState("");
+  const [availableTemplates, setAvailableTemplates] = useState(templates);
+  const [moreTemplates, setMoreTemplates] = useState(templates.length === 200);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
   const current = useRef(local);
   const busy = useRef(false);
   const publishAttempt = useRef<{ revision: number; operation: string } | null>(null);
@@ -102,15 +105,15 @@ export function NoteEditor({ id, initial, template = false, templates = [], publ
   }
 
   function applyTemplate() {
-    const chosen = templates.find(item => item.id === selected);
+    const chosen = availableTemplates.find(item => item.id === selected);
     if (!chosen || publishing || status === "conflict") return;
-    if ((local.content || local.plan?.blocks.length) && !window.confirm("¿Reemplazar el texto del borrador con esta plantilla? La publicación actual se conserva.")) return;
-    edit({ ...local, content: chosen.content, plan: chosen.plan ? { version: 1, blocks: chosen.plan.blocks.map(b => ({ ...b, id: crypto.randomUUID(), exercises: b.exercises.map(e => ({ ...e, id: crypto.randomUUID() })) })) } : null });
+    if ((local.content || local.plan) && !window.confirm("¿Reemplazar el contenido del borrador con esta plantilla? La publicación actual se conserva.")) return;
+    edit({ ...local, content: chosen.content, plan: chosen.plan ? copyPlan(chosen.plan) : null });
   }
 
   return <section className="routine-editor" aria-label={template ? "Editor de plantilla" : "Editor de rutina"}>
-    <div className="routine-editor-heading"><div><p className="dash-kicker">{template ? "PLANTILLA DE RUTINA" : "BORRADOR PRIVADO"}</p><h2>{template ? "Editá tu plantilla" : "Armá la rutina por bloques"}</h2></div><span role="status" aria-live="polite">{labels[status]}</span></div>
-    <p>{template ? "Se guarda automáticamente. Las copias ya aplicadas no se modifican." : "Organizá bloques y elegí ejercicios. Solo los administradores ven este borrador."}</p>
+    <div className="routine-editor-heading"><div><p className="dash-kicker">{template ? "PLANTILLA DE RUTINA" : "BORRADOR PRIVADO"}</p><h2>{template ? "Editá tu plantilla" : "Armá la rutina por días"}</h2></div><span role="status" aria-live="polite">{labels[status]}</span></div>
+    <p>{template ? "Se guarda automáticamente. Las copias ya aplicadas no se modifican." : "Organizá días, bloques y ejercicios. Solo los administradores ven este borrador."}</p>
     {template && <label>Título de la plantilla<input maxLength={100} value={local.title ?? ""} disabled={publishing} onChange={event => edit({ ...local, title: event.target.value })}/></label>}
     <PlanBuilder plan={local.plan ?? null} disabled={publishing} onChange={plan => edit({ ...local, plan })}/>
     <label htmlFor="routine-text">{template ? "Observaciones de la plantilla" : "Observaciones de la rutina"}</label><textarea id="routine-text" maxLength={40000} rows={6} value={local.content} disabled={publishing} onChange={event => edit({ ...local, content: event.target.value })} placeholder="Indicaciones generales, descansos o notas complementarias…" aria-describedby="routine-help"/>
@@ -125,7 +128,15 @@ export function NoteEditor({ id, initial, template = false, templates = [], publ
     {!template && <>
       <p className="routine-publication-state" role="status">{published ? (local.content !== published.content || planKey(local.plan) !== planKey(published.plan)) ? "Hay cambios todavía sin publicar. El alumno sigue viendo la publicación anterior." : "El borrador coincide con la rutina publicada." : "Todavía no publicaste una rutina para este alumno."}</p>
       <details className="routine-preview"><summary>Última rutina publicada</summary>{published ? <><p>Publicada el {new Date(published.published_at).toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" })}</p><PlanView plan={published.plan}/><pre>{published.content}</pre></> : <p>Sin publicación. El alumno verá un estado vacío.</p>}</details>
-      <section className="routine-template-picker"><h3>Empezar desde una plantilla</h3>{templates.length ? <><label htmlFor="routine-template">Plantilla</label><select id="routine-template" value={selected} onChange={event => setSelected(event.target.value)}><option value="">Elegí una plantilla</option>{templates.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select><button type="button" disabled={!selected || publishing || status === "conflict"} onClick={applyTemplate}>Copiar al borrador</button></> : <p>Todavía no hay plantillas.</p>}<a href="/rutinas/plantillas">Gestionar plantillas</a></section>
+      <section className="routine-template-picker"><h3>Empezar desde una plantilla</h3>{availableTemplates.length ? <><label htmlFor="routine-template">Plantilla</label><select id="routine-template" value={selected} onChange={event => setSelected(event.target.value)}><option value="">Elegí una plantilla</option>{availableTemplates.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select><button type="button" disabled={!selected || publishing || status === "conflict"} onClick={applyTemplate}>Copiar al borrador</button></> : <p>Todavía no hay plantillas.</p>}{moreTemplates && <button type="button" disabled={loadingTemplates} onClick={async () => {
+  setLoadingTemplates(true);
+  try {
+    const response = await fetch(`/api/rutinas?templates=1&offset=${availableTemplates.length}`, { cache: "no-store", signal: AbortSignal.timeout(15000) });
+    const result = await response.json();
+    if (!response.ok) { setMessage(result.message); return; }
+    setAvailableTemplates(previous => [...new Map([...previous, ...result.templates].map((t: Template) => [t.id, t])).values()]); setMoreTemplates(result.more);
+  } catch { setMessage("No pudimos cargar más plantillas. Tu borrador se conserva."); } finally { setLoadingTemplates(false); }
+}}>Mostrar más plantillas</button>}<a href="/rutinas/plantillas">Gestionar plantillas</a></section>
     </>}
     <noscript>El autoguardado requiere JavaScript. No se realizarán cambios desde esta página.</noscript>
   </section>;

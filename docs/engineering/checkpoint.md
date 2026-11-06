@@ -1,5 +1,20 @@
 # Checkpoint CUEVA
 
+## CUEVA-006C — REVIEW local, 2026-11-06
+
+Base remota verificada `7663e51f7b60c269a9bb7f13f0f69d26358b609d`;
+rama `codex/cueva-006c-rutinas`, checkout preparado reutilizado.
+[Encargo y ampliación aprobada](CUEVA-006C-task.md): catálogo de plantillas,
+días libres, bloques con vueltas compartidas, selección múltiple, peso/repeticiones
+o tiempo. Usuario agregó carga de video desde galería: hasta 50 MB, solo admin.
+[Modelo y conservación de legado](../architecture/routine-days.md).
+Laboratorio real PostgreSQL/Auth/PostgREST/Storage: 121/121 PASS; nueve capturas,
+teclado, ambos temas y axe. Modelo 5/5, controles generales y CI en el
+[informe de entrega](CUEVA-006C-review.md). Commit/PR identificados en el handoff.
+Sin cambios de pagos, vencimientos, Auth o rama de Facu. Sin merge, migraciones
+alojadas, archivos reales ni producción. Revisión independiente y operación
+alojada pendientes; estos resultados locales no acreditan aceptación o despliegue.
+
 ## CUEVA-006B — REVIEW local, 2026-11-06
 
 Cambio expreso: constructor de ejercicios principal; nota como complemento.

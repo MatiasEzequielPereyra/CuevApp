@@ -10,6 +10,12 @@ export async function GET(req: Request) {
   const client = await studentAdmin();
   if (!client) return reply({ message: "Acceso restringido." }, 403);
   const params = new URL(req.url).searchParams;
+  if (params.get("templates") === "1") {
+    const offset = Number(params.get("offset") ?? 0);
+    if (!Number.isSafeInteger(offset) || offset < 0 || offset > 1000000) return reply({ message: "Página inválida." }, 400);
+    const { data, error } = await client.from("cueva_routine_templates").select("id,title,content,revision,plan").order("title").order("id").range(offset, offset + 100);
+    return error ? reply({ message: "No pudimos cargar las plantillas." }, 503) : reply({ templates: data?.slice(0, 100), more: (data?.length ?? 0) > 100 });
+  }
   const id = params.get("id") ?? "";
   if (!uuid.test(id)) return reply({ message: "Identificador inválido." }, 400);
   const template = params.get("kind") === "template";
@@ -39,7 +45,7 @@ export async function POST(req: Request) {
   if (error) {
     if (error.code === "40001") return reply({ message: "Hay cambios en otra ventana. Tu texto se conserva. Compará las versiones antes de guardar.", conflict: true }, 409);
     if (error.code === "42501") return reply({ message: "Acceso restringido." }, 403);
-    if ((error.code.startsWith("22") || error.code === "23514")) return reply({ message: "Revisá series (1–30), repeticiones (10 o 8-12), peso (0–2000 kg) y ejercicios activos. Tu borrador se conserva." }, 400);
+    if ((error.code.startsWith("22") || error.code === "23514")) return reply({ message: "Revisá días, vueltas (1–30), repeticiones (10 o 8-12), peso (0–2000 kg), tiempo y ejercicios activos. Tu borrador se conserva." }, 400);
     return reply({ message: "No se pudo guardar. Tu texto sigue en el editor; reintentá sin cerrar esta página." }, 503);
   }
   return reply({ note: data });

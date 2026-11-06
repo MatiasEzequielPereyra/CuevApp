@@ -222,3 +222,15 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
 .routine-plan-view section { margin-block:24px; }.routine-plan-view li { margin-bottom:18px; overflow-wrap:anywhere; }.routine-plan-view p { white-space:pre-wrap; }
 .routine-editor textarea { min-height:150px; }
 @media(max-width:680px) { .routine-target-fields { grid-template-columns:1fr; gap:0; }.routine-block,.routine-target,.exercise-catalog { padding:12px; }.exercise-results li { flex-wrap:wrap; }.routine-actions button { font-size:13px; } }
+.routine-day { border: 1px solid var(--dash-border); border-radius: 14px; padding: clamp(12px, 2vw, 24px); margin-block: 18px; min-width: 0; }
+.routine-day > label { font-weight: 700; }
+.routine-day input, .routine-day select, .exercise-catalog input, .exercise-catalog textarea { max-width: 100%; }
+.routine-plan-view label { display: grid; gap: 8px; margin-block: 16px; }
+.exercise-results li > div { min-width: 0; overflow-wrap: anywhere; }
+.exercise-results li { flex-wrap: wrap; gap: 12px; }
+.routine-target a, .routine-target span[role=status] { display: block; margin-block: 8px; }
+
+.exercise-catalog input[type="checkbox"] { width: 20px; height: 20px; min-height: 20px; padding: 0; margin: 0; }
+.exercise-catalog label:has(input[type="checkbox"]) { display: flex; align-items: center; gap: 10px; }
+.exercise-catalog textarea { width: 100%; min-height: 100px; padding: 12px; border: 1px solid var(--dash-border); border-radius: 8px; font: inherit; color: var(--dash-text); background: var(--dash-bg); resize: vertical; }
+.routine-plan-view select { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--dash-border); border-radius: 8px; color: var(--dash-text); background: var(--dash-bg); font: inherit; }
