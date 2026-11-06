@@ -14,7 +14,7 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit",
     "test:docs": "node --test tests/documents.test.mjs",
-    "test": "npm run test:docs && playwright test",
+    "test": "npm run test:docs && node --test tests/due-date-preview.test.mjs && playwright test",
     "test:e2e": "playwright test",
     "verify": "npm run lint && npm run typecheck && npm run build && npm test",
     "verify:sources": "node scripts/verify-sources.mjs",
