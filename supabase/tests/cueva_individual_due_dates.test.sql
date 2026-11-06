@@ -151,14 +151,6 @@ select is((select count(*)::integer from public.cueva_due_schedules where studen
 
 select is((select count(*)::integer from public.cueva_due_date_audit where student_id='a3000000-0000-4000-8000-000000000001'),
  4,'only successfully applied due day changes are audited');
-select is((select count(*)::integer from public.cueva_due_date_attempts where student_id='a3000000-0000-4000-8000-000000000001'),
- 5,'all five rejected due-day attempts are retained separately');
-select is((select actor_email from public.cueva_due_date_audit where id='ad100000-0000-4000-8000-000000000001'),
- 'due-date-admin@example.test','audit identifies the administrator by account email');
-select is((select actor_email from public.cueva_due_date_attempts where operation_id='b1020000-0000-4000-8000-000000000001'),
- 'due-date-admin@example.test','failed attempt identifies the administrator by account email');
-select ok((select error_code='22023' and length(error_message)>0 from public.cueva_due_date_attempts where operation_id='b1020000-0000-4000-8000-000000000001'),
- 'failed attempt stores the database error code and explanation');
 
 select is(public.cueva_billing_write('b1000000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','19',
@@ -184,6 +176,14 @@ select is(public.cueva_billing_write('b1030000-0000-4000-8000-000000000001',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
  'scope','next_period','reason','ab')),null::uuid,
  'due-day writer rejects a reason shorter than three characters and records the failure');
+select is((select count(*)::integer from public.cueva_due_date_attempts where student_id='a3000000-0000-4000-8000-000000000001'),
+ 5,'all five rejected due-day attempts are retained separately');
+select is((select actor_email from public.cueva_due_date_audit where id='ad100000-0000-4000-8000-000000000001'),
+ 'due-date-admin@example.test','audit identifies the administrator by account email');
+select is((select actor_email from public.cueva_due_date_attempts where operation_id='b1020000-0000-4000-8000-000000000001'),
+ 'due-date-admin@example.test','failed attempt identifies the administrator by account email');
+select ok((select error_code='22023' and length(error_message)>0 from public.cueva_due_date_attempts where operation_id='b1020000-0000-4000-8000-000000000001'),
+ 'failed attempt stores the database error code and explanation');
 
 select throws_ok($$insert into public.cueva_due_schedules(id,student_id,due_day,effective_month,actor)
  values('b2000000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001',20,date '2026-01-01','a1000000-0000-4000-8000-000000000001')$$,
@@ -197,9 +197,9 @@ select throws_ok($$insert into public.cueva_due_date_audit(id,student_id,actor,o
  '42501',null,'admin cannot insert audit rows directly');
 select throws_ok($$update public.cueva_due_date_audit set reason='tampered' where id='a6000000-0000-4000-8000-000000000001'$$,
  '42501',null,'admin cannot edit audit history directly');
-select throws_ok($delete from public.cueva_due_date_audit where id='a6000000-0000-4000-8000-000000000001'$,
+select throws_ok($$delete from public.cueva_due_date_audit where id='a6000000-0000-4000-8000-000000000001'$$,
  '42501',null,'admin cannot delete audit history directly');
-select throws_ok($insert into public.cueva_due_date_attempts(operation_id,student_id,actor,actor_email,requested_due_day,effective_month,scope,error_code,error_message)
+select throws_ok($$insert into public.cueva_due_date_attempts(operation_id,student_id,actor,actor_email,requested_due_day,effective_month,scope,error_code,error_message)
  values('b2020000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001','spoof@example.test','20','2026-12','next_period','22023','spoof')$,
  '42501',null,'admin cannot insert rejected-attempt audit rows directly');
 
