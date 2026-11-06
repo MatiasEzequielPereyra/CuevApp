@@ -222,3 +222,28 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
 .routine-plan-view section { margin-block:24px; }.routine-plan-view li { margin-bottom:18px; overflow-wrap:anywhere; }.routine-plan-view p { white-space:pre-wrap; }
 .routine-editor textarea { min-height:150px; }
 @media(max-width:680px) { .routine-target-fields { grid-template-columns:1fr; gap:0; }.routine-block,.routine-target,.exercise-catalog { padding:12px; }.exercise-results li { flex-wrap:wrap; }.routine-actions button { font-size:13px; } }
+
+.due-date-manager { display:grid; gap:22px; margin-block:28px; padding:clamp(18px,3vw,26px); border:1px solid var(--dash-border); border-radius:13px; background:var(--dash-panel); color:var(--dash-text); }
+.due-date-manager h2 { margin-top:8px; font-size:21px; letter-spacing:-.025em; }
+.due-date-manager h3 { font-size:16px; }
+.due-date-manager p { color:var(--dash-muted); font-size:13px; line-height:1.65; }
+.due-date-form { display:grid; gap:18px; max-width:680px; }
+.due-date-form fieldset { display:grid; gap:12px; min-width:0; padding:16px; border:1px solid var(--dash-border); border-radius:9px; }
+.due-date-form legend { padding-inline:6px; font-size:13px; font-weight:700; }
+.due-date-form > label { display:grid; gap:8px; font-size:13px; font-weight:600; }
+.due-date-form input[type=number],.due-date-form textarea { width:100%; min-height:44px; padding:11px 12px; border:1px solid var(--dash-border); border-radius:8px; color:var(--dash-text); background:var(--dash-bg); font:inherit; }
+.due-date-form textarea { resize:vertical; }
+.due-date-choice,.due-date-confirm { display:flex; align-items:flex-start; gap:10px; font-size:13px; line-height:1.5; }
+.due-date-choice input,.due-date-confirm input { width:18px; height:18px; flex:none; margin-top:1px; accent-color:#5955ed; }
+.due-date-preview { display:grid; gap:10px; padding:16px; border:1px solid var(--dash-border); border-radius:10px; background:var(--dash-panel-alt); }
+.due-date-preview > div { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 16px; font-size:13px; }
+.due-date-preview > div span { color:var(--dash-muted); }
+.due-date-preview > div strong { text-align:right; }
+.due-date-form button { min-height:44px; padding:11px 16px; border:0; border-radius:8px; color:#fff; background:#5955ed; font:inherit; font-weight:700; cursor:pointer; }
+.due-date-form button:disabled { opacity:.55; cursor:not-allowed; }
+.due-date-history { border-top:1px solid var(--dash-border); padding-top:20px; }
+.due-date-history ol { display:grid; gap:12px; padding-left:22px; }
+.due-date-history li { padding:14px; border:1px solid var(--dash-border); border-radius:9px; background:var(--dash-panel-alt); overflow-wrap:anywhere; }
+.due-date-history li strong { font-size:13px; }
+.due-date-history li p { margin-top:6px; }
+@media(max-width:680px) { .due-date-manager { padding:16px; }.due-date-preview > div { flex-direction:column; gap:4px; }.due-date-preview > div strong { text-align:left; } }
