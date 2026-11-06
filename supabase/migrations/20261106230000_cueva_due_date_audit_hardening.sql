@@ -20,6 +20,7 @@ create table public.cueva_due_date_attempts (
  actor uuid not null references auth.users(id),
  actor_email text not null,
  requested_due_day text,
+ requested_reason text,
  effective_month text,
  scope text,
  error_code text not null,
@@ -50,10 +51,10 @@ begin
   get stacked diagnostics error_code=returned_sqlstate,error_message=message_text;
   if p is not null and jsonb_typeof(p)='object' and p->>'kind'='due_day' then
    insert into public.cueva_due_date_attempts(
-    operation_id,student_id,actor,actor_email,requested_due_day,effective_month,scope,error_code,error_message
+    operation_id,student_id,actor,actor_email,requested_due_day,requested_reason,effective_month,scope,error_code,error_message
    ) values (
     op,left(p->>'student_id',64),who,(select u.email from auth.users u where u.id=who),
-    left(p->>'due_day',8),left(p->>'effective_month',16),left(p->>'scope',32),
+    left(p->>'due_day',8),left(p->>'reason',300),left(p->>'effective_month',16),left(p->>'scope',32),
     error_code,left(error_message,300)
    );
    return null;
