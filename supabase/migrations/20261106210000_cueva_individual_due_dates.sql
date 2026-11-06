@@ -4,7 +4,7 @@ begin;
 -- separate from cueva_students.joined_on avoids changing the student's signup date.
 create table public.cueva_due_schedules (
  id uuid primary key,
- student_id uuid not null references public.cueva_students(id),
+ student_id uuid not null references public.cueva_students(id) on delete cascade,
  due_day smallint not null check (due_day between 1 and 31),
  effective_month date not null check (extract(day from effective_month)=1),
  actor uuid references auth.users(id),
