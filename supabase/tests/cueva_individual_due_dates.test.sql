@@ -126,19 +126,19 @@ select throws_ok(format($q$select public.cueva_billing_write('b1030000-0000-4000
  to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM')),
  '22023',null,'due-day writer requires a meaningful audit reason');
 
-select throws_ok($insert into public.cueva_due_schedules(id,student_id,due_day,effective_month,actor)
- values('b2000000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001',20,date '2026-01-01','a1000000-0000-4000-8000-000000000001')$,
+select throws_ok($$insert into public.cueva_due_schedules(id,student_id,due_day,effective_month,actor)
+ values('b2000000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001',20,date '2026-01-01','a1000000-0000-4000-8000-000000000001')$$,
  '42501',null,'admin cannot insert due schedules outside the audited RPC');
-select throws_ok($update public.cueva_due_schedules set due_day=21 where id='a6000000-0000-4000-8000-000000000001'$,
+select throws_ok($$update public.cueva_due_schedules set due_day=21 where id='a6000000-0000-4000-8000-000000000001'$$,
  '42501',null,'admin cannot edit due schedules directly');
-select throws_ok($delete from public.cueva_due_schedules where id='a6000000-0000-4000-8000-000000000001'$,
+select throws_ok($$delete from public.cueva_due_schedules where id='a6000000-0000-4000-8000-000000000001'$$,
  '42501',null,'admin cannot delete due schedules directly');
-select throws_ok($insert into public.cueva_due_date_audit(id,student_id,actor,old_due_day,new_due_day,effective_month,scope,reason,result)
- values('b2010000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001',19,20,date '2026-11-01','current_period','Manual audit','applied')$,
+select throws_ok($$insert into public.cueva_due_date_audit(id,student_id,actor,old_due_day,new_due_day,effective_month,scope,reason,result)
+ values('b2010000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001',19,20,date '2026-11-01','current_period','Manual audit','applied')$$,
  '42501',null,'admin cannot insert audit rows directly');
-select throws_ok($update public.cueva_due_date_audit set reason='tampered' where id='a6000000-0000-4000-8000-000000000001'$,
+select throws_ok($$update public.cueva_due_date_audit set reason='tampered' where id='a6000000-0000-4000-8000-000000000001'$$,
  '42501',null,'admin cannot edit audit history directly');
-select throws_ok($delete from public.cueva_due_date_audit where id='a6000000-0000-4000-8000-000000000001'$,
+select throws_ok($$delete from public.cueva_due_date_audit where id='a6000000-0000-4000-8000-000000000001'$$,
  '42501',null,'admin cannot delete audit history directly');
 
 reset role;
