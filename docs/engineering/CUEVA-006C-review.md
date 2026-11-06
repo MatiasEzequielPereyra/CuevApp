@@ -1,5 +1,9 @@
 # CUEVA-006C — entrega del EXECUTOR
 
+Corrección posterior P2-001: [cambio, regresión y límites](CUEVA-006C-P2-001.md).
+Los resultados históricos inferiores corresponden a la entrega inicial; no se
+presentan como ejecuciones nuevas de la corrección.
+
 Estado: implementación local para **REVIEW**; pendiente de revisión independiente.
 Base verificada al inicio: `7663e51f7b60c269a9bb7f13f0f69d26358b609d`.
 Rama `codex/cueva-006c-rutinas`, checkout Git real reutilizado:

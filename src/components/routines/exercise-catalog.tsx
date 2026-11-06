@@ -34,7 +34,7 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30 }: { onSelectMany?
       const r = await fetch("/api/ejercicios", { method: "POST", signal: AbortSignal.timeout(15000), headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editing?.id ?? newId.current, name, description, video_url: video || null, video_path: videoPath, active, revision: editing?.revision ?? 0 }) });
       const data = await r.json(); if (!mounted.current) return;
       if (!r.ok) { setMessage(data.message); return; }
-      const e: Exercise = data.exercise; setEditing(e); setName(e.name); setDescription(e.description); setVideo((e.video_url || e.video_path) ?? ""); setVideoPath(e.video_path); setActive(e.active);
+      const e: Exercise = data.exercise; setEditing(e); setName(e.name); setDescription(e.description); setVideo(e.video_url ?? ""); setVideoPath(e.video_path); setActive(e.active);
       setRows(previous => [...previous.filter(x => x.id !== e.id), e]); setMessage("Ejercicio guardado. Las rutinas conservan sus objetivos y nombres.");
       if (e.active && selectCurrent.current) setSelected(previous => [...previous.filter(x => x.id !== e.id), e]);
     } catch { setMessage("No recibimos confirmación. Reintentá con la misma identidad."); }
