@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   migrations:
-    name: Apply migrations to an isolated Supabase stack
+    name: Apply migrations and SQL tests to an isolated Supabase stack
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -36,3 +36,6 @@ jobs:
 
       - name: Verify applied migration history
         run: supabase migration list --local
+
+      - name: Run database tests
+        run: supabase test db
