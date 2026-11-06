@@ -7,7 +7,7 @@ create table public.cueva_due_schedules (
  student_id uuid not null references public.cueva_students(id),
  due_day smallint not null check (due_day between 1 and 31),
  effective_month date not null check (extract(day from effective_month)=1),
- actor uuid not null references auth.users(id),
+ actor uuid references auth.users(id),
  recorded_at timestamptz not null default clock_timestamp(),
  unique(student_id,effective_month)
 );
@@ -57,7 +57,7 @@ revoke all on function cueva_private.monthly_due_date(smallint,date) from public
 -- Seed existing students from joined_on, without modifying that source date.
 insert into public.cueva_due_schedules(id,student_id,due_day,effective_month,actor)
 select gen_random_uuid(),s.id,extract(day from s.joined_on)::smallint,
-       date_trunc('month',s.joined_on)::date,s.id
+       date_trunc('month',s.joined_on)::date,null
 from public.cueva_students s
 where not exists(select 1 from public.cueva_due_schedules d where d.student_id=s.id);
 
