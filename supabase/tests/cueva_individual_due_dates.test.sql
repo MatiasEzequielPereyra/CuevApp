@@ -7,7 +7,7 @@ select is(cueva_private.monthly_due_date(28::smallint,date '2026-02-01'),date '2
 select is(cueva_private.monthly_due_date(29::smallint,date '2026-02-01'),date '2026-02-28','day 29 clamps in common February');
 select is(cueva_private.monthly_due_date(29::smallint,date '2028-02-01'),date '2028-02-29','day 29 in leap February');
 select is(cueva_private.monthly_due_date(30::smallint,date '2026-02-01'),date '2026-02-28','day 30 clamps in February');
-select is(cueva_private.monthly_due_date(31::smallint,date '2026-02-01'),date '2028-02-29'::date - interval '2 years','day 31 clamps in common February');
+select is(cueva_private.monthly_due_date(31::smallint,date '2026-02-01'),date '2026-02-28','day 31 clamps in common February');
 select is(cueva_private.monthly_due_date(31::smallint,date '2026-04-01'),date '2026-04-30','day 31 clamps in April');
 select is(cueva_private.monthly_due_date(31::smallint,date '2026-06-01'),date '2026-06-30','day 31 clamps in June');
 select is(cueva_private.monthly_due_date(31::smallint,date '2026-09-01'),date '2026-09-30','day 31 clamps in September');
