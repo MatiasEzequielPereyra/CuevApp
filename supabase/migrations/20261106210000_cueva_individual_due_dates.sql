@@ -73,8 +73,7 @@ create trigger cueva_students_seed_due_schedule
  after insert on public.cueva_students
  for each row execute function cueva_private.seed_student_due_schedule();
 
--- Extend the existing idempotent financial writer in place. All prior branches
--- retain their original validation, locking, grants, and ledger behavior.
+-- Extend the existing idempotent financial writer in place.
 create or replace function cueva_private.billing_write(op uuid,p jsonb) returns uuid
 language plpgsql security definer set search_path='' as $$
 declare
@@ -124,7 +123,7 @@ begin
   if not exists(select 1 from public.cueva_students where id=student) then raise exception 'Alumno inexistente'; end if;
   select d.* into schedule from public.cueva_due_schedules d
    where d.student_id=student and d.effective_month<=month_date
-   order by d.effective_month desc,d.recorded_at desc limit 1;
+   order by d.effective_month desc,d.recorded_at desc,d.id desc limit 1;
   if not found then raise exception 'No existe una regla de vencimiento para ese mes'; end if;
   date_value:=cueva_private.monthly_due_date(schedule.due_day,month_date);
   select * into price from public.cueva_prices where effective_month<=month_date order by effective_month desc limit 1;
@@ -141,7 +140,7 @@ begin
   if effective<date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date
      or effective>date '2100-12-01' then raise exception 'Mes de vigencia fuera de rango' using errcode='22023'; end if;
   scope_value:=p->>'scope';
-  if scope_value not in ('current_period','next_period') then raise exception 'Alcance inválido' using errcode='22023'; end if;
+  if scope_value is null or scope_value not in ('current_period','next_period') then raise exception 'Alcance inválido' using errcode='22023'; end if;
   if (scope_value='current_period' and effective<>date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date)
      or (scope_value='next_period' and effective<>(date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date+interval '1 month')::date)
   then raise exception 'El alcance no coincide con el mes de vigencia' using errcode='22023'; end if;
@@ -149,7 +148,7 @@ begin
   if length(reason_value) not between 3 and 300 then raise exception 'Indicá un motivo de entre 3 y 300 caracteres' using errcode='22023'; end if;
   select d.due_day into old_day from public.cueva_due_schedules d
    where d.student_id=student and d.effective_month<=effective
-   order by d.effective_month desc,d.recorded_at desc limit 1;
+   order by d.effective_month desc,d.recorded_at desc,d.id desc limit 1;
   if old_day is null then raise exception 'No existe una regla anterior para ese alumno'; end if;
   select t.* into period from public.cueva_periods t where t.student_id=student and t.month=effective for update;
   if found then
