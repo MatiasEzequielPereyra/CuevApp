@@ -9,22 +9,26 @@ import ts from "typescript";
 // Render the real server component with synthetic props. No auth bypass route or real account is used.
 const source = readFileSync("src/components/dashboard/admin-dashboard.tsx", "utf8");
 const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
-const componentModule = { exports: {} as { AdminDashboard: React.ComponentType<Record<string, unknown>> } };
+const componentModule = { exports: {} as { AdminDashboard: React.ComponentType<Record<string, unknown>>; AdminShell: React.ComponentType<Record<string, unknown>> } };
 new Function("require", "module", "exports", output)(createRequire(__filename), componentModule, componentModule.exports);
-const { AdminDashboard } = componentModule.exports;
+const { AdminDashboard, AdminShell } = componentModule.exports;
 const css = readFileSync("src/app/globals.css", "utf8");
 const svg = readFileSync("public/brand/cueva-symbol.svg", "utf8");
-const fixture = renderToStaticMarkup(React.createElement(AdminDashboard, {
+const fixtureProps = {
   displayName: "Alex", email: "alex@example.test", role: "Administrador",
   logo: React.createElement("img", { src: `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`, alt: "CUEVA", width: 42, height: 42, className: "brand-mark" }),
   themePicker: React.createElement("div", { className: "theme-picker", role: "group", "aria-label": "Elegir tema" }, ["Claro", "Oscuro", "Sistema"].map((label) => React.createElement("button", { key: label, type: "button", "aria-pressed": label === "Sistema" }, label))),
   accountActions: React.createElement("p", null, "Las invitaciones y la recuperación de alumnos estarán disponibles cuando terminemos de configurar el correo del gimnasio."),
-}));
+};
+const fixture = renderToStaticMarkup(React.createElement(AdminDashboard, fixtureProps));
+const routinesFixture = renderToStaticMarkup(React.createElement(AdminShell, {
+  ...fixtureProps, active: "rutinas",
+}, React.createElement("h1", null, "Rutinas")));
 
-async function loadDashboard(page: Page, theme: "light" | "dark" = "dark") {
+async function loadDashboard(page: Page, theme: "light" | "dark" = "dark", markup = fixture) {
   // A blank document prevents pending Next hydration from changing the synthetic fixture.
   await page.goto("about:blank");
-  await page.setContent(`<!doctype html><html lang="es-AR" data-theme="${theme}" data-preference="system"><head><title>CUEVA · Panel de administración</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>${fixture}</body></html>`);
+  await page.setContent(`<!doctype html><html lang="es-AR" data-theme="${theme}" data-preference="system"><head><title>CUEVA · Panel de administración</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>${markup}</body></html>`);
   await expect(page).toHaveTitle("CUEVA · Panel de administración");
 }
 
@@ -59,13 +63,31 @@ test("el panel permite navegar por teclado hasta cuenta y salir", async ({ page 
   await expect(page.getByRole("button", { name: "Cerrar sesión" })).toBeFocused();
 });
 
-test("la navegación móvil llega a una sección por teclado", async ({ page }) => {
+test("la navegación móvil llega a Rutinas por teclado y marca la sección activa", async ({ page, baseURL }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await loadDashboard(page);
-  const link = page.getByRole("navigation", { name: "Navegación móvil" }).getByRole("link", { name: "Comprobantes" });
+  if (!baseURL) throw new Error("La prueba requiere el servidor local configurado.");
+  // Resolve the real absolute-path link from the isolated about:blank fixture.
+  // Only this test adds a base; same-document account anchors stay unaffected.
+  await page.evaluate(origin => {
+    const base = document.createElement("base");
+    base.href = origin;
+    document.head.append(base);
+  }, baseURL);
+  const mobileNav = page.getByRole("navigation", { name: "Navegación móvil" });
+  const link = mobileNav.getByRole("link", { name: "Rutinas", exact: true });
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute("href", "/rutinas");
+  await expect(link).not.toHaveAttribute("aria-current", "page");
   await link.focus();
   await expect(link).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/#comprobantes$/);
-  await expect(page.locator("#comprobantes").getByRole("heading", { name: "Comprobantes" })).toBeVisible();
+  await expect(page).toHaveURL(new URL("/rutinas", baseURL).href);
+
+  // No authenticated fixture is claimed: render the real shell's active state
+  // with synthetic props, as the surrounding dashboard tests already do.
+  await loadDashboard(page, "dark", routinesFixture);
+  await expect(page.getByRole("heading", { name: "Rutinas", exact: true })).toBeVisible();
+  await expect(mobileNav.getByRole("link", { name: "Rutinas", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(mobileNav.getByRole("link", { name: "Inicio", exact: true })).not.toHaveAttribute("aria-current", "page");
 });
