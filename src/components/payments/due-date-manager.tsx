@@ -8,17 +8,24 @@ type AuditEntry = {
  reason: string | null; result: string; recorded_at: string;
 };
 function monthAfter(month: string) {
- const [year, value] = month.split("-").map(Number);
+ const parts = month.split("-");
+ const year = Number(parts[0]);
+ const value = Number(parts[1]);
  const date = new Date(Date.UTC(year, value, 1));
  return `${date.getUTCFullYear()}-${String(date.getUTCMonth()+1).padStart(2,"0")}`;
 }
 function dueDate(day: number, month: string) {
- const [year, value] = month.split("-").map(Number);
+ const parts = month.split("-");
+ const year = Number(parts[0]);
+ const value = Number(parts[1]);
  const last = new Date(Date.UTC(year, value, 0)).getUTCDate();
  return `${year}-${String(value).padStart(2,"0")}-${String(Math.min(day,last)).padStart(2,"0")}`;
 }
 function dateLabel(value: string) {
- const [year,month,day] = value.split("-").map(Number);
+ const parts = value.split("-");
+ const year = Number(parts[0]);
+ const month = Number(parts[1]);
+ const day = Number(parts[2]);
  return new Intl.DateTimeFormat("es-AR",{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(Date.UTC(year,month-1,day)));
 }
 export function DueDateManager({
