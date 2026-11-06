@@ -49,7 +49,7 @@ begin
   return result_id;
  exception when others then
   get stacked diagnostics error_code=returned_sqlstate,error_message=message_text;
-  if p is not null and jsonb_typeof(p)='object' and p->>'kind'='due_day' then
+  if op is not null and p is not null and jsonb_typeof(p)='object' and p->>'kind'='due_day' then
    insert into public.cueva_due_date_attempts(
     operation_id,student_id,actor,actor_email,requested_due_day,requested_reason,effective_month,scope,error_code,error_message
    ) values (
