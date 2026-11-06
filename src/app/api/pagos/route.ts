@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { studentAdmin } from "@/lib/students/server";
 import { productConfig } from "@/lib/product-auth/server";
 export async function POST(req:Request){
- const reply=(message:string,status:number)=>NextResponse.json({message},{status,headers:{"Cache-Control":"no-store"}});
+ const reply=(message:string,status:number)=>NextResponse.json({message,operation_not_applied:true},{status,headers:{"Cache-Control":"no-store"}});
  const cfg=productConfig();if(!cfg)return reply("Acceso no disponible.",404);
  if(req.headers.get("origin")!==cfg.origin)return reply("Solicitud no permitida.",403);
  const client=await studentAdmin();if(!client)return reply("Acceso restringido.",403);
