@@ -12,3 +12,7 @@ export function operationForSubmission(
   if (current && current.payload === payload) return current;
   return { op: createId(), payload };
 }
+
+export function isDefinitiveDatabaseError(code: unknown): boolean {
+  return typeof code === "string" && /^[0-9A-Z]{5}$/.test(code);
+}
