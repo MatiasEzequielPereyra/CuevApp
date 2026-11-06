@@ -200,7 +200,7 @@ select throws_ok($$update public.cueva_due_date_audit set reason='tampered' wher
 select throws_ok($$delete from public.cueva_due_date_audit where id='a6000000-0000-4000-8000-000000000001'$$,
  '42501',null,'admin cannot delete audit history directly');
 select throws_ok($$insert into public.cueva_due_date_attempts(operation_id,student_id,actor,actor_email,requested_due_day,effective_month,scope,error_code,error_message)
- values('b2020000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001','spoof@example.test','20','2026-12','next_period','22023','spoof')$,
+ values('b2020000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001','spoof@example.test','20','2026-12','next_period','22023','spoof')$$,
  '42501',null,'admin cannot insert rejected-attempt audit rows directly');
 
 reset role;
