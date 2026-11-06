@@ -60,3 +60,12 @@ async function loadOperationKey() {
   new Function("require", "module", "exports", output)(load, unit, unit.exports);
   return unit.exports;
 }
+
+
+test("only a definitive database error proves the operation was rolled back", async () => {
+  const { isDefinitiveDatabaseError } = await loadOperationKey();
+  assert.equal(isDefinitiveDatabaseError("P0001"), true);
+  assert.equal(isDefinitiveDatabaseError("23505"), true);
+  assert.equal(isDefinitiveDatabaseError("ECONNRESET"), false);
+  assert.equal(isDefinitiveDatabaseError(undefined), false);
+});
