@@ -18,7 +18,7 @@ export default async function Payments({searchParams}:{searchParams:Promise<Reco
  const students=await query;
  const snapshot=await client.rpc("cueva_billing_snapshot",{student});const data=snapshot.data as Snapshot|null;
  const today=buenosAiresDate();const month=today.slice(0,7);
- const nextMonth=(()=>{const [y,m]=month.split("-").map(Number);const d=new Date(Date.UTC(y,m,1));return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}`;})();
+ const nextMonth=(()=>{const parts=month.split("-");const year=Number(parts[0]);const monthNumber=Number(parts[1]);const d=new Date(Date.UTC(year,monthNumber,1));return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}`;})();
  const [scheduleResult,auditResult]=student?await Promise.all([
   client.from("cueva_due_schedules").select("id,due_day,effective_month,recorded_at").eq("student_id",student).lte("effective_month",nextMonth+"-01").order("effective_month",{ascending:false}).order("recorded_at",{ascending:false}).order("id",{ascending:false}).limit(20),
   client.from("cueva_due_date_audit").select("id,actor,old_due_day,new_due_day,effective_month,scope,reason,result,recorded_at").eq("student_id",student).order("recorded_at",{ascending:false}).limit(50)
