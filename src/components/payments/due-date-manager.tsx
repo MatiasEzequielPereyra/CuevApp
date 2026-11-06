@@ -41,6 +41,7 @@ export function DueDateManager({
  const [confirmed,setConfirmed]=useState(false);
  const [pending,setPending]=useState(false);
  const [message,setMessage]=useState("");
+ const [historyChecked,setHistoryChecked]=useState(false);
  const busy=useRef(false);
  const operation=useRef<{op:string;payload:string}|null>(null);
  const effectiveMonth=scope==="current_period"?currentMonth:monthAfter(currentMonth);
@@ -63,8 +64,9 @@ export function DueDateManager({
    const response=await fetch("/api/pagos",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({op:operation.current.op,p})});
    const result=await response.json();
    setMessage(result.message??"No se pudo guardar.");
-   if(response.ok){operation.current=null;setReason("");setConfirmed(false);router.refresh();}
-  } catch(error) {setMessage(error instanceof Error?error.message:"No se pudo conectar. Conservamos los datos.");}
+   if(response.ok){operation.current=null;setReason("");setConfirmed(false);setHistoryChecked(false);router.refresh();}
+   else setHistoryChecked(false);
+  } catch(error) {setMessage(error instanceof Error?error.message:"No se pudo conectar. Conservamos los datos.");setHistoryChecked(false);}
   finally {busy.current=false;setPending(false);}
  }
  return <section className="due-date-manager" aria-labelledby="due-date-title">
@@ -87,7 +89,8 @@ export function DueDateManager({
    {scope==="current_period"&&<label className="due-date-confirm"><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/> Confirmo que quiero modificar el período actual.</label>}
    {message&&<p role="status">{message}</p>}
    <button type="submit" disabled={!canSave}>{pending?"Guardando…":"Guardar cambio de vencimiento"}</button>
-   <button type="button" disabled={pending} onClick={()=>{operation.current=null;setMessage("Nueva operación: antes de reenviar, revisá el historial para evitar duplicar un cambio.");}}>Nueva operación</button>
+   {operation.current&&<label className="due-date-confirm"><input type="checkbox" checked={historyChecked} onChange={event=>setHistoryChecked(event.target.checked)}/> Revisé el historial y confirmé que el cambio anterior no se aplicó.</label>}
+   <button type="button" disabled={pending||!operation.current||!historyChecked} onClick={()=>{operation.current=null;setHistoryChecked(false);setMessage("Nueva operación habilitada. Se generará una clave nueva al guardar.");}}>Nueva operación</button>
   </form>
   <div className="due-date-history"><h3>Historial de cambios</h3>
    {!history.length?<p>Todavía no hay cambios administrativos de vencimiento.</p>:<ol>{history.map(item=><li key={item.id}>
