@@ -87,6 +87,7 @@ export function DueDateManager({
    {scope==="current_period"&&<label className="due-date-confirm"><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/> Confirmo que quiero modificar el período actual.</label>}
    {message&&<p role="status">{message}</p>}
    <button type="submit" disabled={!canSave}>{pending?"Guardando…":"Guardar cambio de vencimiento"}</button>
+   <button type="button" disabled={pending} onClick={()=>{operation.current=null;setMessage("Nueva operación: antes de reenviar, revisá el historial para evitar duplicar un cambio.");}}>Nueva operación</button>
   </form>
   <div className="due-date-history"><h3>Historial de cambios</h3>
    {!history.length?<p>Todavía no hay cambios administrativos de vencimiento.</p>:<ol>{history.map(item=><li key={item.id}>
