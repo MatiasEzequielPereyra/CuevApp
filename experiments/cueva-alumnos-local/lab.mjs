@@ -6,7 +6,8 @@ import { launch } from '../cueva-002i-local/application.mjs';
 import pg from 'pg';
 
 // Isolated test-only stack. All keys and accounts are synthetic and ephemeral.
-const routinesOnly = process.env.CUEVA_ROUTINES_ONLY === '1';
+const structuredOnly = process.env.CUEVA_STRUCTURED_ROUTINES_ONLY === '1';
+const routinesOnly = structuredOnly || process.env.CUEVA_ROUTINES_ONLY === '1';
 const images = {
   db: 'postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24',
   auth: 'public.ecr.aws/supabase/gotrue@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b',
@@ -14,7 +15,7 @@ const images = {
   rest: 'public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962',
 };
 const id = randomUUID().replaceAll('-', '').slice(0, 12);
-const prefix = routinesOnly ? 'cueva-rutinas' : 'cueva-alumnos';
+const prefix = structuredOnly ? 'cueva-estructuradas' : routinesOnly ? 'cueva-rutinas' : 'cueva-alumnos';
 const names = { network: `${prefix}-net-${id}`, db: `${prefix}-db-${id}`, auth: `${prefix}-auth-${id}`, mail: `${prefix}-mail-${id}`, rest: `${prefix}-rest-${id}` };
 const secret = () => randomBytes(32).toString('hex');
 const dbPassword = secret(), authenticatorPassword = secret(), coordinatorPassword = secret(), jwtSecret = secret(), password = `Aa9!${secret()}`;
@@ -83,7 +84,7 @@ try {
   stage='rest_ready'; await waitFor(async()=>(await request(`${rest}/`)).status<500);
   const admin=testJwt('service_role');
   stage='browser_flow';
-  const { runBrowserFlow }=await import(routinesOnly ? '../cueva-routines-local/browser-test.mjs' : './browser-test.mjs');
+  const { runBrowserFlow }=await import(structuredOnly ? '../cueva-routines-local/structured-test.mjs' : routinesOnly ? '../cueva-routines-local/browser-test.mjs' : './browser-test.mjs');
   await runBrowserFlow({base,rest,mailBase,dbPort,coordinatorPassword,admin,anon:testJwt('anon'),id,password,sql,request,note,launch,chromium,pg,secret,accessIntegrationOnly:process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'});
 } catch (error) {
   if(created.includes(names.auth)) {
@@ -97,7 +98,7 @@ try {
 finally {
   for(const name of created.reverse()) { try { if(name===names.auth){docker(['rm','-f',name]);}else{docker(['stop','--time','5',name]);} note(`cleanup_${name.split('-')[2]}`,'PASS'); } catch { note(`cleanup_${name.split('-')[2]}`,'FAIL'); } }
   if(networkCreated){try{docker(['network','rm',names.network]);note('cleanup_network','PASS');}catch{note('cleanup_network','FAIL');}}
-  await writeFile(routinesOnly?'../cueva-routines-local/results.json':'results.json',JSON.stringify({date:new Date().toISOString(),scope:routinesOnly?'CUEVA-006A':process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'?'CUEVA-ACCESO-001-INTEGRACION':'CUEVA-ALUMNOS-001',images,results},null,2)+'\n');
+  await writeFile(structuredOnly?'../cueva-routines-local/structured-results.json':routinesOnly?'../cueva-routines-local/results.json':'results.json',JSON.stringify({date:new Date().toISOString(),scope:structuredOnly?'CUEVA-006B':routinesOnly?'CUEVA-006A':process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'?'CUEVA-ACCESO-001-INTEGRACION':'CUEVA-ALUMNOS-001',images,results},null,2)+'\n');
   console.log(JSON.stringify({results},null,2));
   if(results.some(x=>['FAIL','BLOCKED'].includes(x.status)))process.exitCode=1;
 }

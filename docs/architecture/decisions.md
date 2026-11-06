@@ -1,5 +1,14 @@
 # Registro de decisiones técnicas
 
+## D009 — Constructor principal (producto CONFIRMED; técnica PROPOSED)
+
+2026-11-06, instrucción explícita [CUEVA-006B](../engineering/CUEVA-006B-task.md):
+seleccionar ejercicios y organizar bloques reemplaza la nota principal de D008.
+Autoguardado, conflictos, instantáneas y publicación explícita se conservan.
+Catálogo estable y JSON versionado con nombres/objetivos copiados; alternativas,
+límites y compatibilidad en [modelo](structured-routines.md). No se interpretan
+notas anteriores ni se declaran aceptadas las entregas 006A/006B antes de auditoría.
+
 ## D008 — Rutinas de texto y publicación (PROPOSED, CUEVA-006A)
 
 Implementación local para revisión: separar borrador CAS de publicaciones

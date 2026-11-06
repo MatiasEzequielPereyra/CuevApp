@@ -1,5 +1,14 @@
 # Backlog de CUEVA
 
+## Cambio vigente — CUEVA-006B, 2026-11-06
+
+REVIEW local: catálogo básico y constructor principal por bloques/ejercicios.
+El usuario reemplaza expresamente la nota principal de 006A por estructura;
+las notas previas quedan como observaciones sin conversión. Plantillas estructuradas
+y consulta de objetivos; registro de resultados, videos, imágenes, archivos y
+offline siguen pendientes. [Encargo](CUEVA-006B-task.md). 006A continúa REVIEW;
+no confundir su evidencia anterior con pruebas nuevas de este incremento.
+
 ## Incremento vigente — CUEVA-006A, 2026-11-06
 
 REVIEW local: rutinas libres, una nota por ficha, borrador autoguardado en

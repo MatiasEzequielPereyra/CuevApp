@@ -207,3 +207,18 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
 .student-routine-nav a[aria-current] { color:var(--dash-accent); font-weight:700; }
 .routine-account-link { display:inline-block; margin-top:20px; padding-block:12px; color:var(--dash-accent); }
 .student-dashboard .dash-main { padding-bottom:120px; }
+.routine-builder { border:0; padding:0; margin:28px 0; min-width:0; }
+.routine-builder > legend { font-size:20px; font-weight:700; }
+.routine-block,.routine-target,.exercise-catalog { min-width:0; border:1px solid var(--dash-border); border-radius:12px; padding:18px; margin-top:20px; background:var(--dash-panel-alt); }
+.routine-target { background:var(--dash-panel); }
+.routine-target legend { font-weight:700; overflow-wrap:anywhere; max-width:100%; }
+.routine-target-fields { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+.routine-catalog-search,.routine-catalog-form { display:grid; gap:14px; margin-top:18px; }
+.exercise-catalog label { display:grid; gap:10px; font-size:14px; }
+.exercise-catalog input { width:100%; min-width:0; min-height:44px; padding:12px; border:1px solid var(--dash-border); border-radius:8px; color:var(--dash-text); background:var(--dash-bg); font:inherit; }
+.exercise-catalog button { min-height:44px; padding:10px 14px; border:1px solid var(--dash-border); border-radius:8px; color:var(--dash-text); background:var(--dash-panel); font:inherit; cursor:pointer; }
+.exercise-catalog .exercise-active { display:flex; align-items:center; }.exercise-active input { width:20px; min-height:20px; }
+.exercise-results { padding:0; list-style:none; }.exercise-results li { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-block:12px; overflow-wrap:anywhere; }
+.routine-plan-view section { margin-block:24px; }.routine-plan-view li { margin-bottom:18px; overflow-wrap:anywhere; }.routine-plan-view p { white-space:pre-wrap; }
+.routine-editor textarea { min-height:150px; }
+@media(max-width:680px) { .routine-target-fields { grid-template-columns:1fr; gap:0; }.routine-block,.routine-target,.exercise-catalog { padding:12px; }.exercise-results li { flex-wrap:wrap; }.routine-actions button { font-size:13px; } }

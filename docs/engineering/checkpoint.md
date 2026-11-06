@@ -1,5 +1,22 @@
 # Checkpoint CUEVA
 
+## CUEVA-006B — REVIEW local, 2026-11-06
+
+Cambio expreso: constructor de ejercicios principal; nota como complemento.
+[Encargo](CUEVA-006B-task.md) y [modelo](../architecture/structured-routines.md).
+Continuación fuente `fd315ca0bd6a9db3131449b2cd58ae6eb43b8759` de 006A,
+que permanece REVIEW. Origin/main avanzó solo con skills a
+`2ca0d519bbf188bcf09b1982ec08f632b8b44b9b`; se reaplicó 006A sobre esa base
+en esta rama, commit equivalente `8060032`. No se modificó la rama original ni
+el checkout del Orchestrator. Rama `codex/cueva-006b-rutinas-estructuradas`.
+El diff acumulado de auditoría será desde ese main, incluyendo 006A aún sin aceptar.
+Catálogo y estructura versionada implementados. Prueba nueva 92/92 PASS;
+lint/tipos/build/documentos/fuentes/seguridad/diff PASS. Nueve capturas nuevas,
+teclado, axe y conservación de contenido previo. Ocho moderadas dev preexistentes,
+sin altas/críticas ni cambios de dependencias. [Informe](CUEVA-006B-review.md).
+Sin operaciones alojadas. Migraciones, revisión e integración pendientes del
+Orchestrator; 006A no se declara aceptado. Commit final identificado en handoff.
+
 ## CUEVA-006A — REVIEW local, 2026-11-06
 
 Base efectiva `fb801dd557a8cb45b25d12cffc0170bd7e1ff79c`, igual a origin/main
