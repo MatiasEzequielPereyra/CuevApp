@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { operationForSubmission } from "@/lib/payments/operation-key";
 
 type AuditEntry = {
- id: string; actor: string; old_due_day: number; new_due_day: number;
+ id: string; actor: string; actor_email: string | null; old_due_day: number; new_due_day: number;
  effective_month: string; scope: "current_period" | "next_period";
  reason: string | null; result: string; recorded_at: string;
 };
@@ -98,7 +98,7 @@ export function DueDateManager({
     <strong>{item.old_due_day} → {item.new_due_day} · desde {item.effective_month.slice(0,7)}</strong>
     <p>{item.scope==="current_period"?"Período actual":"Próximo período"} · {item.result==="applied"?"Aplicado":"Resultado no disponible"}</p>
     {item.reason&&<p>Motivo: {item.reason}</p>}
-    <p>Administrador: {item.actor} · {new Date(item.recorded_at).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires"})}</p>
+    <p>Administrador: {item.actor_email??"Identidad no disponible"} · {new Date(item.recorded_at).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires"})}</p>
    </li>)}</ol>}
   </div>
  </section>;
