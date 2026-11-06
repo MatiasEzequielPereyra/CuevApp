@@ -1,3 +1,7 @@
+
+
+> **AVISO DE VIGENCIA (2026-11-06):** Para cuotas, vencimientos, comprobantes y notificaciones, este documento conserva antecedentes históricos y contiene decisiones anteriores que quedaron reemplazadas. La especificación vigente es [CUEVA-FINANZAS-COMPROBANTES-NOTIFICACIONES-V1.md](CUEVA-FINANZAS-COMPROBANTES-NOTIFICACIONES-V1.md). Ante cualquier contradicción, prevalece esa especificación posterior. No utilizar las secciones históricas de comprobantes y recordatorios como instrucciones de implementación.
+
 # CUEVA — MASTER PRODUCT CONTEXT & DECISION HISTORY V1
 
 ## DOCUMENTO MAESTRO DE CONTEXTO FUNCIONAL
