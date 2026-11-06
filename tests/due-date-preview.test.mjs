@@ -10,7 +10,7 @@ const source = fs.readFileSync("src/components/payments/due-date-manager.tsx", "
 const output = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
 }).outputText;
-const runtimeRequire = (name) => name === "next/navigation" ? { useRouter: () => ({ refresh() {} }) } : load(name);
+const runtimeRequire = (name) => name === "next/navigation" ? { useRouter: () => ({ refresh() {} }) } : name === "@/lib/payments/operation-key" ? loadOperationKeySync() : load(name);
 new Function("require", "module", "exports", output)(runtimeRequire, unit, unit.exports);
 
 const { monthAfter, dueDate, dateLabel } = unit.exports;
@@ -69,3 +69,13 @@ test("only a definitive database error proves the operation was rolled back", as
   assert.equal(isDefinitiveDatabaseError("ECONNRESET"), false);
   assert.equal(isDefinitiveDatabaseError(undefined), false);
 });
+
+function loadOperationKeySync() {
+  const source = fs.readFileSync("src/lib/payments/operation-key.ts", "utf8");
+  const output = ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  const unit = { exports: {} };
+  new Function("require", "module", "exports", output)(load, unit, unit.exports);
+  return unit.exports;
+}
