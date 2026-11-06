@@ -7,21 +7,21 @@ type AuditEntry = {
  effective_month: string; scope: "current_period" | "next_period";
  reason: string | null; result: string; recorded_at: string;
 };
-function monthAfter(month: string) {
+export function monthAfter(month: string) {
  const parts = month.split("-");
  const year = Number(parts[0]);
  const value = Number(parts[1]);
  const date = new Date(Date.UTC(year, value, 1));
  return `${date.getUTCFullYear()}-${String(date.getUTCMonth()+1).padStart(2,"0")}`;
 }
-function dueDate(day: number, month: string) {
+export function dueDate(day: number, month: string) {
  const parts = month.split("-");
  const year = Number(parts[0]);
  const value = Number(parts[1]);
  const last = new Date(Date.UTC(year, value, 0)).getUTCDate();
  return `${year}-${String(value).padStart(2,"0")}-${String(Math.min(day,last)).padStart(2,"0")}`;
 }
-function dateLabel(value: string) {
+export function dateLabel(value: string) {
  const parts = value.split("-");
  const year = Number(parts[0]);
  const month = Number(parts[1]);
