@@ -150,15 +150,30 @@ begin
    where d.student_id=student and d.effective_month<=effective
    order by d.effective_month desc,d.recorded_at desc,d.id desc limit 1;
   if old_day is null then raise exception 'No existe una regla anterior para ese alumno'; end if;
-  select t.* into period from public.cueva_periods t where t.student_id=student and t.month=effective for update;
-  if found then
-   select coalesce(sum(m.cents),0) into paid from public.cueva_payments m
-    where m.period_id=period.id and not exists(select 1 from public.cueva_reversals r where r.payment_id=m.id);
-   if paid>=period.cents then raise exception 'No se puede cambiar el vencimiento de un período totalmente pagado' using errcode='P0001'; end if;
-   update public.cueva_periods set due_on=cueva_private.monthly_due_date(new_day,effective) where id=period.id;
-  end if;
   insert into public.cueva_due_schedules(id,student_id,due_day,effective_month,actor)
    values(op,student,new_day,effective,who);
+  -- The schedule remains effective for later periods. Recalculate existing unpaid
+  -- periods from that month onward, but never rewrite a fully paid later period.
+  for period in
+   select t.* from public.cueva_periods t
+   where t.student_id=student and t.month>=effective
+   order by t.month for update
+  loop
+   select coalesce(sum(m.cents),0) into paid from public.cueva_payments m
+    where m.period_id=period.id and not exists(select 1 from public.cueva_reversals r where r.payment_id=m.id);
+   if paid>=period.cents then
+    if period.month=effective then
+     raise exception 'No se puede cambiar el vencimiento de un período totalmente pagado' using errcode='P0001';
+    end if;
+   else
+    select d.* into schedule from public.cueva_due_schedules d
+     where d.student_id=student and d.effective_month<=period.month
+     order by d.effective_month desc,d.recorded_at desc,d.id desc limit 1;
+    update public.cueva_periods
+     set due_on=cueva_private.monthly_due_date(schedule.due_day,period.month)
+     where id=period.id;
+   end if;
+  end loop;
   insert into public.cueva_due_date_audit(id,student_id,actor,old_due_day,new_due_day,effective_month,scope,reason,result)
    values(op,student,who,old_day,new_day,effective,scope_value,reason_value,'applied');
 
