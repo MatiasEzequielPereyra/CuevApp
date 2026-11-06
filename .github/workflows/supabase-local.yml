@@ -39,3 +39,6 @@ jobs:
 
       - name: Run database tests
         run: supabase test db
+
+      - name: Verify concurrent billing writes
+        run: node tests/billing-concurrency.test.mjs
