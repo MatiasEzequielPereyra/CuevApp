@@ -8,6 +8,11 @@ type AuditEntry = {
  effective_month: string; scope: "current_period" | "next_period";
  reason: string | null; result: string; recorded_at: string;
 };
+type AttemptEntry = {
+ id: string; operation_id: string; actor_email: string; requested_due_day: string | null;
+ effective_month: string | null; scope: string | null; requested_reason: string | null;
+ error_code: string; error_message: string; recorded_at: string;
+};
 export function monthAfter(month: string) {
  const parts = month.split("-");
  const year = Number(parts[0]);
@@ -30,10 +35,10 @@ export function dateLabel(value: string) {
  return new Intl.DateTimeFormat("es-AR",{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(Date.UTC(year,month-1,day)));
 }
 export function DueDateManager({
- studentId, currentMonth, currentDay, nextDay, currentDueOn, nextDueOn, history,
+ studentId, currentMonth, currentDay, nextDay, currentDueOn, nextDueOn, history, attempts,
 }: {
  studentId:string; currentMonth:string; currentDay:number; nextDay:number;
- currentDueOn:string|null; nextDueOn:string|null; history:AuditEntry[];
+ currentDueOn:string|null; nextDueOn:string|null; history:AuditEntry[]; attempts:AttemptEntry[];
 }) {
  const router=useRouter();
  const [scope,setScope]=useState<"next_period"|"current_period">("next_period");
@@ -99,6 +104,15 @@ export function DueDateManager({
     <p>{item.scope==="current_period"?"Período actual":"Próximo período"} · {item.result==="applied"?"Aplicado":"Resultado no disponible"}</p>
     {item.reason&&<p>Motivo: {item.reason}</p>}
     <p>Administrador: {item.actor_email??"Identidad no disponible"} · {new Date(item.recorded_at).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires"})}</p>
+   </li>)}</ol>}
+  </div>
+  <div className="due-date-history"><h3>Intentos rechazados</h3>
+   {!attempts.length?<p>No hay intentos rechazados registrados.</p>:<ol>{attempts.map(item=><li key={item.id}>
+    <strong>Intento de cambio · {item.requested_due_day??"Día inválido"} · {item.effective_month??"Mes inválido"}</strong>
+    <p>{item.scope==="current_period"?"Período actual":item.scope==="next_period"?"Próximo período":"Alcance inválido"} · Rechazado</p>
+    <p>{item.error_message} ({item.error_code})</p>
+    {item.requested_reason&&<p>Motivo enviado: {item.requested_reason}</p>}
+    <p>Administrador: {item.actor_email} · {new Date(item.recorded_at).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires"})}</p>
    </li>)}</ol>}
   </div>
  </section>;
