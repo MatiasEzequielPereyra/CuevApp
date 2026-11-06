@@ -1,6 +1,7 @@
 begin;
-select plan(18);
+select plan(38);
 
+-- Pure date helper coverage.
 select is(cueva_private.monthly_due_date(1::smallint,date '2026-01-01'),date '2026-01-01','day 1');
 select is(cueva_private.monthly_due_date(18::smallint,date '2026-04-01'),date '2026-04-18','day 18');
 select is(cueva_private.monthly_due_date(28::smallint,date '2026-02-01'),date '2026-02-28','day 28 in common February');
@@ -19,6 +20,112 @@ select is(cueva_private.monthly_due_date(30::smallint,date '2026-12-01'),date '2
 select throws_ok($$select cueva_private.monthly_due_date(0::smallint,date '2026-01-01')$$,'22023',null,'rejects day zero');
 select throws_ok($$select cueva_private.monthly_due_date(32::smallint,date '2026-01-01')$$,'22023',null,'rejects day 32');
 select throws_ok($$select cueva_private.monthly_due_date(31::smallint,date '2026-01-02')$$,'22023',null,'requires first day of month');
+
+-- Build a real admin/session context. These fixtures exist only in this test transaction.
+insert into auth.users(id,aud,role,email,created_at,updated_at)
+values ('a1000000-0000-4000-8000-000000000001','authenticated','authenticated','due-date-admin@example.test',now(),now());
+insert into auth.sessions(id,user_id,created_at,updated_at)
+values ('a2000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001',now(),now());
+insert into cueva_private.access_state(user_id,ready,session_not_before)
+values ('a1000000-0000-4000-8000-000000000001',true,now()-interval '1 minute');
+insert into public.cueva_profiles(user_id,role)
+values ('a1000000-0000-4000-8000-000000000001','admin');
+insert into public.cueva_students(id,first_name,last_name,email,joined_on)
+values ('a3000000-0000-4000-8000-000000000001','Test','Student','due-date-student@example.test',date '2026-01-31');
+
+select set_config('request.jwt.claim.sub','a1000000-0000-4000-8000-000000000001',true);
+select set_config('request.jwt.claims',jsonb_build_object('sub','a1000000-0000-4000-8000-000000000001','role','authenticated','session_id','a2000000-0000-4000-8000-000000000001')::text,true);
+set local role authenticated;
+
+select is((select count(*)::integer from public.cueva_due_schedules where student_id='a3000000-0000-4000-8000-000000000001'),1,'new student receives one initial due schedule');
+select is(public.cueva_billing_write('a4000000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','price','month',to_char(date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires'),'YYYY-MM'),'cents','10000')),
+ 'a4000000-0000-4000-8000-000000000001'::uuid,'admin can create the current monthly price');
+select is(public.cueva_billing_write('a5000000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','period','student_id','a3000000-0000-4000-8000-000000000001','month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'))),
+ 'a5000000-0000-4000-8000-000000000001'::uuid,'admin can create the next period');
+select is((select due_on from public.cueva_periods where id='a5000000-0000-4000-8000-000000000001'),
+ cueva_private.monthly_due_date(31::smallint,(date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date),
+ 'period due date is derived from the student day and clamps at month end');
+
+select is(public.cueva_billing_write('a6000000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','15',
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','next_period','reason','Initial schedule adjustment')),
+ 'a6000000-0000-4000-8000-000000000001'::uuid,'admin can change the next period due day');
+select is((select due_on from public.cueva_periods where id='a5000000-0000-4000-8000-000000000001'),
+ (date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date+14,
+ 'changing due day updates an existing unpaid period');
+select is(public.cueva_billing_write('a6000000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','15',
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','next_period','reason','Initial schedule adjustment')),
+ 'a6000000-0000-4000-8000-000000000001'::uuid,'identical operation retry is idempotent');
+select throws_ok(format($q$select public.cueva_billing_write('a6000000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','16',
+ 'effective_month',%L,'scope','next_period','reason','Changed retry payload'))$q$,
+ to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM')),
+ 'P0001',null,'same operation id with a different payload is rejected');
+
+select is(public.cueva_billing_write('a7000000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','payment','student_id','a3000000-0000-4000-8000-000000000001',
+ 'period_id','a5000000-0000-4000-8000-000000000001','cents','4000','paid_on',current_date::text,'method','efectivo')),
+ 'a7000000-0000-4000-8000-000000000001'::uuid,'partial payment is accepted');
+select is(public.cueva_billing_write('a8000000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','16',
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','next_period','reason','Adjust partially paid period')),
+ 'a8000000-0000-4000-8000-000000000001'::uuid,'partially paid period can have its due day changed');
+select is((select due_on from public.cueva_periods where id='a5000000-0000-4000-8000-000000000001'),
+ (date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date+15,
+ 'partial payment does not prevent due date update');
+
+select is(public.cueva_billing_write('a9000000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','payment','student_id','a3000000-0000-4000-8000-000000000001',
+ 'period_id','a5000000-0000-4000-8000-000000000001','cents','6000','paid_on',current_date::text,'method','transferencia')),
+ 'a9000000-0000-4000-8000-000000000001'::uuid,'remaining balance can be paid');
+select throws_ok(format($q$select public.cueva_billing_write('aa000000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','17',
+ 'effective_month',%L,'scope','next_period','reason','Must reject fully paid period'))$q$,
+ to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM')),
+ 'P0001',null,'fully paid period rejects due day change');
+select is(public.cueva_billing_write('ab000000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','reverse','student_id','a3000000-0000-4000-8000-000000000001',
+ 'payment_id','a9000000-0000-4000-8000-000000000001','reason','Reverse test payment')),
+ 'ab000000-0000-4000-8000-000000000001'::uuid,'payment reversal is accepted');
+select is(public.cueva_billing_write('ac000000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','18',
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','next_period','reason','Change after payment reversal')),
+ 'ac000000-0000-4000-8000-000000000001'::uuid,'reversed payment is excluded from the paid balance');
+select is((select count(*)::integer from public.cueva_due_date_audit where student_id='a3000000-0000-4000-8000-000000000001'),
+ 3,'only successfully applied due day changes are audited');
+
+reset role;
+
+-- A real authenticated alumno has a valid session but no administrative visibility or write access.
+insert into auth.users(id,aud,role,email,created_at,updated_at)
+values ('ad000000-0000-4000-8000-000000000001','authenticated','authenticated','due-date-alumno@example.test',now(),now());
+insert into auth.sessions(id,user_id,created_at,updated_at)
+values ('ae000000-0000-4000-8000-000000000001','ad000000-0000-4000-8000-000000000001',now(),now());
+insert into cueva_private.access_state(user_id,ready,session_not_before)
+values ('ad000000-0000-4000-8000-000000000001',true,now()-interval '1 minute');
+insert into public.cueva_profiles(user_id,role)
+values ('ad000000-0000-4000-8000-000000000001','alumno');
+select set_config('request.jwt.claim.sub','ad000000-0000-4000-8000-000000000001',true);
+select set_config('request.jwt.claims',jsonb_build_object('sub','ad000000-0000-4000-8000-000000000001','role','authenticated','session_id','ae000000-0000-4000-8000-000000000001')::text,true);
+set local role authenticated;
+
+select is((select count(*)::integer from public.cueva_due_schedules where student_id='a3000000-0000-4000-8000-000000000001'),0,'alumno cannot read administrative due schedules');
+select is((select count(*)::integer from public.cueva_due_date_audit where student_id='a3000000-0000-4000-8000-000000000001'),0,'alumno cannot read administrative due date audit');
+select throws_ok(format($q$select public.cueva_billing_write('af000000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','20',
+ 'effective_month',%L,'scope','next_period','reason','Alumno must not change rules'))$q$,
+ to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM')),
+ '42501',null,'alumno cannot change administrative due day through the RPC');
+select throws_ok($$insert into public.cueva_due_schedules(id,student_id,due_day,effective_month,actor)
+ values('b0000000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001',20,date '2026-01-01','ad000000-0000-4000-8000-000000000001')$$,
+ '42501',null,'alumno cannot write directly to due schedule table');
 
 select * from finish();
 rollback;
