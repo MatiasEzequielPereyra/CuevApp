@@ -141,3 +141,27 @@ SKILLS_SELECTED: cueva-feature-development, cueva-finance, cueva-supabase-securi
 SKILLS_APPLIED: cambio acotado desde el HEAD auditado, recuperación con identidad y huella verificadas, idempotencia, regresiones de PDF y verificación en navegador, SQL y Storage aislado.
 SKILL_SOURCES: .agents/skills/cueva-feature-development/SKILL.md, .agents/skills/cueva-finance/SKILL.md, .agents/skills/cueva-supabase-security/SKILL.md, c0/supabase
 ```
+
+## Tercera corrección de auditoría del PR #37
+
+Base `72f07daf384d82ff0c90df04693d59d4ec02e906`. La reproducción local
+aceptó cinco catálogos clásicos con claves distintas de 128 KiB y
+retuvo 20,7 MiB de heap tras GC. El parser comprueba los tokens antes
+de delegar en pdf-lib, tanto en objetos clásicos como comprimidos.
+Los límites son 1.024 bytes para nombres, 32 para números y 256 KiB
+para cadenas literales o hexadecimales. Los presupuestos de objetos,
+profundidad, páginas y descompresión siguen vigentes.
+
+Cada validación evalúa el bundle de pdf-lib en un contexto propio.
+Solo se reutiliza el código compilado. Los cachés de nombres y
+referencias y los objetos que contienen quedan disponibles para GC
+al finalizar. La regresión fuerza GC entre lotes de archivos válidos
+con nombres y referencias distintos y verifica el límite de heap
+retenido. El build incluye el bundle en la traza de la ruta de
+comprobantes.
+
+```
+SKILLS_SELECTED: cueva-feature-development
+SKILLS_APPLIED: reproducción sobre el HEAD auditado, límites previos al parser, contexto por documento, pruebas de regresión y verificación de CI
+SKILL_SOURCES: .agents/skills/cueva-feature-development/SKILL.md
+```

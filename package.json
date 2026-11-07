@@ -15,7 +15,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test:docs": "node --test tests/documents.test.mjs",
     "test": "npm run test:docs && npm run test:routines:model && npm run test:receipts && playwright test",
-    "test:receipts": "node --test tests/receipts-file.test.mjs",
+    "test:receipts": "node --expose-gc --test tests/receipts-file.test.mjs",
     "test:routines:model": "node --experimental-strip-types --test experiments/cueva-006c-local/model.test.mjs",
     "test:e2e": "playwright test",
     "verify": "npm run lint && npm run typecheck && npm run build && npm test",

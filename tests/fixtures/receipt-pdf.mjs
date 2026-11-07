@@ -53,10 +53,10 @@ export function extraObjectsFixture(extras) {
   return classicPdfFixture([catalog, "<</Type/Pages/Kids[3 0 R]/Count 1>>", leaf(2), ...extras]);
 }
 
-export function objectStreamFixture(size, count = 1, id = 99) {
+export function objectStreamFixture(size, count = 1, id = 99, body = "true") {
   const prefix = `${id} 0 `;
   const payload = Buffer.alloc(size, 32);
-  payload.write(`${prefix}true`);
+  payload.write(`${prefix}${body}`);
   const compressed = deflateSync(payload);
   return Buffer.concat([
     Buffer.from(`<</Type/ObjStm/N ${count}/First ${prefix.length}/Filter/FlateDecode/Length ${compressed.length}>>\nstream\n`),

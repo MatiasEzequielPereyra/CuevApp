@@ -7,7 +7,7 @@ import { crc32, deflateSync } from "node:zlib";
 import ts from "typescript";
 import {
   validPdfFixture, forgedXrefFixture, repeatedPageTreeFixture, cyclicPageTreeFixture,
-  manyPagesFixture, extraObjectsFixture, objectStreamFixture,
+  classicPdfFixture, manyPagesFixture, extraObjectsFixture, objectStreamFixture,
 } from "./fixtures/receipt-pdf.mjs";
 
 const require = createRequire(import.meta.url);
@@ -237,4 +237,64 @@ test("PDF limits page depth, page count, objects and total decoded structural by
   for (const [bytes, reason] of samples) assert.equal(await validReceiptBytes(bytes, "application/pdf"), false, reason);
   assert.equal(await validReceiptBytes(manyPagesFixture(100), "application/pdf"), true);
   assert.equal(await validReceiptBytes(extraObjectsFixture([objectStreamFixture(1024)]), "application/pdf"), true);
+});
+
+function catalogWith(entries) {
+  return classicPdfFixture([
+    `<</Type/Catalog/Pages 2 0 R ${entries}>>`,
+    "<</Type/Pages/Kids[3 0 R]/Count 1>>",
+    "<</Type/Page/Parent 2 0 R/MediaBox[0 0 100 100]>>",
+  ]);
+}
+
+test("PDF rejects oversized tokens in classic and compressed objects", async () => {
+  for (let i = 0; i < 5; i++) {
+    const key = `/${i}${"A".repeat(128 * 1024 - 1)}`;
+    assert.equal(await validReceiptBytes(catalogWith(`${key} true`), "application/pdf"), false);
+  }
+
+  const largeName = `/${"A".repeat(1025)}`;
+  const body = `<<${largeName} true>>`;
+  const samples = [
+    [catalogWith(`/Custom ${largeName}`), "name value"],
+    [catalogWith(`/Custom (${"A".repeat(256 * 1024)})`), "literal string"],
+    [catalogWith(`/Custom <${"AA".repeat(128 * 1024)}>`), "hexadecimal string"],
+    [catalogWith(`/Custom 99 ${"0".repeat(33)} R`), "reference generation"],
+    [extraObjectsFixture([objectStreamFixture(body.length + 10, 1, 99, body)]), "compressed key"],
+  ];
+  for (const [bytes, reason] of samples) assert.equal(await validReceiptBytes(bytes, "application/pdf"), false, reason);
+  const bounded = `/${"A".repeat(1024)}`;
+  assert.equal(await validReceiptBytes(catalogWith(`${bounded} (nested (and \\) escaped))`), "application/pdf"), true);
+});
+
+test("PDF releases names and references after consecutive uploads in one process", async t => {
+  assert.equal(typeof global.gc, "function", "run test:receipts with --expose-gc");
+  const heapAfterGc = async () => {
+    let minimum = Infinity;
+    for (let i = 0; i < 5; i++) {
+      await new Promise(resolve => setImmediate(resolve));
+      global.gc();
+      minimum = Math.min(minimum, process.memoryUsage().heapUsed);
+    }
+    return minimum;
+  };
+  // Warm both formats and make the parser yield on a valid classic document.
+  const warm = [await validPdfFixture(true), extraObjectsFixture(Array(260).fill("true"))];
+  assert.deepEqual(await Promise.all(warm.map(bytes => validReceiptBytes(bytes, "application/pdf"))), [true, true]);
+
+  const batches = {
+    names: index => catalogWith(Array.from({ length: 1500 }, (_, n) =>
+      `/Upload${index}Key${n}${"A".repeat(160)} true`).join(" ")),
+    refs: index => catalogWith(`/Refs[${Array.from({ length: 16000 }, (_, n) =>
+      `${100000000 + index * 16000 + n} 0 R`).join(" ")}]`),
+  };
+  for (const [kind, makeDocument] of Object.entries(batches)) {
+    const baseline = await heapAfterGc();
+    for (let i = 0; i < 8; i++) {
+      assert.equal(await validReceiptBytes(makeDocument(i), "application/pdf"), true, kind);
+    }
+    const retainedMiB = ((await heapAfterGc()) - baseline) / (1024 * 1024);
+    t.diagnostic(`${kind}: ${retainedMiB.toFixed(2)} MiB retained after forced GC`);
+    assert.ok(retainedMiB < 4, `${kind} retained ${retainedMiB.toFixed(2)} MiB across uploads`);
+  }
 });

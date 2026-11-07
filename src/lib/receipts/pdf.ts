@@ -1,171 +1,79 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { Script } from "node:vm";
 import { inflateSync } from "node:zlib";
-import {
-  PDFArray, PDFDict, PDFName, PDFNumber, PDFObjectParser, PDFParser, PDFRawStream, PDFRef,
-  type PDFContext, type PDFObject,
+import type {
+  PDFContext, PDFDict as PdfDict, PDFObject, PDFRawStream as PdfRawStream, PDFRef as PdfRef,
 } from "pdf-lib";
 import ByteStream from "pdf-lib/cjs/core/parser/ByteStream";
+
+type PdfLibrary = typeof import("pdf-lib");
+
+let pdfLibScript: Script | undefined;
+
+function loadPdfLibrary() {
+  // Cache the trusted code, but evaluate it in a fresh context for each file:
+  // pdf-lib's PDFName and PDFRef pools belong to that context.
+  pdfLibScript ??= new Script(readFileSync(resolve("node_modules/pdf-lib/dist/pdf-lib.min.js"), "utf8"), {
+    filename: "pdf-lib.min.js",
+  });
+  const exports = {} as PdfLibrary;
+  pdfLibScript.runInNewContext({ exports, module: { exports }, setTimeout }, {
+    contextCodeGeneration: { strings: false, wasm: false },
+  });
+  return exports;
+}
 
 const maxObjects = 10_000;
 const maxValues = 100_000;
 const maxDepth = 32;
 const maxPages = 100;
 const maxDecodedBytes = 16 * 1024 * 1024;
-const name = PDFName.of;
-const field = (dict: PDFDict, key: string) => dict.get(name(key));
-const number = (value: PDFObject | undefined) => value instanceof PDFNumber ? value.asNumber() : NaN;
+
+const maxNameTokenBytes = 1024;
+const maxNumberTokenBytes = 32;
+const maxTextTokenBytes = 256 * 1024;
+// Match the whitespace and delimiters used by pdf-lib's name reader.
+const nameSeparators = new Set([0, 9, 10, 12, 13, 32, 37, 40, 41, 47, 60, 62, 91, 93, 123, 125]);
+
+function checkNameToken(bytes: ByteStream) {
+  for (let i = 1; i <= maxNameTokenBytes + 1; i++) {
+    const byte = bytes.peekAhead(i);
+    if (byte === undefined || nameSeparators.has(byte)) return;
+  }
+  invalidPdf();
+}
+
+function checkNumberToken(bytes: ByteStream) {
+  for (let i = 0; i <= maxNumberTokenBytes; i++) {
+    const byte = bytes.peekAhead(i);
+    if (!(byte >= 48 && byte <= 57) && byte !== 43 && byte !== 45 && byte !== 46) return;
+  }
+  invalidPdf();
+}
+
+function checkTextToken(bytes: ByteStream, hex: boolean) {
+  let depth = 1;
+  for (let i = 1; i < maxTextTokenBytes; i++) {
+    const byte = bytes.peekAhead(i);
+    if (byte === undefined) break;
+    if (hex) {
+      if (byte === 62) return;
+    } else if (byte === 92) {
+      i++; // Escaped parentheses and backslashes do not change nesting.
+    } else if (byte === 40) {
+      depth++;
+    } else if (byte === 41 && --depth === 0) {
+      return;
+    }
+  }
+  invalidPdf();
+}
+
 const integer = (value: number, min: number, max: number) => Number.isSafeInteger(value) && value >= min && value <= max;
 
 function invalidPdf(): never {
   throw new Error("Invalid or oversized PDF structure");
-}
-
-class PdfBudget {
-  objects = 0;
-  values = 0;
-  depth = 0;
-  decoded = 0;
-
-  addObjects(count: number) {
-    this.objects += count;
-    if (this.objects > maxObjects) invalidPdf();
-  }
-
-  readValue(parse: () => PDFObject) {
-    if (++this.values > maxValues || this.depth >= maxDepth) invalidPdf();
-    this.depth++;
-    try {
-      return parse();
-    } finally {
-      this.depth--;
-    }
-  }
-
-  decode(stream: PDFRawStream, limit = maxDecodedBytes) {
-    const { dict } = stream;
-    const length = number(field(dict, "Length"));
-    const filter = field(dict, "Filter");
-    const method = filter instanceof PDFArray && filter.size() === 1 ? filter.get(0) : filter;
-    const remaining = Math.min(limit, maxDecodedBytes - this.decoded);
-    if (length !== stream.getContentsSize() || remaining < 1 || (!method && length > remaining)) invalidPdf();
-    if (method && method !== name("FlateDecode")) invalidPdf();
-    const bytes = method ? inflateSync(stream.getContents(), { maxOutputLength: remaining }) : Buffer.from(stream.getContents());
-    if (bytes.length > remaining) invalidPdf();
-    this.decoded += bytes.length;
-    return bytes;
-  }
-}
-
-class CompressedObjects extends PDFObjectParser {
-  constructor(bytes: Buffer, context: PDFContext, private readonly budget: PdfBudget) {
-    super(ByteStream.of(bytes), context);
-  }
-
-  override parseObject() {
-    return this.budget.readValue(() => super.parseObject());
-  }
-
-  assignObjects(bytes: Buffer, first: number, count: number) {
-    // The header consists of one object number and byte offset per entry.
-    const header = bytes.toString("latin1", 0, first).trim().split(/[\t\r\n\f ]+/);
-    if (header.length !== count * 2 || header.some(value => !/^\d{1,10}$/.test(value))) invalidPdf();
-    const ids = new Set<number>();
-    let last = -1;
-    for (let i = 0; i < header.length; i += 2) {
-      const id = Number(header[i]), offset = Number(header[i + 1]);
-      const next = i + 2 < header.length ? Number(header[i + 3]) : bytes.length - first;
-      if (!integer(id, 1, 2_147_483_647) || ids.has(id) || offset <= last || next <= offset
-        || first + next > bytes.length) invalidPdf();
-      ids.add(id);
-      last = offset;
-      this.bytes.moveTo(first + offset);
-      const object = this.parseObject();
-      if (object instanceof PDFRawStream || this.bytes.offset() > first + next) invalidPdf();
-      this.context.assign(PDFRef.of(id, 0), object);
-    }
-  }
-}
-
-// pdf-lib parses the PDF syntax. Intercept structural streams before its
-// document parser can expand them with its default, unbounded decoder.
-class BoundedPdfParser extends PDFParser {
-  private readonly budget = new PdfBudget();
-  private integers = 0;
-
-  protected override parseRawInt() {
-    // Also bounds classic xref work, including previous incremental sections.
-    if (++this.integers > maxValues) invalidPdf();
-    return super.parseRawInt();
-  }
-
-  override parseObject() {
-    const outer = this.budget.depth === 0;
-    if (outer) this.budget.addObjects(1);
-    const object = this.budget.readValue(() => super.parseObject());
-    if (!(object instanceof PDFRawStream)) return object;
-    if (!outer) invalidPdf();
-    const { dict } = object;
-    // Resolve Type just as pdf-lib does, so indirect Type cannot bypass the guard.
-    const type = dict.lookup(name("Type"));
-    if (type === name("ObjStm")) {
-      const count = number(field(dict, "N")), first = number(field(dict, "First"));
-      if (!integer(count, 1, maxObjects) || !integer(first, 1, count * 32) || field(dict, "DecodeParms")) invalidPdf();
-      this.budget.addObjects(count);
-      const bytes = this.budget.decode(object);
-      if (first >= bytes.length) invalidPdf();
-      new CompressedObjects(bytes, this.context, this.budget).assignObjects(bytes, first, count);
-      return dict;
-    }
-    if (type === name("XRef")) {
-      const size = number(field(dict, "Size"));
-      const widths = field(dict, "W"), index = field(dict, "Index");
-      if (!integer(size, 1, 200_000) || !(widths instanceof PDFArray) || widths.size() !== 3) invalidPdf();
-      let width = 0;
-      for (let i = 0; i < 3; i++) {
-        const part = number(widths.get(i));
-        if (!integer(part, 0, 4)) invalidPdf();
-        width += part;
-      }
-      let rows = size;
-      if (index !== undefined) {
-        if (!(index instanceof PDFArray) || !index.size() || index.size() % 2) invalidPdf();
-        rows = 0;
-        let end = 0;
-        for (let i = 0; i < index.size(); i += 2) {
-          const start = number(index.get(i)), count = number(index.get(i + 1));
-          if (!integer(start, end, size - 1) || !integer(count, 1, size - start)) invalidPdf();
-          end = start + count;
-          rows += count;
-        }
-      }
-      if (!width || rows > maxObjects + 1) invalidPdf();
-      const params = field(dict, "DecodeParms");
-      const options = params instanceof PDFArray && params.size() === 1 ? params.get(0) : params;
-      let taggedRows = false;
-      if (options !== undefined) {
-        if (!(options instanceof PDFDict)) invalidPdf();
-        const predictor = number(field(options, "Predictor") ?? PDFNumber.of(1));
-        if (!integer(predictor, 1, 2) && !integer(predictor, 10, 15)) invalidPdf();
-        taggedRows = predictor >= 10;
-        if (predictor !== 1 && (number(field(options, "Columns")) !== width
-          || number(field(options, "Colors") ?? PDFNumber.of(1)) !== 1
-          || number(field(options, "BitsPerComponent") ?? PDFNumber.of(8)) !== 8)) invalidPdf();
-      }
-      const stride = width + Number(taggedRows);
-      const bytes = this.budget.decode(object, rows * stride);
-      if (bytes.length !== rows * stride) invalidPdf();
-      if (taggedRows) {
-        for (let i = 0; i < bytes.length; i += stride) if (bytes[i]! > 4) invalidPdf();
-      }
-      const trailer: PDFContext["trailerInfo"] = {};
-      for (const key of ["Root", "Encrypt", "Info", "ID"] as const) {
-        const value = field(dict, key);
-        if (value) trailer[key] = value;
-      }
-      this.context.trailerInfo = trailer;
-      return dict;
-    }
-    return object;
-  }
 }
 
 function pdfIndexRoot(bytes: Buffer) {
@@ -202,7 +110,7 @@ function pdfIndexRoot(bytes: Buffer) {
         objects++;
       }
     }
-    return objects > 0 && PDFRef.of(Number(root[1]), Number(root[2]));
+    return objects > 0 && ([Number(root[1]), Number(root[2])] as const);
   }
 
   // PDF 1.5+ permits a cross-reference stream instead of a text table.
@@ -228,39 +136,236 @@ function pdfIndexRoot(bytes: Buffer) {
   return /^\d+\s+\d+\s+obj\s*<</.test(dictionary)
     && /\/Type\s*\/XRef\b/.test(dictionary)
     && /^[\r\n]*endstream\s+endobj\s*$/.test(xref.slice(end))
-    && PDFRef.of(Number(root[1]), Number(root[2]));
-}
-
-function countPages(context: PDFContext, root: PDFRef) {
-  const seen = new Set<PDFRef>();
-  let pages = 0;
-  function visit(ref: PDFObject | undefined, parent: PDFRef | undefined, depth: number): number {
-    if (!(ref instanceof PDFRef) || depth >= maxDepth || seen.has(ref) || seen.size >= maxObjects) invalidPdf();
-    seen.add(ref);
-    const node = context.lookup(ref);
-    if (!(node instanceof PDFDict) || (parent && field(node, "Parent") !== parent)) invalidPdf();
-    const type = field(node, "Type");
-    if (parent && type === name("Page")) {
-      if (++pages > maxPages) invalidPdf();
-      return 1;
-    }
-    if (type !== name("Pages")) invalidPdf();
-    const kids = node.lookup(name("Kids")), expected = number(field(node, "Count"));
-    if (!(kids instanceof PDFArray) || !integer(expected, 0, maxPages) || kids.size() > maxObjects - seen.size) invalidPdf();
-    let count = 0;
-    for (let i = 0; i < kids.size(); i++) {
-      count += visit(kids.get(i), ref, depth + 1);
-      if (count > expected) invalidPdf();
-    }
-    if (count !== expected) invalidPdf();
-    return count;
-  }
-  return visit(root, undefined, 0);
+    && ([Number(root[1]), Number(root[2])] as const);
 }
 
 export async function validPdf(bytes: Buffer) {
-  const root = pdfIndexRoot(bytes);
-  if (!root) return false;
+  const rootIds = pdfIndexRoot(bytes);
+  if (!rootIds) return false;
+  const { PDFArray, PDFDict, PDFName, PDFNumber, PDFObjectParser, PDFParser, PDFRawStream, PDFRef } = loadPdfLibrary();
+  const root = PDFRef.of(...rootIds);
+
+  const name = PDFName.of;
+  const field = (dict: PdfDict, key: string) => dict.get(name(key));
+  const number = (value: PDFObject | undefined) => value instanceof PDFNumber ? value.asNumber() : NaN;
+
+  class PdfBudget {
+    objects = 0;
+    values = 0;
+    depth = 0;
+    decoded = 0;
+
+    addObjects(count: number) {
+      this.objects += count;
+      if (this.objects > maxObjects) invalidPdf();
+    }
+
+    readValue(parse: () => PDFObject) {
+      if (++this.values > maxValues || this.depth >= maxDepth) invalidPdf();
+      this.depth++;
+      try {
+        return parse();
+      } finally {
+        this.depth--;
+      }
+    }
+
+    decode(stream: PdfRawStream, limit = maxDecodedBytes) {
+      const { dict } = stream;
+      const length = number(field(dict, "Length"));
+      const filter = field(dict, "Filter");
+      const method = filter instanceof PDFArray && filter.size() === 1 ? filter.get(0) : filter;
+      const remaining = Math.min(limit, maxDecodedBytes - this.decoded);
+      if (length !== stream.getContentsSize() || remaining < 1 || (!method && length > remaining)) invalidPdf();
+      if (method && method !== name("FlateDecode")) invalidPdf();
+      const bytes = method ? inflateSync(stream.getContents(), { maxOutputLength: remaining }) : Buffer.from(stream.getContents());
+      if (bytes.length > remaining) invalidPdf();
+      this.decoded += bytes.length;
+      return bytes;
+    }
+  }
+
+  class CompressedObjects extends PDFObjectParser {
+    constructor(bytes: Buffer, context: PDFContext, private readonly budget: PdfBudget) {
+      super(ByteStream.of(bytes), context);
+    }
+
+    protected override parseName() {
+      checkNameToken(this.bytes);
+      return super.parseName();
+    }
+
+    protected override parseRawNumber() {
+      checkNumberToken(this.bytes);
+      return super.parseRawNumber();
+    }
+
+    protected override parseString() {
+      checkTextToken(this.bytes, false);
+      return super.parseString();
+    }
+
+    protected override parseHexString() {
+      checkTextToken(this.bytes, true);
+      return super.parseHexString();
+    }
+
+    override parseObject() {
+      return this.budget.readValue(() => super.parseObject());
+    }
+
+    assignObjects(bytes: Buffer, first: number, count: number) {
+      // The header consists of one object number and byte offset per entry.
+      const header = bytes.toString("latin1", 0, first).trim().split(/[\t\r\n\f ]+/);
+      if (header.length !== count * 2 || header.some(value => !/^\d{1,10}$/.test(value))) invalidPdf();
+      const ids = new Set<number>();
+      let last = -1;
+      for (let i = 0; i < header.length; i += 2) {
+        const id = Number(header[i]), offset = Number(header[i + 1]);
+        const next = i + 2 < header.length ? Number(header[i + 3]) : bytes.length - first;
+        if (!integer(id, 1, 2_147_483_647) || ids.has(id) || offset <= last || next <= offset
+          || first + next > bytes.length) invalidPdf();
+        ids.add(id);
+        last = offset;
+        this.bytes.moveTo(first + offset);
+        const object = this.parseObject();
+        if (object instanceof PDFRawStream || this.bytes.offset() > first + next) invalidPdf();
+        this.context.assign(PDFRef.of(id, 0), object);
+      }
+    }
+  }
+
+  // pdf-lib parses the PDF syntax. Intercept structural streams before its
+  // document parser can expand them with its default, unbounded decoder.
+  class BoundedPdfParser extends PDFParser {
+    private readonly budget = new PdfBudget();
+    private integers = 0;
+
+    protected override parseRawInt() {
+      // Also bounds classic xref work, including previous incremental sections.
+      if (++this.integers > maxValues) invalidPdf();
+      checkNumberToken(this.bytes);
+      return super.parseRawInt();
+    }
+
+    protected override parseName() {
+      checkNameToken(this.bytes);
+      return super.parseName();
+    }
+
+    protected override parseRawNumber() {
+      checkNumberToken(this.bytes);
+      return super.parseRawNumber();
+    }
+
+    protected override parseString() {
+      checkTextToken(this.bytes, false);
+      return super.parseString();
+    }
+
+    protected override parseHexString() {
+      checkTextToken(this.bytes, true);
+      return super.parseHexString();
+    }
+
+    override parseObject() {
+      const outer = this.budget.depth === 0;
+      if (outer) this.budget.addObjects(1);
+      const object = this.budget.readValue(() => super.parseObject());
+      if (!(object instanceof PDFRawStream)) return object;
+      if (!outer) invalidPdf();
+      const { dict } = object;
+      // Resolve Type just as pdf-lib does, so indirect Type cannot bypass the guard.
+      const type = dict.lookup(name("Type"));
+      if (type === name("ObjStm")) {
+        const count = number(field(dict, "N")), first = number(field(dict, "First"));
+        if (!integer(count, 1, maxObjects) || !integer(first, 1, count * 32) || field(dict, "DecodeParms")) invalidPdf();
+        this.budget.addObjects(count);
+        const bytes = this.budget.decode(object);
+        if (first >= bytes.length) invalidPdf();
+        new CompressedObjects(bytes, this.context, this.budget).assignObjects(bytes, first, count);
+        return dict;
+      }
+      if (type === name("XRef")) {
+        const size = number(field(dict, "Size"));
+        const widths = field(dict, "W"), index = field(dict, "Index");
+        if (!integer(size, 1, 200_000) || !(widths instanceof PDFArray) || widths.size() !== 3) invalidPdf();
+        let width = 0;
+        for (let i = 0; i < 3; i++) {
+          const part = number(widths.get(i));
+          if (!integer(part, 0, 4)) invalidPdf();
+          width += part;
+        }
+        let rows = size;
+        if (index !== undefined) {
+          if (!(index instanceof PDFArray) || !index.size() || index.size() % 2) invalidPdf();
+          rows = 0;
+          let end = 0;
+          for (let i = 0; i < index.size(); i += 2) {
+            const start = number(index.get(i)), count = number(index.get(i + 1));
+            if (!integer(start, end, size - 1) || !integer(count, 1, size - start)) invalidPdf();
+            end = start + count;
+            rows += count;
+          }
+        }
+        if (!width || rows > maxObjects + 1) invalidPdf();
+        const params = field(dict, "DecodeParms");
+        const options = params instanceof PDFArray && params.size() === 1 ? params.get(0) : params;
+        let taggedRows = false;
+        if (options !== undefined) {
+          if (!(options instanceof PDFDict)) invalidPdf();
+          const predictor = number(field(options, "Predictor") ?? PDFNumber.of(1));
+          if (!integer(predictor, 1, 2) && !integer(predictor, 10, 15)) invalidPdf();
+          taggedRows = predictor >= 10;
+          if (predictor !== 1 && (number(field(options, "Columns")) !== width
+            || number(field(options, "Colors") ?? PDFNumber.of(1)) !== 1
+            || number(field(options, "BitsPerComponent") ?? PDFNumber.of(8)) !== 8)) invalidPdf();
+        }
+        const stride = width + Number(taggedRows);
+        const bytes = this.budget.decode(object, rows * stride);
+        if (bytes.length !== rows * stride) invalidPdf();
+        if (taggedRows) {
+          for (let i = 0; i < bytes.length; i += stride) if (bytes[i]! > 4) invalidPdf();
+        }
+        const trailer: PDFContext["trailerInfo"] = {};
+        for (const key of ["Root", "Encrypt", "Info", "ID"] as const) {
+          const value = field(dict, key);
+          if (value) trailer[key] = value;
+        }
+        this.context.trailerInfo = trailer;
+        return dict;
+      }
+      return object;
+    }
+  }
+
+  function countPages(context: PDFContext, root: PdfRef) {
+    const seen = new Set<PdfRef>();
+    let pages = 0;
+    function visit(ref: PDFObject | undefined, parent: PdfRef | undefined, depth: number): number {
+      if (!(ref instanceof PDFRef) || depth >= maxDepth || seen.has(ref) || seen.size >= maxObjects) invalidPdf();
+      seen.add(ref);
+      const node = context.lookup(ref);
+      if (!(node instanceof PDFDict) || (parent && field(node, "Parent") !== parent)) invalidPdf();
+      const type = field(node, "Type");
+      if (parent && type === name("Page")) {
+        if (++pages > maxPages) invalidPdf();
+        return 1;
+      }
+      if (type !== name("Pages")) invalidPdf();
+      const kids = node.lookup(name("Kids")), expected = number(field(node, "Count"));
+      if (!(kids instanceof PDFArray) || !integer(expected, 0, maxPages) || kids.size() > maxObjects - seen.size) invalidPdf();
+      let count = 0;
+      for (let i = 0; i < kids.size(); i++) {
+        count += visit(kids.get(i), ref, depth + 1);
+        if (count > expected) invalidPdf();
+      }
+      if (count !== expected) invalidPdf();
+      return count;
+    }
+    return visit(root, undefined, 0);
+  }
+
   const context = await new BoundedPdfParser(bytes, 250, true).parseDocument();
   if (context.trailerInfo.Encrypt || context.trailerInfo.Root !== root) return false;
   const catalog = context.lookup(root);
