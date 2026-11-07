@@ -4,10 +4,20 @@ on:
   push:
     paths:
       - "supabase/**"
+      - "src/app/api/comprobantes/**"
+      - "src/lib/receipts/**"
+      - "experiments/cueva-004a-local/**"
+      - "experiments/cueva-006c-local/lab.mjs"
+      - "tests/fixtures/receipt-pdf.mjs"
       - ".github/workflows/membership-sql.yml"
   pull_request:
     paths:
       - "supabase/**"
+      - "src/app/api/comprobantes/**"
+      - "src/lib/receipts/**"
+      - "experiments/cueva-004a-local/**"
+      - "experiments/cueva-006c-local/lab.mjs"
+      - "tests/fixtures/receipt-pdf.mjs"
       - ".github/workflows/membership-sql.yml"
 
 permissions:
@@ -36,3 +46,26 @@ jobs:
           docker cp supabase "$CONTAINER_ID:/tmp/supabase"
           docker exec "$CONTAINER_ID" psql -U postgres -v ON_ERROR_STOP=1 -f /tmp/supabase/tests/membership.sql
           docker exec "$CONTAINER_ID" psql -U postgres -v ON_ERROR_STOP=1 -f /tmp/supabase/tests/payment-receipts.sql
+
+  receipt-storage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CUEVA_RECEIPTS_LAB: "1"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Exercise signed uploads and downloads with real Supabase Storage
+        working-directory: experiments/cueva-006c-local
+        run: node lab.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cueva-004a-storage-evidence
+          path: experiments/cueva-004a-local/results.json

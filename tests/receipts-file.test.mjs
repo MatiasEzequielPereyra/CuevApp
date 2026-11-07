@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
 import { crc32, deflateSync } from "node:zlib";
 import ts from "typescript";
+import { validPdfFixture, forgedXrefFixture } from "./fixtures/receipt-pdf.mjs";
 
 const require = createRequire(import.meta.url);
 function load(path, mocks = {}) {
@@ -85,6 +86,7 @@ const actor = "11111111-1111-4111-8111-111111111111";
 const session = "22222222-2222-4222-8222-222222222222";
 const period = "33333333-3333-4333-8333-333333333333";
 const id = "44444444-4444-4444-8444-444444444444";
+const uploadId = "55555555-5555-4555-8555-555555555555";
 const origin = "https://app.example.test";
 
 function scenario({ user = { id: actor }, bytes = png(), available = true, storageType = "image/png" } = {}) {
@@ -94,11 +96,6 @@ function scenario({ user = { id: actor }, bytes = png(), available = true, stora
     auth: {
       getUser: async () => ({ data: { user } }),
       getClaims: async () => ({ data: { claims: { sub: actor, session_id: session } } }),
-    },
-    rpc: async (name, params) => {
-      assert.equal(name, "cueva_receipt_prepare");
-      if (params.p_period !== period) return { error: { code: "42501" } };
-      return { data: finalized ? "submitted" : "eligible" };
     },
     from: () => ({ select: () => ({ eq: () => ({
       maybeSingle: async () => ({ data: available ? { object_path: "scoped.png", media_type: "image/png" } : null }),
@@ -129,6 +126,13 @@ function scenario({ user = { id: actor }, bytes = png(), available = true, stora
     "@/lib/product-auth/server": {
       productConfig: () => ({ origin }), userClient: async () => client,
       serviceClient: () => ({ rpc: async (name, params) => {
+        if (name === "cueva_receipt_reserve") {
+          if (params.p_period !== period) return { error: { code: "42501" } };
+          return { data: finalized ? { status: "submitted" } : {
+            status: "reserved", id: uploadId, path: `${actor}/${period}/${uploadId}.png`,
+          } };
+        }
+        if (name === "cueva_receipt_retire_upload") return { data: null };
         assert.equal(name, "cueva_receipt_submit");
         writes.push(params); finalized = true;
         return { data: params.p_id };
@@ -140,13 +144,14 @@ function scenario({ user = { id: actor }, bytes = png(), available = true, stora
     "@/lib/receipts/file": validation,
     "@/lib/receipts/server": {
       receiptStorage: async () => storage,
+      receiptServiceStorage: () => storage.from(contracts.receiptBucket),
       receiptError: () => ({ status: 403, message: "Acceso restringido" }),
     },
   });
   const payload = { id, period, extension: "png", type: "image/png", size: bytes.length, hash: sha(bytes) };
   const send = (action, override = {}, requestOrigin = origin) => POST(new Request(`${origin}/api/comprobantes`, {
     method: "POST", headers: { origin: requestOrigin, "content-type": "application/json" },
-    body: JSON.stringify({ ...payload, action, ...override }),
+    body: JSON.stringify({ ...payload, action, uploadId, ...override }),
   }));
   const open = () => GET(new Request(`${origin}/api/comprobantes?id=${id}`));
   return { send, open, writes, signatures };
@@ -155,10 +160,11 @@ function scenario({ user = { id: actor }, bytes = png(), available = true, stora
 test("upload keeps a validated immutable path and exact retry writes once", async () => {
   const fixture = scenario();
   assert.equal((await fixture.send("prepare")).status, 200);
-  assert.deepEqual(fixture.signatures, [{ path: `${actor}/${period}/${id}.png`, options: { upsert: false } }]);
+  assert.deepEqual(fixture.signatures, [{ path: `${actor}/${period}/${uploadId}.png`, options: { upsert: false } }]);
   assert.equal((await fixture.send("submit")).status, 200);
   assert.equal((await fixture.send("submit")).status, 200);
   assert.equal(fixture.writes.length, 1);
+  assert.equal(fixture.writes[0].p_upload, uploadId);
   assert.equal(fixture.writes[0].p_actor, actor);
   assert.equal(fixture.writes[0].p_session, session);
 });
@@ -190,4 +196,17 @@ test("file access signs only authorized rows and never caches the redirect", asy
   assert.equal(response.status, 307);
   assert.match(response.headers.get("cache-control"), /no-store/);
   assert.deepEqual(fixture.signatures, [{ path: "scoped.png", seconds: 60, options: { download: "comprobante.png" } }]);
+});
+
+
+test("PDF requires a readable catalog and page tree for classic and stream indexes", async () => {
+  for (const useObjectStreams of [false, true]) {
+    const bytes = await validPdfFixture(useObjectStreams);
+    assert.equal(await validReceiptBytes(bytes, "application/pdf"), true);
+  }
+  const forged = forgedXrefFixture();
+  assert.equal(forged.length, 128);
+  assert.equal(await validReceiptBytes(forged, "application/pdf"), false);
+  assert.equal(await validReceiptBytes(Buffer.from(pdf().toString().replace("/Root 1 0 R", "/Root 9 0 R")), "application/pdf"), false);
+  assert.equal(await validReceiptBytes(Buffer.from(pdf().toString().replace("/Kids [3 0 R]", "/Kids [9 0 R]")), "application/pdf"), false);
 });

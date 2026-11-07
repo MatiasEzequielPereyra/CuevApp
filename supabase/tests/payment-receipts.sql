@@ -37,11 +37,6 @@ select md5('receipt-period-' || k)::uuid,md5('receipt-student-' || owner)::uuid,
 from (values ('a','a',interval '0 month'),('settle','a',interval '-1 month'),
   ('race','a',interval '-2 month'),('b','b',interval '0 month')) as periods(k,owner,delta);
 
-insert into storage.objects (bucket_id,name)
-select 'cueva-payment-receipts',
-  md5('receipt-a')::uuid::text || '/' || md5('receipt-period-' || period)::uuid::text || '/' ||
-  md5('receipt-file-' || file)::uuid::text || '.png'
-from (values ('a','partial'),('a','reject'),('a','full'),('settle','settle'),('race','race1'),('race','race2')) as fixtures(period,file);
 commit;
 
 set plpgsql.check_asserts = on;
@@ -49,11 +44,30 @@ set plpgsql.check_asserts = on;
 create function pg_temp.claims(k text) returns text language sql as $$
   select jsonb_build_object('sub',md5(k)::uuid,'session_id',md5(md5(k)::uuid::text || '-session')::uuid)::text
 $$;
-create function pg_temp.submit_sql(period text, file text) returns text language sql as $$
-  select format('select public.cueva_receipt_submit(%L,%L,%L,%L,%L,16,%L)',
-    md5('receipt-a')::uuid, md5(md5('receipt-a')::uuid::text || '-session')::uuid,
-    md5('receipt-period-' || period)::uuid, md5('receipt-file-' || file)::uuid, 'image/png', repeat('a',64))
-$$;
+-- Simulate the trusted server and Storage metadata only in this test database.
+create function public.receipt_test_submit(period text, file text)
+returns uuid language plpgsql security definer set search_path = '' as $
+declare
+  actor uuid := md5('receipt-a')::uuid;
+  session_id uuid := md5(actor::text || '-session')::uuid;
+  period_id uuid := md5('receipt-period-' || period)::uuid;
+  receipt_id uuid := md5('receipt-file-' || file)::uuid;
+  lease jsonb;
+begin
+  lease := public.cueva_receipt_reserve(actor,session_id,period_id,receipt_id,'image/png',16,repeat('a',64),null);
+  if file <> 'missing' and lease->>'status' = 'reserved' then
+    insert into storage.objects values ('cueva-payment-receipts',lease->>'path');
+  end if;
+  return public.cueva_receipt_submit(actor,session_id,period_id,receipt_id,'image/png',16,repeat('a',64),
+    coalesce((lease->>'id')::uuid,gen_random_uuid()));
+end;
+$;
+revoke all on function public.receipt_test_submit(text,text) from public;
+grant execute on function public.receipt_test_submit(text,text) to service_role;
+
+create function pg_temp.submit_sql(period text, file text) returns text language sql as $
+  select format('select public.receipt_test_submit(%L,%L)',period,file)
+$;
 
 begin;
 set local role service_role;
@@ -71,7 +85,7 @@ begin
   end;
   begin
     perform public.cueva_receipt_submit(md5('receipt-a')::uuid,gen_random_uuid(),
-      md5('receipt-period-a')::uuid,md5('receipt-file-partial')::uuid,'image/png',16,repeat('a',64));
+      md5('receipt-period-a')::uuid,md5('receipt-file-partial')::uuid,'image/png',16,repeat('a',64),gen_random_uuid());
     raise exception 'invalid session accepted';
   exception when insufficient_privilege then null;
   end;
@@ -91,7 +105,7 @@ begin
   assert (select count(*) from storage.objects) = 1, 'staged objects remain unreadable';
   begin
     perform public.cueva_receipt_submit(md5('receipt-a')::uuid,gen_random_uuid(),
-      md5('receipt-period-a')::uuid,gen_random_uuid(),'image/png',16,repeat('a',64));
+      md5('receipt-period-a')::uuid,gen_random_uuid(),'image/png',16,repeat('a',64),gen_random_uuid());
     raise exception 'student bypassed byte validation';
   exception when insufficient_privilege then null;
   end;
@@ -115,8 +129,9 @@ begin
   assert not exists (select 1 from storage.objects), 'other member file hidden';
   assert not (public.cueva_receipt_periods()::text like '%' || md5('receipt-period-a')::uuid::text || '%'), 'other member period hidden';
   begin
-    perform public.cueva_receipt_prepare(md5('receipt-period-a')::uuid,gen_random_uuid(),'image/png',16,repeat('a',64));
-    raise exception 'cross-member upload accepted';
+    perform public.cueva_receipt_reserve(md5('receipt-a')::uuid,md5(md5('receipt-a')::uuid::text || '-session')::uuid,
+      md5('receipt-period-a')::uuid,gen_random_uuid(),'image/png',16,repeat('a',64),null);
+    raise exception 'student called privileged reservation';
   exception when insufficient_privilege then null;
   end;
 end $$;
@@ -204,8 +219,12 @@ end $$;
 select set_config('request.jwt.claims',pg_temp.claims('receipt-a'),true);
 do $$ begin
   assert public.cueva_membership_snapshot() #>> '{current,balance}' = '0', 'paid balance exact';
+end $;
+set local role service_role;
+do $ begin
   begin
-    perform public.cueva_receipt_prepare(md5('receipt-period-a')::uuid,gen_random_uuid(),'image/png',16,repeat('a',64));
+    perform public.cueva_receipt_reserve(md5('receipt-a')::uuid,md5(md5('receipt-a')::uuid::text || '-session')::uuid,
+      md5('receipt-period-a')::uuid,gen_random_uuid(),'image/png',16,repeat('a',64),null);
     raise exception 'paid period accepted' using errcode='XX000';
   exception when raise_exception then null;
   end;
@@ -236,3 +255,4 @@ end $$;
 select dblink_disconnect('receipt_one');
 select dblink_disconnect('receipt_two');
 \echo 'Payment receipt database checks passed.'
+
