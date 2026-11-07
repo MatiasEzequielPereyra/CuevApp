@@ -8,7 +8,7 @@ import pg from "pg";
 
 const apiUrl = process.env.API_URL;
 const anonKey = process.env.ANON_KEY;
-const serviceKey = process.env.SERVICE_ROLE_KEY;
+const serviceKey = process.env.CUEVA_SERVICE_KEY;
 const databaseUrl = process.env.DB_URL;
 const origin = "http://127.0.0.1:3000";
 for (const [name, value] of Object.entries({ API_URL: apiUrl, ANON_KEY: anonKey, SERVICE_ROLE_KEY: serviceKey, DB_URL: databaseUrl })) {
