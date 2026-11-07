@@ -98,7 +98,11 @@ test("only a definitive database error proves the operation was rolled back", as
   const { isDefinitiveDatabaseError } = await loadOperationKey();
   assert.equal(isDefinitiveDatabaseError("P0001"), true);
   assert.equal(isDefinitiveDatabaseError("23505"), true);
+  assert.equal(isDefinitiveDatabaseError("22023"), true);
+  assert.equal(isDefinitiveDatabaseError("08006"), false);
+  assert.equal(isDefinitiveDatabaseError("08001"), false);
   assert.equal(isDefinitiveDatabaseError("ECONNRESET"), false);
+  assert.equal(isDefinitiveDatabaseError("PGRST116"), false);
   assert.equal(isDefinitiveDatabaseError(undefined), false);
 });
 
@@ -111,3 +115,20 @@ function loadOperationKeySync() {
   new Function("require", "module", "exports", output)(load, unit, unit.exports);
   return unit.exports;
 }
+
+
+test("pending operations persist across reload and can be cleared after a definitive result", async () => {
+  const { persistPendingOperation, readPendingOperation, clearPendingOperation } = await loadOperationKey();
+  const values = new Map();
+  globalThis.window = { sessionStorage: {
+    getItem: key => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+    removeItem: key => values.delete(key),
+  } };
+  const pending = { op: "00000000-0000-4000-8000-000000000001", payload: JSON.stringify({ kind: "payment", cents: "4000" }) };
+  persistPendingOperation("billing:test", pending);
+  assert.deepEqual(readPendingOperation("billing:test"), pending);
+  clearPendingOperation("billing:test");
+  assert.equal(readPendingOperation("billing:test"), null);
+  delete globalThis.window;
+});
