@@ -81,7 +81,7 @@ $$;
 revoke all on function cueva_private.receipt_balance(uuid) from public, anon, authenticated, service_role;
 
 create function cueva_private.receipt_check(
-  p_student uuid, p_actor uuid, p_period uuid, p_id uuid, p_type text, p_size integer, p_hash text
+  p_student uuid, p_actor uuid, p_period uuid, p_id uuid, p_type text, p_size integer, p_hash text, p_recover boolean
 ) returns text language plpgsql stable security invoker set search_path = '' as $$
 declare
   existing public.cueva_payment_receipts;
@@ -108,13 +108,18 @@ begin
   if cueva_private.receipt_balance(p_period) <= 0 then
     raise exception 'La cuota está saldada' using errcode = 'P0001';
   end if;
-  if exists (select 1 from public.cueva_payment_receipts where period_id = p_period and state = 'pending') then
+  select * into existing from public.cueva_payment_receipts where period_id = p_period and state = 'pending';
+  if found then
+    if p_recover and existing.submitted_by = p_actor and existing.media_type = p_type
+      and existing.file_size = p_size and existing.file_hash = p_hash then
+      return 'submitted';
+    end if;
     raise exception 'Ya hay un comprobante pendiente' using errcode = '23505';
   end if;
   return 'eligible';
 end;
 $$;
-revoke all on function cueva_private.receipt_check(uuid,uuid,uuid,uuid,text,integer,text)
+revoke all on function cueva_private.receipt_check(uuid,uuid,uuid,uuid,text,integer,text,boolean)
   from public, anon, authenticated, service_role;
 
 -- One upload lease per period. The operation identifies the receipt; the
@@ -148,17 +153,18 @@ $$;
 revoke all on function cueva_private.receipt_actor_student(uuid,uuid) from public, anon, authenticated, service_role;
 
 create function cueva_private.receipt_reserve(
-  p_actor uuid, p_session uuid, p_period uuid, p_id uuid, p_type text, p_size integer, p_hash text, p_upload uuid
+  p_actor uuid, p_session uuid, p_period uuid, p_id uuid, p_type text, p_size integer, p_hash text, p_upload uuid, p_recover boolean default false
 ) returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
   lease cueva_private.receipt_uploads;
   upload uuid;
   member_id uuid;
   expiry timestamptz;
+  recover boolean := p_upload is null and p_recover is true;
 begin
   perform pg_advisory_xact_lock(903004001);
   member_id := cueva_private.receipt_actor_student(p_actor, p_session);
-  if cueva_private.receipt_check(member_id, p_actor, p_period, p_id, p_type, p_size, p_hash) = 'submitted' then
+  if cueva_private.receipt_check(member_id, p_actor, p_period, p_id, p_type, p_size, p_hash, recover) = 'submitted' then
     return jsonb_build_object('status', 'submitted');
   end if;
   -- Storage tokens last two hours. Leave additional time for a signed PUT
@@ -169,7 +175,7 @@ begin
     if lease.expires_at <= clock_timestamp() then
       return jsonb_build_object('status', 'expired', 'id', lease.upload_id, 'path', lease.object_path);
     end if;
-    if lease.actor <> p_actor or lease.operation_id <> p_id or lease.media_type <> p_type
+    if lease.actor <> p_actor or (lease.operation_id <> p_id and not recover) or lease.media_type <> p_type
       or lease.file_size <> p_size or lease.file_hash <> p_hash
       or (p_upload is not null and lease.upload_id <> p_upload) then
       raise exception 'Ya hay una carga reservada' using errcode = '55P03';
@@ -192,19 +198,20 @@ begin
       p_type, p_size, p_hash, expiry)
     returning * into lease;
   end if;
-  return jsonb_build_object('status', 'reserved', 'id', lease.upload_id, 'path', lease.object_path);
+  return jsonb_build_object('status', 'reserved', 'id', lease.upload_id, 'path', lease.object_path,
+    'operationId', lease.operation_id);
 end;
 $$;
 
 create function public.cueva_receipt_reserve(
-  p_actor uuid, p_session uuid, p_period uuid, p_id uuid, p_type text, p_size integer, p_hash text, p_upload uuid
+  p_actor uuid, p_session uuid, p_period uuid, p_id uuid, p_type text, p_size integer, p_hash text, p_upload uuid, p_recover boolean default false
 ) returns jsonb language sql security invoker set search_path = '' as $$
-  select cueva_private.receipt_reserve(p_actor, p_session, p_period, p_id, p_type, p_size, p_hash, p_upload)
+  select cueva_private.receipt_reserve(p_actor, p_session, p_period, p_id, p_type, p_size, p_hash, p_upload, p_recover)
 $$;
-revoke all on function cueva_private.receipt_reserve(uuid,uuid,uuid,uuid,text,integer,text,uuid),
-  public.cueva_receipt_reserve(uuid,uuid,uuid,uuid,text,integer,text,uuid) from public, anon, authenticated, service_role;
-grant execute on function cueva_private.receipt_reserve(uuid,uuid,uuid,uuid,text,integer,text,uuid),
-  public.cueva_receipt_reserve(uuid,uuid,uuid,uuid,text,integer,text,uuid) to service_role;
+revoke all on function cueva_private.receipt_reserve(uuid,uuid,uuid,uuid,text,integer,text,uuid,boolean),
+  public.cueva_receipt_reserve(uuid,uuid,uuid,uuid,text,integer,text,uuid,boolean) from public, anon, authenticated, service_role;
+grant execute on function cueva_private.receipt_reserve(uuid,uuid,uuid,uuid,text,integer,text,uuid,boolean),
+  public.cueva_receipt_reserve(uuid,uuid,uuid,uuid,text,integer,text,uuid,boolean) to service_role;
 
 -- Only the server that verified the bytes can finalize. Recheck the exact
 -- lease, actor/session, ownership and balance under the ledger lock.

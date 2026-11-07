@@ -1,6 +1,6 @@
 import { crc32, inflateSync } from "node:zlib";
 import sharp from "sharp";
-import { PDFDocument, PDFName, PDFPageTree, PDFRef } from "pdf-lib";
+import { validPdf } from "./pdf";
 
 function validPng(bytes: Buffer) {
   if (!bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) return false;
@@ -68,81 +68,6 @@ async function validJpeg(bytes: Buffer) {
   return true;
 }
 
-function pdfIndexRoot(bytes: Buffer) {
-  if (!/^%PDF-(?:1\.[0-7]|2\.0)[\r\n]/.test(bytes.toString("latin1", 0, 16))) return false;
-  const tailStart = Math.max(0, bytes.length - 4096);
-  const tail = /startxref[\t \r\n]+(\d{1,10})[\t \r\n]+%%EOF[\t \r\n]*$/.exec(bytes.toString("latin1", tailStart));
-  if (!tail) return false;
-  const offset = Number(tail[1]);
-  const tailOffset = tailStart + tail.index;
-  if (offset < 9 || offset >= tailOffset) return false;
-  const xref = bytes.toString("latin1", offset, tailOffset);
-  const rootRef = /\/Root\s+(\d{1,10})\s+(\d{1,5})\s+R\b/;
-
-  if (/^xref\s/.test(xref)) {
-    const trailer = xref.indexOf("trailer");
-    const root = trailer < 0 ? null : rootRef.exec(xref.slice(trailer));
-    if (!root) return false;
-    const lines = xref.slice(4, trailer).trim().split(/\r\n|\r|\n/);
-    let index = 0, objects = 0;
-    while (index < lines.length) {
-      const section = /^(\d{1,10})[ \t]+(\d{1,10})$/.exec(lines[index++]!.trim());
-      if (!section) return false;
-      const start = Number(section[1]), count = Number(section[2]);
-      if (count < 1 || count > lines.length - index) return false;
-      for (let entry = 0; entry < count; entry++) {
-        const fields = /^(\d{10})[ \t]+(\d{5})[ \t]+([nf])$/.exec(lines[index++]!.trim());
-        if (!fields) return false;
-        if (fields[3] === "f") continue;
-        const position = Number(fields[1]);
-        if (position < 9 || position >= offset) return false;
-        const object = /^(\d+)[ \t\r\n]+(\d+)[ \t\r\n]+obj\b/.exec(bytes.toString("latin1", position, position + 64));
-        if (!object || Number(object[1]) !== start + entry || Number(object[2]) !== Number(fields[2])) return false;
-        objects++;
-      }
-    }
-    return objects > 0 && PDFRef.of(Number(root[1]), Number(root[2]));
-  }
-
-  // PDF 1.5+ permits a cross-reference stream instead of a text table.
-  const stream = />>[\t \r\n]*stream\r?\n/.exec(xref);
-  if (!stream) return false;
-  const dictionary = xref.slice(0, stream.index);
-  const length = /\/Length\s+(\d{1,10})\b(?!\s+\d+\s+R\b)/.exec(dictionary);
-  const root = rootRef.exec(dictionary);
-  const size = Number(/\/Size\s+([1-9]\d{0,5})\b/.exec(dictionary)?.[1]);
-  const widths = /\/W\s*\[\s*([0-4])\s+([0-4])\s+([0-4])\s*\]/.exec(dictionary);
-  if (!root || !length || Number(length[1]) < 1 || !size || size > 200_000 || !widths) return false;
-  if (/\/Index\b/.test(dictionary)) {
-    const sections = /\/Index\s*\[\s*([\d\s]+)\]/.exec(dictionary)?.[1]?.trim().split(/\s+/).map(Number);
-    if (!sections?.length || sections.length % 2) return false;
-    let endObject = 0;
-    for (let i = 0; i < sections.length; i += 2) {
-      const start = sections[i]!, count = sections[i + 1]!;
-      if (!count || start < endObject || start + count > size) return false;
-      endObject = start + count;
-    }
-  }
-  const end = stream.index + stream[0].length + Number(length[1]);
-  return /^\d+\s+\d+\s+obj\s*<</.test(dictionary)
-    && /\/Type\s*\/XRef\b/.test(dictionary)
-    && /^[\r\n]*endstream\s+endobj\s*$/.test(xref.slice(end))
-    && PDFRef.of(Number(root[1]), Number(root[2]));
-}
-
-async function validPdf(bytes: Buffer) {
-  const root = pdfIndexRoot(bytes);
-  if (!root) return false;
-  const pdf = await PDFDocument.load(bytes, { throwOnInvalidObject: true, updateMetadata: false });
-  if (pdf.context.trailerInfo.Root !== root) return false;
-  const pages = pdf.catalog.lookup(PDFName.of("Pages"));
-  if (!(pages instanceof PDFPageTree)) return false;
-  const count = pdf.getPages().length;
-  return pdf.catalog.get(PDFName.of("Type")) === PDFName.of("Catalog")
-    && pages.get(PDFName.of("Type")) === PDFName.of("Pages")
-    && count > 0 && count === pages.Count().asNumber();
-}
-
 export async function validReceiptBytes(bytes: Buffer, mediaType: string): Promise<boolean> {
   if (!bytes.length || bytes.length > 10 * 1024 * 1024) return false;
   try {
@@ -154,7 +79,3 @@ export async function validReceiptBytes(bytes: Buffer, mediaType: string): Promi
     return false;
   }
 }
-
-
-
-

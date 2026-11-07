@@ -42,7 +42,9 @@ export async function POST(req: Request) {
 
   try {
     const db = serviceClient();
-    const reserve = () => db.rpc("cueva_receipt_reserve", parameters);
+    const reserve = () => db.rpc("cueva_receipt_reserve", {
+      ...parameters, p_recover: p.action === "prepare" && p.recover === true,
+    });
     let reserved = await reserve();
     if (reserved.data?.status === "expired" && p.action === "prepare") {
       if (!await removeExpiredReceiptUpload(db, receiptServiceStorage(), reserved.data)) {
@@ -61,11 +63,13 @@ export async function POST(req: Request) {
     if (lease?.status !== "reserved") return failure("No pudimos reservar la carga.", 503);
     const storage = receiptServiceStorage();
     if (p.action === "prepare") {
+      const operationId = lease.operationId;
+      if (typeof operationId !== "string" || !uuid.test(operationId)) return failure("No pudimos identificar la carga.", 503);
       const existing = await storage.exists(lease.path);
-      if (existing.data) return json({ uploaded: true, uploadId: lease.id });
+      if (existing.data) return json({ uploaded: true, uploadId: lease.id, operationId });
       const signed = await storage.createSignedUploadUrl(lease.path, { upsert: false });
       if (signed.error || !signed.data) return failure("No pudimos preparar la carga. Reintentá.", 503);
-      return json({ uploadUrl: signed.data.signedUrl, uploadId: lease.id });
+      return json({ uploadUrl: signed.data.signedUrl, uploadId: lease.id, operationId });
     }
 
     const { data: file, error: downloadError } = await storage.download(lease.path);

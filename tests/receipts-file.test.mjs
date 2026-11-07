@@ -5,7 +5,10 @@ import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
 import { crc32, deflateSync } from "node:zlib";
 import ts from "typescript";
-import { validPdfFixture, forgedXrefFixture } from "./fixtures/receipt-pdf.mjs";
+import {
+  validPdfFixture, forgedXrefFixture, repeatedPageTreeFixture, cyclicPageTreeFixture,
+  manyPagesFixture, extraObjectsFixture, objectStreamFixture,
+} from "./fixtures/receipt-pdf.mjs";
 
 const require = createRequire(import.meta.url);
 function load(path, mocks = {}) {
@@ -16,7 +19,8 @@ function load(path, mocks = {}) {
   return exported;
 }
 const contracts = load("src/lib/receipts/contracts.ts");
-const validation = load("src/lib/receipts/file.ts");
+const pdfValidation = load("src/lib/receipts/pdf.ts");
+const validation = load("src/lib/receipts/file.ts", { "./pdf": pdfValidation });
 const { validReceiptBytes } = validation;
 const sha = bytes => createHash("sha256").update(bytes).digest("hex");
 
@@ -129,7 +133,7 @@ function scenario({ user = { id: actor }, bytes = png(), available = true, stora
         if (name === "cueva_receipt_reserve") {
           if (params.p_period !== period) return { error: { code: "42501" } };
           return { data: finalized ? { status: "submitted" } : {
-            status: "reserved", id: uploadId, path: `${actor}/${period}/${uploadId}.png`,
+            status: "reserved", id: uploadId, operationId: id, path: `${actor}/${period}/${uploadId}.png`,
           } };
         }
         if (name === "cueva_receipt_retire_upload") return { data: null };
@@ -209,4 +213,28 @@ test("PDF requires a readable catalog and page tree for classic and stream index
   assert.equal(await validReceiptBytes(forged, "application/pdf"), false);
   assert.equal(await validReceiptBytes(Buffer.from(pdf().toString().replace("/Root 1 0 R", "/Root 9 0 R")), "application/pdf"), false);
   assert.equal(await validReceiptBytes(Buffer.from(pdf().toString().replace("/Kids [3 0 R]", "/Kids [9 0 R]")), "application/pdf"), false);
+});
+
+test("PDF page traversal rejects the 15-level shared subtree and cycles", async () => {
+  const duplicated = repeatedPageTreeFixture();
+  assert.equal(duplicated.length, 1756);
+  assert.equal(await validReceiptBytes(duplicated, "application/pdf"), false);
+  assert.equal(await validReceiptBytes(repeatedPageTreeFixture({ claimedCount: 32768 }), "application/pdf"), false);
+  assert.equal(await validReceiptBytes(cyclicPageTreeFixture(), "application/pdf"), false);
+  assert.equal(await validReceiptBytes(repeatedPageTreeFixture({ duplicate: false }), "application/pdf"), true);
+});
+
+test("PDF limits page depth, page count, objects and total decoded structural bytes", async () => {
+  const mib = 1024 * 1024;
+  const samples = [
+    [repeatedPageTreeFixture({ depth: 33, duplicate: false }), "page depth"],
+    [manyPagesFixture(101), "page count"],
+    [extraObjectsFixture(Array(10000).fill("true")), "indirect objects"],
+    [extraObjectsFixture([objectStreamFixture(1024, 10001)]), "object stream count"],
+    [extraObjectsFixture([objectStreamFixture(16 * mib + 1)]), "one oversized object stream"],
+    [extraObjectsFixture([objectStreamFixture(9 * mib), objectStreamFixture(8 * mib, 1, 100)]), "aggregate object streams"],
+  ];
+  for (const [bytes, reason] of samples) assert.equal(await validReceiptBytes(bytes, "application/pdf"), false, reason);
+  assert.equal(await validReceiptBytes(manyPagesFixture(100), "application/pdf"), true);
+  assert.equal(await validReceiptBytes(extraObjectsFixture([objectStreamFixture(1024)]), "application/pdf"), true);
 });

@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { Readable } from "node:stream";
-import { forgedXrefFixture, validPdfFixture } from "../../tests/fixtures/receipt-pdf.mjs";
+import { forgedXrefFixture, repeatedPageTreeFixture, validPdfFixture } from "../../tests/fixtures/receipt-pdf.mjs";
 
 const bucket = "cueva-payment-receipts";
 
@@ -108,18 +108,27 @@ export async function runBrowserFlow({ base, rest, storageBase, admin, anon, pas
     const retry = await (await send(owner, chosen)).json();
     check("same_operation_same_lease_and_path", retry.uploadId === lease.uploadId
       && new URL(retry.uploadUrl).pathname === new URL(lease.uploadUrl).pathname);
+    const recovery = { ...chosen, id: randomUUID(), recover: true };
+    const beforeUpload = await (await send(owner, recovery)).json();
+    check("recovery_before_upload_keeps_same_path", beforeUpload.operationId === chosen.id
+      && beforeUpload.uploadId === lease.uploadId && new URL(beforeUpload.uploadUrl).pathname === new URL(lease.uploadUrl).pathname);
     check("signed_upload_real_storage", (await put(lease.uploadUrl, valid)).ok);
     check("signed_token_cannot_overwrite", !(await put(lease.uploadUrl, forgedXrefFixture(), "true")).ok);
     const stagedPath = `${users[1].id}/${period}/${lease.uploadId}.pdf`;
     check("staging_private", (await get(owner, chosen.id)).status() === 403);
-    const uploaded = await (await send(owner, chosen)).json();
-    check("retry_after_upload_reuses_object", uploaded.uploaded && uploaded.uploadId === lease.uploadId && !uploaded.uploadUrl);
-    const finalize = { ...chosen, action: "submit", uploadId: lease.uploadId };
+    check("cross_member_recovery_denied", (await send(other, recovery)).status() === 403);
+    check("different_file_cannot_recover", (await send(owner, { ...recovery, hash: "0".repeat(64) })).status() === 409);
+    const uploaded = await (await send(owner, recovery)).json();
+    check("recovery_after_upload_reuses_path_and_operation", uploaded.uploaded && uploaded.uploadId === lease.uploadId
+      && uploaded.operationId === chosen.id && !uploaded.uploadUrl);
+    const finalize = { ...recovery, id: uploaded.operationId, action: "submit", uploadId: uploaded.uploadId };
     check("cross_member_finalize_denied", (await send(other, finalize)).status() === 403);
     const receipts = await Promise.all([send(owner, finalize), send(owner, finalize)]);
     check("concurrent_finalize_exact_retry", receipts.every(reply => reply.ok())
       && sql(`select count(*) from public.cueva_payment_receipts where period_id='${period}' and state='pending'`) === "1",
       receipts.map(reply => reply.status()).join(","));
+    const replay = await send(owner, recovery);
+    check("recovery_after_finalization_returns_submitted", replay.ok() && (await replay.json()).submitted === true);
     check("no_money_before_admin_review", sql(`select count(*) from public.cueva_payments where period_id='${period}'`) === "0");
     check("cross_member_download_denied", (await get(other, chosen.id)).status() === 403);
     check("anonymous_download_denied", (await get(guest, chosen.id)).status() === 403);
@@ -145,6 +154,14 @@ export async function runBrowserFlow({ base, rest, storageBase, admin, anon, pas
     check("invalid_file_creates_no_receipt", sql(`select count(*) from public.cueva_payment_receipts where period_id='${invalidPeriod}'`) === "0");
     check("invalid_file_is_not_resigned", (await send(owner, invalid)).status() === 422);
 
+    const repeatedTree = repeatedPageTreeFixture({ claimedCount: 32768 });
+    const tree = dataFor(users[2].periods[0], repeatedTree);
+    const treeLease = await (await send(other, tree)).json();
+    check("shared_page_tree_uploaded", (await put(treeLease.uploadUrl, repeatedTree)).ok);
+    check("shared_page_tree_rejected_without_receipt",
+      (await send(other, { ...tree, action: "submit", uploadId: treeLease.uploadId })).status() === 422
+      && sql(`select count(*) from public.cueva_payment_receipts where period_id='${tree.period}'`) === "0");
+
     const abandoned = dataFor(abandonedPeriod, valid);
     const oldLease = await (await send(owner, abandoned)).json();
     check("abandoned_fixture_uploaded", (await put(oldLease.uploadUrl, valid)).ok);
@@ -156,12 +173,12 @@ export async function runBrowserFlow({ base, rest, storageBase, admin, anon, pas
     // Advance only the DB lease in the isolated test to exercise the cleanup
     // paths. Production leases include the full Storage token lifetime.
     sql(`update cueva_private.receipt_uploads set expires_at=clock_timestamp()-interval '1 minute'
-      where period_id in ('${invalidPeriod}', '${abandonedPeriod}')`);
+      where period_id in ('${invalidPeriod}', '${abandonedPeriod}', '${tree.period}')`);
     const fresh = await (await send(owner, invalid)).json();
     check("lazy_cleanup_allocates_fresh_nonce", fresh.uploadId && fresh.uploadId !== invalidLease.uploadId);
     check("stale_finalize_cannot_use_new_lease", (await send(owner, { ...invalid, action: "submit", uploadId: invalidLease.uploadId })).status() === 409);
     const cleaned = await sweep();
-    check("scheduled_cleanup_releases_abandoned_lease", cleaned.ok() && (await cleaned.json()).removed === 1,
+    check("scheduled_cleanup_releases_abandoned_lease", cleaned.ok() && (await cleaned.json()).removed === 2,
       String(cleaned.status()));
     check("real_storage_objects_removed", sql(`select count(*) from storage.objects where bucket_id='${bucket}'`) === "1");
     const afterCleanup = await (await send(owner, abandoned)).json();

@@ -32,10 +32,10 @@ export function ReceiptUpload({ period }: { period: string }) {
       const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", await file.arrayBuffer()));
       const hash = Array.from(digest, byte => byte.toString(16).padStart(2, "0")).join("");
       const payload = { id: operation.current, period, extension: file.name.split(".").at(-1), type, size: file.size, hash };
-      const request = async (action: "prepare" | "submit", uploadId?: string) => {
+      const request = async (action: "prepare" | "submit", uploadId?: string, id = payload.id) => {
         const response = await fetch("/api/comprobantes", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          signal: AbortSignal.timeout(60000), body: JSON.stringify({ ...payload, action, uploadId }),
+          signal: AbortSignal.timeout(60000), body: JSON.stringify({ ...payload, id, action, uploadId, recover: action === "prepare" }),
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || "No pudimos confirmar la carga.");
@@ -43,6 +43,10 @@ export function ReceiptUpload({ period }: { period: string }) {
       };
       const prepared = await request("prepare");
       if (!prepared.submitted) {
+        if (typeof prepared.operationId !== "string" || typeof prepared.uploadId !== "string") {
+          throw new Error("No pudimos identificar la carga.");
+        }
+        operation.current = prepared.operationId;
         if (!prepared.uploaded) {
           if (typeof prepared.uploadUrl !== "string") throw new Error("No pudimos preparar la carga.");
           setMessage("Subiendo comprobante.");
@@ -54,7 +58,7 @@ export function ReceiptUpload({ period }: { period: string }) {
           if (!sent.ok && sent.status !== 409 && sent.status !== 400) throw new Error("Falló la carga. Podés reintentar.");
         }
         setMessage("Verificando el archivo.");
-        const submitted = await request("submit", prepared.uploadId);
+        const submitted = await request("submit", prepared.uploadId, prepared.operationId);
         if (!submitted.submitted) throw new Error("No pudimos confirmar la presentación.");
       }
       setDone(true);

@@ -115,3 +115,29 @@ SKILLS_SELECTED: cueva-feature-development, cueva-finance, cueva-supabase-securi
 SKILLS_APPLIED: base aislada, reglas financieras, RPC de servicio con sesión verificada, RLS y Storage privado, límites de carga, regresiones de formato y evidencia reproducible.
 SKILL_SOURCES: .agents/skills/cueva-feature-development/SKILL.md, .agents/skills/cueva-finance/SKILL.md, .agents/skills/cueva-supabase-security/SKILL.md, c0/supabase, c20/vercel-functions, e5/skills/pdf
 ```
+
+## Segunda corrección de auditoría del PR #37
+
+Base de la corrección `fb76efc41ac3a43cf866492bd5d210f3a58be927`.
+El validador comprueba referencias únicas en el árbol de páginas, límites
+de 32 niveles y 100 páginas, y los conteos de cada subárbol. El análisis
+acota los objetos a 10.000, los valores sintácticos a 100.000 y la expansión
+de streams estructurales a 16 MiB acumulados. Admite tablas clásicas y
+streams de referencias u objetos sin filtro o con Flate. La regresión
+incluye un PDF de 1.756 bytes con 15 niveles de referencias repetidas, además
+de ciclos y casos que exceden los límites.
+
+La preparación puede recuperar una reserva vigente con la misma cuenta,
+período, tipo, tamaño y SHA-256. El servidor devuelve la operación y la
+ruta originales. La finalización usa ese identificador; si el comprobante
+ya está pendiente con la misma huella, la preparación confirma su
+presentación. La prueba de navegador cubre recargar o volver a seleccionar
+el archivo. El laboratorio de Storage cubre la recuperación con otro ID
+de solicitud, la finalización concurrente y el rechazo de otra cuenta u
+otro archivo.
+
+```
+SKILLS_SELECTED: cueva-feature-development, cueva-finance, cueva-supabase-security, supabase:supabase
+SKILLS_APPLIED: cambio acotado desde el HEAD auditado, recuperación con identidad y huella verificadas, idempotencia, regresiones de PDF y verificación en navegador, SQL y Storage aislado.
+SKILL_SOURCES: .agents/skills/cueva-feature-development/SKILL.md, .agents/skills/cueva-finance/SKILL.md, .agents/skills/cueva-supabase-security/SKILL.md, c0/supabase
+```
