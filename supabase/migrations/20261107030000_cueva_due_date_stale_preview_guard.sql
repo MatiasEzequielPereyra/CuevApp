@@ -66,6 +66,9 @@ begin
    if current_day<>expected_day then
     raise exception 'El vencimiento cambió desde que abriste la vista previa. Actualizá los datos y revisá el nuevo valor.' using errcode='P0001';
    end if;
+   if p->>'scope'='current_period' and p->'confirm_current_period' is distinct from 'true'::jsonb then
+    raise exception 'Confirmá explícitamente el cambio del período actual' using errcode='22023';
+   end if;
   end if;
 
   result_id:=cueva_private.billing_write(op,p);
