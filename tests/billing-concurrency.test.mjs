@@ -76,7 +76,44 @@ try {
     [studentId, month],
   );
   assert.equal(rows[0].total, 1, "database contains exactly one period after the race");
-  process.stdout.write("PASS: concurrent same-student/month period creation is serialized and unique.\n");
+
+  const { rows: [{ next_month: nextMonth }] } = await admin.query(`
+    select to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month'),'YYYY-MM') as next_month
+  `);
+  const dueDayPayloads = [
+    { kind: "due_day", student_id: studentId, due_day: "20", expected_old_due_day: "31", effective_month: nextMonth, scope: "next_period" },
+    { kind: "due_day", student_id: studentId, due_day: "21", expected_old_due_day: "31", effective_month: nextMonth, scope: "next_period" },
+  ];
+  const dueDayOperations = [randomUUID(), randomUUID()];
+  const dueDayResults = await Promise.all(clients.map((client, index) =>
+    client.query(
+      "select public.cueva_billing_write($1::uuid,$2::jsonb) as operation_id",
+      [dueDayOperations[index], JSON.stringify(dueDayPayloads[index])],
+    ),
+  ));
+  const dueDaySuccesses = dueDayResults.filter(result => result.rows[0].operation_id !== null);
+  const dueDayRejections = dueDayResults.filter(result => result.rows[0].operation_id === null);
+  assert.equal(dueDaySuccesses.length, 1, "exactly one concurrent due-day change succeeds");
+  assert.equal(dueDayRejections.length, 1, "the competing stale due-day preview is rejected");
+
+  const { rows: dueSchedules } = await admin.query(
+    "select due_day from public.cueva_due_schedules where student_id=$1 and effective_month=($2||'-01')::date order by recorded_at desc,id desc",
+    [studentId, nextMonth],
+  );
+  assert.equal(dueSchedules.length, 1, "the race leaves exactly one effective schedule for the month");
+  assert.ok([20, 21].includes(dueSchedules[0].due_day), "the winning due-day value is persisted");
+
+  const { rows: dueAudit } = await admin.query(
+    "select count(*)::integer as total from public.cueva_due_date_audit where student_id=$1",
+    [studentId],
+  );
+  const { rows: dueAttempts } = await admin.query(
+    "select count(*)::integer as total from public.cueva_due_date_attempts where student_id=$1",
+    [studentId],
+  );
+  assert.equal(dueAudit[0].total, 1, "only the winning due-day change is audited as applied");
+  assert.equal(dueAttempts[0].total, 1, "the stale competing change is retained as a rejected attempt");
+  process.stdout.write("PASS: concurrent period creation is unique and concurrent due-day changes reject stale previews.\\n");
 } finally {
   await Promise.all(clients.map(client => client.end().catch(() => undefined)));
   if (adminConnected) {
