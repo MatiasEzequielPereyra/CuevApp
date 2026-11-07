@@ -35,9 +35,9 @@ export function dateLabel(value: string) {
  return new Intl.DateTimeFormat("es-AR",{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(Date.UTC(year,month-1,day)));
 }
 export function DueDateManager({
- studentId, currentMonth, currentDay, nextDay, currentDueOn, nextDueOn, history, attempts,
+ studentId, actorId, currentMonth, currentDay, nextDay, currentDueOn, nextDueOn, history, attempts,
 }: {
- studentId:string; currentMonth:string; currentDay:number; nextDay:number;
+ studentId:string; actorId:string; currentMonth:string; currentDay:number; nextDay:number;
  currentDueOn:string|null; nextDueOn:string|null; history:AuditEntry[]; attempts:AttemptEntry[];
 }) {
  const router=useRouter();
@@ -51,7 +51,7 @@ export function DueDateManager({
  const [operationPending,setOperationPending]=useState(false);
  const busy=useRef(false);
  const operation=useRef<{op:string;payload:string}|null>(null);
- const storageKey=`cueva:due-date-operation:${studentId}`;
+ const storageKey=`cueva:due-date-operation:${actorId}:${studentId}`;
  useEffect(()=>{
   const saved=readPendingOperation(storageKey);
   if(!saved||busy.current)return;
