@@ -59,7 +59,7 @@ y [límites de funciones](https://vercel.com/docs/functions/limitations).
   a 360 px y formularios 3/3. Las pruebas HTTP usan servicios sintéticos.
 - [Pruebas de archivo y rutas](../../tests/receipts-file.test.mjs),
   [formularios en navegador](../../tests/e2e/receipts.spec.ts) y
-  [prueba SQL](../../supabase/tests/payment-receipts.sql).
+  [prueba SQL](../../supabase/standalone-tests/payment-receipts.sql).
   El flujo SQL ejecuta PostgreSQL real con roles y metadatos Storage de
   laboratorio. Incluye dos conexiones concurrentes y la transacción de pagos.
 - La sesión local carece del motor Docker accesible. La verificación general

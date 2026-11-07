@@ -98,6 +98,9 @@ try {
   })));
   const page = await context.newPage();
   await page.goto(`${origin}/pagos?alumno=${studentId}`);
+  const receiptLink = page.getByRole("link", { name: "Revisar comprobantes de pago" });
+  await receiptLink.waitFor({ state: "visible", timeout: 30000 });
+  assert.equal(await receiptLink.getAttribute("href"), "/pagos/comprobantes", "payments keeps the receipt review link");
   await page.getByRole("heading", { name: "Vencimiento del alumno" }).waitFor({ state: "visible", timeout: 30000 });
   await page.getByLabel("Nuevo día de vencimiento").fill("20");
   await page.getByRole("button", { name: "Guardar cambio de vencimiento" }).click();
