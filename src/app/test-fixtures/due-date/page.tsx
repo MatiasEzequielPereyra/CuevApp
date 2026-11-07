@@ -8,6 +8,7 @@ export default function DueDateFixture() {
   return <main className="shell">
     <DueDateManager
       studentId="e2000000-0000-4000-8000-000000000001"
+      actorId="e1000000-0000-4000-8000-000000000001"
       currentMonth="2026-11"
       currentDay={12}
       nextDay={12}
