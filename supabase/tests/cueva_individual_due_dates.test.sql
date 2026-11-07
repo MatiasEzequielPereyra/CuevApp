@@ -283,11 +283,11 @@ select throws_ok($$insert into public.cueva_due_date_attempts(operation_id,stude
 -- A failure while appending the audit must roll back the schedule and all period updates.
 reset role;
 create function cueva_private.test_fail_due_audit_insert()
-returns trigger language plpgsql set search_path='' as $
+returns trigger language plpgsql set search_path='' as $audit_failure$
 begin
  raise exception 'forced audit insert failure' using errcode='P0001';
 end;
-$;
+$audit_failure$;
 create trigger zz_test_fail_due_audit_insert
  before insert on public.cueva_due_date_audit
  for each row execute function cueva_private.test_fail_due_audit_insert();
