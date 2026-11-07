@@ -6,11 +6,15 @@ on:
       - "supabase/**"
       - ".github/workflows/supabase-local.yml"
       - "tests/billing-concurrency.test.mjs"
+      - "package.json"
+      - "package-lock.json"
   pull_request:
     paths:
       - "supabase/**"
       - ".github/workflows/supabase-local.yml"
       - "tests/billing-concurrency.test.mjs"
+      - "package.json"
+      - "package-lock.json"
   workflow_dispatch:
 
 permissions:
