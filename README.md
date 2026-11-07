@@ -2,13 +2,12 @@
 
 Fundación de la aplicación del gimnasio. CUEVA-001A fue aceptada e integrada en el PR #1. La página está publicada en [cueva-gym.vercel.app](https://cueva-gym.vercel.app). Ver el checkpoint para la evidencia y el siguiente encargo.
 
-Incremento local vigente: [CUEVA-006B — Rutinas estructuradas](docs/engineering/CUEVA-006B-task.md),
-con [modelo](docs/architecture/structured-routines.md) y
-[reproducción, resultados y límites](docs/engineering/CUEVA-006B-review.md).
-Continúa la implementación 006A, que permanece REVIEW sin aceptación independiente.
-Los estados de la fundación conservados más abajo son históricos; prevalece
-el cierre vigente del checkpoint. Este incremento no está aplicado ni validado
-en el servicio alojado.
+Incremento local vigente: [CUEVA-006C — Catálogo de rutinas, días y bloques](docs/engineering/CUEVA-006C-task.md),
+con [modelo y videos de galería](docs/architecture/routine-days.md) y
+[reproducción, resultados y límites](docs/engineering/CUEVA-006C-review.md).
+Entrega local para REVIEW; no aplicada ni validada en el servicio alojado.
+Los registros anteriores de 006A/006B se conservan como antecedentes; verificar
+GitHub y el checkpoint antes de afirmar integración o publicación.
 
 ## Orden de lectura
 

@@ -1,5 +1,14 @@
 # Registro de decisiones técnicas
 
+## D010 — Días, vueltas de bloque y videos (producto CONFIRMED; técnica REVIEW)
+
+2026-11-06, [CUEVA-006C](../engineering/CUEVA-006C-task.md), con ampliación explícita
+del usuario a galería de hasta 50 MB, solo admin. JSON v2 aditivo, v1 legible y
+conversión administrativa sin pérdida; publicación explícita y copias independientes.
+Storage privado, uploads directos firmados y lectura limitada a ejercicios de la
+publicación propia; YouTube opcional validado. [Contrato y alternativas](routine-days.md).
+Sin operaciones alojadas ni aceptación independiente por esta entrega.
+
 ## D009 — Constructor principal (producto CONFIRMED; técnica PROPOSED)
 
 2026-11-06, instrucción explícita [CUEVA-006B](../engineering/CUEVA-006B-task.md):

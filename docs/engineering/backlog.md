@@ -1,5 +1,15 @@
 # Backlog de CUEVA
 
+## Incremento vigente — CUEVA-006C, 2026-11-06
+
+REVIEW local: catálogo de rutinas/plantillas, días, bloques con vueltas comunes,
+objetivos por peso/repeticiones o tiempo y selección múltiple paginada. Video desde
+galería (50 MB, solo admin) aprobado posteriormente por el usuario; lectura privada
+por ejercicios de la última publicación. Legado preservado y conversión explícita.
+[Entrega y límites](CUEVA-006C-review.md). Integración, bucket/migraciones alojadas,
+revisión independiente y producción pendientes. No completa resultados, temporizador,
+offline ni el MVP. Las notas previas de videos pendientes son historia de entregas.
+
 ## Cambio vigente — CUEVA-006B, 2026-11-06
 
 REVIEW local: catálogo básico y constructor principal por bloques/ejercicios.
