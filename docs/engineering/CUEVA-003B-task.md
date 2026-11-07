@@ -5,7 +5,7 @@
 **BASE_SHA:** `7663e51f7b60c269a9bb7f13f0f69d26358b609d`  
 **BRANCH:** `feature/cueva-003b-vencimientos`  
 **SKILLS_SELECTED:** `cueva-feature-development`, `cueva-finance`, `cueva-supabase-security`.  
-**SKILLS_APPLIED:** contratos financiero, seguridad y desarrollo aplicados; interfaz administrativa integrada en `/pagos`, pendiente de pruebas y auditoría independiente.  
+**SKILLS_APPLIED:** contratos financieros, controles de seguridad, idempotencia transaccional, precondición de concurrencia para vencimientos, interfaz administrativa y pruebas automatizadas.  
 **SKILL_SOURCES:** `.agents/skills/cueva-feature-development/SKILL.md`, `.agents/skills/cueva-finance/SKILL.md`, `.agents/skills/cueva-supabase-security/SKILL.md`.
 
 ## 1. Objetivo
