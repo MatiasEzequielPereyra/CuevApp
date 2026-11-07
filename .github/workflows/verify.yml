@@ -20,6 +20,8 @@ jobs:
           node-version: 22.14.0
           cache: npm
       - run: npm ci
+      - name: Verify source integrity
+        run: npm run verify:sources
       - run: npx playwright install --with-deps chromium
       - run: npm run verify
       - run: npm run verify:security
