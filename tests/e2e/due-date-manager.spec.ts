@@ -79,3 +79,26 @@ test("clears a definitively rejected operation so corrected data receives a new 
   expect(calls).toBe(2);
   expect(operationIds[0]).not.toBe(operationIds[1]);
 });
+
+
+test("billing payment resumes the same idempotent operation after a page reload", async ({ page }) => {
+  const operationIds: string[] = [];
+  let calls = 0;
+  await page.route("**/api/pagos", async (route) => {
+    calls += 1;
+    operationIds.push(route.request().postDataJSON().op);
+    const uncertain = calls === 1;
+    await route.fulfill({
+      status: uncertain ? 503 : 200,
+      contentType: "application/json",
+      body: JSON.stringify({ message: uncertain ? "Resultado incierto." : "Operación registrada.", operation_not_applied: false }),
+    });
+  });
+  await page.getByLabel("Importe en pesos").fill("1000");
+  await page.getByRole("button", { name: "Confirmar pago" }).click();
+  await expect(page.getByText("Resultado incierto.")).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("Operación registrada.")).toBeVisible();
+  expect(calls).toBe(2);
+  expect(operationIds[0]).toBe(operationIds[1]);
+});
