@@ -15,11 +15,17 @@ jobs:
       NEXT_TELEMETRY_DISABLED: 1
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22.14.0
           cache: npm
       - run: npm ci
+      - name: Fetch protected base branch
+        run: git fetch origin main --no-tags
+      - name: Verify source manifest has not changed
+        run: npm run verify:source-manifest
       - name: Verify source integrity
         run: npm run verify:sources
       - run: npx playwright install --with-deps chromium
