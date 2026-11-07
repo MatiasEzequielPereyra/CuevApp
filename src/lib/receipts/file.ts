@@ -110,12 +110,22 @@ function pdfIndexRoot(bytes: Buffer) {
   const dictionary = xref.slice(0, stream.index);
   const length = /\/Length\s+(\d{1,10})\b(?!\s+\d+\s+R\b)/.exec(dictionary);
   const root = rootRef.exec(dictionary);
-  if (!root || !length || Number(length[1]) < 1) return false;
+  const size = Number(/\/Size\s+([1-9]\d{0,5})\b/.exec(dictionary)?.[1]);
+  const widths = /\/W\s*\[\s*([0-4])\s+([0-4])\s+([0-4])\s*\]/.exec(dictionary);
+  if (!root || !length || Number(length[1]) < 1 || !size || size > 200_000 || !widths) return false;
+  if (/\/Index\b/.test(dictionary)) {
+    const sections = /\/Index\s*\[\s*([\d\s]+)\]/.exec(dictionary)?.[1]?.trim().split(/\s+/).map(Number);
+    if (!sections?.length || sections.length % 2) return false;
+    let endObject = 0;
+    for (let i = 0; i < sections.length; i += 2) {
+      const start = sections[i]!, count = sections[i + 1]!;
+      if (!count || start < endObject || start + count > size) return false;
+      endObject = start + count;
+    }
+  }
   const end = stream.index + stream[0].length + Number(length[1]);
   return /^\d+\s+\d+\s+obj\s*<</.test(dictionary)
     && /\/Type\s*\/XRef\b/.test(dictionary)
-    && /\/Size\s+[1-9]\d*\b/.test(dictionary)
-    && /\/W\s*\[\s*\d+\s+\d+\s+\d+\s*\]/.test(dictionary)
     && /^[\r\n]*endstream\s+endobj\s*$/.test(xref.slice(end))
     && PDFRef.of(Number(root[1]), Number(root[2]));
 }
@@ -144,6 +154,7 @@ export async function validReceiptBytes(bytes: Buffer, mediaType: string): Promi
     return false;
   }
 }
+
 
 
 

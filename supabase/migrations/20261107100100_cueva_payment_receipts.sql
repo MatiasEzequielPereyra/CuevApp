@@ -91,11 +91,11 @@ begin
     where p.id = p_period and p.student_id = p_student
       and p.month <= date_trunc('month', now() at time zone 'America/Argentina/Buenos_Aires')::date
   ) then
-    raise exception 'Per�odo no disponible' using errcode = '42501';
+    raise exception 'Per?odo no disponible' using errcode = '42501';
   end if;
   if p_id is null or p_type is null or p_type not in ('image/jpeg','image/png','application/pdf')
     or p_size is null or p_size not between 1 and 10485760 or coalesce(p_hash,'') !~ '^[a-f0-9]{64}$' then
-    raise exception 'Archivo inv�lido' using errcode = '22023';
+    raise exception 'Archivo inv?lido' using errcode = '22023';
   end if;
   select * into existing from public.cueva_payment_receipts where id = p_id;
   if found then
@@ -103,10 +103,10 @@ begin
       and existing.media_type = p_type and existing.file_size = p_size then
       return 'submitted';
     end if;
-    raise exception 'Operaci�n ya utilizada' using errcode = '23505';
+    raise exception 'Operaci?n ya utilizada' using errcode = '23505';
   end if;
   if cueva_private.receipt_balance(p_period) <= 0 then
-    raise exception 'La cuota est� saldada' using errcode = 'P0001';
+    raise exception 'La cuota est? saldada' using errcode = 'P0001';
   end if;
   if exists (select 1 from public.cueva_payment_receipts where period_id = p_period and state = 'pending') then
     raise exception 'Ya hay un comprobante pendiente' using errcode = '23505';
@@ -153,10 +153,11 @@ create function cueva_private.receipt_reserve(
 declare
   lease cueva_private.receipt_uploads;
   upload uuid;
-  member_id uuid := cueva_private.receipt_actor_student(p_actor, p_session);
+  member_id uuid;
   expiry timestamptz;
 begin
   perform pg_advisory_xact_lock(903004001);
+  member_id := cueva_private.receipt_actor_student(p_actor, p_session);
   if cueva_private.receipt_check(member_id, p_actor, p_period, p_id, p_type, p_size, p_hash) = 'submitted' then
     return jsonb_build_object('status', 'submitted');
   end if;
@@ -181,7 +182,7 @@ begin
     end if;
   else
     if p_upload is not null then
-      raise exception 'La carga ya no está reservada' using errcode = '55P03';
+      raise exception 'La carga ya no est� reservada' using errcode = '55P03';
     end if;
     upload := gen_random_uuid();
     insert into cueva_private.receipt_uploads
@@ -211,7 +212,7 @@ create function cueva_private.receipt_submit(
   p_actor uuid, p_session uuid, p_period uuid, p_id uuid, p_type text, p_size integer, p_hash text, p_upload uuid
 ) returns uuid language plpgsql security definer set search_path = '' as $
 declare
-  member_id uuid := cueva_private.receipt_actor_student(p_actor, p_session);
+  member_id uuid;
   lease jsonb;
 begin
   if p_upload is null then
@@ -220,13 +221,14 @@ begin
   lease := cueva_private.receipt_reserve(p_actor, p_session, p_period, p_id, p_type, p_size, p_hash, p_upload);
   if lease->>'status' = 'submitted' then return p_id; end if;
   if lease->>'status' <> 'reserved' then
-    raise exception 'La carga ya no está reservada' using errcode = '55P03';
+    raise exception 'La carga ya no est� reservada' using errcode = '55P03';
   end if;
   if not exists (
     select 1 from storage.objects where bucket_id = 'cueva-payment-receipts' and name = lease->>'path'
   ) then
     raise exception 'Carga no encontrada' using errcode = '22023';
   end if;
+  member_id := cueva_private.receipt_actor_student(p_actor, p_session);
   insert into public.cueva_payment_receipts
     (id, student_id, period_id, submitted_by, object_path, media_type, file_size, file_hash)
   values (p_id, member_id, p_period, p_actor, lease->>'path', p_type, p_size, p_hash);
@@ -305,20 +307,20 @@ begin
     raise exception 'Acceso restringido' using errcode = '42501';
   end if;
   if p_id is null or p_operation is null or p_action is null or p_action not in ('approve','reject') then
-    raise exception 'Revisi�n inv�lida' using errcode = '22023';
+    raise exception 'Revisi?n inv?lida' using errcode = '22023';
   end if;
   if p_action = 'approve' then
     if coalesce(p_cents,'') !~ '^[0-9]{1,12}$' or p_paid_on is null
       or p_paid_on not between date '1900-01-01' and (now() at time zone 'America/Argentina/Buenos_Aires')::date
       or p_method is null or p_method not in ('efectivo','transferencia','debito','credito','otro')
       or (p_method = 'otro' and coalesce(length(btrim(p_detail)),0) not between 1 and 120) then
-      raise exception 'Revis� el importe, la fecha y el medio de pago' using errcode = '22023';
+      raise exception 'Revis? el importe, la fecha y el medio de pago' using errcode = '22023';
     end if;
     review := jsonb_build_object('kind','payment','cents',p_cents,'paid_on',p_paid_on,
       'method',p_method,'detail',case when p_method = 'otro' then btrim(p_detail) end,'receipt_id',p_id);
   else
     if coalesce(length(btrim(p_reason)),0) not between 1 and 300 then
-      raise exception 'Indic� un motivo de rechazo' using errcode = '22023';
+      raise exception 'Indic? un motivo de rechazo' using errcode = '22023';
     end if;
     review := jsonb_build_object('kind','reject','reason',btrim(p_reason));
   end if;
@@ -345,7 +347,7 @@ begin
   end if;
 
   if exists (select 1 from cueva_private.billing_operations where id = p_operation) then
-    raise exception 'Operaci�n ya utilizada' using errcode = '23505';
+    raise exception 'Operaci?n ya utilizada' using errcode = '23505';
   end if;
   -- Mark this receipt first so the ledger's after-insert trigger closes only
   -- other pending receipts. The payment FK and both writes commit together.
@@ -368,7 +370,7 @@ revoke all on function cueva_private.receipt_review(uuid,uuid,text,text,date,tex
 grant execute on function cueva_private.receipt_review(uuid,uuid,text,text,date,text,text,text),
   public.cueva_receipt_review(uuid,uuid,text,text,date,text,text,text) to authenticated;
 
--- Extend Mi Membres�a with receipt metadata, preserving its audited ledger read.
+-- Extend Mi Membres?a with receipt metadata, preserving its audited ledger read.
 create function cueva_private.receipt_periods()
 returns jsonb language sql stable security definer set search_path = '' as $$
   select coalesce(jsonb_object_agg(p.month::text, jsonb_build_object(
@@ -394,4 +396,5 @@ grant execute on function cueva_private.receipt_periods(), public.cueva_receipt_
   to authenticated;
 
 commit;
+
 
