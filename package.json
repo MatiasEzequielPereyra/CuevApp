@@ -18,6 +18,7 @@
     "test:e2e": "playwright test",
     "verify": "npm run lint && npm run typecheck && npm run build && npm test",
     "verify:sources": "node scripts/verify-sources.mjs",
+    "verify:source-manifest": "node scripts/verify-source-manifest-unchanged.mjs",
     "verify:security": "node scripts/security-review.mjs"
   },
   "dependencies": {
