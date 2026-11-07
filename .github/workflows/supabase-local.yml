@@ -82,7 +82,6 @@ jobs:
           export CUEVA_PRODUCT_AUTH_LOCAL=1
           export CUEVA_SUPABASE_URL="$API_URL"
           export CUEVA_PUBLISHABLE_KEY="$ANON_KEY"
-          export CUEVA_SERVICE_KEY="$SERVICE_ROLE_KEY"
           export CUEVA_PRODUCT_ORIGIN="http://127.0.0.1:3000"
           export CUEVA_AUTH_URL="$API_URL/auth/v1"
           export CUEVA_REST_URL="$API_URL/rest/v1"
