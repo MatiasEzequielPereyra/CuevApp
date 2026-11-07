@@ -312,8 +312,10 @@ select is((select count(*)::integer from public.cueva_due_date_audit where id='b
  0,'audit failure leaves no successful audit record');
 select is((select count(*)::integer from public.cueva_due_date_attempts where operation_id='b3000000-0000-4000-8000-000000000001'),
  1,'audit failure is recorded as one rejected attempt');
+reset role;
 select is((select count(*)::integer from cueva_private.billing_operations where id='b3000000-0000-4000-8000-000000000001'),
  0,'audit failure does not persist a successful billing operation');
+set local role authenticated;
 
 select ok(not has_table_privilege('anon','public.cueva_due_schedules','SELECT')
  and not has_table_privilege('anon','public.cueva_due_schedules','INSERT')
