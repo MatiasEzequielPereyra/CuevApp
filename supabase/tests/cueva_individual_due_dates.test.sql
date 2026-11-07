@@ -73,7 +73,7 @@ select throws_ok($q$select public.cueva_billing_write('a6000000-0000-4000-8000-0
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','16','expected_old_due_day','31',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
  'scope','next_period','reason','Changed retry payload'))$q$,
- '23505',null,'successful operation key rejects a different payload without recording a rejected attempt');
+ 'P0001',null,'successful operation key rejects a different payload without recording a rejected attempt');
 select is(public.cueva_billing_write('a6000000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','15','expected_old_due_day','31',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
