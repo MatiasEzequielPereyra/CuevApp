@@ -198,10 +198,10 @@ select is(public.cueva_billing_write('b1020000-0000-4000-8000-000000000001',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
  'scope','next_period','reason','Invalid day test')),null::uuid,
  'retrying the same rejected operation returns the same rejected result');
-select throws_ok($select public.cueva_billing_write('b1020000-0000-4000-8000-000000000001',
+select throws_ok($q$select public.cueva_billing_write('b1020000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','21',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
- 'scope','next_period','reason','Changed retry payload'))$,
+ 'scope','next_period','reason','Changed retry payload'))$q$,
  '23505',null,'reusing a rejected operation id with a different payload is rejected');
 select is((select count(*)::integer from public.cueva_due_date_attempts
  where operation_id='b1020000-0000-4000-8000-000000000001'),1,
