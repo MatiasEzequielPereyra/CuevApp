@@ -3,9 +3,9 @@ import { useEffect, useRef,useState } from "react";
 import {useRouter} from "next/navigation";
 import {toCents} from "@/lib/payments/money";
 import {clearPendingOperation,operationForSubmission,persistPendingOperation,readPendingOperation} from "@/lib/payments/operation-key";
-export function BillingForm({kind,studentId,periodId,paymentId,month,today}:{kind:"price"|"period"|"payment"|"reverse";studentId?:string;periodId?:string;paymentId?:string;month:string;today:string}){
+export function BillingForm({kind,studentId,periodId,paymentId,month,today,actorId}:{kind:"price"|"period"|"payment"|"reverse";studentId?:string;periodId?:string;paymentId?:string;month:string;today:string;actorId:string}){
  const router=useRouter();const busy=useRef(false);const operation=useRef<{op:string;payload:string}|null>(null);const [pending,setPending]=useState(false),[message,setMessage]=useState("");const [operationPending,setOperationPending]=useState(false),[operationRejected,setOperationRejected]=useState(false);
- const storageKey=`cueva:billing-operation:${kind}:${studentId??"global"}:${periodId??paymentId??"none"}`;
+ const storageKey=`cueva:billing-operation:${actorId}:${kind}:${studentId??"global"}:${periodId??paymentId??"none"}`;
  useEffect(()=>{const saved=readPendingOperation(storageKey);if(!saved||busy.current)return;operation.current=saved;setOperationPending(true);setPending(true);busy.current=true;
   void (async()=>{try{const payload=JSON.parse(saved.payload) as Record<string,unknown>;const response=await fetch("/api/pagos",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({op:saved.op,p:payload})});const result=await response.json();setMessage(result.message??"No se pudo confirmar la operación pendiente.");if(response.ok){clearPendingOperation(storageKey);operation.current=null;setOperationPending(false);setOperationRejected(false);router.refresh();}else if(result.operation_not_applied===true){clearPendingOperation(storageKey);operation.current=null;setOperationRejected(true);}}catch{setMessage("No pudimos confirmar el resultado anterior. Conservamos la operación para reintentar sin duplicarla.");}finally{busy.current=false;setPending(false);}})();
  },[router,storageKey]);
