@@ -44,7 +44,7 @@ test("due date manager renders the next period by default and exposes change and
   assert.match(markup, /Fecha nueva/);
   assert.match(markup, /admin@example\.test/);
   assert.match(markup, /Día de vencimiento inválido/);
-  assert.match(markup, /No hay intentos rechazados/ === false ? /x/ : /Intentos rechazados/);
+  assert.match(markup, /Intentos rechazados/);
 });
 
 test("next period calculation crosses year boundaries", () => {
