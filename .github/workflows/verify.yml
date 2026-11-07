@@ -19,10 +19,6 @@ jobs:
         with:
           node-version: 22.14.0
           cache: npm
-      - name: Regenerate lockfile with scoped security override
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Show lockfile security update
-        run: git diff -- package-lock.json
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run verify
