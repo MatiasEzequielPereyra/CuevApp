@@ -15,6 +15,38 @@ new Function("require", "module", "exports", output)(runtimeRequire, unit, unit.
 
 const { monthAfter, dueDate, dateLabel } = unit.exports;
 
+const React = load("react");
+const { renderToStaticMarkup } = load("react-dom/server");
+
+test("due date manager renders the next period by default and exposes change and rejection history", () => {
+  const markup = renderToStaticMarkup(React.createElement(unit.exports.DueDateManager, {
+    studentId: "student-1",
+    currentMonth: "2026-11",
+    currentDay: 15,
+    nextDay: 15,
+    currentDueOn: "2026-11-15",
+    nextDueOn: null,
+    history: [{
+      id: "audit-1", actor: "admin-1", actor_email: "admin@example.test",
+      old_due_day: 10, new_due_day: 15, effective_month: "2026-11-01",
+      scope: "current_period", reason: "Acuerdo con alumno", result: "applied",
+      recorded_at: "2026-11-06T12:00:00Z",
+    }],
+    attempts: [{
+      id: "attempt-1", operation_id: "operation-1", actor_email: "admin@example.test",
+      requested_due_day: "32", effective_month: "2026-12", scope: "next_period",
+      requested_reason: "Corrección", error_code: "22023",
+      error_message: "Día de vencimiento inválido", recorded_at: "2026-11-06T12:01:00Z",
+    }],
+  }));
+  assert.match(markup, /Próximo período/);
+  assert.match(markup, /Fecha anterior/);
+  assert.match(markup, /Fecha nueva/);
+  assert.match(markup, /admin@example\.test/);
+  assert.match(markup, /Día de vencimiento inválido/);
+  assert.match(markup, /No hay intentos rechazados/ === false ? /x/ : /Intentos rechazados/);
+});
+
 test("next period calculation crosses year boundaries", () => {
   assert.equal(monthAfter("2026-01"), "2026-02");
   assert.equal(monthAfter("2026-12"), "2027-01");
