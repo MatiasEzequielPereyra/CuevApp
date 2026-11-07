@@ -118,7 +118,30 @@ try {
   );
   assert.equal(persistedAudit.rows[0]?.actor, userId);
   assert.equal(persistedAudit.rows[0]?.new_due_day, 20);
-  process.stdout.write("PASS: authenticated Playwright UI -> Next API -> isolated Supabase persisted and audited the due-date change.\n");
+
+  await page.getByRole("radio", { name: /Período actual/ }).check();
+  await page.getByRole("checkbox", { name: "Confirmo que quiero modificar el período actual." }).check();
+  await page.getByLabel("Nuevo día de vencimiento").fill("22");
+  await page.getByRole("button", { name: "Guardar cambio de vencimiento" }).click();
+  await page.getByText("Operación registrada.", { exact: true }).waitFor({ state: "visible", timeout: 30000 });
+
+  const currentMonth = await database.query(
+    "select date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date as month",
+  );
+  const currentSchedule = await database.query(
+    "select due_day from public.cueva_due_schedules where student_id=$1 and effective_month=$2 order by recorded_at desc,id desc limit 1",
+    [studentId, currentMonth.rows[0].month],
+  );
+  assert.equal(currentSchedule.rows[0]?.due_day, 22, "explicitly confirmed current-period change must persist");
+
+  const currentAudit = await database.query(
+    "select actor,new_due_day,scope from public.cueva_due_date_audit where student_id=$1 and scope='current_period' order by recorded_at desc limit 1",
+    [studentId],
+  );
+  assert.equal(currentAudit.rows[0]?.actor, userId);
+  assert.equal(currentAudit.rows[0]?.new_due_day, 22);
+  assert.equal(currentAudit.rows[0]?.scope, "current_period");
+  process.stdout.write("PASS: authenticated UI persisted next-period and explicitly confirmed current-period changes with audit.\n");
 } finally {
   if (browser) await browser.close();
   if (databaseConnected) {
