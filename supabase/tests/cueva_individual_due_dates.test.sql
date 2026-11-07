@@ -65,15 +65,22 @@ select is((select due_on from public.cueva_periods where id='a5000000-0000-4000-
  (date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date+14,
  'changing due day updates an existing unpaid period');
 select is(public.cueva_billing_write('a6000000-0000-4000-8000-000000000001',
- jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','15',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','15','expected_old_due_day','31',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
  'scope','next_period','reason','Initial schedule adjustment')),
  'a6000000-0000-4000-8000-000000000001'::uuid,'identical operation retry is idempotent');
-select is(public.cueva_billing_write('a6000000-0000-4000-8000-000000000001',
+select throws_ok($q$select public.cueva_billing_write('a6000000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','16','expected_old_due_day','31',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
- 'scope','next_period','reason','Changed retry payload')),null::uuid,
- 'same operation id with a different payload is rejected and audited');
+ 'scope','next_period','reason','Changed retry payload'))$q$,
+ '23505',null,'successful operation key rejects a different payload without recording a rejected attempt');
+select is(public.cueva_billing_write('a6000000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','15','expected_old_due_day','31',
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','next_period','reason','Initial schedule adjustment')),
+ 'a6000000-0000-4000-8000-000000000001'::uuid,'original successful operation remains idempotently recoverable');
+select is((select count(*)::integer from public.cueva_due_date_attempts where operation_id='a6000000-0000-4000-8000-000000000001'),
+ 0,'successful operation key is never converted into a rejected attempt');
 
 select is(public.cueva_billing_write('a7000000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','payment','student_id','a3000000-0000-4000-8000-000000000001',
@@ -170,7 +177,7 @@ select is((select due_day from public.cueva_due_schedules
  and effective_month=date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date),
  19::smallint,'current-period change becomes effective in the selected month');
 select is(public.cueva_billing_write('b1010000-0000-4000-8000-000000000001',
- jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','20',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','20','expected_old_due_day','21',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
  'scope','current_period','reason','Mismatched scope')),null::uuid,
  'current-period scope cannot target the next month and is audited');
@@ -180,7 +187,7 @@ select is(public.cueva_billing_write('b1020000-0000-4000-8000-000000000001',
  'scope','next_period','reason','Invalid day test')),null::uuid,
  'due-day writer rejects day zero and records the failure');
 select is(public.cueva_billing_write('b1030000-0000-4000-8000-000000000001',
- jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','20',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','20','expected_old_due_day','21',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
  'scope','next_period','reason','ab')),null::uuid,
  'due-day writer rejects a reason shorter than three characters and records the failure');
@@ -194,7 +201,7 @@ select is((select due_day from public.cueva_due_schedules where student_id='a300
  21::smallint,'stale preview does not overwrite the newer due-day rule');
 
 select is((select count(*)::integer from public.cueva_due_date_attempts where student_id='a3000000-0000-4000-8000-000000000001'),
- 6,'all six rejected due-day attempts are retained separately');
+ 5,'all five rejected due-day attempts are retained separately');
 select is((select actor_email from public.cueva_due_date_audit where id='ad100000-0000-4000-8000-000000000001'),
  'due-date-admin@example.test','audit identifies the administrator by account email');
 select is((select actor_email from public.cueva_due_date_attempts where operation_id='b1020000-0000-4000-8000-000000000001'),
@@ -203,12 +210,12 @@ select ok((select error_code='22023' and length(error_message)>0 from public.cue
  'failed attempt stores the database error code and explanation');
 
 select is(public.cueva_billing_write('b1020000-0000-4000-8000-000000000001',
- jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','0',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','0','expected_old_due_day','21',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
  'scope','next_period','reason','Invalid day test')),null::uuid,
  'retrying the same rejected operation returns the same rejected result');
 select throws_ok($q$select public.cueva_billing_write('b1020000-0000-4000-8000-000000000001',
- jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','21',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','21','expected_old_due_day','21',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
  'scope','next_period','reason','Changed retry payload'))$q$,
  '23505',null,'reusing a rejected operation id with a different payload is rejected');
