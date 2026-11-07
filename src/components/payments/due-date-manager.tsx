@@ -81,7 +81,7 @@ export function DueDateManager({
   if(busy.current||!canSave)return;
   busy.current=true;setPending(true);setMessage("");
   try {
-   const p={kind:"due_day",student_id:studentId,due_day:day,expected_old_due_day:String(oldDay),effective_month:effectiveMonth,scope,...(reason.trim()?{reason:reason.trim()}:{})};
+   const p={kind:"due_day",student_id:studentId,due_day:day,expected_old_due_day:String(oldDay),effective_month:effectiveMonth,scope,...(scope==="current_period"?{confirm_current_period:confirmed}:{}),...(reason.trim()?{reason:reason.trim()}:{})};
    const payload=JSON.stringify(p);
    operation.current=operationForSubmission(operation.current??readPendingOperation(storageKey),payload,operationRejected,()=>crypto.randomUUID());
    persistPendingOperation(storageKey,operation.current);
