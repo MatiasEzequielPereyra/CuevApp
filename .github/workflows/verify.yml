@@ -24,6 +24,11 @@ jobs:
       - run: npm run verify
       - run: npm run verify:security
       - run: npm audit --omit=dev --audit-level=moderate
+      - name: Report complete dependency audit
+        run: |
+          npm audit --json > /tmp/npm-audit.json || true
+          node -e 'const a=require("/tmp/npm-audit.json"); console.log(JSON.stringify({metadata:a.metadata?.vulnerabilities,packages:Object.entries(a.vulnerabilities??{}).map(([name,v])=>({name,severity:v.severity,range:v.range,fixAvailable:v.fixAvailable,via:v.via.map(x=>typeof x==="string"?x:{name:x.name,title:x.title,range:x.range,url:x.url})}))},null,2))'
+      - run: npm audit --audit-level=moderate
       - run: npm audit --audit-level=critical
       - uses: actions/upload-artifact@v4
         if: always()
