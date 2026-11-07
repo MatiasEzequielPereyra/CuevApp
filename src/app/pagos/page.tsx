@@ -19,6 +19,7 @@ export default async function Payments({searchParams}:{searchParams:Promise<Reco
  const today=buenosAiresDate();const month=today.slice(0,7);
  return <AdminShell displayName={user.email??"Cuenta CUEVA"} email={user.email??""} role="Administrador" logo={<BrandMark size={42}/>} themePicker={<ThemePicker/>} active="pagos">
  <h1>Pagos y cuotas</h1><p>Gestión administrativa · importes en pesos argentinos · fechas de Buenos Aires.</p>
+ <p><Link href="/pagos/comprobantes">Revisar comprobantes de pago</Link></p>
  {students.error||snapshot.error||!data?<section className="dash-account"><h2>Pagos no disponibles</h2><p>No pudimos consultar las cuotas. La migración puede estar pendiente.</p><Link href="/pagos">Reintentar</Link></section>:<>
  <details><summary>Configurar precio mensual general</summary>{data.prices.length?<ul>{data.prices.map(price=><li key={price.month}>{price.month.slice(0,7)}: {pesos(price.cents)}</li>)}</ul>:<p>Sin precio configurado.</p>}<BillingForm kind="price" month={month} today={today}/></details>
  <form className="student-search"><label>Buscar alumno<input name="q" defaultValue={q}/></label><button>Buscar</button></form>

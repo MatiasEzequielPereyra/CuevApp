@@ -2,6 +2,8 @@ import Link from "next/link";
 import { StudentShell } from "@/components/routines/student-shell";
 import { pesos } from "@/lib/payments/money";
 import { productConfig, userClient } from "@/lib/product-auth/server";
+import { ReceiptUpload } from "@/components/receipts/receipt-upload";
+import { receiptState, type Receipt } from "@/lib/receipts/contracts";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +32,9 @@ function PaymentDate({ value }: { value: string }) {
   return <time dateTime={value}>{dateFormat.format(new Date(value))}</time>;
 }
 
-function PeriodDetails({ period }: { period: MembershipPeriod }) {
+type ReceiptPeriod = { id: string; receipts: Receipt[] };
+
+function PeriodDetails({ period, files }: { period: MembershipPeriod; files?: ReceiptPeriod | undefined }) {
   return <>
     <dl>
       <div><dt>Estado de la cuota</dt><dd>{statuses[period.status]}</dd></div>
@@ -42,6 +46,21 @@ function PeriodDetails({ period }: { period: MembershipPeriod }) {
     {period.payments.length > 0 && <ul className="membership-payment-list" aria-label="Pagos confirmados">
       {period.payments.map((payment, index) => <li key={index}><PaymentDate value={payment.paid_on}/> · {pesos(payment.cents)}</li>)}
     </ul>}
+    {files && <section aria-label="Comprobantes del período">
+      <h3>Comprobantes</h3>
+      {!files.receipts.length && <p>Todavía no presentaste comprobantes para esta cuota.</p>}
+      {!!files.receipts.length && <ul className="membership-payment-list">
+        {files.receipts.map(receipt => <li key={receipt.id}>
+          <strong>{receiptState[receipt.state]}</strong>
+          <p>Presentado el <PaymentDate value={receipt.submitted_at}/></p>
+          {receipt.resolved_at && <p>Resuelto el <PaymentDate value={receipt.resolved_at}/></p>}
+          {receipt.rejection_reason && <p>Motivo del rechazo: {receipt.rejection_reason}</p>}
+          <a href={`/api/comprobantes?id=${receipt.id}`} target="_blank" rel="noopener noreferrer">Abrir comprobante</a>
+        </li>)}
+      </ul>}
+      {BigInt(period.balance) > 0n && !files.receipts.some(receipt => receipt.state === "pending") &&
+        <ReceiptUpload key={files.id} period={files.id}/>}
+    </section>}
   </>;
 }
 
@@ -55,14 +74,19 @@ export default async function MembershipPage() {
     return <main className="shell"><h1>Acceso restringido</h1><Link href="/cuenta">Mi cuenta</Link></main>;
   }
 
-  const { data: snapshot, error: readError } = await client.rpc("cueva_membership_snapshot");
+  const [{ data: snapshot, error: readError }, receiptPeriods] = await Promise.all([
+    client.rpc("cueva_membership_snapshot"),
+    client.rpc("cueva_receipt_periods"),
+  ]);
   const data = snapshot as Membership | null;
+  const files = receiptPeriods.error ? null : receiptPeriods.data as Record<string, ReceiptPeriod> | null;
   return <StudentShell active="membresia">
     <div className="dash-heading"><div><h1>Mi Membresía</h1><p>Consultá tu cuota y los pagos registrados por el gimnasio.</p></div></div>
     {readError || !data ? <section className="dash-account">
       <div><h2>No pudimos cargar tu membresía</h2><p>Si el problema continúa, consultá con el gimnasio.</p></div>
       <Link href="/mi-membresia">Reintentar</Link>
     </section> : <>
+      {!files && <p>Los comprobantes no están disponibles por el momento.</p>}
       <div className="membership-summary">
         <section className="membership-card"><h2>Estado de membresía</h2>
           <dl>
@@ -71,14 +95,14 @@ export default async function MembershipPage() {
           </dl>
         </section>
         <section className="membership-card"><h2>Cuota de este mes</h2>
-          {data.current ? <PeriodDetails period={data.current}/> : <p>El gimnasio todavía no registró la cuota de este mes.</p>}
+          {data.current ? <PeriodDetails period={data.current} files={files?.[data.current.month]}/> : <p>El gimnasio todavía no registró la cuota de este mes.</p>}
         </section>
       </div>
       <section className="membership-history"><h2>Historial de cuotas</h2>
         {data.history.length === 0 && <p>Todavía no hay cuotas de meses anteriores.</p>}
         {data.history.map(period => <details className="membership-card" key={period.month}>
           <summary>{monthFormat.format(new Date(period.month))}</summary>
-          <PeriodDetails period={period}/>
+          <PeriodDetails period={period} files={files?.[period.month]}/>
         </details>)}
       </section>
     </>}

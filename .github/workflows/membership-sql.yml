@@ -35,3 +35,4 @@ jobs:
         run: |
           docker cp supabase "$CONTAINER_ID:/tmp/supabase"
           docker exec "$CONTAINER_ID" psql -U postgres -v ON_ERROR_STOP=1 -f /tmp/supabase/tests/membership.sql
+          docker exec "$CONTAINER_ID" psql -U postgres -v ON_ERROR_STOP=1 -f /tmp/supabase/tests/payment-receipts.sql
