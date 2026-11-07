@@ -1,5 +1,5 @@
 begin;
-select plan(83);
+select plan(84);
 
 -- Pure date helper coverage.
 select is(cueva_private.monthly_due_date(1::smallint,date '2026-01-01'),date '2026-01-01','day 1');
@@ -187,10 +187,15 @@ select is((select count(*)::integer from public.cueva_due_schedules where studen
 select is((select count(*)::integer from public.cueva_due_date_audit where student_id='a3000000-0000-4000-8000-000000000001'),
  4,'only successfully applied due day changes are audited');
 
+select is(public.cueva_billing_write('b1080000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','19','expected_old_due_day','31',
+ 'effective_month',to_char(date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date,'YYYY-MM'),
+ 'scope','current_period','reason','Missing explicit confirmation')),null::uuid,
+ 'current-period change without explicit confirmation is rejected and audited');
 select is(public.cueva_billing_write('b1000000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','19','expected_old_due_day','31',
  'effective_month',to_char(date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date,'YYYY-MM'),
- 'scope','current_period','reason','Explicit current period change')),
+ 'scope','current_period','confirm_current_period',true,'reason','Explicit current period change')),
  'b1000000-0000-4000-8000-000000000001'::uuid,'explicit current-period change is accepted');
 select is((select due_day from public.cueva_due_schedules
  where student_id='a3000000-0000-4000-8000-000000000001'
@@ -231,7 +236,7 @@ select is((select due_day from public.cueva_due_schedules where student_id='a300
  21::smallint,'stale preview does not overwrite the newer due-day rule');
 
 select is((select count(*)::integer from public.cueva_due_date_attempts where student_id='a3000000-0000-4000-8000-000000000001'),
- 8,'all eight rejected due-day attempts are retained separately');
+ 9,'all nine rejected due-day attempts are retained separately');
 select is((select actor_email from public.cueva_due_date_audit where id='ad100000-0000-4000-8000-000000000001'),
  'due-date-admin@example.test','audit identifies the administrator by account email');
 select is((select actor_email from public.cueva_due_date_attempts where operation_id='b1020000-0000-4000-8000-000000000001'),
