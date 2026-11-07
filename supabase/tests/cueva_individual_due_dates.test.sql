@@ -39,10 +39,10 @@ set local role authenticated;
 
 select ok(not has_function_privilege('authenticated','cueva_private.billing_write(uuid,jsonb)','EXECUTE'),
  'authenticated cannot execute the private financial writer directly');
-select throws_ok($select cueva_private.billing_write('a3f00000-0000-4000-8000-000000000001',
+select throws_ok($q$select cueva_private.billing_write('a3f00000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','20',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
- 'scope','next_period'))$,
+ 'scope','next_period'))$q$,
  '42501',null,'authenticated must use the guarded billing wrapper instead of the private writer');
 
 select is((select count(*)::integer from public.cueva_due_schedules where student_id='a3000000-0000-4000-8000-000000000001'),1,'new student receives one initial due schedule');
