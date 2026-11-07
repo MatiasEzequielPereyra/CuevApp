@@ -1,5 +1,5 @@
 begin;
-select plan(70);
+select plan(72);
 
 -- Pure date helper coverage.
 select is(cueva_private.monthly_due_date(1::smallint,date '2026-01-01'),date '2026-01-01','day 1');
@@ -36,6 +36,14 @@ values ('a3000000-0000-4000-8000-000000000001','Test','Student','due-date-studen
 select set_config('request.jwt.claim.sub','a1000000-0000-4000-8000-000000000001',true);
 select set_config('request.jwt.claims',jsonb_build_object('sub','a1000000-0000-4000-8000-000000000001','role','authenticated','session_id','a2000000-0000-4000-8000-000000000001')::text,true);
 set local role authenticated;
+
+select ok(not has_function_privilege('authenticated','cueva_private.billing_write(uuid,jsonb)','EXECUTE'),
+ 'authenticated cannot execute the private financial writer directly');
+select throws_ok($select cueva_private.billing_write('a3f00000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','20',
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','next_period'))$,
+ '42501',null,'authenticated must use the guarded billing wrapper instead of the private writer');
 
 select is((select count(*)::integer from public.cueva_due_schedules where student_id='a3000000-0000-4000-8000-000000000001'),1,'new student receives one initial due schedule');
 select is(public.cueva_billing_write('a4000000-0000-4000-8000-000000000001',
