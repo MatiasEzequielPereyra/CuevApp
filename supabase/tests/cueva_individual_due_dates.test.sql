@@ -1,5 +1,5 @@
 begin;
-select plan(94);
+select plan(96);
 
 -- Pure date helper coverage.
 select is(cueva_private.monthly_due_date(1::smallint,date '2026-01-01'),date '2026-01-01','day 1');
@@ -182,6 +182,19 @@ select is(public.cueva_delete_empty_student('af400000-0000-4000-8000-00000000000
  'empty student without audit history remains deletable');
 select is((select count(*)::integer from public.cueva_due_schedules where student_id='af400000-0000-4000-8000-000000000001'),
  0,'deleting an empty student cascades only its due schedule');
+
+-- Rejected attempts are also retained as administrative history and protect the fiche.
+insert into public.cueva_students(id,first_name,last_name,email,joined_on)
+values ('af500000-0000-4000-8000-000000000001','Rejected','Attempt','rejected-attempt-student@example.test',current_date);
+select is(public.cueva_billing_write('af600000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','af500000-0000-4000-8000-000000000001','due_day','0',
+ 'expected_old_due_day',extract(day from current_date)::text,
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','next_period')),
+ null::uuid,'invalid due-day attempt is retained for the student');
+select is(public.cueva_delete_empty_student('af500000-0000-4000-8000-000000000001',
+ 'rejected-attempt-student@example.test',true),'protected',
+ 'student with rejected due-date attempt history cannot be deleted');
 
 
 select is((select count(*)::integer from public.cueva_due_date_audit where student_id='a3000000-0000-4000-8000-000000000001'),
