@@ -83,7 +83,7 @@ export function DueDateManager({
   try {
    const p={kind:"due_day",student_id:studentId,due_day:day,effective_month:effectiveMonth,scope,...(reason.trim()?{reason:reason.trim()}:{})};
    const payload=JSON.stringify(p);
-   operation.current=operationForSubmission(operation.current,payload,operationRejected,()=>crypto.randomUUID());
+   operation.current=operationForSubmission(operation.current??readPendingOperation(storageKey),payload,operationRejected,()=>crypto.randomUUID());
    persistPendingOperation(storageKey,operation.current);
    setOperationPending(true);setOperationRejected(false);
    const response=await fetch("/api/pagos",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({op:operation.current.op,p})});
