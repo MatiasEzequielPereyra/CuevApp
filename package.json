@@ -14,12 +14,13 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit",
     "test:docs": "node --test tests/documents.test.mjs",
-    "test": "npm run test:docs && npm run test:routines:model && playwright test",
+    "test": "npm run test:docs && npm run test:routines:model && node --test tests/due-date-preview.test.mjs tests/billing-api.test.mjs tests/payments-money.test.mjs tests/reconciliation-transport.test.mjs && playwright test",
     "test:routines:model": "node --experimental-strip-types --test experiments/cueva-006c-local/model.test.mjs",
     "test:e2e": "playwright test",
     "verify": "npm run lint && npm run typecheck && npm run build && npm test",
     "verify:sources": "node scripts/verify-sources.mjs",
-    "verify:security": "node scripts/security-review.mjs"
+    "verify:security": "node scripts/security-review.mjs",
+    "verify:source-manifest": "node scripts/verify-source-manifest-unchanged.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
@@ -39,5 +40,10 @@
     "eslint": "9.39.5",
     "eslint-config-next": "16.4.3",
     "typescript": "6.0.3"
+  },
+  "overrides": {
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "11.0.1"
+    }
   }
 }

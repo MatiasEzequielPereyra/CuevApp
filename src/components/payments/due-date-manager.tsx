@@ -1,0 +1,137 @@
+"use client";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { clearPendingOperation, operationForSubmission, persistPendingOperation, readPendingOperation } from "@/lib/payments/operation-key";
+
+type AuditEntry = {
+ id: string; actor: string; actor_email: string | null; old_due_day: number; new_due_day: number;
+ effective_month: string; scope: "current_period" | "next_period";
+ reason: string | null; result: string; recorded_at: string;
+};
+type AttemptEntry = {
+ id: string; operation_id: string; actor_email: string; requested_due_day: string | null;
+ effective_month: string | null; scope: string | null; requested_reason: string | null;
+ error_code: string; error_message: string; recorded_at: string;
+};
+export function monthAfter(month: string) {
+ const parts = month.split("-");
+ const year = Number(parts[0]);
+ const value = Number(parts[1]);
+ const date = new Date(Date.UTC(year, value, 1));
+ return `${date.getUTCFullYear()}-${String(date.getUTCMonth()+1).padStart(2,"0")}`;
+}
+export function dueDate(day: number, month: string) {
+ const parts = month.split("-");
+ const year = Number(parts[0]);
+ const value = Number(parts[1]);
+ const last = new Date(Date.UTC(year, value, 0)).getUTCDate();
+ return `${year}-${String(value).padStart(2,"0")}-${String(Math.min(day,last)).padStart(2,"0")}`;
+}
+export function dateLabel(value: string) {
+ const parts = value.split("-");
+ const year = Number(parts[0]);
+ const month = Number(parts[1]);
+ const day = Number(parts[2]);
+ return new Intl.DateTimeFormat("es-AR",{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(Date.UTC(year,month-1,day)));
+}
+export function DueDateManager({
+ studentId, actorId, currentMonth, currentDay, nextDay, currentDueOn, nextDueOn, history, attempts,
+}: {
+ studentId:string; actorId:string; currentMonth:string; currentDay:number; nextDay:number;
+ currentDueOn:string|null; nextDueOn:string|null; history:AuditEntry[]; attempts:AttemptEntry[];
+}) {
+ const router=useRouter();
+ const [scope,setScope]=useState<"next_period"|"current_period">("next_period");
+ const [day,setDay]=useState(String(nextDay));
+ const [reason,setReason]=useState("");
+ const [confirmed,setConfirmed]=useState(false);
+ const [pending,setPending]=useState(false);
+ const [message,setMessage]=useState("");
+ const [operationRejected,setOperationRejected]=useState(false);
+ const [operationPending,setOperationPending]=useState(false);
+ const busy=useRef(false);
+ const operation=useRef<{op:string;payload:string}|null>(null);
+ const storageKey=`cueva:due-date-operation:${actorId}:${studentId}`;
+ useEffect(()=>{
+  const saved=readPendingOperation(storageKey);
+  if(!saved||busy.current)return;
+  operation.current=saved;setOperationPending(true);setPending(true);busy.current=true;
+  void (async()=>{
+   try {
+    const payload=JSON.parse(saved.payload) as Record<string,unknown>;
+    const response=await fetch("/api/pagos",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({op:saved.op,p:payload})});
+    const result=await response.json();
+    setMessage(result.message??"No se pudo confirmar la operación pendiente.");
+    if(response.ok){clearPendingOperation(storageKey);operation.current=null;setOperationPending(false);setOperationRejected(false);router.refresh();}
+    else if(result.operation_not_applied===true){clearPendingOperation(storageKey);operation.current=null;setOperationRejected(true);if(typeof result.message==="string"&&result.message.includes("vencimiento cambió"))router.refresh();}
+   } catch {setMessage("No pudimos confirmar el resultado anterior. Conservamos la operación para reintentar sin duplicarla.");}
+   finally {busy.current=false;setPending(false);}
+  })();
+ },[router,storageKey]);
+ const effectiveMonth=scope==="current_period"?currentMonth:monthAfter(currentMonth);
+ const oldDay=scope==="current_period"?currentDay:nextDay;
+ const existingDue=scope==="current_period"?currentDueOn:nextDueOn;
+ const oldDate=existingDue??dueDate(oldDay,effectiveMonth);
+ const newDate=dueDate(Number(day),effectiveMonth);
+ const validDay=/^(?:[1-9]|[12][0-9]|3[01])$/.test(day);
+ const validReason=!reason.trim()||(reason.trim().length>=3&&reason.trim().length<=300);
+ const canSave=validDay&&validReason&&!pending&&(scope!=="current_period"||confirmed);
+ async function submit(event:FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+  if(busy.current||!canSave)return;
+  busy.current=true;setPending(true);setMessage("");
+  try {
+   const p={kind:"due_day",student_id:studentId,due_day:day,expected_old_due_day:String(oldDay),effective_month:effectiveMonth,scope,...(scope==="current_period"?{confirm_current_period:confirmed}:{}),...(reason.trim()?{reason:reason.trim()}:{})};
+   const payload=JSON.stringify(p);
+   operation.current=operationForSubmission(operation.current??readPendingOperation(storageKey),payload,operationRejected,()=>crypto.randomUUID());
+   persistPendingOperation(storageKey,operation.current);
+   setOperationPending(true);setOperationRejected(false);
+   const response=await fetch("/api/pagos",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({op:operation.current.op,p})});
+   const result=await response.json();
+   setMessage(result.message??"No se pudo guardar.");
+   if(response.ok){clearPendingOperation(storageKey);operation.current=null;setOperationPending(false);setOperationRejected(false);setReason("");setConfirmed(false);router.refresh();}
+   else if(result.operation_not_applied===true){clearPendingOperation(storageKey);operation.current=null;setOperationRejected(true);}
+  } catch(error) {setOperationRejected(false);setMessage(error instanceof Error?error.message:"No se pudo conectar. Conservamos los datos.");}
+  finally {busy.current=false;setPending(false);}
+ }
+ return <section className="due-date-manager" aria-labelledby="due-date-title">
+  <div><p className="dash-kicker">CALENDARIO INDIVIDUAL</p><h2 id="due-date-title">Vencimiento del alumno</h2>
+   <p>Día de referencia actual: <strong>{currentDay}</strong>. Si un mes no tiene ese día, se utiliza su último día y se recupera la referencia original al mes siguiente.</p>
+  </div>
+  <form className="due-date-form" onSubmit={submit}>
+   <fieldset><legend>¿Desde cuándo debe aplicarse?</legend>
+    <label className="due-date-choice"><input type="radio" name="scope" checked={scope==="next_period"} onChange={()=>{setScope("next_period");setConfirmed(false);setDay(String(nextDay));}}/> Próximo período · {monthAfter(currentMonth)} (predeterminado)</label>
+    <label className="due-date-choice"><input type="radio" name="scope" checked={scope==="current_period"} onChange={()=>{setScope("current_period");setConfirmed(false);setDay(String(currentDay));}}/> Período actual · {currentMonth}</label>
+   </fieldset>
+   <label>Nuevo día de vencimiento<input type="number" min="1" max="31" step="1" inputMode="numeric" value={day} onChange={event=>setDay(event.target.value)} required/></label>
+   <div className="due-date-preview" aria-live="polite">
+    <p>Vista previa · {effectiveMonth}</p>
+    <div><span>Fecha anterior</span><strong>{dateLabel(oldDate)}</strong></div>
+    <div><span>Fecha nueva</span><strong>{validDay?dateLabel(newDate):"Ingresá un día entre 1 y 31"}</strong></div>
+    <p>Alcance: {scope==="current_period"?"período actual":"próximo período y períodos futuros impagos existentes"}</p>
+   </div>
+   <label>Motivo (opcional)<textarea value={reason} onChange={event=>setReason(event.target.value)} minLength={3} maxLength={300} rows={2} placeholder="Podés dejarlo vacío."/></label>
+   {scope==="current_period"&&<label className="due-date-confirm"><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/> Confirmo que quiero modificar el período actual.</label>}
+   {message&&<p role="status">{message}</p>}
+   <button type="submit" disabled={!canSave}>{pending?"Guardando…":"Guardar cambio de vencimiento"}</button>
+   {operationPending&&operationRejected&&<p role="status">El servidor confirmó que el intento no se aplicó. Podés corregir los datos y volver a guardar.</p>}
+  </form>
+  <div className="due-date-history"><h3>Historial de cambios</h3>
+   {!history.length?<p>Todavía no hay cambios administrativos de vencimiento.</p>:<ol>{history.map(item=><li key={item.id}>
+    <strong>{item.old_due_day} → {item.new_due_day} · desde {item.effective_month.slice(0,7)}</strong>
+    <p>{item.scope==="current_period"?"Período actual":"Próximo período"} · {item.result==="applied"?"Aplicado":"Resultado no disponible"}</p>
+    {item.reason&&<p>Motivo: {item.reason}</p>}
+    <p>Administrador: {item.actor_email??"Identidad no disponible"} · {new Date(item.recorded_at).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires"})}</p>
+   </li>)}</ol>}
+  </div>
+  <div className="due-date-history"><h3>Intentos rechazados</h3>
+   {!attempts.length?<p>No hay intentos rechazados registrados.</p>:<ol>{attempts.map(item=><li key={item.id}>
+    <strong>Intento de cambio · {item.requested_due_day??"Día inválido"} · {item.effective_month??"Mes inválido"}</strong>
+    <p>{item.scope==="current_period"?"Período actual":item.scope==="next_period"?"Próximo período":"Alcance inválido"} · Rechazado</p>
+    <p>{item.error_message} ({item.error_code})</p>
+    {item.requested_reason&&<p>Motivo enviado: {item.requested_reason}</p>}
+    <p>Administrador: {item.actor_email} · {new Date(item.recorded_at).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires"})}</p>
+   </li>)}</ol>}
+  </div>
+ </section>;
+}

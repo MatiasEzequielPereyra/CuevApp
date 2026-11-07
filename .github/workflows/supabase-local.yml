@@ -1,0 +1,95 @@
+name: Supabase local migrations
+
+on:
+  push:
+    paths:
+      - "supabase/**"
+      - ".github/workflows/supabase-local.yml"
+      - "tests/billing-concurrency.test.mjs"
+      - "tests/e2e/**"
+      - "src/app/api/pagos/**"
+      - "src/components/payments/**"
+      - "package.json"
+      - "package-lock.json"
+  pull_request:
+    paths:
+      - "supabase/**"
+      - ".github/workflows/supabase-local.yml"
+      - "tests/billing-concurrency.test.mjs"
+      - "tests/e2e/**"
+      - "src/app/api/pagos/**"
+      - "src/components/payments/**"
+      - "package.json"
+      - "package-lock.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migrations:
+    name: Apply migrations and SQL tests to an isolated Supabase stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Supabase CLI v2
+        uses: supabase/setup-cli@v3
+        with:
+          version: v2.stable
+
+      - name: Report Supabase CLI version
+        run: supabase --version
+
+      - name: Start isolated Supabase and apply migrations
+        run: supabase start
+
+      - name: Verify applied migration history
+        run: supabase migration list --local
+
+      - name: Run database tests
+        run: supabase test db
+
+      - name: Verify concurrent billing writes
+        run: node tests/billing-concurrency.test.mjs
+
+      - name: Install Chromium for authenticated integration test
+        run: npx playwright install --with-deps chromium
+
+      - name: Run authenticated UI-to-Supabase integration
+        run: |
+          eval "$(supabase status -o env)"
+          # Supabase CLI v2 output names vary across releases. Normalize both
+          # legacy and current names before starting the authenticated test.
+          export API_URL="${API_URL:-${SUPABASE_URL:-http://127.0.0.1:54321}}"
+          export ANON_KEY="${ANON_KEY:-${SUPABASE_ANON_KEY:-${PUBLISHABLE_KEY:-${SUPABASE_PUBLISHABLE_KEY:-}}}}"
+          export CUEVA_SERVICE_KEY="${SERVICE_ROLE_KEY-${SUPABASE_SERVICE_ROLE_KEY-${SECRET_KEY-${SUPABASE_SECRET_KEY-}}}}"
+          export DB_URL="${DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
+          : "${DB_URL:?Supabase local database URL is unavailable}"
+          : "${ANON_KEY:?Supabase CLI did not provide an anonymous/publishable key}"
+          : "${CUEVA_SERVICE_KEY:?Supabase CLI did not provide a service/secret key}"
+          export CUEVA_PRODUCT_AUTH_LOCAL=1
+          export CUEVA_SUPABASE_URL="$API_URL"
+          export CUEVA_PUBLISHABLE_KEY="$ANON_KEY"
+          export CUEVA_PRODUCT_ORIGIN="http://127.0.0.1:3000"
+          export CUEVA_AUTH_URL="$API_URL/auth/v1"
+          export CUEVA_REST_URL="$API_URL/rest/v1"
+          export NEXT_TELEMETRY_DISABLED=1
+          npm run dev -- --port 3000 > /tmp/cueva-next.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          node tests/e2e/supabase-due-date.integration.mjs || {
+            cat /tmp/cueva-next.log
+            exit 1
+          }
