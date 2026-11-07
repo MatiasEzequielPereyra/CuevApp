@@ -10,6 +10,7 @@ const sessionId = randomUUID();
 const studentId = randomUUID();
 const priceOperation = randomUUID();
 const periodOperations = [randomUUID(), randomUUID()];
+const dueDayOperations = [randomUUID(), randomUUID()];
 const clients = [new Client({ connectionString }), new Client({ connectionString })];
 
 let month;
@@ -84,7 +85,6 @@ try {
     { kind: "due_day", student_id: studentId, due_day: "20", expected_old_due_day: "31", effective_month: nextMonth, scope: "next_period" },
     { kind: "due_day", student_id: studentId, due_day: "21", expected_old_due_day: "31", effective_month: nextMonth, scope: "next_period" },
   ];
-  const dueDayOperations = [randomUUID(), randomUUID()];
   const dueDayResults = await Promise.all(clients.map((client, index) =>
     client.query(
       "select public.cueva_billing_write($1::uuid,$2::jsonb) as operation_id",
@@ -113,7 +113,7 @@ try {
   );
   assert.equal(dueAudit[0].total, 1, "only the winning due-day change is audited as applied");
   assert.equal(dueAttempts[0].total, 1, "the stale competing change is retained as a rejected attempt");
-  process.stdout.write("PASS: concurrent period creation is unique and concurrent due-day changes reject stale previews.\\n");
+  process.stdout.write("PASS: concurrent period creation is unique and concurrent due-day changes reject stale previews.\n");
 } finally {
   await Promise.all(clients.map(client => client.end().catch(() => undefined)));
   if (adminConnected) {
