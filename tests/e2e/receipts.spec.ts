@@ -46,7 +46,7 @@ async function mount(page: Page, kind: "upload" | "review") {
   })();` });
 }
 
-test("el alumno reintenta una presentaci�n con la misma operaci�n y sin volver a subir los bytes", async ({ page }) => {
+test("el alumno reintenta una presentación con la misma operación y sin volver a subir los bytes", async ({ page }) => {
   let uploaded = false, transfers = 0, submitted = 0;
   const operations: string[] = [];
   await page.route(`${fixtureOrigin}/__receipts-upload`, async route => {
@@ -64,14 +64,14 @@ test("el alumno reintenta una presentaci�n con la misma operaci�n y sin volv
     }
     submitted++;
     await route.fulfill(submitted === 1
-      ? { status: 503, json: { message: "No pudimos confirmar la presentaci�n." } }
+      ? { status: 503, json: { message: "No pudimos confirmar la presentación." } }
       : { json: { submitted: true } });
   });
   await mount(page, "upload");
   await page.getByLabel("Archivo del comprobante").setInputFiles({ name: "fixture.png", mimeType: "image/png", buffer: Buffer.from("fixture") });
   const button = page.getByRole("button", { name: "Presentar comprobante", exact: true });
   await button.click();
-  await expect(page.getByRole("status")).toHaveText("No pudimos confirmar la presentaci�n.");
+  await expect(page.getByRole("status")).toHaveText("No pudimos confirmar la presentación.");
   await button.click();
   await expect(page.getByRole("status")).toContainText("Comprobante presentado");
   expect(transfers).toBe(1);
@@ -80,7 +80,7 @@ test("el alumno reintenta una presentaci�n con la misma operaci�n y sin volv
   await expect(page.locator("body")).toHaveAttribute("data-refreshed", "true");
 });
 
-test("la bandeja env�a importe, fecha real y medio, y muestra un cierre sin efecto", async ({ page }) => {
+test("la bandeja envía importe, fecha real y medio, y muestra un cierre sin efecto", async ({ page }) => {
   const requests: unknown[] = [];
   await page.route("**/api/comprobantes/revisar", async route => {
     requests.push(route.request().postDataJSON());
@@ -90,23 +90,23 @@ test("la bandeja env�a importe, fecha real y medio, y muestra un cierre sin ef
   await page.getByLabel("Importe en pesos").fill("1234,50");
   await page.getByLabel("Fecha real del pago").fill("2026-11-06");
   await page.getByLabel("Medio de pago").selectOption("otro");
-  await page.getByLabel("Descripci�n del medio").fill("Billetera");
+  await page.getByLabel("Descripción del medio").fill("Billetera");
   await page.getByRole("button", { name: "Confirmar y registrar pago" }).click();
-  await expect(page.getByRole("status")).toHaveText("Sin efecto: per�odo ya saldado");
+  await expect(page.getByRole("status")).toHaveText("Sin efecto: período ya saldado");
   expect(requests).toEqual([expect.objectContaining({
     id, action: "approve", amount: "1234,50", date: "2026-11-06", method: "otro", detail: "Billetera",
   })]);
   await expect(page.getByRole("button", { name: "Confirmar y registrar pago" })).toBeDisabled();
 });
 
-test("el rechazo exige motivo antes de enviar la revisi�n", async ({ page }) => {
+test("el rechazo exige motivo antes de enviar la revisión", async ({ page }) => {
   let reason: string | undefined;
   await page.route("**/api/comprobantes/revisar", async route => {
     reason = route.request().postDataJSON().reason;
     await route.fulfill({ json: { state: "rejected" } });
   });
   await mount(page, "review");
-  await page.getByLabel("Decisi�n").selectOption("reject");
+  await page.getByLabel("Decisión").selectOption("reject");
   const button = page.getByRole("button", { name: "Rechazar comprobante", exact: true });
   await button.click();
   await expect(page.getByLabel("Motivo visible para el alumno")).toBeFocused();

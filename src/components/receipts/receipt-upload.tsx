@@ -16,11 +16,11 @@ export function ReceiptUpload({ period }: { period: string }) {
     if (busy.current || done) return;
     const type = receiptType(file.name);
     if (!type || (file.type && file.type !== type)) {
-      setMessage("Eleg� un archivo JPG, PNG o PDF.");
+      setMessage("Elegí un archivo JPG, PNG o PDF.");
       return;
     }
     if (!file.size || file.size > maxReceiptBytes) {
-      setMessage("El archivo debe pesar hasta 10 MB y no estar vac�o.");
+      setMessage("El archivo debe pesar hasta 10 MB y no estar vacío.");
       return;
     }
 
@@ -51,17 +51,17 @@ export function ReceiptUpload({ period }: { period: string }) {
             body: file, signal: AbortSignal.timeout(180000),
           });
           // A concurrent retry may have created the immutable object already.
-          if (!sent.ok && sent.status !== 409 && sent.status !== 400) throw new Error("Fall� la carga. Pod�s reintentar.");
+          if (!sent.ok && sent.status !== 409 && sent.status !== 400) throw new Error("Falló la carga. Podés reintentar.");
         }
         setMessage("Verificando el archivo.");
         const submitted = await request("submit", prepared.uploadId);
-        if (!submitted.submitted) throw new Error("No pudimos confirmar la presentaci�n.");
+        if (!submitted.submitted) throw new Error("No pudimos confirmar la presentación.");
       }
       setDone(true);
       setMessage("Comprobante presentado. El gimnasio lo va a revisar.");
       router.refresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "No se confirm� la carga. Pod�s reintentar.");
+      setMessage(error instanceof Error ? error.message : "No se confirmó la carga. Podés reintentar.");
     } finally {
       busy.current = false;
       setPending(false);

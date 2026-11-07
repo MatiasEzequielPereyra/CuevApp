@@ -38,12 +38,12 @@ export async function removeExpiredReceiptUpload(
 }
 
 export function receiptError(error: { code: string }) {
-  if (error.code === "42501") return { status: 403, message: "Comprobante o per�odo no disponible para esta cuenta." };
+  if (error.code === "42501") return { status: 403, message: "Comprobante o período no disponible para esta cuenta." };
   if (error.code === "55P03") return { status: 409, message: "Ya hay una carga reservada para este período. Reintentá con el mismo archivo." };
-  if (error.code === "23505") return { status: 409, message: "Ya hay un comprobante pendiente o la operaci�n ya fue utilizada." };
-  if (error.code === "40001") return { status: 409, message: "El comprobante ya fue revisado. Actualiz� la bandeja." };
-  if (error.code === "P0001") return { status: 409, message: "La cuota est� saldada o el importe supera el saldo disponible." };
-  if (error.code.startsWith("22") || error.code === "23514") return { status: 400, message: "Revis� los datos del comprobante." };
-  return { status: 503, message: "No pudimos confirmar la operaci�n. Pod�s reintentar." };
+  if (error.code === "23505") return { status: 409, message: "Ya hay un comprobante pendiente o la operación ya fue utilizada." };
+  if (error.code === "40001") return { status: 409, message: "El comprobante ya fue revisado. Actualizá la bandeja." };
+  if (error.code === "P0001") return { status: 409, message: "La cuota está saldada o el importe supera el saldo disponible." };
+  if (error.code.startsWith("22") || error.code === "23514") return { status: 400, message: "Revisá los datos del comprobante." };
+  return { status: 503, message: "No pudimos confirmar la operación. Podés reintentar." };
 }
 

@@ -101,7 +101,7 @@ try {
     const logs=spawnSync('docker',['logs',names.auth],{encoding:'utf8'}); const output=String(logs.stdout)+String(logs.stderr);
     const categories=[['database',/database|postgres|migration/i],['configuration',/config|environment|invalid/i],['network',/connection|network|dial tcp/i]].filter(([,pattern])=>pattern.test(output)).map(([label])=>label);
     const indicators=[['missing_database_url',/DATABASE_URL.*(missing|required)|missing.*DATABASE_URL/i],['missing_jwt',/JWT.*(missing|required)|missing.*JWT/i],['schema',/schema.*(does not exist|missing)/i],['database_connection',/failed to connect|connection refused/i],['jwt_configuration',/JWT.*(invalid|error)/i],['migrations',/migrat/i],['namespace',/namespace/i],['mail_failure',/smtp.*(error|fail|refused)|error.*smtp/i],['email_invalid',/email.*(invalid|not allowed)/i]].filter(([,pattern])=>pattern.test(output)).map(([label])=>label);
-    note('auth_startup_diagnostic','OBSERVED',`categor�as=${categories.join(',')||'unknown'}; indicadores=${indicators.join(',')||'unknown'}; logs descartados`);
+    note('auth_startup_diagnostic','OBSERVED',`categorías=${categories.join(',')||'unknown'}; indicadores=${indicators.join(',')||'unknown'}; logs descartados`);
   }
   note('execution','BLOCKED',`Etapa ${stage}; causa=${stage==='database_setup' ? error.message : (/^(PORT_NOT_LOOPBACK|READINESS_TIMEOUT|INVITE_FAILED|INVITE_LINK_MISSING|INVITE_TOKEN_MISSING|VERIFY_FAILED|SESSION_MISSING|DIRECT_[A-Z_]+|BAD_FIXTURE_ID)$/.test(error.message)?error.message:'OTHER')}; detalles sensibles omitidos.`);
 }

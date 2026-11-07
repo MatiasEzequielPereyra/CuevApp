@@ -33,7 +33,7 @@ export async function runBrowserFlow({ base, rest, storageBase, admin, anon, pas
       const student = randomUUID();
       user.periods = [randomUUID(), randomUUID(), randomUUID()];
       sql(`insert into public.cueva_students(id,first_name,last_name,email,joined_on,active)
-          values ('${student}','Persona','Sint�tica','${user.email}','2000-01-01',true);
+          values ('${student}','Persona','Sintética','${user.email}','2000-01-01',true);
         insert into public.cueva_student_invitations(student_id,email,user_id,state,lease,requested_by)
           values ('${student}','${user.email}','${user.id}','sent','${randomUUID()}','${actor}');`);
       for (const [offset, period] of user.periods.entries()) {
@@ -73,8 +73,8 @@ export async function runBrowserFlow({ base, rest, storageBase, admin, anon, pas
       const context = await browser.newContext();
       const page = await context.newPage();
       await page.goto(`${app.origin}/ingresar`);
-      await page.getByLabel("Correo electr�nico").fill(user.email);
-      await page.getByLabel("Contrase�a", { exact: true }).fill(password);
+      await page.getByLabel("Correo electrónico").fill(user.email);
+      await page.getByLabel("Contraseña", { exact: true }).fill(password);
       await page.getByRole("button", { name: "Ingresar", exact: true }).click();
       await page.waitForURL("**/cuenta");
       contexts.push(context);

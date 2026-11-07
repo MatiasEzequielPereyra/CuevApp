@@ -219,9 +219,9 @@ end $$;
 select set_config('request.jwt.claims',pg_temp.claims('receipt-a'),true);
 do $$ begin
   assert public.cueva_membership_snapshot() #>> '{current,balance}' = '0', 'paid balance exact';
-end $;
+end $$;
 set local role service_role;
-do $ begin
+do $$ begin
   begin
     perform public.cueva_receipt_reserve(md5('receipt-a')::uuid,md5(md5('receipt-a')::uuid::text || '-session')::uuid,
       md5('receipt-period-a')::uuid,gen_random_uuid(),'image/png',16,repeat('a',64),null);
