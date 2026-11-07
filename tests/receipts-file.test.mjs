@@ -9,7 +9,7 @@ import ts from "typescript";
 const require = createRequire(import.meta.url);
 function load(path, mocks = {}) {
   const source = readFileSync(path, "utf8");
-  const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+  const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, esModuleInterop: true } }).outputText;
   const exported = {};
   new Function("require", "exports", compiled)(id => mocks[id] ?? require(id), exported);
   return exported;
@@ -56,24 +56,29 @@ function pdf() {
   return Buffer.from(body);
 }
 
-test("format validation accepts actual JPEG, PNG, PDF and rejects truncation and type mismatch", () => {
+test("format validation accepts actual JPEG, PNG, PDF and rejects truncation and type mismatch", async () => {
+  const jpeg = readFileSync("docs/brand/reference.jpeg");
   const samples = [
-    [readFileSync("docs/brand/reference.jpeg"), "image/jpeg"],
+    [jpeg, "image/jpeg"],
     [png(), "image/png"],
     [pdf(), "application/pdf"],
   ];
   for (const [bytes, type] of samples) {
-    assert.ok(validReceiptBytes(bytes, type), type);
-    assert.equal(validReceiptBytes(bytes.subarray(0, bytes.length - 12), type), false);
-    assert.equal(validReceiptBytes(bytes, type === "image/png" ? "image/jpeg" : "image/png"), false);
+    assert.ok(await validReceiptBytes(bytes, type), type);
+    assert.equal(await validReceiptBytes(bytes.subarray(0, bytes.length - 12), type), false);
+    assert.equal(await validReceiptBytes(bytes, type === "image/png" ? "image/jpeg" : "image/png"), false);
   }
+  const scan = jpeg.indexOf(Buffer.from([0xff, 0xda]));
+  assert.ok(scan > 0);
+  const corruptJpeg = Buffer.concat([jpeg.subarray(0, scan + 2 + jpeg.readUInt16BE(scan + 2)), Buffer.from([0xff, 0xd9])]);
+  assert.equal(await validReceiptBytes(corruptJpeg, "image/jpeg"), false, "valid markers but unreadable scan");
   const damaged = png();
   damaged[45] ^= 1;
-  assert.equal(validReceiptBytes(damaged, "image/png"), false);
-  assert.equal(validReceiptBytes(png([5, 128]), "image/png"), false, "invalid PNG scan filter");
-  assert.equal(validReceiptBytes(png([0]), "image/png"), false, "valid CRC with missing pixels");
-  assert.equal(validReceiptBytes(Buffer.from(pdf().toString().replace(/\d{10} 00000 n/, "0000000010 00000 n")), "application/pdf"), false);
-  assert.equal(validReceiptBytes(Buffer.alloc(10485761), "application/pdf"), false);
+  assert.equal(await validReceiptBytes(damaged, "image/png"), false);
+  assert.equal(await validReceiptBytes(png([5, 128]), "image/png"), false, "invalid PNG scan filter");
+  assert.equal(await validReceiptBytes(png([0]), "image/png"), false, "valid CRC with missing pixels");
+  assert.equal(await validReceiptBytes(Buffer.from(pdf().toString().replace(/\d{10} 00000 n/, "0000000010 00000 n")), "application/pdf"), false);
+  assert.equal(await validReceiptBytes(Buffer.alloc(10485761), "application/pdf"), false);
 });
 
 const actor = "11111111-1111-4111-8111-111111111111";

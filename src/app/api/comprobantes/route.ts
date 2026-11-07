@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     if (downloadError || !file) return failure("No pudimos confirmar la carga del archivo. Reintentá.", 503);
     if (file.size !== p.size || file.type.split(";")[0] !== type) return failure("El archivo recibido no coincide con el seleccionado.", 422);
     const bytes = Buffer.from(await file.arrayBuffer());
-    if (createHash("sha256").update(bytes).digest("hex") !== p.hash || !validReceiptBytes(bytes, type)) {
+    if (createHash("sha256").update(bytes).digest("hex") !== p.hash || !(await validReceiptBytes(bytes, type))) {
       return failure("El archivo está corrupto o su formato no coincide. Seleccioná otro.", 422);
     }
 

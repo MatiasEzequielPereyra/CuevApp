@@ -25,10 +25,11 @@ laboratorio SQL del #36 no se repitió localmente.
   va directamente a un bucket privado de 10 MB para respetar el límite de cuerpo
   de las funciones. La ruta de finalización descarga ese mismo objeto, verifica
   tamaño, MIME, extensión declarada, hash e integridad estructural.
-- La comprobación de formato cubre segmentos y fin de JPEG, CRC y flujo zlib
-  acotado de PNG, y encabezado, referencias y cierre de PDF. Tiene un límite de
-  64 MiB de datos PNG decodificados. No renderiza todos los codecs ni ejecuta el
-  contenido de los PDF.
+- La comprobación de formato decodifica los JPEG con Sharp 0.35.5, la versión
+  ya presente en el lockfile, declarada como dependencia directa. Verifica CRC y
+  flujo zlib de PNG, y encabezado, referencias y cierre de PDF. Aplica límites
+  de 50 megapíxeles en JPEG y 64 MiB de datos PNG decodificados. PDF se comprueba
+  a nivel estructural.
 - La capacidad de finalizar está restringida a la credencial de servidor. La
   sesión verificada, ficha, período y saldo se comprueban otra vez al escribir.
   El índice parcial y el lock del ledger impiden dos pendientes concurrentes.
@@ -55,7 +56,7 @@ y [límites de funciones](https://vercel.com/docs/functions/limitations).
 
 - Ejecutadas localmente con Node 22.14.0 y npm 10.9.2. Lint, TypeScript directo,
   fuentes 4/4, documentos 2/2, archivos y rutas 4/4, y navegador de Mi Membresía
-  a 360 px. Las pruebas HTTP usan servicios sintéticos.
+  a 360 px y formularios 3/3. Las pruebas HTTP usan servicios sintéticos.
 - [Pruebas de archivo y rutas](../../tests/receipts-file.test.mjs),
   [formularios en navegador](../../tests/e2e/receipts.spec.ts) y
   [prueba SQL](../../supabase/tests/payment-receipts.sql).

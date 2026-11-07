@@ -1,4 +1,5 @@
 import { crc32, inflateSync } from "node:zlib";
+import sharp from "sharp";
 
 function validPng(bytes: Buffer) {
   if (!bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) return false;
@@ -57,35 +58,13 @@ function validPng(bytes: Buffer) {
   return true;
 }
 
-function validJpeg(bytes: Buffer) {
-  if (bytes.length < 12 || bytes.readUInt16BE(0) !== 0xffd8) return false;
-  let offset = 2, frame = false, scan = false, scanning = false;
-  while (offset < bytes.length) {
-    if (scanning) {
-      offset = bytes.indexOf(0xff, offset);
-      if (offset === -1) return false;
-    }
-    if (bytes[offset++] !== 0xff) return false;
-    while (bytes[offset] === 0xff) offset++;
-    const marker = bytes[offset++];
-    if (scanning && (marker === 0 || (marker !== undefined && marker >= 0xd0 && marker <= 0xd7))) continue;
-    scanning = false;
-    if (marker === 0xd9) return frame && scan && offset === bytes.length;
-    if (marker === undefined || marker < 0xc0 || marker === 0xd8 || (marker >= 0xd0 && marker <= 0xd7) || offset + 2 > bytes.length) return false;
-    const length = bytes.readUInt16BE(offset);
-    if (length < 2 || offset + length > bytes.length) return false;
-    if (marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
-      if (length < 8 || !bytes.readUInt16BE(offset + 3) || !bytes.readUInt16BE(offset + 5)) return false;
-      frame = true;
-    }
-    if (marker === 0xda) {
-      if (!frame || length < 6) return false;
-      scan = true;
-      scanning = true;
-    }
-    offset += length;
-  }
-  return false;
+async function validJpeg(bytes: Buffer) {
+  if (bytes.length < 12 || bytes.readUInt16BE(0) !== 0xffd8 || bytes.readUInt16BE(bytes.length - 2) !== 0xffd9) return false;
+  const image = sharp(bytes, { failOn: "warning", limitInputPixels: 50_000_000 });
+  if ((await image.metadata()).format !== "jpeg") return false;
+  // Pixel statistics force a decode. Header metadata alone misses corrupt scans.
+  await image.stats();
+  return true;
 }
 
 function validPdf(bytes: Buffer) {
@@ -133,11 +112,11 @@ function validPdf(bytes: Buffer) {
     && /^endstream\s+endobj\s*$/.test(xref.slice(end));
 }
 
-export function validReceiptBytes(bytes: Buffer, mediaType: string): boolean {
+export async function validReceiptBytes(bytes: Buffer, mediaType: string): Promise<boolean> {
   if (!bytes.length || bytes.length > 10 * 1024 * 1024) return false;
   try {
     if (mediaType === "image/png") return validPng(bytes);
-    if (mediaType === "image/jpeg") return validJpeg(bytes);
+    if (mediaType === "image/jpeg") return await validJpeg(bytes);
     if (mediaType === "application/pdf") return validPdf(bytes);
     return false;
   } catch {
