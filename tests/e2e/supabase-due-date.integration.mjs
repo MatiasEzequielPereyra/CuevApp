@@ -124,6 +124,7 @@ try {
   await page.getByLabel("Nuevo día de vencimiento").fill("22");
   await page.getByRole("button", { name: "Guardar cambio de vencimiento" }).click();
   await page.getByText("Operación registrada.", { exact: true }).waitFor({ state: "visible", timeout: 30000 });
+  await page.getByText(/Día de referencia actual: 22/).waitFor({ state: "visible", timeout: 30000 });
 
   const currentMonth = await database.query(
     "select date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date as month",
