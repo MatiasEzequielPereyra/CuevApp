@@ -1,5 +1,5 @@
 begin;
-select plan(81);
+select plan(83);
 
 -- Pure date helper coverage.
 select is(cueva_private.monthly_due_date(1::smallint,date '2026-01-01'),date '2026-01-01','day 1');
@@ -202,6 +202,14 @@ select is(public.cueva_billing_write('b1010000-0000-4000-8000-000000000001',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
  'scope','current_period','reason','Mismatched scope')),null::uuid,
  'current-period scope cannot target the next month and is audited');
+select is(public.cueva_billing_write('b1060000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','20','expected_old_due_day','21',
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope',null)),null::uuid,'missing scope is rejected and audited');
+select is(public.cueva_billing_write('b1070000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','20','expected_old_due_day','21',
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','future_period')),null::uuid,'unknown scope is rejected and audited');
 select is(public.cueva_billing_write('b1020000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','0','expected_old_due_day','21',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
@@ -223,7 +231,7 @@ select is((select due_day from public.cueva_due_schedules where student_id='a300
  21::smallint,'stale preview does not overwrite the newer due-day rule');
 
 select is((select count(*)::integer from public.cueva_due_date_attempts where student_id='a3000000-0000-4000-8000-000000000001'),
- 6,'all six rejected due-day attempts are retained separately');
+ 8,'all eight rejected due-day attempts are retained separately');
 select is((select actor_email from public.cueva_due_date_audit where id='ad100000-0000-4000-8000-000000000001'),
  'due-date-admin@example.test','audit identifies the administrator by account email');
 select is((select actor_email from public.cueva_due_date_attempts where operation_id='b1020000-0000-4000-8000-000000000001'),
