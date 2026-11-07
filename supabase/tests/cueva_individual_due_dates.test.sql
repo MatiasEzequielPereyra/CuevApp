@@ -286,7 +286,8 @@ create function cueva_private.test_fail_due_audit_insert()
 returns trigger language plpgsql set search_path='' as $
 begin
  raise exception 'forced audit insert failure' using errcode='P0001';
-end $;
+end;
+$;
 create trigger zz_test_fail_due_audit_insert
  before insert on public.cueva_due_date_audit
  for each row execute function cueva_private.test_fail_due_audit_insert();
