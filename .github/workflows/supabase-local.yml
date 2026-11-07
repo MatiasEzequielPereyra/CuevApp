@@ -57,3 +57,25 @@ jobs:
 
       - name: Verify concurrent billing writes
         run: node tests/billing-concurrency.test.mjs
+
+      - name: Install Chromium for authenticated integration test
+        run: npx playwright install --with-deps chromium
+
+      - name: Run authenticated UI-to-Supabase integration
+        run: |
+          eval "$(supabase status -o env)"
+          export CUEVA_PRODUCT_AUTH_LOCAL=1
+          export CUEVA_SUPABASE_URL="$API_URL"
+          export CUEVA_PUBLISHABLE_KEY="$ANON_KEY"
+          export CUEVA_SERVICE_KEY="$SERVICE_ROLE_KEY"
+          export CUEVA_PRODUCT_ORIGIN="http://127.0.0.1:3000"
+          export CUEVA_AUTH_URL="$API_URL/auth/v1"
+          export CUEVA_REST_URL="$API_URL/rest/v1"
+          export NEXT_TELEMETRY_DISABLED=1
+          npm run dev -- --port 3000 > /tmp/cueva-next.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          node tests/e2e/supabase-due-date.integration.mjs || {
+            cat /tmp/cueva-next.log
+            exit 1
+          }
