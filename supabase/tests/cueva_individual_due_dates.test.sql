@@ -1,5 +1,5 @@
 begin;
-select plan(84);
+select plan(93);
 
 -- Pure date helper coverage.
 select is(cueva_private.monthly_due_date(1::smallint,date '2026-01-01'),date '2026-01-01','day 1');
@@ -278,6 +278,60 @@ select throws_ok($$delete from public.cueva_due_date_audit where id='a6000000-00
 select throws_ok($$insert into public.cueva_due_date_attempts(operation_id,student_id,actor,actor_email,requested_due_day,effective_month,scope,error_code,error_message)
  values('b2020000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001','spoof@example.test','20','2026-12','next_period','22023','spoof')$$,
  '42501',null,'admin cannot insert rejected-attempt audit rows directly');
+
+
+-- A failure while appending the audit must roll back the schedule and all period updates.
+reset role;
+create function cueva_private.test_fail_due_audit_insert()
+returns trigger language plpgsql set search_path='' as $
+begin
+ raise exception 'forced audit insert failure' using errcode='P0001';
+end $;
+create trigger zz_test_fail_due_audit_insert
+ before insert on public.cueva_due_date_audit
+ for each row execute function cueva_private.test_fail_due_audit_insert();
+set local role authenticated;
+select is(public.cueva_billing_write('b3000000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','22','expected_old_due_day','21',
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','next_period','reason','Rollback when audit insert fails')),null::uuid,
+ 'audit insertion failure is returned as a rejected operation');
+reset role;
+drop trigger zz_test_fail_due_audit_insert on public.cueva_due_date_audit;
+drop function cueva_private.test_fail_due_audit_insert();
+set local role authenticated;
+select is((select due_day from public.cueva_due_schedules where student_id='a3000000-0000-4000-8000-000000000001'
+ and effective_month=(date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date
+ order by recorded_at desc,id desc limit 1),21::smallint,
+ 'audit failure rolls back the newly inserted due schedule');
+select is((select due_on from public.cueva_periods where id='b1040000-0000-4000-8000-000000000001'),
+ (date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '2 months')::date+20,
+ 'audit failure rolls back recalculated future period dates');
+select is((select count(*)::integer from public.cueva_due_date_audit where id='b3000000-0000-4000-8000-000000000001'),
+ 0,'audit failure leaves no successful audit record');
+select is((select count(*)::integer from public.cueva_due_date_attempts where operation_id='b3000000-0000-4000-8000-000000000001'),
+ 1,'audit failure is recorded as one rejected attempt');
+select is((select count(*)::integer from cueva_private.billing_operations where id='b3000000-0000-4000-8000-000000000001'),
+ 0,'audit failure does not persist a successful billing operation');
+
+select ok(not has_table_privilege('anon','public.cueva_due_schedules','SELECT')
+ and not has_table_privilege('anon','public.cueva_due_schedules','INSERT')
+ and not has_table_privilege('anon','public.cueva_due_schedules','UPDATE')
+ and not has_table_privilege('anon','public.cueva_due_schedules','DELETE'),
+ 'anon has no direct access to due schedules');
+select ok(not has_table_privilege('anon','public.cueva_due_date_audit','SELECT')
+ and not has_table_privilege('anon','public.cueva_due_date_audit','INSERT')
+ and not has_table_privilege('anon','public.cueva_due_date_audit','UPDATE')
+ and not has_table_privilege('anon','public.cueva_due_date_audit','DELETE'),
+ 'anon has no direct access to due date audit');
+select ok(not has_table_privilege('anon','public.cueva_due_date_attempts','SELECT')
+ and not has_table_privilege('anon','public.cueva_due_date_attempts','INSERT')
+ and not has_table_privilege('anon','public.cueva_due_date_attempts','UPDATE')
+ and not has_table_privilege('anon','public.cueva_due_date_attempts','DELETE'),
+ 'anon has no direct access to rejected attempts');
+select ok(not has_function_privilege('anon','public.cueva_billing_write(uuid,jsonb)','EXECUTE')
+ and not has_function_privilege('anon','cueva_private.billing_write_guarded(uuid,jsonb)','EXECUTE'),
+ 'anon cannot execute either billing writer');
 
 reset role;
 
