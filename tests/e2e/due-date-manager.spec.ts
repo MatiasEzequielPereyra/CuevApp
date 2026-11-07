@@ -10,8 +10,8 @@ test.beforeEach(async ({ page }) => {
 test("previews next period by default and requires explicit confirmation for current period", async ({ page }) => {
   await expect(page.getByText("Alcance: próximo período y períodos futuros impagos existentes")).toBeVisible();
   const submit = page.getByRole("button", { name: "Guardar cambio de vencimiento" });
-  await page.getByLabel("Nuevo día de vencimiento").fill("20");
   await page.getByLabel("Período actual · 2026-11").check();
+  await page.getByLabel("Nuevo día de vencimiento").fill("20");
   await expect(page.getByText("Alcance: período actual")).toBeVisible();
   await expect(submit).toBeDisabled();
   await page.getByLabel("Confirmo que quiero modificar el período actual.").check();
@@ -24,8 +24,8 @@ test("submits the selected scope and previewed due day to the API", async ({ pag
     submitted = route.request().postDataJSON();
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ message: "Operación registrada.", operation_not_applied: false }) });
   });
-  await page.getByLabel("Nuevo día de vencimiento").fill("20");
   await page.getByLabel("Período actual · 2026-11").check();
+  await page.getByLabel("Nuevo día de vencimiento").fill("20");
   await page.getByLabel("Confirmo que quiero modificar el período actual.").check();
   await page.getByRole("button", { name: "Guardar cambio de vencimiento" }).click();
   await expect(page.getByText("Operación registrada.")).toBeVisible();
