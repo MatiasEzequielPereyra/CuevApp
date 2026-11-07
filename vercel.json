@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/comprobantes/limpieza", "schedule": "25 6 * * *" }
+  ]
+}

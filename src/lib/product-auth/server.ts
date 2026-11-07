@@ -19,13 +19,14 @@ export function productConfig() {
       if (local ? (parsed.protocol !== "http:" || parsed.hostname !== "127.0.0.1" || !parsed.port) : parsed.protocol !== "https:") return null;
     }
     if (local && auth && rest) {
-      const api = new URL(url);
-      const authBase = new URL(auth);
-      const restBase = new URL(rest);
-      for (const [parsed, path] of [[authBase, "/auth/v1"], [restBase, "/rest/v1"]] as const) {
-        if (parsed.origin !== api.origin || parsed.pathname !== path || parsed.search || parsed.hash || parsed.username || parsed.password
-          || parsed.protocol !== "http:" || parsed.hostname !== "127.0.0.1" || !parsed.port) return null;
-      }
+      // The CLI uses one gateway. The isolated service lab uses bare loopback origins.
+      const gateway = auth === `${url}/auth/v1` && rest === `${url}/rest/v1`;
+      const split = [auth, rest].every(value => {
+        const endpoint = new URL(value);
+        return endpoint.origin === value && endpoint.protocol === "http:"
+          && endpoint.hostname === "127.0.0.1" && !!endpoint.port;
+      });
+      if (!gateway && !split) return null;
     }
   } catch { return null; }
   return { url, key, serviceKey, origin, auth, rest, local, ownerTest, expectedOwner, ownerOnly: ownerTest && !customMailReady };

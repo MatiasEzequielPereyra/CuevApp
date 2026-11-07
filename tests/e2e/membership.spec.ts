@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import ts from "typescript";
 import { pesos } from "@/lib/payments/money";
+import * as receiptContracts from "@/lib/receipts/contracts";
 
 const fixtures = {
   active: true,
@@ -39,16 +40,36 @@ const shell = loadExport("src/components/routines/student-shell.tsx", {
   "@/components/brand/brand-mark": { BrandMark: () => "CUEVA" },
   "@/components/theme/theme-picker": { ThemePicker: () => null },
 });
+const upload = loadExport("src/components/receipts/receipt-upload.tsx", {
+  "next/navigation": { useRouter: () => ({ refresh: () => undefined }) },
+  "@/lib/receipts/contracts": receiptContracts,
+});
+const receiptPeriods = {
+  "2026-11-01": {
+    id: "11111111-1111-4111-8111-111111111111",
+    receipts: [{ id: "22222222-2222-4222-8222-222222222222", state: "rejected",
+      submitted_at: "2026-11-06T15:00:00Z", resolved_at: "2026-11-07T15:00:00Z",
+      rejection_reason: "No se lee la fecha" }],
+  },
+  "2026-10-01": {
+    id: "33333333-3333-4333-8333-333333333333",
+    receipts: [{ id: "44444444-4444-4444-8444-444444444444", state: "approved",
+      submitted_at: "2026-10-09T15:00:00Z", resolved_at: "2026-10-10T15:00:00Z",
+      rejection_reason: null }],
+  },
+};
 const { default: membershipPage } = loadExport("src/app/mi-membresia/page.tsx", {
   "next/link": { default: link },
   "@/components/routines/student-shell": shell,
   "@/lib/payments/money": { pesos },
+  "@/components/receipts/receipt-upload": upload,
+  "@/lib/receipts/contracts": receiptContracts,
   "@/lib/product-auth/server": {
     productConfig: () => ({}),
     userClient: async () => ({
       auth: { getUser: async () => ({ data: { user: { id: "fixture" } } }) },
       from: () => ({ select: () => ({ maybeSingle: async () => ({ data: { role: "alumno" } }) }) }),
-      rpc: async () => ({ data: fixtures }),
+      rpc: async (name: string) => ({ data: name === "cueva_receipt_periods" ? receiptPeriods : fixtures }),
     }),
   },
 }) as { default: () => Promise<React.ReactElement> };
@@ -66,7 +87,13 @@ test("Mi Membresía muestra el pago, el vencimiento y el saldo en el celular", a
   await expect(page.locator('time[datetime="2026-11-05"]').first()).toBeVisible();
   await expect(page.locator('time[datetime="2026-11-09"]')).toBeVisible();
   await expect(page.getByText(pesos(fixtures.current.balance), { exact: true })).toBeVisible();
+  await expect(page.getByText("Motivo del rechazo: No se lee la fecha")).toBeVisible();
+  await expect(page.getByLabel("Archivo del comprobante")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Abrir comprobante", exact: true }).first())
+    .toHaveAttribute("href", "/api/comprobantes?id=22222222-2222-4222-8222-222222222222");
   await page.getByText("octubre de 2026", { exact: true }).click();
   await expect(page.locator('time[datetime="2026-10-08"]')).toBeVisible();
+  await expect(page.getByText("Confirmado", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Archivo del comprobante")).toHaveCount(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

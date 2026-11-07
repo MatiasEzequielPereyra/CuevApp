@@ -248,6 +248,10 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
 .membership-history summary { cursor: pointer; min-height: 44px; }
 .membership-payment-list { padding-inline-start: 22px; }
 .student-routine-nav { gap: clamp(12px, 5vw, 40px); }
+.receipt-form { min-width: 0; margin-top: 12px; }
+.receipt-form fieldset { display: grid; gap: 12px; min-width: 0; margin: 0; border: 0; padding: 0; }
+.receipt-form input, .receipt-form select, .receipt-form textarea { max-width: 100%; min-width: 0; }
+
 .due-date-manager { display:grid; gap:22px; margin-block:28px; padding:clamp(18px,3vw,26px); border:1px solid var(--dash-border); border-radius:13px; background:var(--dash-panel); color:var(--dash-text); }
 .due-date-manager h2 { margin-top:8px; font-size:21px; letter-spacing:-.025em; }
 .due-date-manager h3 { font-size:16px; }
@@ -272,4 +276,3 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
 .due-date-history li strong { font-size:13px; }
 .due-date-history li p { margin-top:6px; }
 @media(max-width:680px) { .due-date-manager { padding:16px; }.due-date-preview > div { flex-direction:column; gap:4px; }.due-date-preview > div strong { text-align:left; } }
-

@@ -14,21 +14,24 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit",
     "test:docs": "node --test tests/documents.test.mjs",
-    "test": "npm run test:docs && npm run test:routines:model && node --test tests/due-date-preview.test.mjs tests/billing-api.test.mjs tests/payments-money.test.mjs tests/reconciliation-transport.test.mjs && playwright test",
+    "test": "npm run test:docs && npm run test:routines:model && node --test tests/due-date-preview.test.mjs tests/billing-api.test.mjs tests/payments-money.test.mjs tests/reconciliation-transport.test.mjs && npm run test:receipts && playwright test",
     "test:routines:model": "node --experimental-strip-types --test experiments/cueva-006c-local/model.test.mjs",
     "test:e2e": "playwright test",
     "verify": "npm run lint && npm run typecheck && npm run build && npm test",
     "verify:sources": "node scripts/verify-sources.mjs",
     "verify:security": "node scripts/security-review.mjs",
-    "verify:source-manifest": "node scripts/verify-source-manifest-unchanged.mjs"
+    "verify:source-manifest": "node scripts/verify-source-manifest-unchanged.mjs",
+    "test:receipts": "node --expose-gc --test tests/receipts-file.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.118.0",
     "next": "16.4.3",
+    "pdf-lib": "1.17.1",
     "pg": "8.23.1",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "sharp": "0.35.5"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",

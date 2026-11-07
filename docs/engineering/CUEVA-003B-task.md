@@ -110,3 +110,24 @@ Los administradores podrán modificar vencimientos según la especificación vig
 La capa SQL de calendario individual y auditoría fue implementada y superó las 64 aserciones pgTAP, migraciones efímeras y verificación general/seguridad en CI (commit `b87c918`). La capa UI inicial se integra en la ficha económica administrativa `/pagos?alumno=<id>`: consulta calendario e historial bajo RLS, permite vista previa de fecha anterior/nueva, alcance próximo período (predeterminado) o período actual (confirmación explícita), motivo opcional e idempotencia de envío. Se conserva el marco visual administrativo existente.
 
 La UI y las migraciones superaron los workflows automatizados en el commit `1bb7882`. Luego se añadieron protecciones para recuperar claves exitosas incluso ante registros rechazados heredados, impedir que una confirmación basada en una vista previa obsoleta sobrescriba una regla más reciente, y refrescar la ficha tras ese rechazo. Las pruebas SQL cubren recuperación heredada, reutilización de claves y rechazo de vista previa obsoleta. Se incorporó además una prueba de integración Playwright autenticada que recorre la UI administrativa, la API Next y el Supabase efímero, verificando persistencia y auditoría; el workflow instala Chromium y ejecuta esta prueba. La ejecución de CI sobre el HEAD final continúa pendiente de confirmación. No se modificó Supabase alojado ni producción. No se creó scheduler, notificaciones, comprobantes ni acceso económico de alumnos.
+
+## 9. Sincronización con Comprobantes
+
+Base de integración `72f2d40bdfa6c035f5767639e75eef5b024a6b39`, HEAD de partida `6b39a6a6858dac3b086aa06d7dabfc78f2de9e4a`.
+Las seis migraciones de CUEVA-003B conservan su orden y contenido con
+versiones `20261107101000` a `20261107101500`, posteriores a la migración
+`20261107100100` de Comprobantes. La migración integrada conserva sus bytes.
+La página de Pagos conserva el acceso a Comprobantes y el calendario
+individual. El lockfile combina las dependencias de ambos cambios y
+CI conserva las regresiones y los controles de cada rama.
+
+El workflow de Supabase ejecuta dos bases aisladas. Una arranca con todas
+las migraciones. La otra arranca con el historial hasta Comprobantes,
+carga datos sintéticos y aplica solo las migraciones pendientes. En ambas
+se verifican el historial aplicado, la conservación de un comprobante
+aprobado y su pago, el cambio de vencimiento con auditoría, y la aprobación
+de un comprobante pendiente con un único movimiento en el ledger.
+
+- **SKILLS_SELECTED** `cueva-feature-development`, `cueva-finance`, `cueva-supabase-security`, `supabase`, `supabase-postgres-best-practices`.
+- **SKILLS_APPLIED** Compatibilidad con el historial de migraciones, pruebas con roles reales en bases aisladas y verificación de idempotencia y trazabilidad.
+- **SKILL_SOURCES** `.agents/skills/cueva-feature-development/SKILL.md`, `.agents/skills/cueva-finance/SKILL.md`, `.agents/skills/cueva-supabase-security/SKILL.md` y las guías de migraciones y PostgreSQL de Supabase.
