@@ -18,11 +18,10 @@ for (const [name, value] of Object.entries({ API_URL: apiUrl, ANON_KEY: anonKey,
 const admin = createClient(apiUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
 const anonymous = createClient(apiUrl, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
 const database = new pg.Client({ connectionString: databaseUrl });
-const userId = randomUUID();
+let userId;
 const studentId = randomUUID();
 const priceId = randomUUID();
-const operationId = randomUUID();
-const email = `due-date-e2e-${userId}@example.test`;
+const email = `due-date-e2e-${randomUUID()}@example.test`;
 const password = `CuevA-${randomUUID()}-9!`;
 let browser;
 let userCreated = false;
@@ -32,8 +31,9 @@ try {
   await database.connect();
   databaseConnected = true;
 
-  const created = await admin.auth.admin.createUser({ id: userId, email, password, email_confirm: true });
-  if (created.error) throw created.error;
+  const created = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+  if (created.error || !created.data.user) throw created.error ?? new Error("Supabase did not create the test user");
+  userId = created.data.user.id;
   userCreated = true;
 
   const signedIn = await anonymous.auth.signInWithPassword({ email, password });
@@ -112,11 +112,6 @@ try {
   );
   assert.equal(schedule.rows[0]?.due_day, 20, "UI/API operation must persist the new due-day schedule");
 
-  const audit = await database.query(
-    "select actor,new_due_day from public.cueva_due_date_audit where id=$1",
-    [operationId],
-  );
-  // The operation id is generated in the browser; locate the audit by actor and student instead.
   const persistedAudit = await database.query(
     "select actor,new_due_day from public.cueva_due_date_audit where student_id=$1 order by recorded_at desc limit 1",
     [studentId],
