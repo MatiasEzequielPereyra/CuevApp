@@ -6,8 +6,9 @@ import { launch } from '../cueva-002i-local/application.mjs';
 import pg from 'pg';
 
 // Isolated test-only stack. All keys and accounts are synthetic and ephemeral.
-const structuredOnly = true;
-const routinesOnly = structuredOnly || process.env.CUEVA_ROUTINES_ONLY === '1';
+const receiptsOnly = process.env.CUEVA_RECEIPTS_LAB === "1";
+const structuredOnly = !receiptsOnly;
+const routinesOnly = receiptsOnly || structuredOnly || process.env.CUEVA_ROUTINES_ONLY === '1';
 const images = {
   storage: 'supabase/storage-api@sha256:b93ea65dad8eee7af34ab57d062915fcf085d4eb1a647f38f3bcea25d99850b1',
   db: 'postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24',
@@ -16,7 +17,7 @@ const images = {
   rest: 'public.ecr.aws/supabase/postgrest@sha256:ec0e25a4e24b0a3bc5e4f011369bfc736bd1b19f513bd01079b86329a7636962',
 };
 const id = randomUUID().replaceAll('-', '').slice(0, 12);
-const prefix = structuredOnly ? 'cueva-006c' : routinesOnly ? 'cueva-rutinas' : 'cueva-alumnos';
+const prefix = receiptsOnly ? 'cueva-004a' : structuredOnly ? 'cueva-006c' : routinesOnly ? 'cueva-rutinas' : 'cueva-alumnos';
 const names = { network: `${prefix}-net-${id}`, db: `${prefix}-db-${id}`, auth: `${prefix}-auth-${id}`, mail: `${prefix}-mail-${id}`, storage: `${prefix}-storage-${id}`, rest: `${prefix}-rest-${id}` };
 const secret = () => randomBytes(32).toString('hex');
 const dbPassword = secret(), authenticatorPassword = secret(), coordinatorPassword = secret(), jwtSecret = secret(), password = `Aa9!${secret()}`;
@@ -92,7 +93,7 @@ try {
   sql('grant usage on schema storage to anon,authenticated,service_role; grant all on all tables in schema storage to authenticated,service_role; grant select on storage.buckets to anon; grant all on all sequences in schema storage to authenticated,service_role;');
   const admin=testJwt('service_role');
   stage='browser_flow';
-  const { runBrowserFlow }=await import(structuredOnly ? './flow.mjs' : routinesOnly ? '../cueva-routines-local/browser-test.mjs' : './browser-test.mjs');
+  const { runBrowserFlow }=await import(receiptsOnly ? '../cueva-004a-local/flow.mjs' : structuredOnly ? './flow.mjs' : routinesOnly ? '../cueva-routines-local/browser-test.mjs' : './browser-test.mjs');
   await runBrowserFlow({base,rest,storageBase,mailBase,dbPort,coordinatorPassword,admin,anon:testJwt('anon'),id,password,sql,request,note,launch,chromium,pg,secret,accessIntegrationOnly:process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'});
 } catch (error) {
   if (created.includes(names.storage)) { const logs = spawnSync('docker',['logs',names.storage],{encoding:'utf8'}); const output=String(logs.stdout)+String(logs.stderr); note('storage_diagnostic','OBSERVED',`permission=${/permission denied|row.level/i.test(output)}; configuration=${/missing|required|configuration/i.test(output)}; raw logs discarded`); }
@@ -107,7 +108,8 @@ try {
 finally {
   for(const name of created.reverse()) { try { if(name===names.auth || name===names.storage){docker(['rm','-f',name]);}else{docker(['stop','--time','5',name]);} note(`cleanup_${name.split('-')[2]}`,'PASS'); } catch { note(`cleanup_${name.split('-')[2]}`,'FAIL'); } }
   if(networkCreated){try{docker(['network','rm',names.network]);note('cleanup_network','PASS');}catch{note('cleanup_network','FAIL');}}
-  await writeFile(structuredOnly?'results.json':routinesOnly?'../cueva-routines-local/results.json':'results.json',JSON.stringify({date:new Date().toISOString(),scope:structuredOnly?'CUEVA-006C':routinesOnly?'CUEVA-006A':process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'?'CUEVA-ACCESO-001-INTEGRACION':'CUEVA-ALUMNOS-001',images,results},null,2)+'\n');
+  await writeFile(receiptsOnly?'../cueva-004a-local/results.json':structuredOnly?'results.json':routinesOnly?'../cueva-routines-local/results.json':'results.json',JSON.stringify({date:new Date().toISOString(),scope:receiptsOnly?'CUEVA-004A':structuredOnly?'CUEVA-006C':routinesOnly?'CUEVA-006A':process.env.CUEVA_ACCESS_INTEGRATION_ONLY==='1'?'CUEVA-ACCESO-001-INTEGRACION':'CUEVA-ALUMNOS-001',images,results},null,2)+'\n');
   console.log(JSON.stringify({results},null,2));
   if(results.some(x=>['FAIL','BLOCKED'].includes(x.status)))process.exitCode=1;
 }
+
