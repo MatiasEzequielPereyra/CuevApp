@@ -50,5 +50,5 @@ export function persistPendingOperation(storageKey: string, operation: PendingOp
 }
 
 export function clearPendingOperation(storageKey: string): void {
-  window.sessionStorage.removeItem(storageKey);
+  try { window.sessionStorage.removeItem(storageKey); } catch { /* Storage can become unavailable after a request. */ }
 }
