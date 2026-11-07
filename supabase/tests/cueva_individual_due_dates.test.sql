@@ -1,5 +1,5 @@
 begin;
-select plan(80);
+select plan(81);
 
 -- Pure date helper coverage.
 select is(cueva_private.monthly_due_date(1::smallint,date '2026-01-01'),date '2026-01-01','day 1');
@@ -69,6 +69,24 @@ select is(public.cueva_billing_write('a6000000-0000-4000-8000-000000000001',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
  'scope','next_period','reason','Initial schedule adjustment')),
  'a6000000-0000-4000-8000-000000000001'::uuid,'identical operation retry is idempotent');
+
+-- Reproduce a legacy row created by the previous wrapper bug: a rejected
+-- payload was recorded for an operation that had already succeeded.
+reset role;
+insert into public.cueva_due_date_attempts(
+ operation_id,student_id,actor,actor_email,requested_due_day,requested_reason,
+ effective_month,scope,error_code,error_message,payload
+) values (
+ 'a6000000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001',
+ 'a1000000-0000-4000-8000-000000000001','due-date-admin@example.test','16',
+ 'Changed retry payload',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'next_period','P0001','legacy conflicting attempt',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001',
+ 'due_day','16','expected_old_due_day','31',
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','next_period','reason','Changed retry payload')
+);
+set local role authenticated;
 select throws_ok($q$select public.cueva_billing_write('a6000000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','16','expected_old_due_day','31',
  'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
@@ -80,7 +98,9 @@ select is(public.cueva_billing_write('a6000000-0000-4000-8000-000000000001',
  'scope','next_period','reason','Initial schedule adjustment')),
  'a6000000-0000-4000-8000-000000000001'::uuid,'original successful operation remains idempotently recoverable');
 select is((select count(*)::integer from public.cueva_due_date_attempts where operation_id='a6000000-0000-4000-8000-000000000001'),
- 0,'successful operation key is never converted into a rejected attempt');
+ 1,'legacy rejected-attempt row remains singular and cannot block a successful key');
+select ok((select payload->>'due_day'='16' from public.cueva_due_date_attempts where operation_id='a6000000-0000-4000-8000-000000000001'),
+ 'successful-key recovery does not overwrite the legacy attempt payload');
 
 select is(public.cueva_billing_write('a7000000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','payment','student_id','a3000000-0000-4000-8000-000000000001',
@@ -201,7 +221,7 @@ select is((select due_day from public.cueva_due_schedules where student_id='a300
  21::smallint,'stale preview does not overwrite the newer due-day rule');
 
 select is((select count(*)::integer from public.cueva_due_date_attempts where student_id='a3000000-0000-4000-8000-000000000001'),
- 5,'all five rejected due-day attempts are retained separately');
+ 6,'all six rejected due-day attempts are retained separately');
 select is((select actor_email from public.cueva_due_date_audit where id='ad100000-0000-4000-8000-000000000001'),
  'due-date-admin@example.test','audit identifies the administrator by account email');
 select is((select actor_email from public.cueva_due_date_attempts where operation_id='b1020000-0000-4000-8000-000000000001'),
