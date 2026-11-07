@@ -1,5 +1,5 @@
 begin;
-select plan(72);
+select plan(76);
 
 -- Pure date helper coverage.
 select is(cueva_private.monthly_due_date(1::smallint,date '2026-01-01'),date '2026-01-01','day 1');
@@ -192,6 +192,23 @@ select is((select actor_email from public.cueva_due_date_attempts where operatio
  'due-date-admin@example.test','failed attempt identifies the administrator by account email');
 select ok((select error_code='22023' and length(error_message)>0 from public.cueva_due_date_attempts where operation_id='b1020000-0000-4000-8000-000000000001'),
  'failed attempt stores the database error code and explanation');
+
+select is(public.cueva_billing_write('b1020000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','0',
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','next_period','reason','Invalid day test')),null::uuid,
+ 'retrying the same rejected operation returns the same rejected result');
+select throws_ok($select public.cueva_billing_write('b1020000-0000-4000-8000-000000000001',
+ jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','21',
+ 'effective_month',to_char((date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date,'YYYY-MM'),
+ 'scope','next_period','reason','Changed retry payload'))$,
+ '23505',null,'reusing a rejected operation id with a different payload is rejected');
+select is((select count(*)::integer from public.cueva_due_date_attempts
+ where operation_id='b1020000-0000-4000-8000-000000000001'),1,
+ 'a rejected operation id is retained only once');
+select ok((select payload is not null and actor='a1000000-0000-4000-8000-000000000001'::uuid
+ from public.cueva_due_date_attempts where operation_id='b1020000-0000-4000-8000-000000000001'),
+ 'rejected attempt persists its payload and original actor');
 
 select throws_ok($$insert into public.cueva_due_schedules(id,student_id,due_day,effective_month,actor)
  values('b2000000-0000-4000-8000-000000000001','a3000000-0000-4000-8000-000000000001',20,date '2026-01-01','a1000000-0000-4000-8000-000000000001')$$,
