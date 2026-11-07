@@ -46,7 +46,7 @@ create function pg_temp.claims(k text) returns text language sql as $$
 $$;
 -- Simulate the trusted server and Storage metadata only in this test database.
 create function public.receipt_test_submit(period text, file text)
-returns uuid language plpgsql security definer set search_path = '' as $
+returns uuid language plpgsql security definer set search_path = '' as $$
 declare
   actor uuid := md5('receipt-a')::uuid;
   session_id uuid := md5(actor::text || '-session')::uuid;
@@ -61,13 +61,13 @@ begin
   return public.cueva_receipt_submit(actor,session_id,period_id,receipt_id,'image/png',16,repeat('a',64),
     coalesce((lease->>'id')::uuid,gen_random_uuid()));
 end;
-$;
+$$;
 revoke all on function public.receipt_test_submit(text,text) from public;
 grant execute on function public.receipt_test_submit(text,text) to service_role;
 
-create function pg_temp.submit_sql(period text, file text) returns text language sql as $
+create function pg_temp.submit_sql(period text, file text) returns text language sql as $$
   select format('select public.receipt_test_submit(%L,%L)',period,file)
-$;
+$$;
 
 begin;
 set local role service_role;

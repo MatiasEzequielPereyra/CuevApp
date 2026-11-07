@@ -136,7 +136,7 @@ alter table cueva_private.receipt_uploads enable row level security;
 revoke all on cueva_private.receipt_uploads from public, anon, authenticated, service_role;
 
 create function cueva_private.receipt_actor_student(p_actor uuid, p_session uuid)
-returns uuid language sql stable security invoker set search_path = '' as $
+returns uuid language sql stable security invoker set search_path = '' as $$
   select i.student_id
   from public.cueva_student_invitations i
   join public.cueva_profiles p on p.user_id = i.user_id and p.role = 'alumno'
@@ -144,12 +144,12 @@ returns uuid language sql stable security invoker set search_path = '' as $
   join auth.sessions a on a.user_id = s.user_id
   where i.user_id = p_actor and a.id = p_session and s.ready and s.operation_id is null
     and a.created_at >= s.session_not_before
-$;
+$$;
 revoke all on function cueva_private.receipt_actor_student(uuid,uuid) from public, anon, authenticated, service_role;
 
 create function cueva_private.receipt_reserve(
   p_actor uuid, p_session uuid, p_period uuid, p_id uuid, p_type text, p_size integer, p_hash text, p_upload uuid
-) returns jsonb language plpgsql security definer set search_path = '' as $
+) returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
   lease cueva_private.receipt_uploads;
   upload uuid;
@@ -194,13 +194,13 @@ begin
   end if;
   return jsonb_build_object('status', 'reserved', 'id', lease.upload_id, 'path', lease.object_path);
 end;
-$;
+$$;
 
 create function public.cueva_receipt_reserve(
   p_actor uuid, p_session uuid, p_period uuid, p_id uuid, p_type text, p_size integer, p_hash text, p_upload uuid
-) returns jsonb language sql security invoker set search_path = '' as $
+) returns jsonb language sql security invoker set search_path = '' as $$
   select cueva_private.receipt_reserve(p_actor, p_session, p_period, p_id, p_type, p_size, p_hash, p_upload)
-$;
+$$;
 revoke all on function cueva_private.receipt_reserve(uuid,uuid,uuid,uuid,text,integer,text,uuid),
   public.cueva_receipt_reserve(uuid,uuid,uuid,uuid,text,integer,text,uuid) from public, anon, authenticated, service_role;
 grant execute on function cueva_private.receipt_reserve(uuid,uuid,uuid,uuid,text,integer,text,uuid),
@@ -210,7 +210,7 @@ grant execute on function cueva_private.receipt_reserve(uuid,uuid,uuid,uuid,text
 -- lease, actor/session, ownership and balance under the ledger lock.
 create function cueva_private.receipt_submit(
   p_actor uuid, p_session uuid, p_period uuid, p_id uuid, p_type text, p_size integer, p_hash text, p_upload uuid
-) returns uuid language plpgsql security definer set search_path = '' as $
+) returns uuid language plpgsql security definer set search_path = '' as $$
 declare
   member_id uuid;
   lease jsonb;
@@ -235,31 +235,31 @@ begin
   delete from cueva_private.receipt_uploads where upload_id = p_upload;
   return p_id;
 end;
-$;
+$$;
 create function public.cueva_receipt_submit(
   p_actor uuid, p_session uuid, p_period uuid, p_id uuid, p_type text, p_size integer, p_hash text, p_upload uuid
-) returns uuid language sql security invoker set search_path = '' as $
+) returns uuid language sql security invoker set search_path = '' as $$
   select cueva_private.receipt_submit(p_actor, p_session, p_period, p_id, p_type, p_size, p_hash, p_upload)
-$;
+$$;
 revoke all on function cueva_private.receipt_submit(uuid,uuid,uuid,uuid,text,integer,text,uuid),
   public.cueva_receipt_submit(uuid,uuid,uuid,uuid,text,integer,text,uuid) from public, anon, authenticated, service_role;
 grant execute on function cueva_private.receipt_submit(uuid,uuid,uuid,uuid,text,integer,text,uuid),
   public.cueva_receipt_submit(uuid,uuid,uuid,uuid,text,integer,text,uuid) to service_role;
 
 create function cueva_private.receipt_expired_uploads()
-returns table(id uuid, path text) language sql security definer set search_path = '' as $
+returns table(id uuid, path text) language sql security definer set search_path = '' as $$
   select upload_id, object_path from cueva_private.receipt_uploads
   where expires_at <= statement_timestamp() order by expires_at limit 100 for update skip locked
-$;
+$$;
 create function public.cueva_receipt_expired_uploads()
-returns table(id uuid, path text) language sql security invoker set search_path = '' as $
+returns table(id uuid, path text) language sql security invoker set search_path = '' as $$
   select * from cueva_private.receipt_expired_uploads()
-$;
+$$;
 
 -- Expired leases cannot be extended or finalized. Release only after the
 -- Storage API has removed the object. Late duplicate cleanup is harmless.
 create function cueva_private.receipt_retire_upload(p_upload uuid, p_invalid boolean)
-returns void language plpgsql security definer set search_path = '' as $
+returns void language plpgsql security definer set search_path = '' as $$
 begin
   if p_invalid then
     update cueva_private.receipt_uploads set invalid = true where upload_id = p_upload;
@@ -267,11 +267,11 @@ begin
     delete from cueva_private.receipt_uploads where upload_id = p_upload and expires_at <= clock_timestamp();
   end if;
 end;
-$;
+$$;
 create function public.cueva_receipt_retire_upload(p_upload uuid, p_invalid boolean)
-returns void language sql security invoker set search_path = '' as $
+returns void language sql security invoker set search_path = '' as $$
   select cueva_private.receipt_retire_upload(p_upload, p_invalid)
-$;
+$$;
 revoke all on function cueva_private.receipt_expired_uploads(), public.cueva_receipt_expired_uploads(),
   cueva_private.receipt_retire_upload(uuid,boolean), public.cueva_receipt_retire_upload(uuid,boolean)
   from public, anon, authenticated, service_role;
