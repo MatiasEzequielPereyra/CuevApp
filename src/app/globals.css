@@ -237,3 +237,14 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
 .exercise-catalog label:has(input[type="checkbox"]) { display: flex; align-items: center; gap: 10px; }
 .exercise-catalog textarea { width: 100%; min-height: 100px; padding: 12px; border: 1px solid var(--dash-border); border-radius: 8px; font: inherit; color: var(--dash-text); background: var(--dash-bg); resize: vertical; }
 .routine-plan-view select { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--dash-border); border-radius: 8px; color: var(--dash-text); background: var(--dash-bg); font: inherit; }
+
+.membership-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 12px; margin-block: 20px; }
+.membership-card { min-width: 0; padding: 18px; border: 1px solid var(--dash-border); border-radius: 12px; background: var(--dash-panel); }
+.membership-card dl { display: grid; gap: 12px; margin-block: 16px 0; }
+.membership-card dl > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
+.membership-card dt { color: var(--dash-muted); }
+.membership-card dd { margin: 0; font-weight: 700; }
+.membership-history { display: grid; gap: 10px; margin-top: 28px; }
+.membership-history summary { cursor: pointer; min-height: 44px; }
+.membership-payment-list { padding-inline-start: 22px; }
+.student-routine-nav { gap: clamp(12px, 5vw, 40px); }

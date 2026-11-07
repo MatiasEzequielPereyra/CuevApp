@@ -24,4 +24,4 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
-export const config = { matcher: ["/cuenta", "/alumnos", "/api/alumnos", "/api/alumnos/invitacion", "/api/alumnos/eliminar", "/pagos", "/api/pagos", "/rutinas/:path*", "/mi-rutina", "/api/rutinas", "/ejercicios", "/api/ejercicios"] };
+export const config = { matcher: ["/cuenta", "/alumnos", "/api/alumnos", "/api/alumnos/invitacion", "/api/alumnos/eliminar", "/pagos", "/api/pagos", "/rutinas/:path*", "/mi-rutina", "/mi-membresia", "/api/rutinas", "/ejercicios", "/api/ejercicios"] };

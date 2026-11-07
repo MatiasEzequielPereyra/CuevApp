@@ -1,0 +1,37 @@
+name: Membership SQL
+
+on:
+  push:
+    paths:
+      - "supabase/**"
+      - ".github/workflows/membership-sql.yml"
+  pull_request:
+    paths:
+      - "supabase/**"
+      - ".github/workflows/membership-sql.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  membership-sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run membership ledger and isolation checks
+        env:
+          CONTAINER_ID: ${{ job.services.postgres.id }}
+        run: |
+          docker cp supabase "$CONTAINER_ID:/tmp/supabase"
+          docker exec "$CONTAINER_ID" psql -U postgres -v ON_ERROR_STOP=1 -f /tmp/supabase/tests/membership.sql
