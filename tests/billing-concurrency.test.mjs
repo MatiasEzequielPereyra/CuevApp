@@ -118,10 +118,12 @@ try {
   await Promise.all(clients.map(client => client.end().catch(() => undefined)));
   if (adminConnected) {
     try {
+      await admin.query("delete from public.cueva_due_date_audit where student_id=$1", [studentId]);
+      await admin.query("delete from public.cueva_due_date_attempts where student_id=$1", [studentId]);
       await admin.query("delete from public.cueva_periods where student_id=$1", [studentId]);
       await admin.query("delete from public.cueva_students where id=$1", [studentId]);
       await admin.query("delete from public.cueva_prices where id=$1", [priceOperation]);
-      await admin.query("delete from cueva_private.billing_operations where id = any($1::uuid[])", [[priceOperation, ...periodOperations]]);
+      await admin.query("delete from cueva_private.billing_operations where id = any($1::uuid[])", [[priceOperation, ...periodOperations, ...dueDayOperations]]);
       await admin.query("delete from public.cueva_profiles where user_id=$1", [userId]);
       await admin.query("delete from cueva_private.access_state where user_id=$1", [userId]);
       await admin.query("delete from auth.sessions where id=$1", [sessionId]);
