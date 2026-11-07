@@ -1,5 +1,36 @@
 # Checkpoint CUEVA
 
+## CUEVA-006C — aceptación independiente y preparación alojada
+
+Candidato de runtime `38e450d439c2545474b02a0e643065cdb1c319cd`: **ACCEPTED**.
+[PR34 y registro verificable de integración/despliegue](https://github.com/MatiasEzequielPereyra/CuevApp/pull/34).
+P2-001 cerrado: separación de YouTube/Storage, regresión independiente 4/4 PASS
+con Node22/Chromium y API sintética. Modelo independiente5/5, fuentes4/4, escaneo
+385 archivos y nueve hashes/capturas verificados. CI push/PR SUCCESS del candidato;
+el commit documental posterior requiere su CI antes de integrar.
+
+Respaldo privado expresamente autorizado: tabla cueva_private.cueva_006c_release_backup,
+RLS sin grants a roles API; copia comprobada contra 1 borrador, 1 plantilla,
+2 publicaciones y 7 ejercicios. No es un backup externo de desastre.
+Migraciones de días y videos aplicadas desde los bytes revisados al proyecto
+vbkzoojkdkcugxhneyzi. Datos originales comparados con el respaldo: sin cambios.
+Bucket privado, 50MiB, MP4/MOV/WebM; plan free conservado, sin contratar servicios.
+
+Smoke alojado transaccional **PASS_ROLLED_BACK**: template/draft/publicación/reintento
+admin, consulta de publicación/recurso propios del alumno, borradores/plantillas
+ocultos, writer alumno y recurso anónimo denegados. Claims existentes usados solo
+dentro de SQL; no acredita recorrido HTTP autenticado ni subida de video real.
+No quedaron fixtures. Recuperación conservadora: preservar datos/esquema y corregir
+hacia delante; no regresar a un runtime sin lectura v2 después de guardar v2.
+Advisors conservan avisos previos; el respaldo agrega un INFO esperado de RLS sin
+policy, deliberadamente sin acceso de aplicación.
+
+Integración/alias/SHA y smoke HTTP posteriores se registran en PR34: consultarlo
+para el estado actual, sin inferir producción de Preview READY.
+No se modifica la rama de Facu, pagos, Auth, SMTP o cuentas.
+SKILLS_SELECTED/APPLIED: cueva-acceptance-audit, cueva-supabase-security, cueva-release;
+fuentes: sus SKILL.md en .agents/skills. Los estados REVIEW inferiores son históricos.
+
 ## CUEVA-006C — REVIEW local, 2026-11-06
 
 Base remota verificada `7663e51f7b60c269a9bb7f13f0f69d26358b609d`;
