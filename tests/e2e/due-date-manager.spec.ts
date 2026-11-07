@@ -29,7 +29,7 @@ test("submits the selected scope and previewed due day to the API", async ({ pag
   await page.getByLabel("Confirmo que quiero modificar el período actual.").check();
   await page.getByRole("button", { name: "Guardar cambio de vencimiento" }).click();
   await expect(page.getByText("Operación registrada.")).toBeVisible();
-  expect(submitted?.p).toMatchObject({ kind: "due_day", due_day: "20", effective_month: "2026-11", scope: "current_period" });
+  expect(submitted?.p).toMatchObject({ kind: "due_day", due_day: "20", expected_old_due_day: "12", effective_month: "2026-11", scope: "current_period" });
   expect(submitted?.op).toMatch(/^[0-9a-f-]{36}$/i);
 });
 
