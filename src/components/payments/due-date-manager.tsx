@@ -63,7 +63,7 @@ export function DueDateManager({
     const result=await response.json();
     setMessage(result.message??"No se pudo confirmar la operación pendiente.");
     if(response.ok){clearPendingOperation(storageKey);operation.current=null;setOperationPending(false);setOperationRejected(false);router.refresh();}
-    else if(result.operation_not_applied===true){clearPendingOperation(storageKey);operation.current=null;setOperationRejected(true);}
+    else if(result.operation_not_applied===true){clearPendingOperation(storageKey);operation.current=null;setOperationRejected(true);if(typeof result.message==="string"&&result.message.includes("vencimiento cambió"))router.refresh();}
    } catch {setMessage("No pudimos confirmar el resultado anterior. Conservamos la operación para reintentar sin duplicarla.");}
    finally {busy.current=false;setPending(false);}
   })();
