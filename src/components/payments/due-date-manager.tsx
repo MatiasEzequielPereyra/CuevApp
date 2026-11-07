@@ -51,6 +51,23 @@ export function DueDateManager({
  const [operationPending,setOperationPending]=useState(false);
  const busy=useRef(false);
  const operation=useRef<{op:string;payload:string}|null>(null);
+ const storageKey=`cueva:due-date-operation:${studentId}`;
+ useEffect(()=>{
+  const saved=readPendingOperation(storageKey);
+  if(!saved||busy.current)return;
+  operation.current=saved;setOperationPending(true);setPending(true);busy.current=true;
+  void (async()=>{
+   try {
+    const payload=JSON.parse(saved.payload) as Record<string,unknown>;
+    const response=await fetch("/api/pagos",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({op:saved.op,p:payload})});
+    const result=await response.json();
+    setMessage(result.message??"No se pudo confirmar la operación pendiente.");
+    if(response.ok){clearPendingOperation(storageKey);operation.current=null;setOperationPending(false);setOperationRejected(false);router.refresh();}
+    else if(result.operation_not_applied===true){clearPendingOperation(storageKey);operation.current=null;setOperationRejected(true);}
+   } catch {setMessage("No pudimos confirmar el resultado anterior. Conservamos la operación para reintentar sin duplicarla.");}
+   finally {busy.current=false;setPending(false);}
+  })();
+ },[router,storageKey]);
  const effectiveMonth=scope==="current_period"?currentMonth:monthAfter(currentMonth);
  const oldDay=scope==="current_period"?currentDay:nextDay;
  const existingDue=scope==="current_period"?currentDueOn:nextDueOn;
@@ -67,12 +84,13 @@ export function DueDateManager({
    const p={kind:"due_day",student_id:studentId,due_day:day,effective_month:effectiveMonth,scope,...(reason.trim()?{reason:reason.trim()}:{})};
    const payload=JSON.stringify(p);
    operation.current=operationForSubmission(operation.current,payload,operationRejected,()=>crypto.randomUUID());
+   persistPendingOperation(storageKey,operation.current);
    setOperationPending(true);setOperationRejected(false);
    const response=await fetch("/api/pagos",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({op:operation.current.op,p})});
    const result=await response.json();
    setMessage(result.message??"No se pudo guardar.");
-   if(response.ok){operation.current=null;setOperationPending(false);setOperationRejected(false);setReason("");setConfirmed(false);router.refresh();}
-   else setOperationRejected(result.operation_not_applied===true);
+   if(response.ok){clearPendingOperation(storageKey);operation.current=null;setOperationPending(false);setOperationRejected(false);setReason("");setConfirmed(false);router.refresh();}
+   else if(result.operation_not_applied===true){clearPendingOperation(storageKey);operation.current=null;setOperationRejected(true);}
   } catch(error) {setOperationRejected(false);setMessage(error instanceof Error?error.message:"No se pudo conectar. Conservamos los datos.");}
   finally {busy.current=false;setPending(false);}
  }
