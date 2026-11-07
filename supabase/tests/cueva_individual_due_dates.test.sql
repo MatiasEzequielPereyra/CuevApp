@@ -1,5 +1,5 @@
 begin;
-select plan(76);
+select plan(80);
 
 -- Pure date helper coverage.
 select is(cueva_private.monthly_due_date(1::smallint,date '2026-01-01'),date '2026-01-01','day 1');
