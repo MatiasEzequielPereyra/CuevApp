@@ -48,6 +48,13 @@ test("an uncertain transport error preserves the operation key for safe retry", 
   assert.equal((await response.json()).operation_not_applied, false);
 });
 
+test("a PostgreSQL connection exception is uncertain, not a definitive rollback", async () => {
+  state.rpcResult = { data: null, error: { code: "08006", message: "connection failure" } };
+  const response = await POST(request());
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).operation_not_applied, false);
+});
+
 test("a definitive SQL constraint error reports that the transaction did not apply", async () => {
   state.rpcResult = { data: null, error: { code: "23505", message: "duplicate" } };
   const response = await POST(request());
