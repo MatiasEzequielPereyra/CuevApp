@@ -1,6 +1,6 @@
 # CUEVA-003B — Vencimientos individuales y recurrencia
 
-**Estado:** IMPLEMENTACIÓN UI / REVIEW local pendiente de verificación.  
+**Estado:** Implementación y CI automatizada aprobadas en la rama; auditoría independiente encontró y corrigió riesgos de idempotencia y confirmaciones desactualizadas. Pendiente de CI sobre el HEAD final y revisión de resultados.  
 **TASK_ID:** CUEVA-003B  
 **BASE_SHA:** `7663e51f7b60c269a9bb7f13f0f69d26358b609d`  
 **BRANCH:** `feature/cueva-003b-vencimientos`  
@@ -109,4 +109,4 @@ Los administradores podrán modificar vencimientos según la especificación vig
 
 La capa SQL de calendario individual y auditoría fue implementada y superó las 64 aserciones pgTAP, migraciones efímeras y verificación general/seguridad en CI (commit `b87c918`). La capa UI inicial se integra en la ficha económica administrativa `/pagos?alumno=<id>`: consulta calendario e historial bajo RLS, permite vista previa de fecha anterior/nueva, alcance próximo período (predeterminado) o período actual (confirmación explícita), motivo opcional e idempotencia de envío. Se conserva el marco visual administrativo existente.
 
-La UI todavía no está aceptada: faltan lint/typecheck/build/E2E sobre el nuevo diff, pruebas negativas de la operación desde UI y revisión independiente de la consulta de calendarios/historial. No se modificó Supabase alojado ni producción. No se creó scheduler, notificaciones, comprobantes ni acceso económico de alumnos.
+La UI y las migraciones superaron los workflows automatizados en el commit `1bb7882`. Posteriormente se añadieron protecciones adicionales: las claves exitosas no se convierten en intentos rechazados cuando se reutilizan con otro payload, y cada cambio de vencimiento exige que el día anterior enviado coincida con la regla vigente bajo el bloqueo transaccional. Estas últimas correcciones requieren la ejecución de CI sobre el HEAD resultante. No se modificó Supabase alojado ni producción. No se creó scheduler, notificaciones, comprobantes ni acceso económico de alumnos.
