@@ -194,7 +194,8 @@ select is(public.cueva_billing_write('b1000000-0000-4000-8000-000000000001',
  'b1000000-0000-4000-8000-000000000001'::uuid,'explicit current-period change is accepted');
 select is((select due_day from public.cueva_due_schedules
  where student_id='a3000000-0000-4000-8000-000000000001'
- and effective_month=date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date),
+ and effective_month=date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date
+ order by recorded_at desc,id desc limit 1),
  19::smallint,'current-period change becomes effective in the selected month');
 select is(public.cueva_billing_write('b1010000-0000-4000-8000-000000000001',
  jsonb_build_object('kind','due_day','student_id','a3000000-0000-4000-8000-000000000001','due_day','20','expected_old_due_day','21',
@@ -217,7 +218,8 @@ select is(public.cueva_billing_write('b1050000-0000-4000-8000-000000000001',
  'scope','next_period','reason','Stale preview test')),null::uuid,
  'stale due-day preview is rejected and audited');
 select is((select due_day from public.cueva_due_schedules where student_id='a3000000-0000-4000-8000-000000000001'
- and effective_month=(date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date),
+ and effective_month=(date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')+interval '1 month')::date
+ order by recorded_at desc,id desc limit 1),
  21::smallint,'stale preview does not overwrite the newer due-day rule');
 
 select is((select count(*)::integer from public.cueva_due_date_attempts where student_id='a3000000-0000-4000-8000-000000000001'),
