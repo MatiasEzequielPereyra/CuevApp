@@ -22,6 +22,13 @@ begin
  perform pg_advisory_xact_lock(903004001);
 
  if op is not null then
+  -- Successful operations take precedence over any legacy rejected-attempt
+  -- row created by the earlier wrapper bug. This preserves the canonical
+  -- result even if both records exist from a pre-fix environment.
+  if exists(select 1 from cueva_private.billing_operations where id=op) then
+   return cueva_private.billing_write(op,p);
+  end if;
+
   select * into previous_attempt
    from public.cueva_due_date_attempts
    where operation_id=op;
@@ -33,13 +40,6 @@ begin
    end if;
    raise exception 'Clave de operación reutilizada con datos distintos o no verificables'
     using errcode='23505';
-  end if;
-
-  -- Delegate existing successful keys to the canonical writer before doing
-  -- any new-operation checks. It returns the original result for an identical
-  -- retry and rejects a different actor/payload without creating an attempt.
-  if exists(select 1 from cueva_private.billing_operations where id=op) then
-   return cueva_private.billing_write(op,p);
   end if;
  end if;
 
