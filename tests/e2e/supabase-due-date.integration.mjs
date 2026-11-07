@@ -130,8 +130,10 @@ try {
       await database.query("delete from public.cueva_prices where id=$1", [priceId]);
       await database.query("delete from cueva_private.billing_operations where id=$1", [priceId]);
       await database.query("delete from public.cueva_students where id=$1", [studentId]);
-      await database.query("delete from public.cueva_profiles where user_id=$1", [userId]);
-      await database.query("delete from cueva_private.access_state where user_id=$1", [userId]);
+      if (userId) {
+        await database.query("delete from public.cueva_profiles where user_id=$1", [userId]);
+        await database.query("delete from cueva_private.access_state where user_id=$1", [userId]);
+      }
     } finally {
       await database.end();
     }
