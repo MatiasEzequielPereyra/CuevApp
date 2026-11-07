@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const fixture = "/__test__/due-date";
+const fixture = "/test-fixtures/due-date";
 
 test.beforeEach(async ({ page }) => {
   await page.goto(fixture);
