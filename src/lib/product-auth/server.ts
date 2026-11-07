@@ -13,10 +13,19 @@ export function productConfig() {
   const { CUEVA_SUPABASE_URL: url, CUEVA_PUBLISHABLE_KEY: key, CUEVA_SERVICE_KEY: serviceKey, CUEVA_PRODUCT_ORIGIN: origin, CUEVA_AUTH_URL: auth, CUEVA_REST_URL: rest } = process.env;
   if (!url || !key || !serviceKey || !origin || (local && (!auth || !rest))) return null;
   try {
-    for (const value of [url, origin, ...(local && auth && rest ? [auth, rest] : [])]) {
+    for (const value of [url, origin]) {
       const parsed = new URL(value);
       if (parsed.origin !== value || parsed.username || parsed.password) return null;
       if (local ? (parsed.protocol !== "http:" || parsed.hostname !== "127.0.0.1" || !parsed.port) : parsed.protocol !== "https:") return null;
+    }
+    if (local && auth && rest) {
+      const api = new URL(url);
+      const authBase = new URL(auth);
+      const restBase = new URL(rest);
+      for (const [parsed, path] of [[authBase, "/auth/v1"], [restBase, "/rest/v1"]] as const) {
+        if (parsed.origin !== api.origin || parsed.pathname !== path || parsed.search || parsed.hash || parsed.username || parsed.password
+          || parsed.protocol !== "http:" || parsed.hostname !== "127.0.0.1" || !parsed.port) return null;
+      }
     }
   } catch { return null; }
   return { url, key, serviceKey, origin, auth, rest, local, ownerTest, expectedOwner, ownerOnly: ownerTest && !customMailReady };

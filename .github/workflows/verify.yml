@@ -15,14 +15,28 @@ jobs:
       NEXT_TELEMETRY_DISABLED: 1
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22.14.0
           cache: npm
       - run: npm ci
+      - name: Fetch protected base branch
+        run: git fetch origin main --no-tags
+      - name: Verify source manifest has not changed
+        run: npm run verify:source-manifest
+      - name: Verify source integrity
+        run: npm run verify:sources
       - run: npx playwright install --with-deps chromium
       - run: npm run verify
       - run: npm run verify:security
+      - run: npm audit --omit=dev --audit-level=moderate
+      - name: Report complete dependency audit
+        run: |
+          npm audit --json > /tmp/npm-audit.json || true
+          node -e 'const a=require("/tmp/npm-audit.json"); console.log(JSON.stringify({metadata:a.metadata?.vulnerabilities,packages:Object.entries(a.vulnerabilities??{}).map(([name,v])=>({name,severity:v.severity,range:v.range,fixAvailable:v.fixAvailable,via:v.via.map(x=>typeof x==="string"?x:{name:x.name,title:x.title,range:x.range,url:x.url})}))},null,2))'
+      - run: npm audit --audit-level=moderate
       - run: npm audit --audit-level=critical
       - uses: actions/upload-artifact@v4
         if: always()
