@@ -33,7 +33,9 @@ const mountCatalog = `(() => {
     return cache[id].exports;
   }
   require("react-dom/client").createRoot(document.getElementById("root"))
-    .render(require("react").createElement(require("catalog").ExerciseCatalog));
+    .render(require("react").createElement(require("catalog").ExerciseCatalog, {
+      videosOnly: new URLSearchParams(location.search).get("vista") === "videos",
+    }));
 })();`;
 const css = readFileSync("src/app/globals.css", "utf8");
 const firstId = "11111111-1111-4111-8111-111111111111";
@@ -41,13 +43,22 @@ const secondId = "22222222-2222-4222-8222-222222222222";
 const youtube = "https://www.youtube.com/watch?v=abcdefghijk";
 const videoBytes = Buffer.from("synthetic-gallery-bytes");
 
-async function catalogFixture(page: Page, origin: string, theme: string) {
+async function catalogFixture(page: Page, origin: string, theme: string, videosOnly = false) {
   const rows = new Map<string, Exercise>([
     [firstId, { id: firstId, name: "Sentadilla", description: "Inicial", revision: 1, active: true, video_url: null, video_path: null }],
     [secondId, { id: secondId, name: "Plancha", description: "Otra ficha", revision: 1, active: true, video_url: null, video_path: null }],
   ]);
   const writes: Exercise[] = [], uploads = new Map<string, Buffer>();
-  await page.route(`${origin}/__catalog-regression`, route => route.fulfill({
+  if (videosOnly) {
+    rows.set(firstId, { ...rows.get(firstId)!, video_url: youtube });
+    rows.set("33333333-3333-4333-8333-333333333333", {
+      id: "33333333-3333-4333-8333-333333333333",
+      name: "Remo", description: "", revision: 1, active: true, video_url: null,
+      video_path: "33333333-3333-4333-8333-333333333333/fixture.webm",
+    });
+    uploads.set("33333333-3333-4333-8333-333333333333/fixture.webm", videoBytes);
+  }
+  await page.route(`${origin}/__catalog-regression*`, route => route.fulfill({
     contentType: "text/html",
     body: `<!doctype html><html lang="es" data-theme="${theme}"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body><main id="root"></main></body></html>`,
   }));
@@ -69,7 +80,12 @@ async function catalogFixture(page: Page, origin: string, theme: string) {
       else if (bytes) await route.fulfill({ contentType: "video/webm", body: bytes });
       else await route.fulfill({ status: 307, headers: { location: exercise!.video_url! } });
     } else if (req.method() === "GET") {
-      await route.fulfill({ json: { exercises: [...rows.values()], next: null } });
+      const q = (url.searchParams.get("q") ?? "").toLowerCase();
+      const exercises = [...rows.values()].filter(e =>
+        e.name.toLowerCase().includes(q) &&
+        (url.searchParams.get("videos") !== "1" || e.video_url || e.video_path)
+      );
+      await route.fulfill({ json: { exercises, next: null } });
     } else {
       const p: Exercise = req.postDataJSON(), current = rows.get(p.id);
       // Reject mixed sources, malformed URLs, missing uploads and stale revisions.
@@ -85,9 +101,9 @@ async function catalogFixture(page: Page, origin: string, theme: string) {
       await route.fulfill({ json: { exercise } });
     }
   });
-  await page.goto(`${origin}/__catalog-regression`);
+  await page.goto(`${origin}/__catalog-regression${videosOnly ? "?vista=videos" : ""}`);
   await page.addScriptTag({ content: mountCatalog });
-  await expect(page.getByRole("button", { name: "Editar Sentadilla", exact: true })).toBeVisible();
+  if (!videosOnly) await expect(page.getByRole("button", { name: "Editar Sentadilla", exact: true })).toBeVisible();
   return { rows, writes };
 }
 
@@ -165,3 +181,31 @@ for (const width of [390, 1440]) for (const theme of ["light", "dark"]) {
     expect(writes.every(e => !(e.video_path && e.video_url))).toBe(true);
   });
 }
+
+test("la biblioteca muestra videos de YouTube y galería y permite buscarlos", async ({ page, baseURL }) => {
+  if (!baseURL) throw new Error("La prueba requiere un origen local.");
+  await page.setViewportSize({ width: 360, height: 800 });
+  await catalogFixture(page, baseURL, "dark", true);
+  const library = page.getByRole("region", { name: "Biblioteca de videos" });
+  await expect(library.getByRole("listitem")).toHaveCount(2);
+  await expect(library.getByText("Plancha", { exact: true })).toHaveCount(0);
+  await expect(library.getByRole("button", { name: /Guardar ejercicio|Editar/ })).toHaveCount(0);
+  await expect(library.getByLabel(/Subir video/)).toHaveCount(0);
+  const youtubeRow = library.getByRole("listitem").filter({ hasText: "Sentadilla" });
+  await youtubeRow.getByRole("link", { name: "Consultar video" }).click();
+  await expect(youtubeRow.getByRole("link", { name: "Abrir video explicativo" })).toBeVisible();
+
+  await library.getByLabel("Buscar ejercicio").fill("remo");
+  await library.getByRole("button", { name: "Buscar ejercicios" }).click();
+  await expect(library.getByRole("listitem")).toHaveCount(1);
+  await expect(library.getByText("Remo", { exact: true })).toBeVisible();
+  await library.getByRole("link", { name: "Consultar video" }).click();
+  const video = library.getByRole("link", { name: "Abrir video explicativo" });
+  await expect(video).toBeVisible();
+  const received = await page.evaluate(async href => [...new Uint8Array(await (await fetch(href!)).arrayBuffer())], await video.getAttribute("href"));
+  expect(Buffer.from(received)).toEqual(videoBytes);
+
+  await library.getByLabel("Buscar ejercicio").fill("plancha");
+  await library.getByRole("button", { name: "Buscar ejercicios" }).click();
+  await expect(library.getByText("No encontramos videos para esa búsqueda.")).toBeVisible();
+});

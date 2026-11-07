@@ -25,6 +25,10 @@ const routinesFixture = renderToStaticMarkup(React.createElement(AdminShell, {
   ...fixtureProps, active: "rutinas",
 }, React.createElement("h1", null, "Rutinas")));
 
+const exercisesFixture = renderToStaticMarkup(React.createElement(AdminShell, {
+  ...fixtureProps, active: "ejercicios",
+}, React.createElement("h1", null, "Ejercicios")));
+
 async function loadDashboard(page: Page, theme: "light" | "dark" = "dark", markup = fixture) {
   // A blank document prevents pending Next hydration from changing the synthetic fixture.
   await page.goto("about:blank");
@@ -41,6 +45,10 @@ for (const width of [360, 390, 768, 1440]) {
       await expect(page.locator(".dash-role").getByText("Administrador", { exact: true })).toBeVisible();
       await expect(page.getByText("Sin datos aún")).toHaveCount(2);
       await expect(page.getByRole("button", { name: "Cerrar sesión" })).toHaveCount(1);
+      const navigation = page.getByRole("navigation", { name: width <= 680 ? "Navegación móvil" : "Navegación principal" });
+      const exercises = navigation.getByRole("link", { name: "Ejercicios", exact: true });
+      await expect(exercises).toBeVisible();
+      await expect(exercises).toHaveAttribute("href", "/ejercicios");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       const accessibility = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
       expect(accessibility.violations).toEqual([]);
@@ -90,4 +98,12 @@ test("la navegación móvil llega a Rutinas por teclado y marca la sección acti
   await expect(page.getByRole("heading", { name: "Rutinas", exact: true })).toBeVisible();
   await expect(mobileNav.getByRole("link", { name: "Rutinas", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(mobileNav.getByRole("link", { name: "Inicio", exact: true })).not.toHaveAttribute("aria-current", "page");
+});
+
+test("Ejercicios tiene su propia sección activa en la navegación móvil", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await loadDashboard(page, "light", exercisesFixture);
+  const nav = page.getByRole("navigation", { name: "Navegación móvil" });
+  await expect(nav.getByRole("link", { name: "Ejercicios", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(nav.getByRole("link", { name: "Rutinas", exact: true })).not.toHaveAttribute("aria-current", "page");
 });

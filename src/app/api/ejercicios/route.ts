@@ -14,6 +14,7 @@ export async function GET(req: Request) {
   if (!Number.isSafeInteger(offset) || offset < 0 || offset > 1000000) return reply({ message: "Página inválida." }, 400);
   let query = client.from("cueva_exercises").select("id,name,active,revision,description,video_url,video_path").order("name").order("id").range(offset, offset + 100);
   if (params.get("active") === "1") query = query.eq("active", true);
+  if (params.get("videos") === "1") query = query.or("video_url.not.is.null,video_path.not.is.null");
   if (q) query = query.ilike("name", `%${q}%`);
   const { data, error } = await query;
   return error ? reply({ message: "No pudimos cargar el catálogo." }, 503) : reply({ exercises: data?.slice(0, 100), next: (data?.length ?? 0) > 100 ? offset + 100 : null });
