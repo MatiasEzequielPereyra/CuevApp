@@ -74,10 +74,11 @@ jobs:
           # legacy and current names before starting the authenticated test.
           export API_URL="${API_URL:-${SUPABASE_URL:-http://127.0.0.1:54321}}"
           export ANON_KEY="${ANON_KEY:-${SUPABASE_ANON_KEY:-${PUBLISHABLE_KEY:-${SUPABASE_PUBLISHABLE_KEY:-}}}}"
-          export SERVICE_ROLE_KEY="${SERVICE_ROLE_KEY:-${SUPABASE_SERVICE_ROLE_KEY:-${SECRET_KEY:-${SUPABASE_SECRET_KEY:-}}}}"
-          : "${DB_URL:?Supabase CLI did not provide DB_URL}"
+          export CUEVA_SERVICE_KEY="${SERVICE_ROLE_KEY:-${SUPABASE_SERVICE_ROLE_KEY:-${SECRET_KEY:-${SUPABASE_SECRET_KEY:-}}}}"
+          export DB_URL="${DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
+          : "${DB_URL:?Supabase local database URL is unavailable}"
           : "${ANON_KEY:?Supabase CLI did not provide an anonymous/publishable key}"
-          : "${SERVICE_ROLE_KEY:?Supabase CLI did not provide a service/secret key}"
+          : "${CUEVA_SERVICE_KEY:?Supabase CLI did not provide a service/secret key}"
           export CUEVA_PRODUCT_AUTH_LOCAL=1
           export CUEVA_SUPABASE_URL="$API_URL"
           export CUEVA_PUBLISHABLE_KEY="$ANON_KEY"
