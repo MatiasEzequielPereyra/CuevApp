@@ -128,7 +128,7 @@ jobs:
           export API_URL="${API_URL:-${SUPABASE_URL:-http://127.0.0.1:54321}}"
           export ANON_KEY="${ANON_KEY:-${SUPABASE_ANON_KEY:-${PUBLISHABLE_KEY:-${SUPABASE_PUBLISHABLE_KEY:-}}}}"
           export CUEVA_SERVICE_KEY="${SERVICE_ROLE_KEY-${SUPABASE_SERVICE_ROLE_KEY-${SECRET_KEY-${SUPABASE_SECRET_KEY-}}}}"
-          export DB_URL="${DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
+          export DB_URL="${DB_URL:-postgresql://postgres:postgres@127.0.0.1:55432/postgres}"
           : "${DB_URL:?Supabase local database URL is unavailable}"
           : "${ANON_KEY:?Supabase CLI did not provide an anonymous/publishable key}"
           : "${CUEVA_SERVICE_KEY:?Supabase CLI did not provide a service/secret key}"
