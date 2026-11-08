@@ -96,18 +96,7 @@ begin
    ) values (
     op,
     case
-     when coalesce(p->>'student_id','') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
-    left(p->>'due_day',8),left(p->>'reason',300),left(p->>'effective_month',16),
-    left(p->>'scope',32),error_code,left(error_message,300),p
-   );
-   return null;
-  end if;
-  raise;
- end;
-end $$;
-
-commit;
-
+     when coalesce(p->>'student_id','') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
       then ((p->>'student_id')::uuid)::text
      else left(p->>'student_id',64)
     end,
