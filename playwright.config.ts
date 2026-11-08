@@ -16,6 +16,7 @@ export default defineConfig({
     timeout: 60_000,
     env: {
       NEXT_TELEMETRY_DISABLED: "1",
+      CUEVA_E2E_FIXTURES: "1",
       CUEVA_LOCAL_AUTH: "1",
       CUEVA_AUTH_URL: "http://127.0.0.1:3101",
       CUEVA_REST_URL: "http://127.0.0.1:3102",

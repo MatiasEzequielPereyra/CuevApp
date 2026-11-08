@@ -44,8 +44,8 @@ jobs:
           CONTAINER_ID: ${{ job.services.postgres.id }}
         run: |
           docker cp supabase "$CONTAINER_ID:/tmp/supabase"
-          docker exec "$CONTAINER_ID" psql -U postgres -v ON_ERROR_STOP=1 -f /tmp/supabase/tests/membership.sql
-          docker exec "$CONTAINER_ID" psql -U postgres -v ON_ERROR_STOP=1 -f /tmp/supabase/tests/payment-receipts.sql
+          docker exec "$CONTAINER_ID" psql -U postgres -v ON_ERROR_STOP=1 -f /tmp/supabase/standalone-tests/membership.sql
+          docker exec "$CONTAINER_ID" psql -U postgres -v ON_ERROR_STOP=1 -f /tmp/supabase/standalone-tests/payment-receipts.sql
 
   receipt-storage:
     runs-on: ubuntu-latest

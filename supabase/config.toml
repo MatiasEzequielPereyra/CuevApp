@@ -1,0 +1,7 @@
+project_id = "cuevapp-ci"
+
+[db]
+port = 55432
+
+[local_smtp]
+port = 55424

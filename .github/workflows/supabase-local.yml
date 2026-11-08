@@ -1,0 +1,159 @@
+name: Supabase local migrations
+
+on:
+  push:
+    paths:
+      - "supabase/**"
+      - ".github/workflows/supabase-local.yml"
+      - "tests/billing-concurrency.test.mjs"
+      - "tests/e2e/**"
+      - "src/app/api/pagos/**"
+      - "src/components/payments/**"
+      - "package.json"
+      - "package-lock.json"
+  pull_request:
+    paths:
+      - "supabase/**"
+      - ".github/workflows/supabase-local.yml"
+      - "tests/billing-concurrency.test.mjs"
+      - "tests/e2e/**"
+      - "src/app/api/pagos/**"
+      - "src/components/payments/**"
+      - "package.json"
+      - "package-lock.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migrations:
+    name: Supabase migrations (${{ matrix.path }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        path: [fresh, upgrade]
+    env:
+      MIGRATION_PATH: ${{ matrix.path }}
+      RECEIPTS_VERSION: "20261107100100"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Supabase CLI v2
+        uses: supabase/setup-cli@v3
+        with:
+          version: v2.stable
+
+      - name: Report Supabase CLI version
+        run: supabase --version
+
+      - name: Start isolated stack at the requested migration baseline
+        run: |
+          workdir="$(mktemp -d)"
+          evidence="$RUNNER_TEMP/cueva-003b-evidence"
+          mkdir -p "$workdir/supabase/migrations" "$evidence"
+          cp supabase/config.toml "$workdir/supabase/"
+          cp -r supabase/tests "$workdir/supabase/"
+          for file in supabase/migrations/*.sql; do
+            name="${file##*/}"
+            version="${name%%_*}"
+            if [[ "$MIGRATION_PATH" == fresh || "$version" < "$RECEIPTS_VERSION" || "$version" == "$RECEIPTS_VERSION" ]]; then
+              cp "$file" "$workdir/supabase/migrations/"
+            fi
+          done
+          echo "SUPABASE_TEST_DIR=$workdir" >> "$GITHUB_ENV"
+          echo "MIGRATION_EVIDENCE=$evidence" >> "$GITHUB_ENV"
+          supabase --workdir "$workdir" start > "$RUNNER_TEMP/supabase-start.log"
+
+      - name: Seed and upgrade the database with Comprobantes already applied
+        if: matrix.path == 'upgrade'
+        run: |
+          db=supabase_db_cuevapp-ci
+          supabase --workdir "$SUPABASE_TEST_DIR" migration list --local | tee "$MIGRATION_EVIDENCE/before-upgrade.txt"
+          docker exec "$db" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c \
+            "do \$\$ begin
+              assert to_regclass('public.cueva_payment_receipts') is not null, 'receipts applied';
+              assert to_regclass('public.cueva_due_schedules') is null, 'due dates not yet applied';
+              assert (select max(version) from supabase_migrations.schema_migrations) = '$RECEIPTS_VERSION', 'expected migration baseline';
+            end \$\$;"
+          docker exec -i "$db" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -v seed=true \
+            < supabase/standalone-tests/receipts-due-dates.sql | tee "$MIGRATION_EVIDENCE/pre-upgrade-fixtures.txt"
+          cp supabase/migrations/*.sql "$SUPABASE_TEST_DIR/supabase/migrations/"
+          supabase --workdir "$SUPABASE_TEST_DIR" migration up --local 2>&1 | tee "$MIGRATION_EVIDENCE/upgrade.txt"
+
+      - name: Verify full migration history and receipts through the updated ledger
+        run: |
+          db=supabase_db_cuevapp-ci
+          supabase --workdir "$SUPABASE_TEST_DIR" migration list --local | tee "$MIGRATION_EVIDENCE/final-migrations.txt"
+          printf '%s\n' supabase/migrations/*.sql | sed 's|.*/||; s|_.*||' > "$RUNNER_TEMP/migrations-expected.txt"
+          docker exec "$db" psql -U postgres -d postgres -At -v ON_ERROR_STOP=1 \
+            -c 'select version from supabase_migrations.schema_migrations order by version' > "$RUNNER_TEMP/migrations-applied.txt"
+          diff -u "$RUNNER_TEMP/migrations-expected.txt" "$RUNNER_TEMP/migrations-applied.txt"
+          if [[ "$MIGRATION_PATH" == fresh ]]; then
+            docker exec -i "$db" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -v seed=true \
+              < supabase/standalone-tests/receipts-due-dates.sql | tee "$MIGRATION_EVIDENCE/fresh-fixtures.txt"
+          fi
+          docker exec -i "$db" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -v seed=false \
+            < supabase/standalone-tests/receipts-due-dates.sql | tee "$MIGRATION_EVIDENCE/due-dates-and-receipts.txt"
+
+      - name: Run database tests
+        run: supabase --workdir "$SUPABASE_TEST_DIR" test db | tee "$MIGRATION_EVIDENCE/pg-tap.txt"
+
+      - name: Verify concurrent billing writes
+        run: |
+          eval "$(supabase --workdir "$SUPABASE_TEST_DIR" status -o env)"
+          test_db_var=CUEVA_TEST_DATABASE_URL
+          export "$test_db_var=${DB_URL:-postgresql://postgres:postgres@127.0.0.1:55432/postgres}"
+          node tests/billing-concurrency.test.mjs | tee "$MIGRATION_EVIDENCE/concurrency.txt"
+
+      - name: Install Chromium for authenticated integration test
+        run: npx playwright install --with-deps chromium
+
+      - name: Run authenticated UI-to-Supabase integration
+        run: |
+          eval "$(supabase --workdir "$SUPABASE_TEST_DIR" status -o env)"
+          # Supabase CLI v2 output names vary across releases. Normalize both
+          # legacy and current names before starting the authenticated test.
+          export API_URL="${API_URL:-${SUPABASE_URL:-http://127.0.0.1:54321}}"
+          export ANON_KEY="${ANON_KEY:-${SUPABASE_ANON_KEY:-${PUBLISHABLE_KEY:-${SUPABASE_PUBLISHABLE_KEY:-}}}}"
+          export CUEVA_SERVICE_KEY="${SERVICE_ROLE_KEY-${SUPABASE_SERVICE_ROLE_KEY-${SECRET_KEY-${SUPABASE_SECRET_KEY-}}}}"
+          export DB_URL="${DB_URL:-postgresql://postgres:postgres@127.0.0.1:55432/postgres}"
+          : "${DB_URL:?Supabase local database URL is unavailable}"
+          : "${ANON_KEY:?Supabase CLI did not provide an anonymous/publishable key}"
+          : "${CUEVA_SERVICE_KEY:?Supabase CLI did not provide a service/secret key}"
+          export CUEVA_PRODUCT_AUTH_LOCAL=1
+          export CUEVA_SUPABASE_URL="$API_URL"
+          export CUEVA_PUBLISHABLE_KEY="$ANON_KEY"
+          export CUEVA_PRODUCT_ORIGIN="http://127.0.0.1:3000"
+          export CUEVA_AUTH_URL="$API_URL/auth/v1"
+          export CUEVA_REST_URL="$API_URL/rest/v1"
+          export NEXT_TELEMETRY_DISABLED=1
+          npm run dev -- --port 3000 > /tmp/cueva-next.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          node tests/e2e/supabase-due-date.integration.mjs | tee "$MIGRATION_EVIDENCE/authenticated-ui.txt" || {
+            cat /tmp/cueva-next.log
+            exit 1
+          }
+
+      - name: Upload migration evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cueva-003b-migrations-${{ matrix.path }}
+          path: ${{ runner.temp }}/cueva-003b-evidence/

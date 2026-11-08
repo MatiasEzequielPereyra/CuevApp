@@ -13,10 +13,20 @@ export function productConfig() {
   const { CUEVA_SUPABASE_URL: url, CUEVA_PUBLISHABLE_KEY: key, CUEVA_SERVICE_KEY: serviceKey, CUEVA_PRODUCT_ORIGIN: origin, CUEVA_AUTH_URL: auth, CUEVA_REST_URL: rest } = process.env;
   if (!url || !key || !serviceKey || !origin || (local && (!auth || !rest))) return null;
   try {
-    for (const value of [url, origin, ...(local && auth && rest ? [auth, rest] : [])]) {
+    for (const value of [url, origin]) {
       const parsed = new URL(value);
       if (parsed.origin !== value || parsed.username || parsed.password) return null;
       if (local ? (parsed.protocol !== "http:" || parsed.hostname !== "127.0.0.1" || !parsed.port) : parsed.protocol !== "https:") return null;
+    }
+    if (local && auth && rest) {
+      // The CLI uses one gateway. The isolated service lab uses bare loopback origins.
+      const gateway = auth === `${url}/auth/v1` && rest === `${url}/rest/v1`;
+      const split = [auth, rest].every(value => {
+        const endpoint = new URL(value);
+        return endpoint.origin === value && endpoint.protocol === "http:"
+          && endpoint.hostname === "127.0.0.1" && !!endpoint.port;
+      });
+      if (!gateway && !split) return null;
     }
   } catch { return null; }
   return { url, key, serviceKey, origin, auth, rest, local, ownerTest, expectedOwner, ownerOnly: ownerTest && !customMailReady };
