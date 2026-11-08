@@ -115,7 +115,10 @@ jobs:
         run: supabase --workdir "$SUPABASE_TEST_DIR" test db | tee "$MIGRATION_EVIDENCE/pg-tap.txt"
 
       - name: Verify concurrent billing writes
-        run: node tests/billing-concurrency.test.mjs | tee "$MIGRATION_EVIDENCE/concurrency.txt"
+        run: |
+          eval "$(supabase --workdir "$SUPABASE_TEST_DIR" status -o env)"
+          export CUEVA_TEST_DATABASE_URL="${DB_URL:-postgresql://postgres:postgres@127.0.0.1:55432/postgres}"
+          node tests/billing-concurrency.test.mjs | tee "$MIGRATION_EVIDENCE/concurrency.txt"
 
       - name: Install Chromium for authenticated integration test
         run: npx playwright install --with-deps chromium
