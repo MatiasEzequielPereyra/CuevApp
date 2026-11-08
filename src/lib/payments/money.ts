@@ -7,7 +7,7 @@ export function toCents(value: string): string {
 export function pesos(cents: string): string {
  const amount=BigInt(cents);const whole=amount/100n;const fraction=amount%100n;
  const formatted=whole.toLocaleString("es-AR");
- return fraction===0n? \`$ \${formatted}\`:\`$ \${formatted},\${fraction.toString().padStart(2,"0")}\`;
+ return fraction===0n? "$ "+formatted:"$ "+formatted+","+fraction.toString().padStart(2,"0");
 }
 export type Movement={id:string;cents:string;paid_on:string;method:string;actor:string;recorded_at:string;reversal:null|{reason:string;actor:string;recorded_at:string}};
 export type Period={id:string;month:string;due_on:string;cents:string;paid:string;payments:Movement[]};
