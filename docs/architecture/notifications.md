@@ -72,7 +72,7 @@ Esta arquitectura no autoriza aplicar migraciones, habilitar extensiones, crear 
 
 ### Lectura del worker
 
-El endpoint de Vercel usa el `serviceClient()` existente. La lectura financiera se encapsula en una RPC de propósito único, ejecutable únicamente por `service_role`, que devuelve por período: identificadores de alumno/período, nombre y correo de destino, mes, `due_on`, importe, total pagado y saldo en centavos. La función debe comprobar `auth.role() = 'service_role'`, usar `SECURITY DEFINER` con `search_path = ''`, y revocar ejecución a `PUBLIC`, `anon` y `authenticated`. No se otorgan permisos directos de lectura a alumnos ni se reutiliza `cueva_billing_snapshot`.
+El endpoint de Vercel usa el `serviceClient()` existente. La lectura financiera se encapsula en una RPC de propósito único, ejecutable únicamente por `service_role`, que devuelve por período: identificadores de alumno/período, nombre y correo de destino, mes, `due_on`, importe, total pagado y saldo en centavos. La función privada debe validar el claim firmado `request.jwt.claims ->> 'role' = 'service_role'`, usar `SECURITY DEFINER` con `search_path = ''`, y revocar ejecución a `PUBLIC`, `anon` y `authenticated`. El wrapper expuesto en `public` será `SECURITY INVOKER` y solo tendrá `EXECUTE` para `service_role`; también se concede `USAGE` sobre `cueva_private` únicamente a ese rol. No se usa `auth.role()`, que está obsoleto. No se otorgan permisos directos de lectura a alumnos ni se reutiliza `cueva_billing_snapshot`.
 
 La clave service-role ya es una autoridad privilegiada del servidor; la RPC limita el contrato de datos utilizado por el worker, pero no se considera una frontera frente a otro código que ya posea esa clave. Nunca se envía la clave al navegador.
 
@@ -93,3 +93,8 @@ El esquema se separará por responsabilidad:
 El worker se ejecuta cada cinco minutos, pero compara contra la hora local configurada (inicialmente 12:00). La frecuencia del cron no adelanta ni desplaza el horario. Para cada período abierto reconcilia ambas identidades (5 días y 1 día) con el vencimiento actual y saldo actual. El primer intento ocurre al llegar el horario; tras cada fallo se programa el siguiente intento a 15 min, 30 min, 60 min y 3 h. El intento inicial más esos cuatro reintentos son cinco intentos máximos. Agotados, la entrega queda fallida definitivamente y se genera una alerta administrativa.
 
 La recuperación no reintenta indiscriminadamente: solo procesa avisos aún relevantes cuyo vencimiento siga siendo futuro; el resto se marca descartado con motivo. Los períodos se evalúan de forma independiente.
+
+
+### Exposición explícita del Data API
+
+Desde el cambio de Supabase aplicado en 2026, las tablas nuevas de `public` no deben suponerse accesibles automáticamente por PostgREST. Toda tabla de notificaciones tendrá RLS habilitado y privilegios explícitos. Las tablas operativas (entregas, intentos, ejecuciones, preferencias y suscripciones) no concederán acceso directo a `anon` ni `authenticated`; el worker accederá mediante RPCs estrechas. La bandeja interna concederá únicamente lectura y actualización del estado de lectura bajo RLS ligada a la sesión vigente y al `user_id`. Los wrappers RPC serán `SECURITY INVOKER` y se concederá `EXECUTE` solo a los roles consumidores.
