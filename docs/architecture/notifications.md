@@ -58,3 +58,38 @@ Proyecto Supabase vbkzoojkdkcugxhneyzi, PostgreSQL 17.11:
 ## Límites de esta decisión
 
 Esta arquitectura no autoriza aplicar migraciones, habilitar extensiones, crear secretos, programar el job alojado, cambiar variables de Vercel, enviar correos/push reales, desplegar ni integrar la rama. Esas operaciones requieren revisión y autorización operativa separada.
+
+
+## Contratos de datos y límites de acceso
+
+### Fuente financiera
+
+- La única fuente de períodos es `public.cueva_periods`; CUEVA-005 no crea períodos ni cuotas.
+- El saldo se obtiene como `period.cents - SUM(payments.cents)`, excluyendo pagos presentes en `cueva_reversals`. Los importes se mantienen como enteros en centavos.
+- El vencimiento se lee de `cueva_periods.due_on`, ya calculado por el mecanismo de vencimientos individuales. No se recalcula desde `joined_on` ni desde `cueva_due_schedules`.
+- Solo se consideran fichas activas, períodos con vencimiento futuro en la fecha local de Buenos Aires y saldo mayor que cero.
+- El correo y nombre de destino provienen de `cueva_students`; no se consulta ni se expone el historial completo de pagos.
+
+### Lectura del worker
+
+El endpoint de Vercel usa el `serviceClient()` existente. La lectura financiera se encapsula en una RPC de propósito único, ejecutable únicamente por `service_role`, que devuelve por período: identificadores de alumno/período, nombre y correo de destino, mes, `due_on`, importe, total pagado y saldo en centavos. La función debe comprobar `auth.role() = 'service_role'`, usar `SECURITY DEFINER` con `search_path = ''`, y revocar ejecución a `PUBLIC`, `anon` y `authenticated`. No se otorgan permisos directos de lectura a alumnos ni se reutiliza `cueva_billing_snapshot`.
+
+La clave service-role ya es una autoridad privilegiada del servidor; la RPC limita el contrato de datos utilizado por el worker, pero no se considera una frontera frente a otro código que ya posea esa clave. Nunca se envía la clave al navegador.
+
+### Estado persistente
+
+El esquema se separará por responsabilidad:
+
+- **Configuración común:** una única fila con hora efectiva y zona horaria fija. Ambos administradores pueden cambiar la hora mediante RPC autenticada con sesión vigente y rol admin; la RPC actualiza solo trabajos pendientes y agrega auditoría con actor, hora, valor anterior/nuevo y resultado.
+- **Notificación lógica:** identidad única por período, tipo (5 días/1 día) y fecha de vencimiento. Cambiar el vencimiento cancela solo filas aún pendientes y crea la identidad correspondiente al nuevo vencimiento. Las procesadas permanecen inmutables.
+- **Entrega por canal:** una fila independiente para email, interna y push, con estado, contador de intentos, próxima ejecución y referencia del proveedor. Una falla de un canal no bloquea los demás.
+- **Intentos:** historial append-only por entrega, con número, canal, instante, resultado, código acotado y referencia del proveedor. No se almacenan cuerpos SMTP, tokens ni datos personales innecesarios.
+- **Bandeja interna:** contenido persistente asociado al alumno y estado de lectura individual; no desaparece por completar una entrega de email o push.
+- **Preferencia push y suscripciones:** push se inicializa habilitado por alumno; endpoint y claves de suscripción quedan solo en servidor. Email e internas no tienen interruptor.
+- **Ejecuciones y recuperación:** registro separado de inicio/fin, recuperación tras indisponibilidad, decisión (envío tardío o descarte) y motivo.
+
+### Ventanas y reintentos
+
+El worker se ejecuta cada cinco minutos, pero compara contra la hora local configurada (inicialmente 12:00). La frecuencia del cron no adelanta ni desplaza el horario. Para cada período abierto reconcilia ambas identidades (5 días y 1 día) con el vencimiento actual y saldo actual. El primer intento ocurre al llegar el horario; tras cada fallo se programa el siguiente intento a 15 min, 30 min, 60 min y 3 h. El intento inicial más esos cuatro reintentos son cinco intentos máximos. Agotados, la entrega queda fallida definitivamente y se genera una alerta administrativa.
+
+La recuperación no reintenta indiscriminadamente: solo procesa avisos aún relevantes cuyo vencimiento siga siendo futuro; el resto se marca descartado con motivo. Los períodos se evalúan de forma independiente.
