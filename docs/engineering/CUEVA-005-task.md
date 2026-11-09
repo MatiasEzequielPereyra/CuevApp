@@ -54,6 +54,11 @@ Supabase Cron solo dispara cada cinco minutos. Vercel realiza todo el procesamie
 - Brevo SMTP figura en el checkpoint para invitaciones; no se considera prueba de que las variables/credenciales de envío transaccional estén disponibles para este nuevo servicio.
 - No existen aún manifest PWA ni service worker en el repositorio.
 
-## Limitaciones del entorno de ejecución
+## Estado del entorno de ejecución y validación
 
-El ejecutor no tiene checkout local ni Supabase CLI instalado, y no dispone de conectividad para clonar el repositorio. La documentación instalada exige generar nuevas migraciones con supabase migration new; por lo tanto, no se inventará ni se escribirá una migración SQL hasta contar con ese flujo de generación. La inspección de código y del proyecto remoto se realizó mediante GitHub/Supabase connectors; las consultas remotas fueron de solo lectura.
+- Existe un checkout local aislado del usuario en `E:\\CuevApp\\CuevApp-cueva-005`, sobre esta rama. No se debe reemplazar, recrear ni confundir con el worktree de CUEVA-003B.
+- En ese checkout se verificaron Node 22.14.0, npm 10.9.2, Docker operativo y Supabase CLI v2.122.1 mediante ejecución efímera con npx; `npm ci` finalizó correctamente (391 paquetes, 0 vulnerabilidades) y dejó el árbol Git limpio.
+- El checkout incluye documentación instalada de Next.js 16.4.3. Antes de editar Route Handlers o APIs de Next se deben leer los documentos pertinentes desde `node_modules/next/dist/docs/`.
+- La actualización documental de esta etapa se realizó sobre GitHub en la rama aislada. No se ejecutaron todavía pruebas locales de migración, lint, typecheck, build ni Playwright para cambios de implementación, porque aún no se agregaron archivos de código.
+- Las consultas al proyecto Supabase alojado fueron de solo lectura. No se aplicaron migraciones, no se instalaron extensiones, no se crearon jobs ni secretos y no se modificó Vercel.
+- La próxima migración debe generarse con `supabase migration new` desde el checkout aislado y validarse en bases locales fresh y upgrade antes de considerar cualquier operación alojada.
