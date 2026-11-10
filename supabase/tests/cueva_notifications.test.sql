@@ -1,0 +1,115 @@
+begin;
+select plan(24);
+
+-- Isolated fixtures: two students, two linked identities, one administrator.
+insert into auth.users(id,aud,role,email,created_at,updated_at)
+values
+ ('b1000000-0000-4000-8000-000000000001','authenticated','authenticated','notifications-admin@example.test',now(),now()),
+ ('b1000000-0000-4000-8000-000000000002','authenticated','authenticated','notifications-student-one@example.test',now(),now()),
+ ('b1000000-0000-4000-8000-000000000003','authenticated','authenticated','notifications-student-two@example.test',now(),now());
+
+insert into auth.sessions(id,user_id,created_at,updated_at)
+values
+ ('b2000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001',now(),now()),
+ ('b2000000-0000-4000-8000-000000000002','b1000000-0000-4000-8000-000000000002',now(),now()),
+ ('b2000000-0000-4000-8000-000000000003','b1000000-0000-4000-8000-000000000003',now(),now());
+
+insert into cueva_private.access_state(user_id,ready,session_not_before)
+values
+ ('b1000000-0000-4000-8000-000000000001',true,now()-interval '1 minute'),
+ ('b1000000-0000-4000-8000-000000000002',true,now()-interval '1 minute'),
+ ('b1000000-0000-4000-8000-000000000003',true,now()-interval '1 minute');
+
+insert into public.cueva_profiles(user_id,role)
+values
+ ('b1000000-0000-4000-8000-000000000001','admin'),
+ ('b1000000-0000-4000-8000-000000000002','alumno'),
+ ('b1000000-0000-4000-8000-000000000003','alumno');
+
+insert into public.cueva_students(id,first_name,last_name,email,joined_on)
+values
+ ('b3000000-0000-4000-8000-000000000001','Student','One','notifications-student-one@example.test',date '2026-01-01'),
+ ('b3000000-0000-4000-8000-000000000002','Student','Two','notifications-student-two@example.test',date '2026-01-02');
+
+insert into public.cueva_student_invitations(
+ student_id,email,user_id,state,lease,requested_by
+) values
+ ('b3000000-0000-4000-8000-000000000001','notifications-student-one@example.test','b1000000-0000-4000-8000-000000000002','sent','b4000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001'),
+ ('b3000000-0000-4000-8000-000000000002','notifications-student-two@example.test','b1000000-0000-4000-8000-000000000003','sent','b4000000-0000-4000-8000-000000000002','b1000000-0000-4000-8000-000000000001');
+
+insert into public.cueva_prices(id,effective_month,cents,actor)
+values ('b5000000-0000-4000-8000-000000000001',date '2026-11-01',10000,'b1000000-0000-4000-8000-000000000001');
+
+insert into public.cueva_periods(id,student_id,month,due_on,cents,price_id,actor)
+values
+ ('b6000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000001',date '2026-11-01',date '2026-11-20',10000,'b5000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001'),
+ ('b6000000-0000-4000-8000-000000000002','b3000000-0000-4000-8000-000000000002',date '2026-11-01',date '2026-11-21',12000,'b5000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001');
+
+insert into public.cueva_payments(id,period_id,cents,paid_on,method,actor)
+values ('b7000000-0000-4000-8000-000000000001','b6000000-0000-4000-8000-000000000001',2500,date '2026-11-10','transferencia','b1000000-0000-4000-8000-000000000001');
+
+insert into public.cueva_notifications(id,period_id,reminder_days,due_on,scheduled_at)
+values
+ ('b8000000-0000-4000-8000-000000000001','b6000000-0000-4000-8000-000000000001',5,date '2026-11-20',timestamptz '2026-11-15 12:00:00-03'),
+ ('b8000000-0000-4000-8000-000000000002','b6000000-0000-4000-8000-000000000002',5,date '2026-11-21',timestamptz '2026-11-16 12:00:00-03');
+
+insert into public.cueva_notification_deliveries(
+ id,notification_id,channel,status,attempt_count,next_attempt_at,last_attempt_at
+) values
+ ('b9000000-0000-4000-8000-000000000001','b8000000-0000-4000-8000-000000000001','internal','pending',0,timestamptz '2026-11-15 12:00:00-03',null),
+ ('b9000000-0000-4000-8000-000000000002','b8000000-0000-4000-8000-000000000001','push','pending',1,timestamptz '2026-11-15 12:15:00-03',timestamptz '2026-11-15 12:00:00-03'),
+ ('b9000000-0000-4000-8000-000000000003','b8000000-0000-4000-8000-000000000002','internal','pending',0,timestamptz '2026-11-16 12:00:00-03',null);
+
+insert into public.cueva_notification_inbox(
+ id,delivery_id,notification_id,student_id,user_id,title,body
+) values
+ ('ba000000-0000-4000-8000-000000000001','b9000000-0000-4000-8000-000000000001','b8000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000002','Recordatorio de cuota','Tu período tiene saldo pendiente.');
+
+-- Student one: own preference and inbox only; cannot read operational tables.
+select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000002',true);
+select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000002','role','authenticated','session_id','b2000000-0000-4000-8000-000000000002')::text,true);
+set local role authenticated;
+
+select is((select count(*)::integer from public.cueva_notification_preferences),1,'student can read their own push preference');
+select is((select count(*)::integer from public.cueva_notification_inbox),1,'student can read their own internal inbox');
+select is((select count(*)::integer from public.cueva_notification_inbox where id='ba000000-0000-4000-8000-000000000001'),1,'own inbox row is visible');
+update public.cueva_notification_preferences set push_enabled=false where student_id='b3000000-0000-4000-8000-000000000001';
+select is((select push_enabled from public.cueva_notification_preferences where student_id='b3000000-0000-4000-8000-000000000001'),false,'student can disable push for their own account');
+select is((with changed as (update public.cueva_notification_preferences set push_enabled=false where student_id='b3000000-0000-4000-8000-000000000002' returning 1) select count(*)::integer from changed),0,'student cannot change another student preference');
+update public.cueva_notification_inbox set read_at=clock_timestamp() where id='ba000000-0000-4000-8000-000000000001';
+select ok((select read_at is not null from public.cueva_notification_inbox where id='ba000000-0000-4000-8000-000000000001'),'student can mark own inbox item as read');
+select throws_ok($$select * from public.cueva_notifications$$,'42501',null,'student cannot query operational notification rows');
+select throws_ok($$select * from public.cueva_notification_deliveries$$,'42501',null,'student cannot query delivery rows');
+
+reset role;
+select ok(has_function_privilege('service_role','public.cueva_notifications_worker_snapshot()','EXECUTE'),'service role can execute the worker snapshot');
+select ok(not has_function_privilege('authenticated','public.cueva_notifications_worker_snapshot()','EXECUTE'),'authenticated cannot execute the worker snapshot');
+select ok(not has_function_privilege('anon','public.cueva_notifications_worker_snapshot()','EXECUTE'),'anon cannot execute the worker snapshot');
+
+-- Both admins use the authenticated schedule RPC; only untouched pending work moves.
+select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000001',true);
+select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000001','role','authenticated','session_id','b2000000-0000-4000-8000-000000000001')::text,true);
+set local role authenticated;
+select is(public.cueva_update_notification_schedule(time '13:00'),time '13:00','administrator can change the common send time');
+select is((select send_time from public.cueva_notification_settings where singleton),time '13:00','new common send time is persisted');
+select is((select count(*)::integer from public.cueva_notification_audit where action='schedule_changed' and actor_id='b1000000-0000-4000-8000-000000000001'),1,'schedule change is audited with its actor');
+select is((select scheduled_at from public.cueva_notifications where id='b8000000-0000-4000-8000-000000000001'),timestamptz '2026-11-15 13:00:00-03','pending notification schedule follows the configured local time');
+select is((select next_attempt_at from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000001'),timestamptz '2026-11-15 13:00:00-03','unattempted delivery schedule is updated');
+select is((select next_attempt_at from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000002'),timestamptz '2026-11-15 12:15:00-03','delivery with a previous attempt keeps its retry schedule');
+
+reset role;
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select results_eq(
+ $$select balance_cents from public.cueva_notifications_worker_snapshot() where period_id='b6000000-0000-4000-8000-000000000001'$$,
+ $$values (7500::bigint)$$,
+ 'worker snapshot returns current balance after partial payment without exposing payment history'
+);
+
+reset role;
+select throws_ok($$insert into public.cueva_notifications(id,period_id,reminder_days,due_on,scheduled_at) values ('b8000000-0000-4000-8000-000000000003','b6000000-0000-4000-8000-000000000001',5,date '2026-11-20',now())$$,'23505',null,'logical notification identity is unique by period, type, and due date');
+select throws_ok($$insert into public.cueva_notification_deliveries(id,notification_id,channel,status,attempt_count,next_attempt_at,lease_token) values ('b9000000-0000-4000-8000-000000000004','b8000000-0000-4000-8000-000000000002','push','processing',0,now(),gen_random_uuid())$$,'23514',null,'processing delivery requires both lease token and expiry');
+select throws_ok($$insert into public.cueva_notification_inbox(id,delivery_id,notification_id,student_id,user_id,title,body) values ('ba000000-0000-4000-8000-000000000002','b9000000-0000-4000-8000-000000000001','b8000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000002','b1000000-0000-4000-8000-000000000003','Wrong owner','Should fail')$$,'23514',null,'internal inbox enforces the delivery, student, and linked user relationship');
+
+select * from finish();
+rollback;
