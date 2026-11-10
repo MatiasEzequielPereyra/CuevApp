@@ -76,7 +76,11 @@ select is((select count(*)::integer from public.cueva_notification_inbox where i
 update public.cueva_notification_preferences set push_enabled=false where student_id='b3000000-0000-4000-8000-000000000001';
 select is((select push_enabled from public.cueva_notification_preferences where student_id='b3000000-0000-4000-8000-000000000001'),false,'student can disable push for their own account');
 update public.cueva_notification_preferences set push_enabled=false where student_id='b3000000-0000-4000-8000-000000000002';
+-- RLS correctly hides the other student's row from this SELECT. Inspect the
+-- persisted value as the database test owner to prove the UPDATE changed nothing.
+reset role;
 select is((select push_enabled from public.cueva_notification_preferences where student_id='b3000000-0000-4000-8000-000000000002'),true,'student cannot change another student preference');
+set local role authenticated;
 update public.cueva_notification_inbox set read_at=clock_timestamp() where id='ba000000-0000-4000-8000-000000000001';
 select ok((select read_at is not null from public.cueva_notification_inbox where id='ba000000-0000-4000-8000-000000000001'),'student can mark own inbox item as read');
 select throws_ok($$select * from public.cueva_notifications$$,'42501',null,'student cannot query operational notification rows');
