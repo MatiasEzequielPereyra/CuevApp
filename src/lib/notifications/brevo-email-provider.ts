@@ -18,13 +18,14 @@ type BrevoEmailPayload = {
 };
 
 function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, character => ({
+  const entities: Record<string, string> = {
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
     '"': "&quot;",
     "'": "&#39;",
-  })[character] ?? character);
+  };
+  return value.replace(/[&<>"']/g, character => entities[character] ?? character);
 }
 
 export function buildBrevoEmailPayload(
@@ -72,7 +73,7 @@ export function createBrevoEmailProvider(configuration: BrevoEmailConfiguration)
         method: "POST",
         headers: {
           "accept": "application/json",
-          "api-key": configuration.apiKey,
+          "api-key": configuration.apiKey.trim(),
           "content-type": "application/json",
         },
         body: JSON.stringify(payload),
