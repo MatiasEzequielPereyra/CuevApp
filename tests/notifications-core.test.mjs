@@ -37,8 +37,9 @@ test("acepta centavos como texto o bigint sin convertirlos a number", () => {
   const largeBalance = "9007199254740993";
   const plan = buildReminderPlan({ ...period, balanceCents: largeBalance }, "12:00", new Date("2026-11-15T15:00:00.000Z"));
   assert.equal(plan.length, 2);
+
   const content = formatReminderContent({ ...period, balanceCents: largeBalance });
-  assert.match(content.body, /9\\.007\\.199\\.254\\.740\\.993,00/);
+  assert.match(content.body, /90\.071\.992\.547\.409,93/);
   assert.match(formatReminderContent({ ...period, balanceCents: 7500n }).body, /75,00/);
   assert.throws(() => buildReminderPlan({ ...period, balanceCents: Number.MAX_SAFE_INTEGER + 1 }, "12:00", new Date()), /Saldo inválido/);
 });
