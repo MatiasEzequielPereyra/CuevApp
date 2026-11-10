@@ -126,7 +126,8 @@ jobs:
       - name: Verify concurrent notification claims and retry policy
         run: |
           eval "$(supabase --workdir "$SUPABASE_TEST_DIR" status -o env)"
-          export CUEVA_TEST_DATABASE_URL="${DB_URL:-postgresql://postgres:postgres@127.0.0.1:55432/postgres}"
+          test_db_var=CUEVA_TEST_DATABASE_URL
+          export "$test_db_var=${DB_URL:-postgresql://postgres:postgres@127.0.0.1:55432/postgres}"
           node tests/notifications-claim-concurrency.test.mjs | tee "$MIGRATION_EVIDENCE/notification-claim-concurrency.txt"
 
       - name: Install Chromium for authenticated integration test
