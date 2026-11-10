@@ -100,7 +100,8 @@ test("envía a suscripciones activas y conserva aislados los errores por endpoin
   assert.equal(calls.length, 2);
   assert.equal(calls[0].init.headers["Content-Encoding"], "aes128gcm");
   assert.match(calls[0].init.headers.Authorization, /^vapid t=/);
-  assert.equal(updates.length, 0);
+  assert.equal(updates.length, 1);
+  assert.deepEqual(updates[0], { revoked_at: new Date(1794355200000).toISOString() });
 });
 
 test("sin cuenta o sin claves VAPID no intenta enviar", async () => {
