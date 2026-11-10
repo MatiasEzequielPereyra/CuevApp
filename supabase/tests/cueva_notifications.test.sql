@@ -1,5 +1,5 @@
 begin;
-select plan(21);
+select plan(23);
 
 -- Isolated fixtures: two students, two linked identities, one administrator.
 insert into auth.users(id,aud,role,email,created_at,updated_at)
@@ -85,6 +85,8 @@ reset role;
 select ok(has_function_privilege('service_role','public.cueva_notifications_worker_snapshot()','EXECUTE'),'service role can execute the worker snapshot');
 select ok(not has_function_privilege('authenticated','public.cueva_notifications_worker_snapshot()','EXECUTE'),'authenticated cannot execute the worker snapshot');
 select ok(not has_function_privilege('anon','public.cueva_notifications_worker_snapshot()','EXECUTE'),'anon cannot execute the worker snapshot');
+select ok(has_table_privilege('service_role','public.cueva_notification_settings','SELECT'),'worker can read the common schedule');
+select ok(has_table_privilege('service_role','public.cueva_notification_preferences','SELECT'),'worker can read push preferences');
 
 -- Both admins use the authenticated schedule RPC; only untouched pending work moves.
 select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000001',true);
