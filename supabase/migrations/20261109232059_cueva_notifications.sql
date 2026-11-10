@@ -328,7 +328,7 @@ as $$
       and invitation.user_id = auth.uid()
       and profile.role = 'alumno'
   )
-$;
+$$;
 revoke all on function cueva_private.is_notification_student(uuid)
   from public, anon, authenticated, service_role;
 grant usage on schema cueva_private to authenticated;
