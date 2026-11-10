@@ -75,7 +75,8 @@ select is((select count(*)::integer from public.cueva_notification_inbox),1,'stu
 select is((select count(*)::integer from public.cueva_notification_inbox where id='ba000000-0000-4000-8000-000000000001'),1,'own inbox row is visible');
 update public.cueva_notification_preferences set push_enabled=false where student_id='b3000000-0000-4000-8000-000000000001';
 select is((select push_enabled from public.cueva_notification_preferences where student_id='b3000000-0000-4000-8000-000000000001'),false,'student can disable push for their own account');
-select is((with changed as (update public.cueva_notification_preferences set push_enabled=false where student_id='b3000000-0000-4000-8000-000000000002' returning 1) select count(*)::integer from changed),0,'student cannot change another student preference');
+update public.cueva_notification_preferences set push_enabled=false where student_id='b3000000-0000-4000-8000-000000000002';
+select is((select push_enabled from public.cueva_notification_preferences where student_id='b3000000-0000-4000-8000-000000000002'),true,'student cannot change another student preference');
 update public.cueva_notification_inbox set read_at=clock_timestamp() where id='ba000000-0000-4000-8000-000000000001';
 select ok((select read_at is not null from public.cueva_notification_inbox where id='ba000000-0000-4000-8000-000000000001'),'student can mark own inbox item as read');
 select throws_ok($$select * from public.cueva_notifications$$,'42501',null,'student cannot query operational notification rows');
