@@ -1,5 +1,5 @@
 begin;
-select plan(23);
+select plan(31);
 
 -- Isolated fixtures: two students, two linked identities, one administrator.
 insert into auth.users(id,aud,role,email,created_at,updated_at)
@@ -121,6 +121,87 @@ reset role;
 select throws_ok($$insert into public.cueva_notifications(id,period_id,reminder_days,due_on,scheduled_at) values ('b8000000-0000-4000-8000-000000000003','b6000000-0000-4000-8000-000000000001',5,date '2026-11-20',now())$$,'23505',null,'logical notification identity is unique by period, type, and due date');
 select throws_ok($$insert into public.cueva_notification_deliveries(id,notification_id,channel,status,attempt_count,next_attempt_at,lease_token) values ('b9000000-0000-4000-8000-000000000004','b8000000-0000-4000-8000-000000000002','push','processing',0,now(),gen_random_uuid())$$,'23514',null,'processing delivery requires both lease token and expiry');
 select throws_ok($$insert into public.cueva_notification_inbox(id,delivery_id,notification_id,student_id,user_id,title,body) values ('ba000000-0000-4000-8000-000000000002','b9000000-0000-4000-8000-000000000001','b8000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000002','b1000000-0000-4000-8000-000000000003','Wrong owner','Should fail')$$,'23514',null,'internal inbox enforces the delivery, student, and linked user relationship');
+
+
+-- Atomic worker claims: only service_role may reserve due deliveries.
+reset role;
+select ok(
+  has_function_privilege('service_role','public.cueva_claim_notification_deliveries(integer,integer)','EXECUTE'),
+  'service role can claim notification deliveries'
+);
+select ok(
+  not has_function_privilege('authenticated','public.cueva_claim_notification_deliveries(integer,integer)','EXECUTE'),
+  'authenticated cannot claim notification deliveries'
+);
+select ok(
+  not has_function_privilege('anon','public.cueva_claim_notification_deliveries(integer,integer)','EXECUTE'),
+  'anon cannot claim notification deliveries'
+);
+
+update public.cueva_notifications
+set scheduled_at = clock_timestamp()
+where id = 'b8000000-0000-4000-8000-000000000001';
+update public.cueva_notification_deliveries
+set next_attempt_at = clock_timestamp()
+where id = 'b9000000-0000-4000-8000-000000000001';
+
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+  (select count(*)::integer from public.cueva_claim_notification_deliveries(1,300)),
+  1,
+  'worker atomically claims one due delivery'
+);
+reset role;
+select is(
+  (select status from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000001'),
+  'processing',
+  'claimed delivery moves to processing'
+);
+select is(
+  (select attempt_count::integer from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000001'),
+  1,
+  'claim increments the attempt counter exactly once'
+);
+select ok(
+  (select lease_token is not null and lease_expires_at > clock_timestamp()
+   from public.cueva_notification_deliveries
+   where id='b9000000-0000-4000-8000-000000000001'),
+  'claim assigns a live unique lease'
+);
+
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+  (select count(*)::integer from public.cueva_claim_notification_deliveries(1,300)),
+  0,
+  'active lease prevents the same delivery from being claimed again'
+);
+reset role;
+
+update public.cueva_notification_deliveries
+set lease_expires_at = clock_timestamp() - interval '1 second'
+where id='b9000000-0000-4000-8000-000000000001';
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+  (select count(*)::integer from public.cueva_claim_notification_deliveries(1,300)),
+  0,
+  'expired lease is recovered but delayed for its retry interval'
+);
+reset role;
+select is(
+  (select count(*)::integer from public.cueva_notification_attempts
+   where delivery_id='b9000000-0000-4000-8000-000000000001'
+     and attempt_number=1 and outcome='unknown' and error_code='lease_expired'),
+  1,
+  'expired lease is recorded as an unknown attempt'
+);
+select is(
+  (select status from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000001'),
+  'pending',
+  'expired lease returns to pending when retries remain and due date is future'
+);
 
 select * from finish();
 rollback;
