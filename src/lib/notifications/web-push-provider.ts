@@ -188,7 +188,7 @@ export function createWebPushProvider(
               "TTL": "86400",
               "Urgency": "normal",
             },
-            body,
+            body: new Uint8Array(body),
             cache: "no-store",
             redirect: "error",
             signal: AbortSignal.timeout(10000),
