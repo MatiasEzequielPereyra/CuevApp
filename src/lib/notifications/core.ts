@@ -18,7 +18,7 @@ export type ReminderCandidate = {
 };
 
 function parseIsoDate(value: string): { year: number; month: number; day: number } {
-  const match = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(value);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) throw new TypeError("Fecha inválida");
   const year = Number(match[1]), month = Number(match[2]), day = Number(match[3]);
   const date = new Date(Date.UTC(year, month - 1, day));
@@ -34,7 +34,7 @@ function parseBalanceCents(value: CentsValue): bigint {
     return value;
   }
   if (typeof value === "string") {
-    if (!/^\\d+$/.test(value)) throw new TypeError("Saldo inválido");
+    if (!/^\d+$/.test(value)) throw new TypeError("Saldo inválido");
     return BigInt(value);
   }
   if (!Number.isSafeInteger(value) || value < 0) throw new TypeError("Saldo inválido");
@@ -68,7 +68,7 @@ export function buenosAiresDate(now: Date): string {
 
 export function buenosAiresDateTimeToUtc(date: string, time: string): Date {
   const { year, month, day } = parseIsoDate(date);
-  const match = /^(\\d{2}):(\\d{2})$/.exec(time);
+  const match = /^(\d{2}):(\d{2})$/.exec(time);
   if (!match) throw new TypeError("Horario inválido");
   const hour = Number(match[1]), minute = Number(match[2]);
   if (hour > 23 || minute > 59) throw new TypeError("Horario inválido");
