@@ -14,7 +14,7 @@ const studentIds = Array.from({ length: 9 }, () => randomUUID());
 const priceId = randomUUID();
 const periodIds = Array.from({ length: 9 }, () => randomUUID());
 const notificationIds = Array.from({ length: 9 }, () => randomUUID());
-const deliveryIds = Array.from({ length: 9 }, () => randomUUID());
+const deliveryIds = Array.from({ length: 10 }, () => randomUUID());
 const leaseTokens = Array.from({ length: 9 }, () => randomUUID());
 let adminConnected = false;
 let workerTransactionsOpen = false;
@@ -133,6 +133,13 @@ try {
     ) values($1,$2,'internal','processing',1,now(),now()-interval '10 minutes',$3,now()-interval '1 second')
   `, [deliveryIds[7], notificationIds[7], randomUUID()]);
 
+  // A second channel remains pending while the expired primary channel exhausts.
+  await admin.query(`
+    insert into public.cueva_notification_deliveries(
+      id,notification_id,channel,status,attempt_count,next_attempt_at
+    ) values($1,$2,'internal','pending',0,now()+interval '1 day')
+  `, [deliveryIds[9], notificationIds[5]]);
+
   await admin.query(`
     update public.cueva_notifications
     set status='cancelled', cancellation_reason='cancelled by worker test'
@@ -169,6 +176,26 @@ try {
   }
   assert.equal(retryRows[4].status, "failed", "the fifth attempt exhausts retries");
   assert.equal(retryRows[4].outcome, "unknown", "the exhausted attempt is recorded as unknown");
+
+  const { rows: [exhaustedParent] } = await admin.query(
+    "select status from public.cueva_notifications where id=$1",
+    [notificationIds[6]],
+  );
+  assert.equal(exhaustedParent.status, "completed",
+    "parent completes when lease recovery exhausts its final channel");
+
+  const { rows: [multiChannelParent] } = await admin.query(
+    "select status from public.cueva_notifications where id=$1",
+    [notificationIds[5]],
+  );
+  assert.equal(multiChannelParent.status, "pending",
+    "parent stays pending while another channel remains pending");
+  const { rows: [remainingChannel] } = await admin.query(
+    "select status from public.cueva_notification_deliveries where id=$1",
+    [deliveryIds[9]],
+  );
+  assert.equal(remainingChannel.status, "pending",
+    "recovery does not alter the remaining channel");
 
   const { rows: [pastDue] } = await admin.query(
     "select status,last_error_code from public.cueva_notification_deliveries where id=$1",
