@@ -33,6 +33,16 @@ test("los pagos parciales conservan recordatorios y saldo cero los excluye", () 
   assert.deepEqual(buildReminderPlan({ ...period, balanceCents: 0 }, "12:00", new Date("2026-11-15T15:00:00.000Z")), []);
 });
 
+test("acepta centavos como texto o bigint sin convertirlos a number", () => {
+  const largeBalance = "9007199254740993";
+  const plan = buildReminderPlan({ ...period, balanceCents: largeBalance }, "12:00", new Date("2026-11-15T15:00:00.000Z"));
+  assert.equal(plan.length, 2);
+  const content = formatReminderContent({ ...period, balanceCents: largeBalance });
+  assert.match(content.body, /9\\.007\\.199\\.254\\.740\\.993,00/);
+  assert.match(formatReminderContent({ ...period, balanceCents: 7500n }).body, /75,00/);
+  assert.throws(() => buildReminderPlan({ ...period, balanceCents: Number.MAX_SAFE_INTEGER + 1 }, "12:00", new Date()), /Saldo inválido/);
+});
+
 test("excluye alumnos inactivos y vencimientos alcanzados", () => {
   assert.deepEqual(buildReminderPlan({ ...period, studentActive: false }, "12:00", new Date("2026-11-15T15:00:00.000Z")), []);
   assert.deepEqual(buildReminderPlan(period, "12:00", new Date("2026-11-20T15:00:00.000Z")), []);
@@ -50,4 +60,5 @@ test("rechaza fechas, horarios y saldos inválidos", () => {
   assert.throws(() => buildReminderPlan({ ...period, dueOn: "2026-02-30" }, "12:00", new Date()));
   assert.throws(() => buildReminderPlan(period, "25:00", new Date()));
   assert.throws(() => buildReminderPlan({ ...period, balanceCents: -1 }, "12:00", new Date()));
+  assert.throws(() => buildReminderPlan({ ...period, balanceCents: "7.500" }, "12:00", new Date()));
 });
