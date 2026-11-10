@@ -202,7 +202,22 @@ export function createSupabaseNotificationWorker(
         .eq("attempt_count", 0);
       throwIfError(scheduleError, "No se pudo sincronizar el horario de las entregas");
 
-      if (!input.channels.includes("push")) {
+      if (input.channels.includes("push")) {
+        const { error: restorePushError } = await db
+          .from("cueva_notification_deliveries")
+          .update({
+            status: "pending",
+            next_attempt_at: input.scheduledAt,
+            last_error_code: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("notification_id", input.notificationId)
+          .eq("channel", "push")
+          .eq("status", "cancelled")
+          .eq("attempt_count", 0)
+          .eq("last_error_code", "push_disabled");
+        throwIfError(restorePushError, "No se pudo restaurar la preferencia push");
+      } else {
         const { error: pushError } = await db
           .from("cueva_notification_deliveries")
           .update({
@@ -212,8 +227,7 @@ export function createSupabaseNotificationWorker(
           })
           .eq("notification_id", input.notificationId)
           .eq("channel", "push")
-          .eq("status", "pending")
-          .eq("attempt_count", 0);
+          .eq("status", "pending");
         throwIfError(pushError, "No se pudo aplicar la preferencia push");
       }
       return input.channels.length;
