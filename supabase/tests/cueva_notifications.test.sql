@@ -287,13 +287,13 @@ select ok(
   'attempt ledger records when each outcome was persisted'
 );
 select throws_ok(
-  $select * from public.cueva_finalize_notification_delivery(
+  $$select * from public.cueva_finalize_notification_delivery(
     'b9000000-0000-4000-8000-000000000001',
     gen_random_uuid(),
     'unknown',
     null,
     null
-  )$,
+  )$$,
   '42501',
   null,
   'non-worker role cannot invoke finalization'
