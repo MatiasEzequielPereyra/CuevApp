@@ -94,6 +94,10 @@ select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000001'
 select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000001','role','authenticated','session_id','b2000000-0000-4000-8000-000000000001')::text,true);
 set local role authenticated;
 select is(public.cueva_update_notification_schedule(time '13:00'),time '13:00','administrator can change the common send time');
+
+-- Operational notification tables are intentionally not readable by admins
+-- through the Data API. Inspect the RPC effects as the database test owner.
+reset role;
 select is((select send_time from public.cueva_notification_settings where singleton),time '13:00','new common send time is persisted');
 select is((select count(*)::integer from public.cueva_notification_audit where action='schedule_changed' and actor_id='b1000000-0000-4000-8000-000000000001'),1,'schedule change is audited with its actor');
 select is((select scheduled_at from public.cueva_notifications where id='b8000000-0000-4000-8000-000000000001'),timestamptz '2026-11-15 13:00:00-03','pending notification schedule follows the configured local time');
