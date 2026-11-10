@@ -20,7 +20,6 @@ export type WebPushConfiguration = {
   now?: () => number;
 };
 
-const encoder = new TextEncoder();
 const b64url = (value: Buffer | Uint8Array | string) =>
   Buffer.from(value).toString("base64url");
 
