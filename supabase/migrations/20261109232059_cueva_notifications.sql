@@ -32,6 +32,10 @@ insert into public.cueva_notification_preferences(student_id)
 select s.id from public.cueva_students s
 on conflict (student_id) do nothing;
 
+-- The server worker reads only the common schedule and per-student push opt-in.
+grant select on public.cueva_notification_settings to service_role;
+grant select on public.cueva_notification_preferences to service_role;
+
 create function cueva_private.seed_notification_preferences()
 returns trigger
 language plpgsql security definer set search_path = ''
