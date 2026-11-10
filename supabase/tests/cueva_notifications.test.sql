@@ -1,5 +1,5 @@
 begin;
-select plan(34);
+select plan(44);
 
 -- Isolated fixtures: two students, two linked identities, one administrator.
 insert into auth.users(id,aud,role,email,created_at,updated_at)
@@ -201,6 +201,102 @@ select is(
   (select status from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000001'),
   'pending',
   'expired lease returns to pending when retries remain and due date is future'
+);
+
+
+-- Lease-safe finalization: only the active service worker may persist an outcome.
+reset role;
+select ok(
+  has_function_privilege('service_role','public.cueva_finalize_notification_delivery(uuid,uuid,text,text,text)','EXECUTE'),
+  'service role can finalize notification deliveries'
+);
+select ok(
+  not has_function_privilege('authenticated','public.cueva_finalize_notification_delivery(uuid,uuid,text,text,text)','EXECUTE'),
+  'authenticated cannot finalize notification deliveries'
+);
+select ok(
+  not has_function_privilege('anon','public.cueva_finalize_notification_delivery(uuid,uuid,text,text,text)','EXECUTE'),
+  'anon cannot finalize notification deliveries'
+);
+
+update public.cueva_notification_deliveries
+set next_attempt_at = clock_timestamp()
+where id = 'b9000000-0000-4000-8000-000000000001'
+  and status = 'pending';
+
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+  (select count(*)::integer from public.cueva_claim_notification_deliveries(1,300)),
+  1,
+  'worker can reclaim a retry after its backoff is due'
+);
+select set_config(
+  'test.cueva_notification_lease_token',
+  (select lease_token::text from public.cueva_notification_deliveries
+   where id='b9000000-0000-4000-8000-000000000001'),
+  true
+);
+select is(
+  (select finalized from public.cueva_finalize_notification_delivery(
+    'b9000000-0000-4000-8000-000000000001',
+    current_setting('test.cueva_notification_lease_token')::uuid,
+    'sent',
+    'provider-test-001',
+    null
+  )),
+  true,
+  'active lease can be finalized as sent'
+);
+select is(
+  (select status from public.cueva_notification_deliveries
+   where id='b9000000-0000-4000-8000-000000000001'),
+  'sent',
+  'successful finalization clears processing state and marks delivery sent'
+);
+select is(
+  (select count(*)::integer from public.cueva_notification_attempts
+   where delivery_id='b9000000-0000-4000-8000-000000000001'
+     and attempt_number=2 and outcome='sent' and provider_reference='provider-test-001'),
+  1,
+  'successful finalization appends exactly one provider outcome'
+);
+select is(
+  (select finalized from public.cueva_finalize_notification_delivery(
+    'b9000000-0000-4000-8000-000000000001',
+    current_setting('test.cueva_notification_lease_token')::uuid,
+    'sent',
+    'provider-test-001',
+    null
+  )),
+  false,
+  'duplicate finalization is a safe no-op'
+);
+select is(
+  (select count(*)::integer from public.cueva_notification_attempts
+   where delivery_id='b9000000-0000-4000-8000-000000000001'
+     and attempt_number=2),
+  1,
+  'duplicate finalization does not duplicate the attempt ledger'
+);
+reset role;
+select ok(
+  (select bool_and(recorded_at is not null)
+   from public.cueva_notification_attempts
+   where delivery_id='b9000000-0000-4000-8000-000000000001'),
+  'attempt ledger records when each outcome was persisted'
+);
+select throws_ok(
+  $select * from public.cueva_finalize_notification_delivery(
+    'b9000000-0000-4000-8000-000000000001',
+    gen_random_uuid(),
+    'unknown',
+    null,
+    null
+  )$,
+  '42501',
+  null,
+  'non-worker role cannot invoke finalization'
 );
 
 select * from finish();
