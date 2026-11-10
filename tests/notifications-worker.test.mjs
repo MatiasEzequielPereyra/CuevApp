@@ -21,11 +21,13 @@ function repository({ periods = [period()], preferences = new Map([["student-1",
   const events = new Map();
   const deliveries = new Map();
   const cancellations = [];
+  const staleDueDates = [];
   const runs = [];
   return {
     events,
     deliveries,
     cancellations,
+    staleDueDates,
     runs,
     startRun: async () => {
       const id = `run-${runs.length + 1}`;
@@ -36,6 +38,7 @@ function repository({ periods = [period()], preferences = new Map([["student-1",
     loadSnapshot: async () => periods,
     loadPushPreferences: async () => preferences,
     cancelPendingPeriod: async (periodId, reason) => cancellations.push({ periodId, reason }),
+    cancelStaleDueDate: async (periodId, dueOn) => staleDueDates.push({ periodId, dueOn }),
     ensureNotification: async input => {
       const key = [input.periodId, input.reminderDays, input.dueOn].join(":");
       if (!events.has(key)) events.set(key, { id: `event-${events.size + 1}`, status: "pending", ...input });
