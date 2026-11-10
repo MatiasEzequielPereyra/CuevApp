@@ -14,7 +14,7 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit",
     "test:docs": "node --test tests/documents.test.mjs",
-    "test": "npm run test:docs && npm run test:notifications:core && npm run test:notifications:dispatcher && npm run test:notifications:worker && npm run test:routines:model && node --test tests/due-date-preview.test.mjs tests/billing-api.test.mjs tests/payments-money.test.mjs tests/reconciliation-transport.test.mjs && npm run test:receipts && playwright test",
+    "test": "npm run test:docs && npm run test:notifications:core && npm run test:notifications:dispatcher && npm run test:notifications:worker && npm run test:notifications:inbox && npm run test:routines:model && node --test tests/due-date-preview.test.mjs tests/billing-api.test.mjs tests/payments-money.test.mjs tests/reconciliation-transport.test.mjs && npm run test:receipts && playwright test",
     "test:routines:model": "node --experimental-strip-types --test experiments/cueva-006c-local/model.test.mjs",
     "test:e2e": "playwright test",
     "verify": "npm run lint && npm run typecheck && npm run build && npm test",
@@ -24,7 +24,8 @@
     "test:receipts": "node --expose-gc --test tests/receipts-file.test.mjs",
     "test:notifications:core": "node --experimental-strip-types --test tests/notifications-core.test.mjs",
     "test:notifications:dispatcher": "node --experimental-strip-types --test tests/notifications-dispatcher.test.mjs",
-    "test:notifications:worker": "node --experimental-strip-types --test tests/notifications-worker.test.mjs"
+    "test:notifications:worker": "node --experimental-strip-types --test tests/notifications-worker.test.mjs",
+    "test:notifications:inbox": "node --experimental-strip-types --test tests/notifications-inbox-provider.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
