@@ -299,7 +299,7 @@ begin
         end)
       else delivery.next_attempt_at
     end,
-    provider_reference = coalesce(p_provider_reference, delivery.provider_reference),
+    provider_reference = p_provider_reference,
     last_error_code = case
       when v_delivery_status = 'sent' then null
       else v_error_code
