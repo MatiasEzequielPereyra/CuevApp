@@ -1,5 +1,5 @@
 begin;
-select plan(24);
+select plan(21);
 
 -- Isolated fixtures: two students, two linked identities, one administrator.
 insert into auth.users(id,aud,role,email,created_at,updated_at)
