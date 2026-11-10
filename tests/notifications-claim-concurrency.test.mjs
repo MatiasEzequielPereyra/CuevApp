@@ -10,11 +10,12 @@ const workers = [new Client({ connectionString }), new Client({ connectionString
 const unauthorized = new Client({ connectionString });
 const suffix = randomUUID();
 const adminId = randomUUID();
-const studentIds = Array.from({ length: 8 }, () => randomUUID());
+const studentIds = Array.from({ length: 9 }, () => randomUUID());
 const priceId = randomUUID();
-const periodIds = Array.from({ length: 8 }, () => randomUUID());
-const notificationIds = Array.from({ length: 8 }, () => randomUUID());
-const deliveryIds = Array.from({ length: 8 }, () => randomUUID());
+const periodIds = Array.from({ length: 9 }, () => randomUUID());
+const notificationIds = Array.from({ length: 9 }, () => randomUUID());
+const deliveryIds = Array.from({ length: 9 }, () => randomUUID());
+const leaseTokens = Array.from({ length: 9 }, () => randomUUID());
 let adminConnected = false;
 let workerTransactionsOpen = false;
 
@@ -91,6 +92,30 @@ try {
   await workers[0].query("commit");
   workerTransactionsOpen = false;
 
+  // A successful finalization is atomic, token-bound, and safe to repeat.
+  const firstClaim = first.rows[0];
+  const sent = await workers[0].query(
+    `select * from public.cueva_finalize_notification_delivery($1,$2,'sent',$3,null)`,
+    [firstClaim.delivery_id, firstClaim.lease_token, `provider-${suffix}`],
+  );
+  assert.equal(sent.rows[0].finalized, true, "active lease finalizes successfully");
+  assert.equal(sent.rows[0].delivery_status, "sent", "successful outcome marks delivery sent");
+  const duplicateSent = await workers[0].query(
+    `select * from public.cueva_finalize_notification_delivery($1,$2,'sent',$3,null)`,
+    [firstClaim.delivery_id, firstClaim.lease_token, `provider-${suffix}`],
+  );
+  assert.equal(duplicateSent.rows[0].finalized, false, "duplicate finalization is a no-op");
+  const { rows: [sentLedger] } = await admin.query(
+    "select count(*)::integer as count from public.cueva_notification_attempts where delivery_id=$1 and outcome='sent'",
+    [firstClaim.delivery_id],
+  );
+  assert.equal(sentLedger.count, 1, "duplicate finalization does not append another attempt");
+  const { rows: [completedParent] } = await admin.query(
+    "select status from public.cueva_notifications where id=$1",
+    [firstClaim.notification_id],
+  );
+  assert.equal(completedParent.status, "completed", "parent completes after its only channel is terminal");
+
   // Expired leases at attempts 1..5 must use the approved retry policy.
   for (let attempt = 1; attempt <= 5; attempt += 1) {
     const index = attempt + 1;
@@ -99,7 +124,7 @@ try {
         id,notification_id,channel,status,attempt_count,next_attempt_at,
         last_attempt_at,lease_token,lease_expires_at
       ) values($1,$2,'push','processing',$3,now(),now()-interval '10 minutes',$4,now()-interval '1 second')
-    `, [deliveryIds[index], notificationIds[index], attempt, randomUUID()]);
+    `, [deliveryIds[index], notificationIds[index], attempt, leaseTokens[index]]);
   }
   await admin.query(`
     insert into public.cueva_notification_deliveries(
@@ -107,6 +132,19 @@ try {
       last_attempt_at,lease_token,lease_expires_at
     ) values($1,$2,'internal','processing',1,now(),now()-interval '10 minutes',$3,now()-interval '1 second')
   `, [deliveryIds[7], notificationIds[7], randomUUID()]);
+
+  await admin.query(`
+    update public.cueva_notifications
+    set status='cancelled', cancellation_reason='cancelled by worker test'
+    where id=$1
+  `, [notificationIds[8]]);
+  await admin.query(`
+    insert into public.cueva_notification_deliveries(
+      id,notification_id,channel,status,attempt_count,next_attempt_at,
+      last_attempt_at,lease_token,lease_expires_at
+    ) values($1,$2,'email','processing',1,now(),now()-interval '10 minutes',$3,now()-interval '1 second')
+  `, [deliveryIds[8], notificationIds[8], leaseTokens[8]]);
+
 
   await workers[1].query("select * from public.cueva_claim_notification_deliveries(100,300)");
 
@@ -140,6 +178,64 @@ try {
   assert.equal(pastDue.last_error_code, "lease_expired_after_due_date",
     "past-due cancellation has an explicit reason");
 
+  const { rows: [cancelledParentDelivery] } = await admin.query(
+    "select status,last_error_code from public.cueva_notification_deliveries where id=$1",
+    [deliveryIds[8]],
+  );
+  assert.equal(cancelledParentDelivery.status, "cancelled",
+    "expired lease is not resurrected when its parent notification was cancelled");
+  assert.equal(cancelledParentDelivery.last_error_code, "notification_cancelled",
+    "terminal parent cancellation is recorded distinctly");
+
+  // Reclaim a recovered delivery with a new token. The old worker must not
+  // finalize against the replacement lease.
+  await admin.query(
+    "update public.cueva_notification_deliveries set next_attempt_at=now() where id=$1",
+    [deliveryIds[2]],
+  );
+  const replacement = await workers[0].query(
+    "select * from public.cueva_claim_notification_deliveries(1,300)",
+  );
+  assert.equal(replacement.rows.length, 1, "recovered delivery can be claimed after backoff");
+  assert.equal(replacement.rows[0].delivery_id, deliveryIds[2], "expected delivery is reclaimed");
+  assert.notEqual(replacement.rows[0].lease_token, leaseTokens[2],
+    "reclaim issues a new lease token");
+  const staleFinalize = await workers[1].query(
+    "select * from public.cueva_finalize_notification_delivery($1,$2,'sent',$3,null)",
+    [deliveryIds[2], leaseTokens[2], `stale-${suffix}`],
+  );
+  assert.equal(staleFinalize.rows[0].finalized, false,
+    "expired worker token cannot finalize a replacement lease");
+  const { rows: [stillProcessing] } = await admin.query(
+    "select status,lease_token from public.cueva_notification_deliveries where id=$1",
+    [deliveryIds[2]],
+  );
+  assert.equal(stillProcessing.status, "processing", "stale finalization leaves replacement processing");
+  assert.equal(stillProcessing.lease_token, replacement.rows[0].lease_token,
+    "stale finalization cannot overwrite replacement token");
+
+  const failedFinalize = await workers[0].query(
+    "select * from public.cueva_finalize_notification_delivery($1,$2,'failed',null,'provider_timeout')",
+    [deliveryIds[2], replacement.rows[0].lease_token],
+  );
+  assert.equal(failedFinalize.rows[0].finalized, true, "active failed attempt is finalized");
+  assert.equal(failedFinalize.rows[0].delivery_status, "pending",
+    "failed attempt is rescheduled while retries remain");
+  const { rows: [failedRetry] } = await admin.query(
+    `select delivery.status,
+            extract(epoch from (delivery.next_attempt_at - delivery.updated_at))::integer as delay_seconds,
+            attempt.outcome, attempt.error_code
+     from public.cueva_notification_deliveries delivery
+     join public.cueva_notification_attempts attempt
+       on attempt.delivery_id=delivery.id and attempt.attempt_number=delivery.attempt_count
+     where delivery.id=$1`,
+    [deliveryIds[2]],
+  );
+  assert.equal(failedRetry.status, "pending", "failed delivery remains retryable");
+  assert.equal(failedRetry.delay_seconds, 1800, "second attempt uses 30-minute backoff");
+  assert.equal(failedRetry.outcome, "failed", "failed provider result is appended");
+  assert.equal(failedRetry.error_code, "provider_timeout", "provider error is preserved");
+
   await expectSqlState(
     workers[1].query("select * from public.cueva_claim_notification_deliveries(0,300)"),
     "22023", "invalid batch size is rejected",
@@ -159,7 +255,7 @@ try {
   );
 
   process.stdout.write(
-    "PASS: concurrent claims are disjoint; retry delays, attempt limit, due-date cancellation, and permissions are enforced.\\n",
+    "PASS: concurrent claims, lease-bound finalization, idempotency, stale-token rejection, retry policy, terminal-parent recovery, and permissions are enforced.\\n",
   );
 } finally {
   if (workerTransactionsOpen) await workers[0].query("rollback").catch(() => undefined);
