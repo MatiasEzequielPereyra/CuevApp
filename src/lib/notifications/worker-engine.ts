@@ -45,6 +45,7 @@ export type NotificationWorkerRepository = {
   loadSnapshot(): Promise<NotificationSnapshotRow[]>;
   loadPushPreferences(): Promise<Map<string, boolean>>;
   cancelPendingPeriod(periodId: string, reason: string): Promise<void>;
+  cancelStaleDueDate(periodId: string, dueOn: string): Promise<void>;
   ensureNotification(input: {
     periodId: string;
     reminderDays: ReminderDays;
@@ -101,6 +102,7 @@ export async function runNotificationWorker(
         continue;
       }
 
+      await repository.cancelStaleDueDate(period.period_id, period.due_on);
       const candidates = buildReminderPlan({
         dueOn: period.due_on,
         periodMonth: period.period_month,
