@@ -47,10 +47,23 @@ export type NotificationDispatchSummary = {
   errors: number;
 };
 
-const SAFE_ERROR_CODE = /^[a-z][a-z0-9_]{1,79}$/;
+const SAFE_ERROR_CODES = new Set([
+  "brevo_unavailable",
+  "brevo_rejected",
+  "missing_destination",
+  "internal_unavailable",
+  "missing_student_account",
+  "push_unavailable",
+  "push_subscription_expired",
+  "missing_push_subscription",
+  "notification_not_relevant",
+  "provider_error",
+  "invalid_provider_result",
+  "invalid_provider_reference",
+]);
 
 function safeFailureCode(value: unknown): string {
-  return typeof value === "string" && SAFE_ERROR_CODE.test(value)
+  return typeof value === "string" && SAFE_ERROR_CODES.has(value)
     ? value
     : "provider_error";
 }
@@ -59,11 +72,11 @@ function providerFor(
   channel: NotificationChannel,
   dependencies: NotificationDispatcherDependencies,
 ) {
-  switch (channel) {
-    case "email": return dependencies.sendEmail;
-    case "internal": return dependencies.createInternal;
-    case "push": return dependencies.sendPush;
-  }
+  return {
+    email: dependencies.sendEmail,
+    internal: dependencies.createInternal,
+    push: dependencies.sendPush,
+  }[channel];
 }
 
 /**
