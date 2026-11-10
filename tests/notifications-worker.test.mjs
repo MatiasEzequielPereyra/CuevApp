@@ -82,6 +82,8 @@ test("crea dos eventos por período y tres canales idempotentes entre ejecucione
   assert.equal(repo.deliveries.size, 6);
   assert.equal(repo.runs[0].outcome, "completed");
   assert.equal(repo.runs[1].outcome, "completed");
+  assert.equal(repo.staleDueDates.length, 2);
+  assert.ok(repo.staleDueDates.every(item => item.dueOn === "2026-11-20"));
 });
 
 test("respeta la preferencia: push desactivado no crea entregas push", async () => {
