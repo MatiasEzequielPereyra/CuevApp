@@ -180,8 +180,8 @@ security definer
 set search_path = ''
 as $$
 declare
-  v_now timestamptz := clock_timestamp();
-  v_local_date date := (v_now at time zone 'America/Argentina/Buenos_Aires')::date;
+  v_now timestamptz;
+  v_local_date date;
   v_delivery public.cueva_notification_deliveries%rowtype;
   v_notification public.cueva_notifications%rowtype;
   v_delivery_status text;
@@ -198,7 +198,7 @@ begin
     raise exception 'Identificador de entrega y reserva son obligatorios' using errcode = '22023';
   end if;
 
-  if p_outcome not in ('sent', 'failed', 'skipped') then
+  if p_outcome is null or p_outcome not in ('sent', 'failed', 'skipped') then
     raise exception 'Resultado de entrega inválido' using errcode = '22023';
   end if;
 
@@ -234,6 +234,11 @@ begin
   from public.cueva_notifications notification
   where notification.id = v_delivery.notification_id
   for update;
+
+  -- Capture the decision time after both row locks have been acquired. A
+  -- caller that waited on a lock must not finalize an already-expired lease.
+  v_now := clock_timestamp();
+  v_local_date := (v_now at time zone 'America/Argentina/Buenos_Aires')::date;
 
   if v_delivery.status <> 'processing'
     or v_delivery.lease_token is distinct from p_lease_token
