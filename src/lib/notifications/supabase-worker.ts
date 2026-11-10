@@ -206,7 +206,7 @@ export function createSupabaseNotificationWorker(
           .eq("notification_id", input.notificationId)
           .eq("channel", "push")
           .eq("status", "cancelled")
-          .eq("attempt_count", 0)
+          .lt("attempt_count", 5)
           .eq("last_error_code", "push_disabled");
         throwIfError(restorePushError, "No se pudo restaurar la preferencia push");
       } else {
