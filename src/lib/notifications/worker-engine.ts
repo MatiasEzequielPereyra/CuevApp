@@ -1,12 +1,11 @@
 import {
   buildReminderPlan,
-  type ReminderCandidate,
+  buenosAiresDate,
   type ReminderDays,
 } from "./core.ts";
 import {
   dispatchClaimedDeliveries,
   type ClaimedNotificationDelivery,
-  type NotificationDeliveryContext,
   type NotificationDispatcherDependencies,
   type NotificationDispatchSummary,
   type NotificationChannel,
@@ -89,7 +88,6 @@ export async function runNotificationWorker(
       repository.loadPushPreferences(),
     ]);
     const sendTime = settings.sendTime.slice(0, 5);
-    const { buenosAiresDate } = await import("./core.ts");
     let eventsEnsured = 0;
     let deliveriesEnsured = 0;
     let cancelledPeriods = 0;
@@ -153,7 +151,3 @@ export async function runNotificationWorker(
     throw error;
   }
 }
-
-export type NotificationWorkerContextLoader = (
-  notificationId: string,
-) => Promise<NotificationDeliveryContext>;
