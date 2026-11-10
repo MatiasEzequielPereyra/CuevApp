@@ -286,18 +286,21 @@ select ok(
    where delivery_id='b9000000-0000-4000-8000-000000000001'),
   'attempt ledger records when each outcome was persisted'
 );
+select set_config('request.jwt.claims','{"role":"authenticated"}',true);
+set local role authenticated;
 select throws_ok(
-  $$select * from public.cueva_finalize_notification_delivery(
+  $select * from public.cueva_finalize_notification_delivery(
     'b9000000-0000-4000-8000-000000000001',
     gen_random_uuid(),
-    'unknown',
+    'sent',
     null,
     null
-  )$$,
+  )$,
   '42501',
   null,
   'non-worker role cannot invoke finalization'
 );
+reset role;
 
 select * from finish();
 rollback;
