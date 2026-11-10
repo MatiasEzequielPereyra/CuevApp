@@ -70,7 +70,7 @@ begin
         'unknown',
         'lease_expired'
       )
-      on conflict (delivery_id, attempt_number) do nothing;
+      on conflict on constraint cueva_notification_attempts_delivery_id_attempt_number_key do nothing;
     end if;
 
     update public.cueva_notification_deliveries delivery
