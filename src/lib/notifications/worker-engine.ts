@@ -63,7 +63,7 @@ export type NotificationWorkerRepository = {
 };
 
 function positiveBalance(value: number | string): string {
-  if (!/^-?\\d+$/.test(String(value))) throw new TypeError("Saldo inválido");
+  if (!/^-?[0-9]+$/.test(String(value))) throw new TypeError("Saldo inválido");
   const balance = BigInt(value);
   return balance > 0n ? balance.toString() : "0";
 }
