@@ -313,41 +313,44 @@ $$;
 revoke all on function public.cueva_notifications_worker_snapshot() from public, anon, authenticated, service_role;
 grant execute on function public.cueva_notifications_worker_snapshot() to service_role;
 
+-- Invitation rows are intentionally admin-only through RLS. This narrow
+-- SECURITY DEFINER predicate checks the authenticated student's own link
+-- without exposing invitation data through the Data API.
+create function cueva_private.is_notification_student(p_student_id uuid)
+returns boolean
+language sql stable security definer set search_path = ''
+as $
+  select exists (
+    select 1
+    from public.cueva_student_invitations invitation
+    join public.cueva_profiles profile on profile.user_id = invitation.user_id
+    where invitation.student_id = p_student_id
+      and invitation.user_id = auth.uid()
+      and profile.role = 'alumno'
+  )
+$;
+revoke all on function cueva_private.is_notification_student(uuid)
+  from public, anon, authenticated, service_role;
+grant usage on schema cueva_private to authenticated;
+grant execute on function cueva_private.is_notification_student(uuid) to authenticated;
+
 -- A student may change only the push preference for the account linked to
 -- their own invitation. Email and internal notifications have no opt-out.
 create policy cueva_notification_preferences_read_own
   on public.cueva_notification_preferences for select to authenticated
   using (
     (select cueva_private.ready_for_current_session())
-    and exists (
-      select 1 from public.cueva_student_invitations invitation
-      join public.cueva_profiles profile on profile.user_id = invitation.user_id
-      where invitation.student_id = cueva_notification_preferences.student_id
-        and invitation.user_id = (select auth.uid())
-        and profile.role = 'alumno'
-    )
+    and (select cueva_private.is_notification_student(cueva_notification_preferences.student_id))
   );
 create policy cueva_notification_preferences_update_own
   on public.cueva_notification_preferences for update to authenticated
   using (
     (select cueva_private.ready_for_current_session())
-    and exists (
-      select 1 from public.cueva_student_invitations invitation
-      join public.cueva_profiles profile on profile.user_id = invitation.user_id
-      where invitation.student_id = cueva_notification_preferences.student_id
-        and invitation.user_id = (select auth.uid())
-        and profile.role = 'alumno'
-    )
+    and (select cueva_private.is_notification_student(cueva_notification_preferences.student_id))
   )
   with check (
     (select cueva_private.ready_for_current_session())
-    and exists (
-      select 1 from public.cueva_student_invitations invitation
-      join public.cueva_profiles profile on profile.user_id = invitation.user_id
-      where invitation.student_id = cueva_notification_preferences.student_id
-        and invitation.user_id = (select auth.uid())
-        and profile.role = 'alumno'
-    )
+    and (select cueva_private.is_notification_student(cueva_notification_preferences.student_id))
   );
 
 create policy cueva_notification_inbox_read_own
