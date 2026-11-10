@@ -157,7 +157,7 @@ create index cueva_notification_inbox_unread_idx
 create function cueva_private.validate_notification_inbox()
 returns trigger
 language plpgsql security definer set search_path = ''
-as $
+as $$
 begin
   if not exists (
     select 1
@@ -181,7 +181,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 revoke all on function cueva_private.validate_notification_inbox() from public, anon, authenticated, service_role;
 create trigger cueva_notification_inbox_validate
   before insert or update of delivery_id, notification_id, student_id, user_id
