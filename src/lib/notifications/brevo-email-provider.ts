@@ -42,7 +42,6 @@ export function buildBrevoEmailPayload(
     sender,
     to: [{ email: context.destinationEmail.trim() }],
     subject: content.subject,
-    textContent: `Hola ${context.studentName},\n\n${content.body}\n\nEste es un aviso automático de CUEVA.`,
     htmlContent: `<p>Hola ${escapeHtml(context.studentName)},</p><p>${escapeHtml(content.body)}</p><p>Este es un aviso automático de CUEVA.</p>`,
   };
 }
