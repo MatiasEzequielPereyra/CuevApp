@@ -1,4 +1,3 @@
-import "server-only";
 import { createCipheriv, createECDH, createPrivateKey, createPublicKey, hkdfSync, randomBytes, sign } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { formatReminderContent } from "./core.ts";
@@ -170,11 +169,11 @@ export function createWebPushProvider(
       const results = await Promise.all(subscriptions.map(async subscription => {
         try {
           if (subscription.expires_at && Date.parse(subscription.expires_at) <= now()) {
-            await db.from("cueva_push_subscriptions")
+            const { error: revokeError } = await db.from("cueva_push_subscriptions")
               .update({ revoked_at: new Date(now()).toISOString() })
               .eq("id", subscription.id)
               .is("revoked_at", null);
-            return "expired" as const;
+            return revokeError ? "failed" as const : "expired" as const;
           }
           const endpoint = new URL(subscription.endpoint);
           if (endpoint.protocol !== "https:") return "failed" as const;
@@ -196,11 +195,11 @@ export function createWebPushProvider(
           });
 
           if (response.status === 404 || response.status === 410) {
-            await db.from("cueva_push_subscriptions")
+            const { error: revokeError } = await db.from("cueva_push_subscriptions")
               .update({ revoked_at: new Date(now()).toISOString() })
               .eq("id", subscription.id)
               .is("revoked_at", null);
-            return "expired" as const;
+            return revokeError ? "failed" as const : "expired" as const;
           }
           return response.ok ? "sent" as const : "failed" as const;
         } catch {
