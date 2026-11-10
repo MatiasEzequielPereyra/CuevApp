@@ -31,7 +31,7 @@ export function buildBrevoEmailPayload(
   context: NotificationDeliveryContext,
   sender: { email: string; name: string },
 ): BrevoEmailPayload | null {
-  if (!context.destinationEmail) return null;
+  if (!context.destinationEmail?.trim()) return null;
   const content = formatReminderContent({
     dueOn: context.dueOn,
     periodMonth: context.periodMonth,
@@ -40,7 +40,7 @@ export function buildBrevoEmailPayload(
   });
   return {
     sender,
-    to: [{ email: context.destinationEmail }],
+    to: [{ email: context.destinationEmail.trim() }],
     subject: content.subject,
     textContent: `Hola ${context.studentName},\n\n${content.body}\n\nEste es un aviso automático de CUEVA.`,
     htmlContent: `<p>Hola ${escapeHtml(context.studentName)},</p><p>${escapeHtml(content.body)}</p><p>Este es un aviso automático de CUEVA.</p>`,
@@ -51,7 +51,7 @@ export function createBrevoEmailProvider(configuration: BrevoEmailConfiguration)
   const fetchImpl = configuration.fetchImpl ?? fetch;
 
   return async (context: NotificationDeliveryContext): Promise<ProviderResult> => {
-    if (!context.destinationEmail) {
+    if (!context.destinationEmail?.trim()) {
       return { outcome: "skipped", errorCode: "missing_destination" };
     }
     if (
@@ -64,8 +64,8 @@ export function createBrevoEmailProvider(configuration: BrevoEmailConfiguration)
 
     try {
       const payload = buildBrevoEmailPayload(context, {
-        email: configuration.senderEmail,
-        name: configuration.senderName,
+        email: configuration.senderEmail.trim(),
+        name: configuration.senderName.trim(),
       });
       if (!payload) return { outcome: "skipped", errorCode: "missing_destination" };
 
