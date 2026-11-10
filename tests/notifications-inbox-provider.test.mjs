@@ -18,14 +18,21 @@ const context = overrides => ({
 test("construye la notificación interna con período, vencimiento y saldo", () => {
   const payload = buildInternalInboxPayload("delivery-1", context());
 
-  assert.deepEqual(payload, {
+  assert.deepEqual({
+    delivery_id: payload.delivery_id,
+    notification_id: payload.notification_id,
+    student_id: payload.student_id,
+    user_id: payload.user_id,
+    title: payload.title,
+  }, {
     delivery_id: "delivery-1",
     notification_id: "notification-1",
     student_id: "student-1",
     user_id: "user-1",
     title: "Recordatorio de cuota",
-    body: assert.match(payload.body, /noviembre de 2026/) && assert.match(payload.body, /750,00/),
   });
+  assert.match(payload.body, /noviembre de 2026/);
+  assert.match(payload.body, /750,00/);
 });
 
 test("no crea una entrada interna si el alumno no tiene cuenta vinculada", () => {
