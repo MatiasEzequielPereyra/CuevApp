@@ -101,7 +101,10 @@ create table public.cueva_notification_deliveries (
   created_at timestamptz not null default clock_timestamp(),
   updated_at timestamptz not null default clock_timestamp(),
   unique (notification_id, channel),
-  check ((status = 'processing') = (lease_token is not null and lease_expires_at is not null)),
+  check (
+    (status = 'processing' and lease_token is not null and lease_expires_at is not null)
+    or (status <> 'processing' and lease_token is null and lease_expires_at is null)
+  ),
   check (status <> 'sent' or attempt_count > 0)
 );
 alter table public.cueva_notification_deliveries enable row level security;
@@ -146,6 +149,40 @@ grant update (read_at) on public.cueva_notification_inbox to authenticated;
 create index cueva_notification_inbox_unread_idx
   on public.cueva_notification_inbox(user_id, created_at desc)
   where read_at is null;
+
+create function cueva_private.validate_notification_inbox()
+returns trigger
+language plpgsql security definer set search_path = ''
+as $
+begin
+  if not exists (
+    select 1
+    from public.cueva_notification_deliveries delivery
+    join public.cueva_student_invitations invitation
+      on invitation.student_id = new.student_id
+     and invitation.user_id = new.user_id
+    join public.cueva_notifications notification
+      on notification.id = delivery.notification_id
+    where delivery.id = new.delivery_id
+      and delivery.channel = 'internal'
+      and delivery.notification_id = new.notification_id
+      and notification.period_id in (
+        select period.id from public.cueva_periods period
+        where period.id = notification.period_id
+          and period.student_id = new.student_id
+      )
+  ) then
+    raise exception 'Bandeja interna no coincide con la entrega y el alumno'
+      using errcode = '23514';
+  end if;
+  return new;
+end;
+$;
+revoke all on function cueva_private.validate_notification_inbox() from public, anon, authenticated, service_role;
+create trigger cueva_notification_inbox_validate
+  before insert or update of delivery_id, notification_id, student_id, user_id
+  on public.cueva_notification_inbox
+  for each row execute function cueva_private.validate_notification_inbox();
 
 create table public.cueva_push_subscriptions (
   id uuid primary key default gen_random_uuid(),
