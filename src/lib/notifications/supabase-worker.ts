@@ -144,6 +144,39 @@ export function createSupabaseNotificationWorker(
         .eq("status", "pending");
       throwIfError(deliveryError, "No se pudieron cancelar entregas pendientes");
     },
+    cancelStaleDueDate: async (periodId, dueOn) => {
+      const { data, error } = await db
+        .from("cueva_notifications")
+        .select("id")
+        .eq("period_id", periodId)
+        .eq("status", "pending")
+        .neq("due_on", dueOn);
+      throwIfError(error, "No se pudieron localizar recordatorios con vencimiento anterior");
+      const ids = Array.isArray(data) ? data.map(row => row.id as string) : [];
+      if (ids.length === 0) return;
+
+      const { error: notificationError } = await db
+        .from("cueva_notifications")
+        .update({
+          status: "cancelled",
+          cancellation_reason: "due_date_changed",
+          updated_at: new Date().toISOString(),
+        })
+        .in("id", ids)
+        .eq("status", "pending");
+      throwIfError(notificationError, "No se pudieron cancelar recordatorios obsoletos");
+
+      const { error: deliveryError } = await db
+        .from("cueva_notification_deliveries")
+        .update({
+          status: "cancelled",
+          last_error_code: "due_date_changed",
+          updated_at: new Date().toISOString(),
+        })
+        .in("notification_id", ids)
+        .eq("status", "pending");
+      throwIfError(deliveryError, "No se pudieron cancelar entregas obsoletas");
+    },
     ensureNotification: async input => {
       const { error: upsertError } = await db
         .from("cueva_notifications")
