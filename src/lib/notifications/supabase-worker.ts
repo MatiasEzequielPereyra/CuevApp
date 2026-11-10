@@ -170,14 +170,6 @@ export function createSupabaseNotificationWorker(
         throw new Error("Evento de notificación inválido");
       }
 
-      if (data.status === "pending") {
-        const { error: scheduleError } = await db
-          .from("cueva_notifications")
-          .update({ scheduled_at: input.scheduledAt, updated_at: new Date().toISOString() })
-          .eq("id", data.id)
-          .eq("status", "pending");
-        throwIfError(scheduleError, "No se pudo sincronizar el horario del evento");
-      }
       return { id: data.id as string, status: data.status as "pending" | "cancelled" | "completed" };
     },
     ensureDeliveries: async input => {
