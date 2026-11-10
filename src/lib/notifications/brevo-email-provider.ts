@@ -14,7 +14,6 @@ type BrevoEmailPayload = {
   sender: { email: string; name: string };
   to: Array<{ email: string }>;
   subject: string;
-  textContent: string;
   htmlContent: string;
 };
 
