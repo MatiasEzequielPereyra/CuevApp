@@ -6,6 +6,7 @@ on:
       - "supabase/**"
       - ".github/workflows/supabase-local.yml"
       - "tests/billing-concurrency.test.mjs"
+      - "tests/notifications-claim-concurrency.test.mjs"
       - "tests/e2e/**"
       - "src/app/api/pagos/**"
       - "src/components/payments/**"
@@ -16,6 +17,7 @@ on:
       - "supabase/**"
       - ".github/workflows/supabase-local.yml"
       - "tests/billing-concurrency.test.mjs"
+      - "tests/notifications-claim-concurrency.test.mjs"
       - "tests/e2e/**"
       - "src/app/api/pagos/**"
       - "src/components/payments/**"
@@ -120,6 +122,12 @@ jobs:
           test_db_var=CUEVA_TEST_DATABASE_URL
           export "$test_db_var=${DB_URL:-postgresql://postgres:postgres@127.0.0.1:55432/postgres}"
           node tests/billing-concurrency.test.mjs | tee "$MIGRATION_EVIDENCE/concurrency.txt"
+
+      - name: Verify concurrent notification claims and retry policy
+        run: |
+          eval "$(supabase --workdir "$SUPABASE_TEST_DIR" status -o env)"
+          export CUEVA_TEST_DATABASE_URL="${DB_URL:-postgresql://postgres:postgres@127.0.0.1:55432/postgres}"
+          node tests/notifications-claim-concurrency.test.mjs | tee "$MIGRATION_EVIDENCE/notification-claim-concurrency.txt"
 
       - name: Install Chromium for authenticated integration test
         run: npx playwright install --with-deps chromium
