@@ -23,5 +23,5 @@ test("rejects missing, short, or whitespace-padded secrets", () => {
 test("rejects missing and malformed authorization headers", () => {
   assert.equal(isAuthorizedNotificationWorkerRequest(request(null), secret), false);
   assert.equal(isAuthorizedNotificationWorkerRequest(request(secret), secret), false);
-  assert.equal(isAuthorizedNotificationWorkerRequest(request(`Bearer ${secret} `), secret), false);
+  assert.equal(isAuthorizedNotificationWorkerRequest(request(`Bearer  ${secret}`), secret), false);
 });
