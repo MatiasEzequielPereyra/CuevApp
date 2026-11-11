@@ -117,8 +117,8 @@ export default async function Payments({ searchParams }: {
   const data = snapshot.data as Snapshot | null;
   const today = buenosAiresDate();
   const month = today.slice(0, 7);
-  const [year, monthNumber] = month.split("-").map(Number);
-  const nextMonth = new Date(Date.UTC(year, monthNumber, 1)).toISOString().slice(0, 7);
+  const [year, monthNumber] = month.split("-");
+  const nextMonth = new Date(Date.UTC(Number(year), Number(monthNumber), 1)).toISOString().slice(0, 7);
   const [currentScheduleResult, nextScheduleResult, auditResult, attemptResult] = student ? await Promise.all([
     client.from("cueva_due_schedules")
       .select("id,due_day,effective_month,recorded_at")
