@@ -79,7 +79,7 @@ test("no realiza llamadas si falta el destinatario o la configuración", async (
   assert.equal(calls, 0);
 });
 
-test("clasifica rechazos definitivos y fallos reintentables sin filtrar respuesta", async () => {
+test("clasifica rechazos definitivos y resultados inciertos sin filtrar respuesta", async () => {
   const rejected = createBrevoEmailProvider(configuration({
     fetchImpl: async () => new Response("private provider detail", { status: 400 }),
   }));
@@ -105,4 +105,22 @@ test("una respuesta exitosa sin JSON utilizable no invalida el envío", async ()
   }));
 
   assert.deepEqual(await provider(context()), { outcome: "sent" });
+});
+
+
+test("reutiliza la misma clave de idempotencia en cada intento lógico", async () => {
+  const payloads = [];
+  const provider = createBrevoEmailProvider(configuration({
+    fetchImpl: async (_url, init) => {
+      payloads.push(JSON.parse(init.body));
+      return Response.json({ messageId: "<stable-key-test>" }, { status: 201 });
+    },
+  }));
+
+  await provider(context());
+  await provider(context());
+
+  assert.equal(payloads.length, 2);
+  assert.equal(payloads[0].headers.IdempotencyKey, context().notificationId);
+  assert.equal(payloads[1].headers.IdempotencyKey, payloads[0].headers.IdempotencyKey);
 });
