@@ -188,7 +188,7 @@ begin
 end;
 $$;
 
-create function cueva_private.finalize_notification_delivery(
+create or replace function cueva_private.finalize_notification_delivery(
   p_delivery_id uuid,
   p_lease_token uuid,
   p_outcome text,
