@@ -289,7 +289,7 @@ try {
   await Promise.all([...workers, unauthorized].map(client => client.end().catch(() => undefined)));
   if (adminConnected) {
     try {
-      await admin.query("delete from public.cueva_notification_attempts where delivery_id=any($1::uuid[])", [deliveryIds]);
+      await admin.query("delete from public.cueva_notification_admin_alerts where delivery_id=any($1::uuid[])", [deliveryIds]);\n      await admin.query("delete from public.cueva_notification_attempts where delivery_id=any($1::uuid[])", [deliveryIds]);
       await admin.query("delete from public.cueva_notification_deliveries where id=any($1::uuid[])", [deliveryIds]);
       await admin.query("delete from public.cueva_notifications where id=any($1::uuid[])", [notificationIds]);
       await admin.query("delete from public.cueva_periods where id=any($1::uuid[])", [periodIds]);
