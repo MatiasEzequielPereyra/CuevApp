@@ -1,5 +1,5 @@
 begin;
-select plan(51);
+select plan(54);
 
 -- Isolated fixtures: two students, two linked identities, one administrator.
 insert into auth.users(id,aud,role,email,created_at,updated_at)
@@ -58,7 +58,8 @@ insert into public.cueva_notification_deliveries(
 ) values
  ('b9000000-0000-4000-8000-000000000001','b8000000-0000-4000-8000-000000000001','internal','pending',0,timestamptz '2026-11-15 12:00:00-03',null),
  ('b9000000-0000-4000-8000-000000000002','b8000000-0000-4000-8000-000000000001','push','pending',1,timestamptz '2026-11-15 12:15:00-03',timestamptz '2026-11-15 12:00:00-03'),
- ('b9000000-0000-4000-8000-000000000003','b8000000-0000-4000-8000-000000000002','internal','pending',0,timestamptz '2026-11-16 12:00:00-03',null);
+ ('b9000000-0000-4000-8000-000000000003','b8000000-0000-4000-8000-000000000002','internal','pending',0,timestamptz '2026-11-16 12:00:00-03',null),
+ ('b9000000-0000-4000-8000-000000000004','b8000000-0000-4000-8000-000000000002','email','pending',0,timestamptz '2026-11-16 12:00:00-03',null);
 
 insert into public.cueva_notification_inbox(
  id,delivery_id,notification_id,student_id,user_id,title,body
@@ -319,6 +320,25 @@ select is(
   1,
   'first terminal failure after five attempts creates one admin alert'
 );
+
+-- An uncertain Brevo response is terminal before exhausting retries.
+update public.cueva_notifications set scheduled_at = clock_timestamp()
+where id = 'b8000000-0000-4000-8000-000000000002';
+update public.cueva_notification_deliveries set next_attempt_at = clock_timestamp()
+where id = 'b9000000-0000-4000-8000-000000000004';
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is((select count(*)::integer from public.cueva_claim_notification_deliveries(1,300)),1,
+  'worker claims the email delivery for uncertain-outcome test');
+select is((select delivery_status from public.cueva_finalize_notification_delivery(
+  'b9000000-0000-4000-8000-000000000004',
+  (select lease_token from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000004'),
+  'unknown',null,'brevo_result_unknown'
+)), 'failed', 'uncertain Brevo result becomes terminal instead of retryable');
+reset role;
+select is((select count(*)::integer from public.cueva_notification_admin_alerts
+  where delivery_id='b9000000-0000-4000-8000-000000000004' and alert_type='provider_outcome_unknown' and attempt_count=1),
+  1,'uncertain provider result creates an admin reconciliation alert at the actual attempt count');
 select ok(
   (select student_name = 'Student Two'
       and period_month = date '2026-11-01'
@@ -336,7 +356,7 @@ select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4
 set local role authenticated;
 select is(
   (select count(*)::integer from public.cueva_notification_admin_alerts),
-  1,
+  2,
   'administrator with a valid session can read operational alerts'
 );
 select throws_ok(
