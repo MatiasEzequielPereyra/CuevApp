@@ -97,6 +97,19 @@ try {
     name, value, url: origin, httpOnly: true, secure: false, sameSite: "Lax",
   })));
   const page = await context.newPage();
+  await page.goto(`${origin}/cuenta`);
+  const cards = page.locator(".dash-cards");
+  await cards.getByRole("link", { name: /Comprobantes de pago/ }).click();
+  await page.getByRole("heading", { name: "Comprobantes de pago", exact: true }).waitFor({ state: "visible" });
+  await page.goto(`${origin}/cuenta`);
+  await cards.getByRole("link", { name: /Vencimientos por alumno/ }).click();
+  await page.getByRole("heading", { name: "Vencimientos", exact: true }).waitFor({ state: "visible" });
+  await page.getByLabel("Buscar alumno").fill("Integration");
+  await page.getByRole("button", { name: "Buscar", exact: true }).click();
+  const studentLink = page.locator(`a[href="/pagos?vista=vencimientos&alumno=${studentId}"]`);
+  await studentLink.click();
+  await page.getByRole("heading", { name: "Vencimiento del alumno" }).waitFor({ state: "visible" });
+
   await page.goto(`${origin}/pagos?alumno=${studentId}`);
   const receiptLink = page.getByRole("link", { name: "Revisar comprobantes de pago" });
   await receiptLink.waitFor({ state: "visible", timeout: 30000 });
