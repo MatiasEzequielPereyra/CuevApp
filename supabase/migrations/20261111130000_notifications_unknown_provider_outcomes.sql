@@ -82,7 +82,7 @@ begin
         v_expired.id,
         v_expired.attempt_count,
         coalesce(v_expired.last_attempt_at, v_now),
-        case when v_expired.channel = 'email' and v_expired.provider_started_at is not null then 'unknown' else 'failed' end,
+        case when v_expired.channel = 'email' and v_expired.provider_started_at is null then 'failed' else 'unknown' end,
         case
           when v_expired.channel = 'email' and v_expired.provider_started_at is not null then 'email_lease_expired_unknown'
           when v_expired.channel = 'email' then 'email_lease_expired_before_provider'
