@@ -93,3 +93,13 @@ test("los leases obsoletos y fallos de finalize quedan aislados", async () => {
   assert.equal(result.errors, 1);
   assert.equal(result.finalized, 0);
 });
+
+
+test("preserva el resultado incierto para bloquear reintentos automáticos", async () => {
+  const deps = dependencies({
+    sendEmail: async () => ({ outcome: "unknown", errorCode: "brevo_result_unknown" }),
+  });
+  const result = await dispatchClaimedDeliveries([delivery("email")], deps);
+  assert.equal(result.finalized, 1);
+  assert.deepEqual(deps.finalized[0].result, { outcome: "unknown", errorCode: "brevo_result_unknown" });
+});
