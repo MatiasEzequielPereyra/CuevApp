@@ -6,7 +6,7 @@ import {
 } from "../src/lib/notifications/brevo-email-provider.ts";
 
 const context = overrides => ({
-  notificationId: "notification-1",
+  notificationId: "11111111-1111-4111-8111-111111111111",
   studentId: "student-1",
   studentName: '<Alumno "Demo">',
   destinationEmail: "student@example.test",
@@ -58,6 +58,7 @@ test("envía mediante el endpoint transaccional de Brevo y conserva su referenci
   const body = JSON.parse(request.init.body);
   assert.equal(body.sender.email, "avisos@example.test");
   assert.equal(body.to[0].email, "student@example.test");
+  assert.deepEqual(body.headers, { IdempotencyKey: context().notificationId });
 });
 
 test("no realiza llamadas si falta el destinatario o la configuración", async () => {
@@ -94,8 +95,8 @@ test("clasifica rechazos definitivos y fallos reintentables sin filtrar respuest
 
   assert.deepEqual(await rejected(context()), { outcome: "failed", errorCode: "brevo_rejected" });
   assert.deepEqual(await throttled(context()), { outcome: "failed", errorCode: "brevo_unavailable" });
-  assert.deepEqual(await unavailable(context()), { outcome: "failed", errorCode: "brevo_unavailable" });
-  assert.deepEqual(await networkFailure(context()), { outcome: "failed", errorCode: "brevo_unavailable" });
+  assert.deepEqual(await unavailable(context()), { outcome: "unknown", errorCode: "brevo_result_unknown" });
+  assert.deepEqual(await networkFailure(context()), { outcome: "unknown", errorCode: "brevo_result_unknown" });
 });
 
 test("una respuesta exitosa sin JSON utilizable no invalida el envío", async () => {
