@@ -55,6 +55,7 @@ function repository({ periods = [period()], preferences = new Map([["student-1",
     dispatcher: {
       loadContext: async () => { throw new Error("No debería cargar contexto sin entregas"); },
       sendEmail: async () => ({ outcome: "failed", errorCode: "brevo_unavailable" }),
+      markEmailStarted: async () => true,
       createInternal: async () => ({ outcome: "sent" }),
       sendPush: async () => ({ outcome: "failed", errorCode: "push_unavailable" }),
       finalize: async () => ({ finalized: true, deliveryStatus: "sent" }),
