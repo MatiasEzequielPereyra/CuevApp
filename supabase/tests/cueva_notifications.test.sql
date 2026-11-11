@@ -60,7 +60,7 @@ insert into public.cueva_notification_deliveries(
  ('b9000000-0000-4000-8000-000000000002','b8000000-0000-4000-8000-000000000001','push','pending',1,timestamptz '2026-11-15 12:15:00-03',timestamptz '2026-11-15 12:00:00-03',null,null),
  ('b9000000-0000-4000-8000-000000000003','b8000000-0000-4000-8000-000000000002','internal','pending',0,timestamptz '2026-11-16 12:00:00-03',null,null,null),
  ('b9000000-0000-4000-8000-000000000004','b8000000-0000-4000-8000-000000000002','email','pending',0,timestamptz '2026-11-16 12:00:00-03',null,null,null),
- ('b9000000-0000-4000-8000-000000000005','b8000000-0000-4000-8000-000000000002','email','processing',1,timestamptz '2026-11-16 12:00:00-03',clock_timestamp()-interval '10 minutes',gen_random_uuid(),clock_timestamp()-interval '1 minute');
+ ('b9000000-0000-4000-8000-000000000005','b8000000-0000-4000-8000-000000000001','email','processing',1,timestamptz '2026-11-16 12:00:00-03',clock_timestamp()-interval '10 minutes',gen_random_uuid(),clock_timestamp()-interval '1 minute');
 
 insert into public.cueva_notification_inbox(
  id,delivery_id,notification_id,student_id,user_id,title,body
