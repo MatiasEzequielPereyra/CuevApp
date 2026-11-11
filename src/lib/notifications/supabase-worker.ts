@@ -53,6 +53,15 @@ export function createSupabaseNotificationWorker(
       };
     },
     ...providers,
+    markEmailStarted: async delivery => {
+      const { data, error } = await db.rpc("cueva_mark_notification_delivery_started", {
+        p_delivery_id: delivery.delivery_id,
+        p_lease_token: delivery.lease_token,
+      });
+      throwIfError(error, "No se pudo registrar el inicio del envío de correo");
+      const row = Array.isArray(data) ? data[0] : null;
+      return row?.started === true;
+    },
     finalize: async (delivery: ClaimedNotificationDelivery, result: ProviderResult) => {
       const { data, error } = await db.rpc("cueva_finalize_notification_delivery", {
         p_delivery_id: delivery.delivery_id,
