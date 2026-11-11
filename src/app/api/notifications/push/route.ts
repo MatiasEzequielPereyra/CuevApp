@@ -22,20 +22,15 @@ async function requireStudent(): Promise<StudentContext | null> {
   const profile = await auth.from("cueva_profiles").select("role").maybeSingle();
   if (profile.error || profile.data?.role !== "alumno") return null;
 
-  const db = serviceClient();
-  const invitation = await db.from("cueva_student_invitations")
-    .select("student_id,state")
-    .eq("user_id", user.id)
+  // The preference table's RLS exposes only the current alumno's row. This
+  // resolves the student link without granting the service role extra access
+  // to invitation or student records.
+  const ownPreference = await auth.from("cueva_notification_preferences")
+    .select("student_id")
     .maybeSingle();
-  if (invitation.error || !invitation.data || invitation.data.state !== "sent") return null;
+  if (ownPreference.error || !ownPreference.data?.student_id) return null;
 
-  const student = await db.from("cueva_students")
-    .select("active")
-    .eq("id", invitation.data.student_id)
-    .maybeSingle();
-  if (student.error || student.data?.active !== true) return null;
-
-  return { auth, db, studentId: invitation.data.student_id as string };
+  return { auth, db: serviceClient(), studentId: ownPreference.data.student_id as string };
 }
 
 async function readJson(request: Request, maxBytes: number): Promise<unknown | null> {

@@ -1,8 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createECDH } from "node:crypto";
 import { parsePushEndpoint, parsePushSubscription } from "../src/lib/notifications/push-subscription.ts";
 
-const publicKey = Buffer.concat([Buffer.from([4]), Buffer.alloc(64, 7)]).toString("base64url");
+const keyPair = createECDH("prime256v1");
+keyPair.generateKeys();
+const publicKey = keyPair.getPublicKey().toString("base64url");
 const auth = Buffer.alloc(16, 9).toString("base64url");
 const valid = {
   endpoint: "https://fcm.googleapis.com/fcm/send/example-token",

@@ -1,3 +1,5 @@
+import { createECDH } from "node:crypto";
+
 export type ParsedPushSubscription = {
   endpoint: string;
   p256dh: string;
@@ -47,6 +49,13 @@ export function parsePushSubscription(
   if (!decodeKey(keyValues.p256dh, 65) || !decodeKey(keyValues.auth, 16)) return null;
   const publicKey = Buffer.from(keyValues.p256dh, "base64url");
   if (publicKey[0] !== 4) return null;
+  try {
+    const validator = createECDH("prime256v1");
+    validator.generateKeys();
+    validator.computeSecret(publicKey);
+  } catch {
+    return null;
+  }
 
   let expiresAt: string | null = null;
   if (input.expirationTime !== null && input.expirationTime !== undefined) {
