@@ -177,6 +177,14 @@ try {
   assert.equal(retryRows[4].status, "failed", "the fifth attempt exhausts retries");
   assert.equal(retryRows[4].outcome, "unknown", "the exhausted attempt is recorded as unknown");
 
+  const { rows: [recoveryAlert] } = await admin.query(
+    "select channel,attempt_count from public.cueva_notification_admin_alerts where delivery_id=$1",
+    [deliveryIds[6]],
+  );
+  assert.ok(recoveryAlert, "lease recovery creates an admin alert when it exhausts the fifth attempt");
+  assert.equal(recoveryAlert.channel, "push", "recovery alert identifies the exhausted channel");
+  assert.equal(recoveryAlert.attempt_count, 5, "recovery alert records the exhausted attempt count");
+
   const { rows: [exhaustedParent] } = await admin.query(
     "select status from public.cueva_notifications where id=$1",
     [notificationIds[6]],
