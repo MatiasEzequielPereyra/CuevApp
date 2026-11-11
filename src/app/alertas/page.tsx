@@ -14,7 +14,7 @@ type AdminAlert = {
   period_month: string;
   reminder_days: 1 | 5;
   channel: "email" | "internal" | "push";
-  attempt_count: 5;
+  attempt_count: 1 | 2 | 3 | 4 | 5;
   failed_at: string;
 };
 
@@ -86,7 +86,7 @@ export default async function AdminAlertsPage() {
         <section className={styles.empty}>
           <span className={styles.emptyIcon} aria-hidden="true">✓</span>
           <h2>No hay alertas pendientes de revisión</h2>
-          <p>Cuando una entrega agote sus cinco intentos, aparecerá acá.</p>
+          <p>Cuando una entrega agote sus intentos o tenga un resultado externo incierto, aparecerá acá.</p>
         </section>
       ) : (
         <section className={styles.list} aria-label="Alertas de notificaciones">
