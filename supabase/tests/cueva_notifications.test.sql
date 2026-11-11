@@ -1,5 +1,5 @@
 begin;
-select plan(56);
+select plan(58);
 
 -- Isolated fixtures: two students, two linked identities, one administrator.
 insert into auth.users(id,aud,role,email,created_at,updated_at)
@@ -54,13 +54,13 @@ values
  ('b8000000-0000-4000-8000-000000000002','b6000000-0000-4000-8000-000000000002',5,date '2026-11-21',timestamptz '2026-11-16 12:00:00-03');
 
 insert into public.cueva_notification_deliveries(
- id,notification_id,channel,status,attempt_count,next_attempt_at,last_attempt_at,lease_token,lease_expires_at
+ id,notification_id,channel,status,attempt_count,next_attempt_at,last_attempt_at,lease_token,lease_expires_at,provider_started_at
 ) values
- ('b9000000-0000-4000-8000-000000000001','b8000000-0000-4000-8000-000000000001','internal','pending',0,timestamptz '2026-11-15 12:00:00-03',null,null,null),
- ('b9000000-0000-4000-8000-000000000002','b8000000-0000-4000-8000-000000000001','push','pending',1,timestamptz '2026-11-15 12:15:00-03',timestamptz '2026-11-15 12:00:00-03',null,null),
- ('b9000000-0000-4000-8000-000000000003','b8000000-0000-4000-8000-000000000002','internal','pending',0,timestamptz '2026-11-16 12:00:00-03',null,null,null),
- ('b9000000-0000-4000-8000-000000000004','b8000000-0000-4000-8000-000000000002','email','pending',0,timestamptz '2026-11-16 12:00:00-03',null,null,null),
- ('b9000000-0000-4000-8000-000000000005','b8000000-0000-4000-8000-000000000001','email','processing',1,timestamptz '2026-11-16 12:00:00-03',clock_timestamp()-interval '10 minutes',gen_random_uuid(),clock_timestamp()-interval '1 minute');
+ ('b9000000-0000-4000-8000-000000000001','b8000000-0000-4000-8000-000000000001','internal','pending',0,timestamptz '2026-11-15 12:00:00-03',null,null,null,null),
+ ('b9000000-0000-4000-8000-000000000002','b8000000-0000-4000-8000-000000000001','push','pending',1,timestamptz '2026-11-15 12:15:00-03',timestamptz '2026-11-15 12:00:00-03',null,null,null),
+ ('b9000000-0000-4000-8000-000000000003','b8000000-0000-4000-8000-000000000002','internal','pending',0,timestamptz '2026-11-16 12:00:00-03',null,null,null,null),
+ ('b9000000-0000-4000-8000-000000000004','b8000000-0000-4000-8000-000000000002','email','processing',1,timestamptz '2026-11-16 12:00:00-03',clock_timestamp()-interval '10 minutes',gen_random_uuid(),clock_timestamp()-interval '1 minute',clock_timestamp()-interval '5 minutes'),
+ ('b9000000-0000-4000-8000-000000000005','b8000000-0000-4000-8000-000000000001','email','processing',1,timestamptz '2026-11-16 12:00:00-03',clock_timestamp()-interval '10 minutes',gen_random_uuid(),clock_timestamp()-interval '1 minute',null);
 
 insert into public.cueva_notification_inbox(
  id,delivery_id,notification_id,student_id,user_id,title,body
@@ -200,9 +200,11 @@ select is(
   'expired lease is recorded as an unknown attempt'
 );
 select is((select status from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000005'),
-  'failed','expired email lease is terminal to prevent a duplicate send');
-select is((select count(*)::integer from public.cueva_notification_admin_alerts where delivery_id='b9000000-0000-4000-8000-000000000005' and alert_type='provider_outcome_unknown'),
-  1,'expired email lease creates an admin reconciliation alert');
+  'pending','expired email lease before provider start remains retryable');
+select is((select status from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000004'),
+  'failed','expired email lease after provider start is terminal to prevent a duplicate send');
+select is((select count(*)::integer from public.cueva_notification_admin_alerts where delivery_id='b9000000-0000-4000-8000-000000000004' and alert_type='provider_outcome_unknown'),
+  1,'expired email lease after provider start creates an admin reconciliation alert');
 select is(
   (select status from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000001'),
   'pending',
@@ -330,19 +332,19 @@ select is(
 update public.cueva_notifications set scheduled_at = clock_timestamp()
 where id = 'b8000000-0000-4000-8000-000000000002';
 update public.cueva_notification_deliveries set next_attempt_at = clock_timestamp()
-where id = 'b9000000-0000-4000-8000-000000000004';
+where id = 'b9000000-0000-4000-8000-000000000005';
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
 set local role service_role;
 select is((select count(*)::integer from public.cueva_claim_notification_deliveries(1,300)),1,
   'worker claims the email delivery for uncertain-outcome test');
 select is((select delivery_status from public.cueva_finalize_notification_delivery(
-  'b9000000-0000-4000-8000-000000000004',
-  (select lease_token from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000004'),
+  'b9000000-0000-4000-8000-000000000005',
+  (select lease_token from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000005'),
   'unknown',null,'brevo_result_unknown'
 )), 'failed', 'uncertain Brevo result becomes terminal instead of retryable');
 reset role;
 select is((select count(*)::integer from public.cueva_notification_admin_alerts
-  where delivery_id='b9000000-0000-4000-8000-000000000004' and alert_type='provider_outcome_unknown' and attempt_count=1),
+  where delivery_id='b9000000-0000-4000-8000-000000000005' and alert_type='provider_outcome_unknown' and attempt_count=1),
   1,'uncertain provider result creates an admin reconciliation alert at the actual attempt count');
 select ok(
   (select student_name = 'Student Two'
