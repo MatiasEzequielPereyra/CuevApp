@@ -1,5 +1,5 @@
 begin;
-select plan(58);
+select plan(61);
 
 -- Isolated fixtures: two students, two linked identities, one administrator.
 insert into auth.users(id,aud,role,email,created_at,updated_at)
@@ -201,6 +201,8 @@ select is(
 );
 select is((select status from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000005'),
   'pending','expired email lease before provider start remains retryable');
+select is((select outcome || ':' || error_code from public.cueva_notification_attempts where delivery_id='b9000000-0000-4000-8000-000000000005' and attempt_number=1),
+  'failed:email_lease_expired_before_provider','pre-provider lease expiry is recorded as a retryable failure');
 select is((select status from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000004'),
   'failed','expired email lease after provider start is terminal to prevent a duplicate send');
 select is((select count(*)::integer from public.cueva_notification_admin_alerts where delivery_id='b9000000-0000-4000-8000-000000000004' and alert_type='provider_outcome_unknown'),
@@ -337,6 +339,14 @@ select set_config('request.jwt.claims','{"role":"service_role"}',true);
 set local role service_role;
 select is((select count(*)::integer from public.cueva_claim_notification_deliveries(1,300)),1,
   'worker claims the email delivery for uncertain-outcome test');
+select ok(has_function_privilege('service_role','public.cueva_mark_notification_delivery_started(uuid,uuid)','EXECUTE'),
+  'service role can mark provider dispatch start');
+select ok(not has_function_privilege('authenticated','public.cueva_mark_notification_delivery_started(uuid,uuid)','EXECUTE'),
+  'authenticated cannot mark provider dispatch start');
+select is((select started from public.cueva_mark_notification_delivery_started(
+  'b9000000-0000-4000-8000-000000000005',
+  (select lease_token from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000005')
+)), true, 'active email lease can persist provider start');
 select is((select delivery_status from public.cueva_finalize_notification_delivery(
   'b9000000-0000-4000-8000-000000000005',
   (select lease_token from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000005'),
@@ -344,7 +354,7 @@ select is((select delivery_status from public.cueva_finalize_notification_delive
 )), 'failed', 'uncertain Brevo result becomes terminal instead of retryable');
 reset role;
 select is((select count(*)::integer from public.cueva_notification_admin_alerts
-  where delivery_id='b9000000-0000-4000-8000-000000000005' and alert_type='provider_outcome_unknown' and attempt_count=1),
+  where delivery_id='b9000000-0000-4000-8000-000000000005' and alert_type='provider_outcome_unknown' and attempt_count=2),
   1,'uncertain provider result creates an admin reconciliation alert at the actual attempt count');
 select ok(
   (select student_name = 'Student Two'
