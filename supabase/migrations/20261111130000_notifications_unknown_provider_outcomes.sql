@@ -86,6 +86,7 @@ begin
       status = case
         when v_expired.notification_status <> 'pending'
           or v_expired.due_on <= v_local_date then 'cancelled'
+        when v_expired.channel = 'email' then 'failed'
         when v_expired.attempt_count >= 5 then 'failed'
         else 'pending'
       end,
