@@ -103,7 +103,7 @@ export async function dispatchClaimedDeliveries(
     try {
       const context = await dependencies.loadContext(delivery.notification_id);
       result = await providerFor(delivery.channel, dependencies)(context);
-      if (result.outcome !== "sent" && result.outcome !== "failed" && result.outcome !== "skipped") {
+      if (result.outcome !== "sent" && result.outcome !== "failed" && result.outcome !== "unknown" && result.outcome !== "skipped") {
         result = { outcome: "failed", errorCode: "invalid_provider_result" };
       }
       if (result.outcome !== "sent") {
