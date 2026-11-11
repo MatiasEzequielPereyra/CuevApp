@@ -34,6 +34,7 @@ export type NotificationDispatcherDependencies = {
   sendEmail(context: NotificationDeliveryContext): Promise<ProviderResult>;
   createInternal(context: NotificationDeliveryContext): Promise<ProviderResult>;
   sendPush(context: NotificationDeliveryContext): Promise<ProviderResult>;
+  markEmailStarted(delivery: ClaimedNotificationDelivery): Promise<boolean>;
   finalize(
     delivery: ClaimedNotificationDelivery,
     result: ProviderResult,
@@ -102,6 +103,10 @@ export async function dispatchClaimedDeliveries(
     let result: ProviderResult;
     try {
       const context = await dependencies.loadContext(delivery.notification_id);
+      if (delivery.channel === "email" && !(await dependencies.markEmailStarted(delivery))) {
+        summary.stale += 1;
+        return;
+      }
       result = await providerFor(delivery.channel, dependencies)(context);
       if (result.outcome !== "sent" && result.outcome !== "failed" && result.outcome !== "unknown" && result.outcome !== "skipped") {
         result = { outcome: "failed", errorCode: "invalid_provider_result" };
