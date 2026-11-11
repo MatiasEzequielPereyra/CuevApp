@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import styles from "./push-notification-settings.module.css";
 
 type PushSettings = {
   pushEnabled: boolean;
@@ -112,31 +111,31 @@ export function PushNotificationSettings() {
   }
 
   if (!settings && !message) {
-    return <section className={styles.panel} aria-labelledby="push-settings-title" aria-busy="true">
+    return <section className={push-settings-panel} aria-labelledby="push-settings-title" aria-busy="true">
       <h2 id="push-settings-title">Avisos en este dispositivo</h2>
       <p>Consultando la configuración…</p>
     </section>;
   }
 
-  return <section className={styles.panel} aria-labelledby="push-settings-title">
+  return <section className={push-settings-panel} aria-labelledby="push-settings-title">
     <div>
-      <p className={styles.kicker}>NOTIFICACIONES</p>
+      <p className={push-settings-kicker}>NOTIFICACIONES</p>
       <h2 id="push-settings-title">Avisos en este dispositivo</h2>
-      <p className={styles.description}>
+      <p className={push-settings-description}>
         Recibí avisos push sobre vencimientos. Los correos y avisos internos de CUEVA siguen activos.
       </p>
     </div>
-    {!settings?.available ? <p className={styles.note}>La recepción push todavía no está configurada en el servidor. Podés seguir usando los avisos por correo y dentro de CUEVA.</p>
-      : settings.pushEnabled && hasSubscription ? <div className={styles.actions}>
-        <span className={styles.status}>Push habilitado</span>
+    {!settings?.available ? <p className={push-settings-note}>La recepción push todavía no está configurada en el servidor. Podés seguir usando los avisos por correo y dentro de CUEVA.</p>
+      : settings.pushEnabled && hasSubscription ? <div className={push-settings-actions}>
+        <span className={push-settings-status}>Push habilitado</span>
         <button type="button" onClick={disablePush} disabled={busy}>Desactivar push</button>
       </div>
-      : <div className={styles.actions}>
+      : <div className={push-settings-actions}>
         <button type="button" onClick={enablePush} disabled={busy}>
           {busy ? "Procesando…" : settings.pushEnabled ? "Activar en este dispositivo" : "Volver a activar push"}
         </button>
-        {!settings.pushEnabled && <span className={styles.note}>La preferencia push está desactivada para tu cuenta.</span>}
+        {!settings.pushEnabled && <span className={push-settings-note}>La preferencia push está desactivada para tu cuenta.</span>}
       </div>}
-    {message && <p className={styles.message} role="status">{message}</p>}
+    {message && <p className={push-settings-message} role="status">{message}</p>}
   </section>;
 }

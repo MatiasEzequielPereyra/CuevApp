@@ -276,3 +276,43 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
 .due-date-history li strong { font-size:13px; }
 .due-date-history li p { margin-top:6px; }
 @media(max-width:680px) { .due-date-manager { padding:16px; }.due-date-preview > div { flex-direction:column; gap:4px; }.due-date-preview > div strong { text-align:left; } }
+
+
+/* CUEVA-005 push notification controls */
+.push-settings-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  margin: 24px 0;
+  padding: 24px;
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+  background: var(--dash-panel);
+  color: var(--dash-text);
+}
+.push-settings-panel > div:first-child { min-width: 0; }
+.push-settings-panel h2 { margin: 0; font-size: 24px; }
+.push-settings-kicker { margin: 0 0 9px; color: var(--dash-muted); font-size: 10px; font-weight: 700; letter-spacing: .14em; }
+.push-settings-description, .push-settings-note, .push-settings-message { max-width: 620px; margin: 10px 0 0; color: var(--dash-muted); font-size: 13px; line-height: 1.6; }
+.push-settings-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.push-settings-actions button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--dash-text);
+  border-radius: 8px;
+  background: var(--dash-text);
+  color: var(--dash-panel);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.push-settings-actions button:disabled { cursor: wait; opacity: .6; }
+.push-settings-status { padding: 8px 11px; border: 1px solid var(--dash-border); border-radius: 8px; font-size: 12px; font-weight: 700; }
+.push-settings-message { flex-basis: 100%; margin-top: 0; }
+@media (max-width: 600px) {
+  .push-settings-panel { align-items: stretch; padding: 18px; }
+  .push-settings-actions { align-items: stretch; flex-direction: column; }
+  .push-settings-actions button { width: 100%; }
+}
