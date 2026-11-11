@@ -359,7 +359,7 @@ declare
   v_alert_type text;
 begin
   if old.status = 'failed' or new.status <> 'failed' then return new; end if;
-  if new.attempt_count <> 5 and new.last_error_code not in ('brevo_result_unknown','email_lease_expired_unknown') then return new; end if;
+  if new.attempt_count <> 5 and coalesce(new.last_error_code,'') not in ('brevo_result_unknown','email_lease_expired_unknown') then return new; end if;
   v_alert_type := case when new.last_error_code in ('brevo_result_unknown','email_lease_expired_unknown') then 'provider_outcome_unknown' else 'retries_exhausted' end;
   select notification.* into v_notification from public.cueva_notifications notification where notification.id = new.notification_id;
   if not found or v_notification.status <> 'pending' then return new; end if;
