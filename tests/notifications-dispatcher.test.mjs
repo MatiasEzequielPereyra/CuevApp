@@ -29,6 +29,7 @@ function dependencies(overrides = {}) {
     finalized,
     loadContext: async id => context(id),
     sendEmail: async () => ({ outcome: "sent", providerReference: "brevo-123" }),
+    markEmailStarted: async () => true,
     createInternal: async () => ({ outcome: "sent" }),
     sendPush: async () => ({ outcome: "sent" }),
     finalize: async (item, result) => {
@@ -102,4 +103,27 @@ test("preserva el resultado incierto para bloquear reintentos automáticos", asy
   const result = await dispatchClaimedDeliveries([delivery("email")], deps);
   assert.equal(result.finalized, 1);
   assert.deepEqual(deps.finalized[0].result, { outcome: "unknown", errorCode: "brevo_result_unknown" });
+});
+
+
+test("marca el inicio del correo antes de invocar al proveedor", async () => {
+  const order = [];
+  const deps = dependencies({
+    markEmailStarted: async () => { order.push("started"); return true; },
+    sendEmail: async () => { order.push("provider"); return { outcome: "sent" }; },
+  });
+  await dispatchClaimedDeliveries([delivery("email")], deps);
+  assert.deepEqual(order, ["started", "provider"]);
+});
+
+test("no llama al proveedor si la reserva ya no es válida al marcar el inicio", async () => {
+  let providerCalls = 0;
+  const deps = dependencies({
+    markEmailStarted: async () => false,
+    sendEmail: async () => { providerCalls += 1; return { outcome: "sent" }; },
+  });
+  const result = await dispatchClaimedDeliveries([delivery("email")], deps);
+  assert.equal(providerCalls, 0);
+  assert.equal(result.stale, 1);
+  assert.equal(result.finalized, 0);
 });
