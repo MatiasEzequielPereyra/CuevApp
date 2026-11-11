@@ -302,5 +302,70 @@ select throws_ok(
 );
 reset role;
 
+
+-- Exhausted deliveries create one concise admin alert transactionally.
+reset role;
+update public.cueva_notification_deliveries
+set status = 'failed',
+    attempt_count = 5,
+    last_error_code = 'provider_error',
+    updated_at = clock_timestamp()
+where id = 'b9000000-0000-4000-8000-000000000003'
+  and status = 'pending';
+
+select is(
+  (select count(*)::integer from public.cueva_notification_admin_alerts
+   where delivery_id = 'b9000000-0000-4000-8000-000000000003'),
+  1,
+  'first terminal failure after five attempts creates one admin alert'
+);
+select ok(
+  (select student_name = 'Student Two'
+      and period_month = date '2026-11-01'
+      and reminder_days = 5
+      and channel = 'internal'
+      and attempt_count = 5
+      and failed_at is not null
+   from public.cueva_notification_admin_alerts
+   where delivery_id = 'b9000000-0000-4000-8000-000000000003'),
+  'admin alert contains the concise student, period, reminder, channel, and exhaustion snapshot'
+);
+
+select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000001',true);
+select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000001','role','authenticated','session_id','b2000000-0000-4000-8000-000000000001')::text,true);
+set local role authenticated;
+select is(
+  (select count(*)::integer from public.cueva_notification_admin_alerts),
+  1,
+  'administrator with a valid session can read operational alerts'
+);
+select throws_ok(
+  $$select * from public.cueva_notification_attempts$$,
+  '42501',
+  null,
+  'administrator UI cannot read the restricted technical attempt ledger'
+);
+
+reset role;
+select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000002',true);
+select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000002','role','authenticated','session_id','b2000000-0000-4000-8000-000000000002')::text,true);
+set local role authenticated;
+select is(
+  (select count(*)::integer from public.cueva_notification_admin_alerts),
+  0,
+  'student cannot read administrative operational alerts'
+);
+
+reset role;
+update public.cueva_notification_deliveries
+set status = 'failed', updated_at = clock_timestamp()
+where id = 'b9000000-0000-4000-8000-000000000003';
+select is(
+  (select count(*)::integer from public.cueva_notification_admin_alerts
+   where delivery_id = 'b9000000-0000-4000-8000-000000000003'),
+  1,
+  'repeated failed-state update cannot duplicate the admin alert'
+);
+
 select * from finish();
 rollback;
