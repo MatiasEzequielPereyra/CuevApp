@@ -15,6 +15,7 @@ type BrevoEmailPayload = {
   to: Array<{ email: string }>;
   subject: string;
   htmlContent: string;
+  headers: { IdempotencyKey: string };
 };
 
 function escapeHtml(value: string): string {
@@ -44,6 +45,7 @@ export function buildBrevoEmailPayload(
     to: [{ email: context.destinationEmail.trim() }],
     subject: content.subject,
     htmlContent: `<p>Hola ${escapeHtml(context.studentName)},</p><p>${escapeHtml(content.body)}</p><p>Este es un aviso automático de CUEVA.</p>`,
+    headers: { IdempotencyKey: context.notificationId },
   };
 }
 
@@ -83,9 +85,11 @@ export function createBrevoEmailProvider(configuration: BrevoEmailConfiguration)
       if (!response.ok) {
         return {
           outcome: "failed",
-          errorCode: response.status === 429 || response.status >= 500
+          errorCode: response.status === 429
             ? "brevo_unavailable"
-            : "brevo_rejected",
+            : response.status >= 500
+              ? "brevo_result_unknown"
+              : "brevo_rejected",
         };
       }
 
@@ -106,7 +110,9 @@ export function createBrevoEmailProvider(configuration: BrevoEmailConfiguration)
 
       return { outcome: "sent", ...(providerReference ? { providerReference } : {}) };
     } catch {
-      return { outcome: "failed", errorCode: "brevo_unavailable" };
+      // The provider may have accepted the message before the connection failed.
+      // Stop automatic retries until an administrator reconciles the provider log.
+      return { outcome: "unknown", errorCode: "brevo_result_unknown" };
     }
   };
 }
