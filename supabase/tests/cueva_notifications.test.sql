@@ -143,7 +143,7 @@ select ok(
 -- A provider-started email must remain reconcilable even if its parent was
 -- cancelled and the due date has since passed.
 update public.cueva_notifications
-set status = 'cancelled', due_on = date '2026-11-10'
+set status = 'cancelled', cancellation_reason = 'cancelled_test', due_on = date '2026-11-10'
 where id = 'b8000000-0000-4000-8000-000000000002';
 
 update public.cueva_notifications
@@ -355,7 +355,7 @@ select is((select started from public.cueva_mark_notification_delivery_started(
 )), true, 'active email lease can persist provider start');
 -- Cancellation/expiry after the provider-start marker cannot erase uncertainty.
 update public.cueva_notifications
-set status = 'cancelled', due_on = date '2026-11-10'
+set status = 'cancelled', cancellation_reason = 'cancelled_test', due_on = date '2026-11-10'
 where id = 'b8000000-0000-4000-8000-000000000001';
 select is((select delivery_status from public.cueva_finalize_notification_delivery(
   'b9000000-0000-4000-8000-000000000005',
