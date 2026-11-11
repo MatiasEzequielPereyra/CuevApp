@@ -82,14 +82,13 @@ export function createBrevoEmailProvider(configuration: BrevoEmailConfiguration)
         cache: "no-store",
       });
 
+      if (response.status >= 500) {
+        return { outcome: "unknown", errorCode: "brevo_result_unknown" };
+      }
       if (!response.ok) {
         return {
           outcome: "failed",
-          errorCode: response.status === 429
-            ? "brevo_unavailable"
-            : response.status >= 500
-              ? "brevo_result_unknown"
-              : "brevo_rejected",
+          errorCode: response.status === 429 ? "brevo_unavailable" : "brevo_rejected",
         };
       }
 
