@@ -99,3 +99,8 @@ La recuperación no reintenta indiscriminadamente: solo procesa avisos aún rele
 ### Exposición explícita del Data API
 
 Desde el cambio de Supabase aplicado en 2026, las tablas nuevas de `public` no deben suponerse accesibles automáticamente por PostgREST. Toda tabla de notificaciones tendrá RLS habilitado y privilegios explícitos. Las tablas operativas (entregas, intentos, ejecuciones, preferencias y suscripciones) no concederán acceso directo a `anon` ni `authenticated`; el worker accederá mediante RPCs estrechas. La bandeja interna concederá únicamente lectura y actualización del estado de lectura bajo RLS ligada a la sesión vigente y al `user_id`. Los wrappers RPC serán `SECURITY INVOKER` y se concederá `EXECUTE` solo a los roles consumidores.
+
+
+## Conciliación de resultados inciertos
+
+El procedimiento de soporte, las comprobaciones en Brevo y los límites de reenvío están documentados en [CUEVA-005 — Conciliación manual](notifications-reconciliation.md). La interfaz administrativa permanece de solo lectura; no se debe reabrir una entrega manualmente ni reenviar ante evidencia inconclusa.

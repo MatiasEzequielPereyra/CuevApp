@@ -95,9 +95,12 @@ begin
     update public.cueva_notification_deliveries delivery
     set
       status = case
+        -- An email that crossed the provider-start boundary is uncertain even
+        -- if its logical notification was cancelled or its due date has passed.
+        -- Keep it terminal-failed so support can reconcile a possible send.
+        when v_expired.channel = 'email' and v_expired.provider_started_at is not null then 'failed'
         when v_expired.notification_status <> 'pending'
           or v_expired.due_on <= v_local_date then 'cancelled'
-        when v_expired.channel = 'email' and v_expired.provider_started_at is not null then 'failed'
         when v_expired.attempt_count >= 5 then 'failed'
         else 'pending'
       end,
@@ -115,10 +118,10 @@ begin
         end)
       end,
       last_error_code = case
+        when v_expired.channel = 'email' and v_expired.provider_started_at is not null then 'email_lease_expired_unknown'
         when v_expired.notification_status = 'cancelled' then 'notification_cancelled'
         when v_expired.notification_status = 'completed' then 'notification_completed'
         when v_expired.due_on <= v_local_date then 'lease_expired_after_due_date'
-        when v_expired.channel = 'email' and v_expired.provider_started_at is not null then 'email_lease_expired_unknown'
         when v_expired.channel = 'email' then 'email_lease_expired_before_provider'
         else 'lease_expired'
       end,
@@ -282,17 +285,19 @@ begin
 
   if p_outcome = 'sent' then
     v_delivery_status := 'sent';
+  elsif p_outcome = 'unknown' then
+    -- Preserve provider uncertainty regardless of later parent cancellation
+    -- or due-date expiry. It is terminal and must reach admin reconciliation.
+    v_delivery_status := 'failed';
   elsif v_notification.status <> 'pending' then
     v_delivery_status := 'cancelled';
     v_error_code := case
       when v_notification.status = 'cancelled' then 'notification_cancelled'
       else 'notification_completed'
     end;
-  elsif v_delivery_status is null and v_notification.due_on <= v_local_date then
+  elsif v_notification.due_on <= v_local_date then
     v_delivery_status := 'cancelled';
     v_error_code := 'delivery_after_due_date';
-  elsif p_outcome = 'unknown' then
-    v_delivery_status := 'failed';
   elsif p_outcome = 'skipped' then
     v_delivery_status := 'skipped';
   elsif v_delivery.attempt_count >= 5 then
@@ -438,9 +443,15 @@ begin
   if new.attempt_count <> 5 and coalesce(new.last_error_code,'') not in ('brevo_result_unknown','email_lease_expired_unknown') then return new; end if;
   v_alert_type := case when new.last_error_code in ('brevo_result_unknown','email_lease_expired_unknown') then 'provider_outcome_unknown' else 'retries_exhausted' end;
   select notification.* into v_notification from public.cueva_notifications notification where notification.id = new.notification_id;
-  if not found or v_notification.status <> 'pending' then return new; end if;
-  v_local_date := (clock_timestamp() at time zone 'America/Argentina/Buenos_Aires')::date;
-  if v_notification.due_on <= v_local_date then return new; end if;
+  if not found then return new; end if;
+  -- Known exhausted retries are relevant only while the parent remains pending
+  -- and the due date is future. An uncertain provider outcome always needs
+  -- reconciliation, even after the parent is cancelled or the due date passes.
+  if v_alert_type = 'retries_exhausted' then
+    if v_notification.status <> 'pending' then return new; end if;
+    v_local_date := (clock_timestamp() at time zone 'America/Argentina/Buenos_Aires')::date;
+    if v_notification.due_on <= v_local_date then return new; end if;
+  end if;
   select period.* into v_period from public.cueva_periods period where period.id = v_notification.period_id;
   if not found then return new; end if;
   select student.* into v_student from public.cueva_students student where student.id = v_period.student_id;
