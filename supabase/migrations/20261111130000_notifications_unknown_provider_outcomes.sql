@@ -374,7 +374,7 @@ returns table (started boolean)
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   v_delivery public.cueva_notification_deliveries%rowtype;
   v_now timestamptz;
@@ -403,7 +403,7 @@ begin
   where id = p_delivery_id;
   return query select true;
 end;
-$;
+$$;
 revoke all on function cueva_private.mark_notification_delivery_started(uuid,uuid)
   from public, anon, authenticated, service_role;
 grant execute on function cueva_private.mark_notification_delivery_started(uuid,uuid)
@@ -417,9 +417,9 @@ returns table (started boolean)
 language sql
 security invoker
 set search_path = ''
-as $
+as $$
   select * from cueva_private.mark_notification_delivery_started(p_delivery_id,p_lease_token)
-$;
+$$;
 revoke all on function public.cueva_mark_notification_delivery_started(uuid,uuid)
   from public, anon, authenticated;
 grant execute on function public.cueva_mark_notification_delivery_started(uuid,uuid)
