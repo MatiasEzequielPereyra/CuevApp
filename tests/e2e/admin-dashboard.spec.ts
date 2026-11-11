@@ -43,7 +43,14 @@ for (const width of [360, 390, 768, 1440]) {
       await loadDashboard(page, theme);
       await expect(page.getByRole("heading", { name: /Hola, Alex/ })).toBeVisible();
       await expect(page.locator(".dash-role").getByText("Administrador", { exact: true })).toBeVisible();
-      await expect(page.getByText("Sin datos aún")).toHaveCount(2);
+      const cards = page.locator(".dash-cards");
+      await expect(cards.getByRole("link", { name: /Vencimientos por alumno/ })).toHaveAttribute("href", "/pagos?vista=vencimientos");
+      await expect(cards.getByRole("link", { name: /Comprobantes de pago/ })).toHaveAttribute("href", "/pagos/comprobantes");
+      if (width > 680) {
+        const sidebar = page.getByRole("navigation", { name: "Navegación principal" });
+        await expect(sidebar.getByRole("link", { name: "Vencimientos", exact: true })).toHaveAttribute("href", "/pagos?vista=vencimientos");
+        await expect(sidebar.getByRole("link", { name: "Comprobantes", exact: true })).toHaveAttribute("href", "/pagos/comprobantes");
+      }
       await expect(page.getByRole("button", { name: "Cerrar sesión" })).toHaveCount(1);
       const navigation = page.getByRole("navigation", { name: width <= 680 ? "Navegación móvil" : "Navegación principal" });
       const exercises = navigation.getByRole("link", { name: "Ejercicios", exact: true });

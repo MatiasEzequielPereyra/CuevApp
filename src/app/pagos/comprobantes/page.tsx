@@ -33,7 +33,7 @@ export default async function ReceiptQueue({ searchParams }: { searchParams: Pro
   const rows = (data ?? []) as unknown as QueueEntry[];
   const pageLink = (index: number) => `/pagos/comprobantes?estado=${resolved ? "resueltos" : "pendientes"}&desde=${index}`;
   return <AdminShell displayName={user.email ?? "Cuenta CUEVA"} email={user.email ?? ""} role="Administrador"
-    logo={<BrandMark size={42}/>} themePicker={<ThemePicker/>} active="pagos">
+    logo={<BrandMark size={42}/>} themePicker={<ThemePicker/>} active="comprobantes">
     <Link href="/pagos">Volver a Pagos y cuotas</Link>
     <h1>Comprobantes de pago</h1>
     <nav className="routine-actions" aria-label="Estado de comprobantes">
