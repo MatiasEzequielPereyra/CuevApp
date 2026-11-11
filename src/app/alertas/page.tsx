@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 type AdminAlert = {
   id: string;
+  alert_type: "retries_exhausted" | "provider_outcome_unknown";
   student_name: string;
   period_month: string;
   reminder_days: 1 | 5;
@@ -49,7 +50,7 @@ export default async function AdminAlertsPage() {
 
   const { data, error } = await auth
     .from("cueva_notification_admin_alerts")
-    .select("id,student_name,period_month,reminder_days,channel,attempt_count,failed_at")
+    .select("id,alert_type,student_name,period_month,reminder_days,channel,attempt_count,failed_at")
     .order("failed_at", { ascending: false })
     .limit(100);
 
@@ -71,7 +72,7 @@ export default async function AdminAlertsPage() {
         <div>
           <p className="dash-overline"><span /> OPERACIÓN DEL GIMNASIO</p>
           <h1>Alertas operativas</h1>
-          <p>Entregas de notificaciones que agotaron sus reintentos y requieren revisión.</p>
+          <p>Entregas que agotaron sus reintentos o necesitan conciliación con el proveedor.</p>
         </div>
         <span className={styles.count}>{alerts.length} {alerts.length === 1 ? "alerta" : "alertas"}</span>
       </div>
@@ -93,10 +94,10 @@ export default async function AdminAlertsPage() {
             <article className={styles.card} key={alert.id}>
               <div className={styles.cardTop}>
                 <div>
-                  <span className={styles.eyebrow}>REINTENTOS AGOTADOS</span>
+                  <span className={styles.eyebrow}>{alert.alert_type === "provider_outcome_unknown" ? "RESULTADO DEL PROVEEDOR INCIERTO" : "REINTENTOS AGOTADOS"}</span>
                   <h2>{alert.student_name}</h2>
                 </div>
-                <span className={styles.status}>Fallido definitivo</span>
+                <span className={styles.status}>{alert.alert_type === "provider_outcome_unknown" ? "Requiere conciliación" : "Fallido definitivo"}</span>
               </div>
               <div className={styles.details}>
                 <span><strong>Período</strong>{periodLabel(alert.period_month)}</span>
@@ -104,7 +105,7 @@ export default async function AdminAlertsPage() {
                 <span><strong>Canal</strong>{channelLabels[alert.channel]}</span>
                 <span><strong>Intentos</strong>{alert.attempt_count} de 5</span>
               </div>
-              <p className={styles.date}>Fecha del fallo: {dateLabel(alert.failed_at)}</p>
+              <p className={styles.date}>{alert.alert_type === "provider_outcome_unknown" ? "No se reintentará automáticamente para evitar un posible duplicado. Verificá el registro del proveedor." : "Fecha del fallo:"} {dateLabel(alert.failed_at)}</p>
             </article>
           ))}
         </section>
