@@ -34,7 +34,7 @@ function dependencies(overrides = {}) {
     sendPush: async () => ({ outcome: "sent" }),
     finalize: async (item, result) => {
       finalized.push({ delivery: item, result });
-      return { finalized: true, deliveryStatus: result.outcome === "failed" ? "pending" : result.outcome };
+      return { finalized: true, deliveryStatus: result.outcome === "unknown" ? "failed" : result.outcome === "failed" ? "pending" : result.outcome };
     },
     ...overrides,
   };
@@ -102,6 +102,7 @@ test("preserva el resultado incierto para bloquear reintentos automáticos", asy
   });
   const result = await dispatchClaimedDeliveries([delivery("email")], deps);
   assert.equal(result.finalized, 1);
+  assert.equal(result.failed, 1);
   assert.deepEqual(deps.finalized[0].result, { outcome: "unknown", errorCode: "brevo_result_unknown" });
 });
 
