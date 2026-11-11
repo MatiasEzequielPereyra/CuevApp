@@ -26,6 +26,7 @@ export type NotificationDeliveryContext = {
 export type ProviderResult =
   | { outcome: "sent"; providerReference?: string | null }
   | { outcome: "failed"; errorCode: string }
+  | { outcome: "unknown"; errorCode: string }
   | { outcome: "skipped"; errorCode: string };
 
 export type NotificationDispatcherDependencies = {
@@ -49,6 +50,7 @@ export type NotificationDispatchSummary = {
 
 const SAFE_ERROR_CODES = new Set([
   "brevo_unavailable",
+  "brevo_result_unknown",
   "brevo_rejected",
   "missing_destination",
   "internal_unavailable",
