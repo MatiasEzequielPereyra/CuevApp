@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-type IconName = "home" | "users" | "calendar" | "wallet" | "file" | "user" | "arrow" | "spark" | "dumbbell";
+type IconName = "home" | "users" | "calendar" | "wallet" | "file" | "user" | "arrow" | "spark" | "dumbbell" | "bell";
 const paths: Record<IconName, ReactNode> = {
   home: <><path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-6h6v6"/></>,
   users: <><circle cx="9" cy="8" r="3"/><path d="M3.5 20v-2a5.5 5.5 0 0 1 11 0v2M16 5.5a3 3 0 0 1 0 5.8M17 13a4.5 4.5 0 0 1 3.5 4.4V20"/></>,
@@ -10,7 +10,7 @@ const paths: Record<IconName, ReactNode> = {
   dumbbell: <><rect x="4" y="7" width="4" height="10" rx="1"/><rect x="16" y="7" width="4" height="10" rx="1"/><path d="M8 12h8M2 10v4m20-4v4"/></>,
   user: <><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></>,
   arrow: <><path d="M5 12h14m-5-5 5 5-5 5"/></>,
-  spark: <><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6zM19 16v5m-2.5-2.5h5"/></>,
+  spark: <><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6zM19 16v5m-2.5-2.5h5"/></>,\n  bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></>,
 };
 function Icon({ name }: { name: IconName }) {
   return <svg className="dash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
@@ -26,12 +26,12 @@ const navigationAreas = [
   { id: "rutinas", name: "Rutinas", description: "Escribí borradores, publicá rutinas y reutilizá plantillas.", icon: "file" as const },
   { id: "ejercicios", name: "Ejercicios", description: "Administrá el catálogo de ejercicios y consultá sus videos.", icon: "dumbbell" as const },
 ];
-const availableAreas = ["alumnos", "pagos", "rutinas", "ejercicios"];
+const availableAreas = ["alumnos", "pagos", "alertas", "rutinas", "ejercicios"];
 type AdminProps = { displayName: string; email: string; role: string; logo: ReactNode; themePicker: ReactNode; accountActions?: ReactNode };
 export function AdminAccountActions({ ownerOnly }: { ownerOnly: boolean }) {
   return ownerOnly ? <p>Las invitaciones y la recuperación de alumnos estarán disponibles cuando terminemos de configurar el correo del gimnasio.</p> : <><form method="post" action="/api/acceso/admin-invitar"><label>Correo del alumno <input name="email" type="email" required/></label><button>Invitar</button></form><form method="post" action="/api/acceso/admin-recuperar"><label>Identificador del alumno <input name="user_id" required/></label><button>Enviar recuperación</button></form></>;
 }
-export function AdminShell({ displayName, email, role, logo, themePicker, accountActions, active = "inicio", children }: AdminProps & { active?: "inicio" | "alumnos" | "pagos" | "rutinas" | "ejercicios"; children: ReactNode }) {
+export function AdminShell({ displayName, email, role, logo, themePicker, accountActions, active = "inicio", children }: AdminProps & { active?: "inicio" | "alumnos" | "pagos" | "alertas" | "rutinas" | "ejercicios"; children: ReactNode }) {
   const panelLink = active === "inicio" ? "#inicio" : "/cuenta";
   const areaLink = (id: string) => availableAreas.includes(id) ? `/${id}` : `${active === "inicio" ? "" : "/cuenta"}#${id}`;
   return <div className="dashboard" id="inicio">
@@ -54,7 +54,7 @@ export function AdminShell({ displayName, email, role, logo, themePicker, accoun
         <footer className="dash-footer"><span>CUEVA <i/> UN LUGAR PARA AVANZAR</span><span>Hecho para acompañar tu entrenamiento.</span></footer>
       </main>
     </div>
-    <nav className="dash-mobile-nav" aria-label="Navegación móvil"><a href={panelLink} aria-current={active === "inicio" ? "page" : undefined}><Icon name="home"/><span>Inicio</span></a><a href="/alumnos" aria-current={active === "alumnos" ? "page" : undefined}><Icon name="users"/><span>Alumnos</span></a><a href={areaLink("pagos")}><Icon name="wallet"/><span>Pagos</span></a><a href="/rutinas" aria-current={active === "rutinas" ? "page" : undefined}><Icon name="file"/><span>Rutinas</span></a><a href="/ejercicios" aria-current={active === "ejercicios" ? "page" : undefined}><Icon name="dumbbell"/><span>Ejercicios</span></a><a href="#cuenta"><Icon name="user"/><span>Cuenta</span></a></nav>
+    <nav className="dash-mobile-nav" aria-label="Navegación móvil"><a href={panelLink} aria-current={active === "inicio" ? "page" : undefined}><Icon name="home"/><span>Inicio</span></a><a href="/alumnos" aria-current={active === "alumnos" ? "page" : undefined}><Icon name="users"/><span>Alumnos</span></a><a href={areaLink("pagos")}><Icon name="wallet"/><span>Pagos</span></a><a href="/alertas" aria-current={active === "alertas" ? "page" : undefined}><Icon name="bell"/><span>Alertas</span></a><a href="/rutinas" aria-current={active === "rutinas" ? "page" : undefined}><Icon name="file"/><span>Rutinas</span></a><a href="/ejercicios" aria-current={active === "ejercicios" ? "page" : undefined}><Icon name="dumbbell"/><span>Ejercicios</span></a><a href="#cuenta"><Icon name="user"/><span>Cuenta</span></a></nav>
   </div>;
 }
 export function AdminDashboard(props: AdminProps) {
