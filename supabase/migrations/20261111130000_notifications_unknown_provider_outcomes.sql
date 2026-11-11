@@ -1,5 +1,11 @@
 begin;
 
+alter table public.cueva_notification_deliveries
+  add column provider_started_at timestamptz;
+alter table public.cueva_notification_deliveries
+  add constraint cueva_notification_deliveries_provider_started_check
+    check (status = 'processing' or provider_started_at is null);
+
 alter table public.cueva_notification_admin_alerts
   add column alert_type text not null default 'retries_exhausted'
     check (alert_type in ('retries_exhausted', 'provider_outcome_unknown'));
@@ -51,6 +57,7 @@ begin
       delivery.notification_id,
       delivery.attempt_count,
       delivery.channel,
+      delivery.provider_started_at,
       delivery.last_attempt_at,
       notification.due_on,
       notification.status as notification_status
@@ -75,8 +82,12 @@ begin
         v_expired.id,
         v_expired.attempt_count,
         coalesce(v_expired.last_attempt_at, v_now),
-        'unknown',
-        case when v_expired.channel = 'email' then 'email_lease_expired_unknown' else 'lease_expired' end
+        case when v_expired.channel = 'email' and v_expired.provider_started_at is not null then 'unknown' else 'failed' end,
+        case
+          when v_expired.channel = 'email' and v_expired.provider_started_at is not null then 'email_lease_expired_unknown'
+          when v_expired.channel = 'email' then 'email_lease_expired_before_provider'
+          else 'lease_expired'
+        end
       )
       on conflict on constraint cueva_notification_attempts_delivery_id_attempt_number_key do nothing;
     end if;
@@ -86,14 +97,14 @@ begin
       status = case
         when v_expired.notification_status <> 'pending'
           or v_expired.due_on <= v_local_date then 'cancelled'
-        when v_expired.channel = 'email' then 'failed'
+        when v_expired.channel = 'email' and v_expired.provider_started_at is not null then 'failed'
         when v_expired.attempt_count >= 5 then 'failed'
         else 'pending'
       end,
       next_attempt_at = case
         when v_expired.notification_status <> 'pending'
           or v_expired.due_on <= v_local_date
-          or v_expired.channel = 'email'
+          or (v_expired.channel = 'email' and v_expired.provider_started_at is not null)
           or v_expired.attempt_count >= 5
           then delivery.next_attempt_at
         else v_now + make_interval(mins => case v_expired.attempt_count
@@ -107,11 +118,13 @@ begin
         when v_expired.notification_status = 'cancelled' then 'notification_cancelled'
         when v_expired.notification_status = 'completed' then 'notification_completed'
         when v_expired.due_on <= v_local_date then 'lease_expired_after_due_date'
-        when v_expired.channel = 'email' then 'email_lease_expired_unknown'
+        when v_expired.channel = 'email' and v_expired.provider_started_at is not null then 'email_lease_expired_unknown'
+        when v_expired.channel = 'email' then 'email_lease_expired_before_provider'
         else 'lease_expired'
       end,
       lease_token = null,
       lease_expires_at = null,
+      provider_started_at = null,
       updated_at = v_now
     where delivery.id = v_expired.id;
 
@@ -152,6 +165,7 @@ begin
       last_attempt_at = v_now,
       lease_token = gen_random_uuid(),
       lease_expires_at = v_now + make_interval(secs => p_lease_seconds),
+      provider_started_at = null,
       updated_at = v_now
     from candidates
     where delivery.id = candidates.id
@@ -324,6 +338,7 @@ begin
     end,
     lease_token = null,
     lease_expires_at = null,
+    provider_started_at = null,
     updated_at = v_now
   where delivery.id = v_delivery.id
   returning delivery.status into v_delivery_status;
@@ -348,6 +363,67 @@ begin
     select true, v_delivery_status, v_delivery.attempt_count, v_notification.status;
 end;
 $$;
+
+
+
+create function cueva_private.mark_notification_delivery_started(
+  p_delivery_id uuid,
+  p_lease_token uuid
+)
+returns table (started boolean)
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_delivery public.cueva_notification_deliveries%rowtype;
+  v_now timestamptz;
+begin
+  if coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role', '') <> 'service_role' then
+    raise exception 'Acceso restringido' using errcode = '42501';
+  end if;
+  if p_delivery_id is null or p_lease_token is null then
+    raise exception 'Identificador de entrega y reserva son obligatorios' using errcode = '22023';
+  end if;
+  select delivery.* into v_delivery
+  from public.cueva_notification_deliveries delivery
+  where delivery.id = p_delivery_id
+  for update;
+  if not found then return query select false; return; end if;
+  v_now := clock_timestamp();
+  if v_delivery.channel <> 'email'
+    or v_delivery.status <> 'processing'
+    or v_delivery.lease_token is distinct from p_lease_token
+    or v_delivery.lease_expires_at <= v_now then
+    return query select false;
+    return;
+  end if;
+  update public.cueva_notification_deliveries
+  set provider_started_at = coalesce(provider_started_at, v_now), updated_at = v_now
+  where id = p_delivery_id;
+  return query select true;
+end;
+$;
+revoke all on function cueva_private.mark_notification_delivery_started(uuid,uuid)
+  from public, anon, authenticated, service_role;
+grant execute on function cueva_private.mark_notification_delivery_started(uuid,uuid)
+  to service_role;
+
+create function public.cueva_mark_notification_delivery_started(
+  p_delivery_id uuid,
+  p_lease_token uuid
+)
+returns table (started boolean)
+language sql
+security invoker
+set search_path = ''
+as $
+  select * from cueva_private.mark_notification_delivery_started(p_delivery_id,p_lease_token)
+$;
+revoke all on function public.cueva_mark_notification_delivery_started(uuid,uuid)
+  from public, anon, authenticated;
+grant execute on function public.cueva_mark_notification_delivery_started(uuid,uuid)
+  to service_role;
 
 create or replace function cueva_private.create_notification_admin_alert()
 returns trigger language plpgsql security definer set search_path = '' as $$
