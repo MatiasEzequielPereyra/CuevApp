@@ -3,6 +3,7 @@ import { StudentShell } from "@/components/routines/student-shell";
 import { pesos } from "@/lib/payments/money";
 import { productConfig, userClient } from "@/lib/product-auth/server";
 import { ReceiptUpload } from "@/components/receipts/receipt-upload";
+import { PushNotificationSettings } from "@/components/notifications/push-notification-settings";
 import { receiptState, type Receipt } from "@/lib/receipts/contracts";
 
 export const dynamic = "force-dynamic";
@@ -82,6 +83,7 @@ export default async function MembershipPage() {
   const files = receiptPeriods.error ? null : receiptPeriods.data as Record<string, ReceiptPeriod> | null;
   return <StudentShell active="membresia">
     <div className="dash-heading"><div><h1>Mi Membresía</h1><p>Consultá tu cuota y los pagos registrados por el gimnasio.</p></div></div>
+    <PushNotificationSettings />
     {readError || !data ? <section className="dash-account">
       <div><h2>No pudimos cargar tu membresía</h2><p>Si el problema continúa, consultá con el gimnasio.</p></div>
       <Link href="/mi-membresia">Reintentar</Link>

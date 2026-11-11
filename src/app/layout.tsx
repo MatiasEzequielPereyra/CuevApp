@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   description: "El espacio digital de CUEVA está en desarrollo. Una base para acompañar el entrenamiento y la gestión del gimnasio.",
   robots: { index: false, follow: false },
   icons: { icon: "/brand/cueva-symbol.svg" },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "CUEVA" },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
