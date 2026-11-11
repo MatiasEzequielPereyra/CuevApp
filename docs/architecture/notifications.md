@@ -87,7 +87,7 @@ El esquema se separará por responsabilidad:
 - **Bandeja interna:** contenido persistente asociado al alumno y estado de lectura individual; no desaparece por completar una entrega de email o push.
 - **Preferencia push y suscripciones:** push se inicializa habilitado por alumno; endpoint y claves de suscripción quedan solo en servidor. Email e internas no tienen interruptor.
 - **Ejecuciones y recuperación:** registro separado de inicio/fin, recuperación tras indisponibilidad, decisión (envío tardío o descarte) y motivo.
-- **Alertas operativas:** una fila por entrega que transiciona por primera vez a fallo definitivo tras cinco intentos; un trigger transaccional cubre tanto la finalización normal como la recuperación de leases. La bandeja y su snapshot funcional son exclusivos de administradores con sesión vigente; los intentos y códigos técnicos permanecen fuera del acceso de la interfaz.
+- **Alertas operativas:** una fila por entrega que transiciona por primera vez a fallo definitivo tras cinco intentos conocidos, o ante un resultado incierto de un proveedor externo. Los resultados inciertos generan alerta aunque la notificación padre se haya cancelado o el vencimiento haya pasado; permanecen terminales y nunca se reintentan automáticamente. Un trigger transaccional cubre tanto la finalización normal como la recuperación de leases. La bandeja y su snapshot funcional son exclusivos de administradores con sesión vigente; los intentos y códigos técnicos permanecen fuera del acceso de la interfaz.
 
 ### Ventanas y reintentos
 
