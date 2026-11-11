@@ -80,6 +80,8 @@ export function createBrevoEmailProvider(configuration: BrevoEmailConfiguration)
         },
         body: JSON.stringify(payload),
         cache: "no-store",
+        redirect: "error",
+        signal: AbortSignal.timeout(10_000),
       });
 
       if (response.status >= 500) {
