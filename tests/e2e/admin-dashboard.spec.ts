@@ -29,6 +29,10 @@ const exercisesFixture = renderToStaticMarkup(React.createElement(AdminShell, {
   ...fixtureProps, active: "ejercicios",
 }, React.createElement("h1", null, "Ejercicios")));
 
+const alertsFixture = renderToStaticMarkup(React.createElement(AdminShell, {
+  ...fixtureProps, active: "alertas",
+}, React.createElement("h1", null, "Alertas operativas")));
+
 async function loadDashboard(page: Page, theme: "light" | "dark" = "dark", markup = fixture) {
   // A blank document prevents pending Next hydration from changing the synthetic fixture.
   await page.goto("about:blank");
@@ -106,4 +110,16 @@ test("Ejercicios tiene su propia sección activa en la navegación móvil", asyn
   const nav = page.getByRole("navigation", { name: "Navegación móvil" });
   await expect(nav.getByRole("link", { name: "Ejercicios", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(nav.getByRole("link", { name: "Rutinas", exact: true })).not.toHaveAttribute("aria-current", "page");
+});
+
+
+test("Alertas operativas está disponible y se marca como sección activa", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await loadDashboard(page, "dark", alertsFixture);
+  const nav = page.getByRole("navigation", { name: "Navegación móvil" });
+  const alerts = nav.getByRole("link", { name: "Alertas", exact: true });
+  await expect(alerts).toBeVisible();
+  await expect(alerts).toHaveAttribute("href", "/alertas");
+  await expect(alerts).toHaveAttribute("aria-current", "page");
+  await expect(nav.getByRole("link", { name: "Inicio", exact: true })).not.toHaveAttribute("aria-current", "page");
 });
