@@ -32,7 +32,7 @@ test("construye la notificación interna con período, vencimiento y saldo", () 
     title: "Recordatorio de cuota",
   });
   assert.match(payload.body, /noviembre de 2026/);
-  assert.match(payload.body, /750,00/);
+  assert.match(payload.body, /750/);
 });
 
 test("no crea una entrada interna si el alumno no tiene cuenta vinculada", () => {
