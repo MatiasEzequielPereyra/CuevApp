@@ -18,7 +18,7 @@ const reply = (data: object, status = 200) => Response.json(data, { status, head
 async function readJson(request: Request, maxBytes: number): Promise<unknown | null> {
   if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) return null;
   const declared = request.headers.get("content-length");
-  if (declared !== null && (!/^\\d+$/.test(declared) || Number(declared) > maxBytes)) return null;
+  if (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > maxBytes)) return null;
   const reader = request.body?.getReader();
   if (!reader) return null;
   const chunks: Uint8Array[] = [];
