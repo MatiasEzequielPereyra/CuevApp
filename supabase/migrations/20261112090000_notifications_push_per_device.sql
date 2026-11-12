@@ -320,6 +320,12 @@ begin
     or (p_error_code is not null and length(p_error_code) > 80) then
     raise exception 'Resultado de entrega push inválido' using errcode = '22023';
   end if;
+  -- Match the claim path's subscription-before-child lock order.
+  select child.* into v_child from public.cueva_notification_push_deliveries child
+  where child.id = p_push_delivery_id;
+  if not found then raise exception 'Entrega push inexistente' using errcode = 'P0002'; end if;
+  perform 1 from public.cueva_push_subscriptions subscription
+  where subscription.id = v_child.subscription_id for update;
   select child.* into v_child from public.cueva_notification_push_deliveries child
   where child.id = p_push_delivery_id for update;
   if not found then raise exception 'Entrega push inexistente' using errcode = 'P0002'; end if;
