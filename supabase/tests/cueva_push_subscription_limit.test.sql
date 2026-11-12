@@ -1,10 +1,15 @@
 begin;
-select plan(12);
+select plan(20);
 
 insert into public.cueva_students(id,first_name,last_name,email,joined_on)
 values
  ('be000000-0000-4000-8000-000000000001','Push','Limit One','push-limit-one@example.test',date '2026-01-01'),
  ('be000000-0000-4000-8000-000000000002','Push','Limit Two','push-limit-two@example.test',date '2026-01-02');
+
+insert into public.cueva_push_subscriptions(student_id,endpoint,p256dh,auth_secret)
+values
+ ('be000000-0000-4000-8000-000000000001','https://push.example.test/revoke-one',repeat('P',87),repeat('Q',22)),
+ ('be000000-0000-4000-8000-000000000002','https://push.example.test/revoke-two',repeat('R',87),repeat('S',22));
 
 select ok(
   has_function_privilege('service_role','public.cueva_register_push_subscription(uuid,text,text,text,timestamp with time zone)','EXECUTE'),
@@ -111,6 +116,53 @@ select is(
   )),
   'student_not_found',
   'registration for a nonexistent student is rejected'
+);
+
+select ok(
+  has_function_privilege('service_role','public.cueva_revoke_push_subscription(uuid,text)','EXECUTE'),
+  'only the server role can invoke the scoped revocation RPC'
+);
+select ok(
+  not has_function_privilege('authenticated','public.cueva_revoke_push_subscription(uuid,text)','EXECUTE'),
+  'authenticated users cannot invoke the revocation RPC directly'
+);
+select ok(
+  not has_function_privilege('anon','public.cueva_revoke_push_subscription(uuid,text)','EXECUTE'),
+  'anonymous users cannot invoke the revocation RPC'
+);
+select ok(
+  not has_table_privilege('service_role','public.cueva_push_subscriptions','SELECT'),
+  'service role has no direct read grant on push subscription storage'
+);
+select is(
+  public.cueva_revoke_push_subscription(
+    'be000000-0000-4000-8000-000000000001',
+    'https://push.example.test/revoke-one'
+  ),
+  'removed',
+  'the scoped RPC revokes the matching student device'
+);
+select is(
+  public.cueva_revoke_push_subscription(
+    'be000000-0000-4000-8000-000000000001',
+    'https://push.example.test/revoke-one'
+  ),
+  'not_found',
+  'repeated revocation is an idempotent no-op'
+);
+select is(
+  public.cueva_revoke_push_subscription(
+    'be000000-0000-4000-8000-000000000001',
+    'https://push.example.test/revoke-two'
+  ),
+  'not_found',
+  'a student cannot revoke another student endpoint'
+);
+select is(
+  (select revoked_at is null from public.cueva_push_subscriptions
+   where endpoint='https://push.example.test/revoke-two'),
+  true,
+  'cross-account revocation leaves the other student's device active'
 );
 
 reset role;
