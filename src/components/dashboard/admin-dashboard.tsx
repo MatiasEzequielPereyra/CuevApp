@@ -43,6 +43,7 @@ export function AdminShell({ displayName, email, role, logo, themePicker, accoun
       <nav className="dash-side-nav" aria-label="Navegación principal">
         <a href={panelLink} className={active === "inicio" ? "dash-nav-active" : undefined} aria-current={active === "inicio" ? "page" : undefined}><Icon name="home"/>Inicio</a>
         {navigationAreas.map(area => <a href={areaLink(area.id)} key={area.id} className={active === area.id ? "dash-nav-active" : undefined} aria-current={active === area.id ? "page" : undefined}><Icon name={area.icon}/>{area.name}{!availableAreas.includes(area.id) && <span>Próximamente</span>}</a>)}
+        <a href="/alertas" className={active === "alertas" ? "dash-nav-active" : undefined} aria-current={active === "alertas" ? "page" : undefined}><Icon name="bell"/>Alertas</a>
         <a href="#cuenta"><Icon name="user"/>Mi cuenta</a>
       </nav>
       <div className="dash-sidebar-bottom"><span className="dash-avatar" aria-hidden="true">{displayName.charAt(0).toUpperCase()}</span><div><strong>{displayName}</strong><small>{role}</small></div></div>
