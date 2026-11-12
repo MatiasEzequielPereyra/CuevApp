@@ -242,13 +242,15 @@ begin
   if coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role', '') <> 'service_role' then
     raise exception 'Acceso restringido' using errcode = '42501';
   end if;
-  select child.* into v_child from public.cueva_notification_push_deliveries child
-  where child.id = p_push_delivery_id for update;
-  if not found then return query select false; return; end if;
+  -- Lock in parent-before-child order, matching the parent-release trigger.
+  -- This prevents a cancellation/recovery deadlock with an in-flight start marker.
   select parent.* into v_parent from public.cueva_notification_deliveries parent
   where parent.id = p_delivery_id and parent.channel = 'push'
     and parent.status = 'processing' and parent.lease_token = p_parent_lease_token
     and parent.lease_expires_at > v_now for key share;
+  if not found then return query select false; return; end if;
+  select child.* into v_child from public.cueva_notification_push_deliveries child
+  where child.id = p_push_delivery_id for update;
   if not found or v_child.delivery_id <> p_delivery_id or v_child.status <> 'processing'
     or v_child.lease_token is distinct from p_push_lease_token or v_child.lease_expires_at <= v_now then
     return query select false; return;
