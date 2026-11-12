@@ -312,7 +312,7 @@ begin
   if coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role', '') <> 'service_role' then
     raise exception 'Acceso restringido' using errcode = '42501';
   end if;
-  if p_push_delivery_id is null or p_push_lease_token is null
+  if p_push_delivery_id is null or p_push_lease_token is null or p_outcome is null
     or p_outcome not in ('sent','failed','unknown','expired')
     or (p_outcome <> 'sent' and (p_error_code is null or length(btrim(p_error_code)) = 0))
     or (p_outcome = 'sent' and p_error_code is not null)
