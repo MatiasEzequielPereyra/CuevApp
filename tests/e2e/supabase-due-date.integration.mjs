@@ -97,7 +97,29 @@ try {
     name, value, url: origin, httpOnly: true, secure: false, sameSite: "Lax",
   })));
   const page = await context.newPage();
-  await page.goto(`${origin}/pagos?alumno=${studentId}`);
+  await page.goto(`${origin}/cuenta`);
+  const cards = page.locator(".dash-cards");
+  await cards.getByRole("link", { name: /Comprobantes de pago/ }).click();
+  await page.getByRole("heading", { name: "Comprobantes de pago", exact: true }).waitFor({ state: "visible" });
+  await page.goto(`${origin}/cuenta`);
+  await cards.getByRole("link", { name: /Vencimientos por alumno/ }).click();
+  await page.getByRole("heading", { name: "Vencimientos", exact: true }).waitFor({ state: "visible" });
+  await page.getByLabel("Buscar alumno").fill("Integration");
+  await page.getByRole("button", { name: "Buscar", exact: true }).click();
+  const studentLink = page.locator(`a[href="/pagos?vista=vencimientos&alumno=${studentId}"]`);
+  await studentLink.click();
+  await page.getByRole("heading", { name: "Vencimiento del alumno" }).waitFor({ state: "visible" });
+
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto(`${origin}/pagos`);
+  await page.getByLabel("Buscar alumno").fill("Integration");
+  await page.getByRole("button", { name: "Buscar", exact: true }).click();
+  await page.waitForURL(url => url.pathname === "/pagos" && url.searchParams.get("q") === "Integration");
+  const paymentStudentLink = page.getByRole("link", { name: /Student, Integration/ });
+  assert.equal(await paymentStudentLink.getAttribute("href"), `/pagos?alumno=${studentId}`);
+  await paymentStudentLink.click();
+  await page.getByRole("heading", { name: "Integration Student", exact: true }).waitFor({ state: "visible" });
+  assert.equal(await page.getByRole("link", { name: "Cambiar alumno" }).getAttribute("href"), "/pagos");
   const receiptLink = page.getByRole("link", { name: "Revisar comprobantes de pago" });
   await receiptLink.waitFor({ state: "visible", timeout: 30000 });
   assert.equal(await receiptLink.getAttribute("href"), "/pagos/comprobantes", "payments keeps the receipt review link");
@@ -130,7 +152,8 @@ try {
   await page.getByText(/Día de referencia actual: 22/).waitFor({ state: "visible", timeout: 30000 });
 
   const currentMonth = await database.query(
-    "select date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date as month",
+    `select date_trunc('month',now() at time zone 'America/Argentina/Buenos_Aires')::date as month,
+            to_char(now() at time zone 'America/Argentina/Buenos_Aires','YYYY-MM-DD') as today`,
   );
   const currentSchedule = await database.query(
     "select due_day from public.cueva_due_schedules where student_id=$1 and effective_month=$2 order by recorded_at desc,id desc limit 1",
@@ -146,6 +169,38 @@ try {
   assert.equal(currentAudit.rows[0]?.new_due_day, 22);
   assert.equal(currentAudit.rows[0]?.scope, "current_period");
   process.stdout.write("PASS: authenticated UI persisted next-period and explicitly confirmed current-period changes with audit.\n");
+
+  const today = currentMonth.rows[0].today;
+  const month = today.slice(0, 7);
+  const dueOn = `${month}-22`;
+  const status = dueOn < today ? "Vencido" : "Pendiente";
+  await page.getByRole("button", { name: "Crear período", exact: true }).click();
+  const period = page.getByRole("article", { name: `Período ${month}` });
+  await period.getByText("Saldo pendiente", { exact: true }).waitFor({ state: "visible", timeout: 30000 });
+  await period.getByText(status, { exact: true }).waitFor({ state: "visible" });
+  const balance = period.locator(".billing-period-balance dd");
+  assert.equal(await balance.textContent(), "$ 100");
+  assert.equal(await period.locator("time").getAttribute("datetime"), dueOn);
+
+  const register = period.locator("summary").filter({ hasText: "Registrar pago" });
+  assert.ok((await register.boundingBox())?.height >= 44, "mobile register action has a comfortable touch target");
+  await register.press("Enter");
+  assert.equal(await register.evaluate(element => element.matches(":focus-visible")), true);
+  await period.getByLabel("Importe en pesos").fill("40");
+  await period.getByRole("button", { name: "Confirmar pago" }).click();
+  await balance.filter({ hasText: /^\$ 60$/ }).waitFor({ state: "visible", timeout: 30000 });
+  await period.locator("summary").filter({ hasText: "Historial de movimientos" }).click();
+  await period.getByText("$ 40 · Confirmado", { exact: true }).waitFor({ state: "visible" });
+  assert.equal(await period.locator("time").getAttribute("datetime"), dueOn);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, "payments fits at 360 CSS pixels");
+
+  const persistedPayment = await database.query(
+    `select p.cents, p.actor, t.due_on::text from public.cueva_payments p
+       join public.cueva_periods t on t.id=p.period_id where t.student_id=$1`,
+    [studentId],
+  );
+  assert.deepEqual(persistedPayment.rows, [{ cents: "4000", actor: userId, due_on: dueOn }]);
+  process.stdout.write("PASS: authenticated admin searched and selected a student, verified the due date, and registered a partial payment from mobile.\n");
 } finally {
   if (browser) await browser.close();
   if (databaseConnected) {
@@ -153,11 +208,12 @@ try {
       await database.query("delete from public.cueva_due_date_audit where student_id=$1", [studentId]);
       await database.query("delete from public.cueva_due_date_attempts where student_id=$1", [studentId]);
       await database.query("delete from public.cueva_due_schedules where student_id=$1", [studentId]);
+      await database.query("delete from public.cueva_payments using public.cueva_periods where period_id=cueva_periods.id and student_id=$1", [studentId]);
       await database.query("delete from public.cueva_periods where student_id=$1", [studentId]);
       await database.query("delete from public.cueva_prices where id=$1", [priceId]);
-      await database.query("delete from cueva_private.billing_operations where id=$1", [priceId]);
       await database.query("delete from public.cueva_students where id=$1", [studentId]);
       if (userId) {
+        await database.query("delete from cueva_private.billing_operations where actor=$1", [userId]);
         await database.query("delete from public.cueva_profiles where user_id=$1", [userId]);
         await database.query("delete from cueva_private.access_state where user_id=$1", [userId]);
       }

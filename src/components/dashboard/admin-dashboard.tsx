@@ -16,25 +16,28 @@ const paths: Record<IconName, ReactNode> = {
 function Icon({ name }: { name: IconName }) {
   return <svg className="dash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
-const areas: { id: string; name: string; label: string; description: string; icon: IconName }[] = [
-  { id: "alumnos", name: "Alumnos", label: "Alumnos activos", description: "Registrá, buscá y editá fichas administrativas.", icon: "users" },
-  { id: "vencimientos", name: "Vencimientos", label: "Próximos vencimientos", description: "Acá vas a poder consultar los próximos vencimientos.", icon: "calendar" },
-  { id: "pagos", name: "Pagos", label: "Pagos y cuotas", description: "Registrá pagos, consultá saldos y conservá el historial.", icon: "wallet" },
-  { id: "comprobantes", name: "Comprobantes", label: "Comprobantes pendientes", description: "Los comprobantes para revisar aparecerán acá.", icon: "file" },
+const areas: { id: string; href: string; name: string; label: string; action: string; note: string; description: string; icon: IconName }[] = [
+  { id: "alumnos", href: "/alumnos", name: "Alumnos", label: "Alumnos activos", action: "Gestionar fichas", note: "Abrir listado de alumnos", description: "Registrá, buscá y editá fichas administrativas.", icon: "users" },
+  { id: "vencimientos", href: "/pagos?vista=vencimientos", name: "Vencimientos", label: "Vencimientos por alumno", action: "Gestionar vencimientos", note: "Consultar el calendario individual", description: "Consultá y ajustá el día de vencimiento de cada alumno.", icon: "calendar" },
+  { id: "pagos", href: "/pagos", name: "Pagos", label: "Pagos y cuotas", action: "Gestionar cuotas", note: "Abrir pagos y períodos", description: "Registrá pagos, consultá saldos y conservá el historial.", icon: "wallet" },
+  { id: "comprobantes", href: "/pagos/comprobantes", name: "Comprobantes", label: "Comprobantes de pago", action: "Revisar comprobantes", note: "Abrir pendientes y resueltos", description: "Revisá los comprobantes que enviaron los alumnos.", icon: "file" },
 ];
 const navigationAreas = [
   ...areas,
-  { id: "rutinas", name: "Rutinas", description: "Escribí borradores, publicá rutinas y reutilizá plantillas.", icon: "file" as const },
-  { id: "ejercicios", name: "Ejercicios", description: "Administrá el catálogo de ejercicios y consultá sus videos.", icon: "dumbbell" as const },
+  { id: "rutinas", href: "/rutinas", name: "Rutinas", description: "Escribí borradores, publicá rutinas y reutilizá plantillas.", icon: "file" as const },
+  { id: "ejercicios", href: "/ejercicios", name: "Ejercicios", description: "Administrá el catálogo de ejercicios y consultá sus videos.", icon: "dumbbell" as const },
 ];
-const availableAreas = ["alumnos", "pagos", "alertas", "rutinas", "ejercicios"];
+
+
 type AdminProps = { displayName: string; email: string; role: string; logo: ReactNode; themePicker: ReactNode; accountActions?: ReactNode };
 export function AdminAccountActions({ ownerOnly }: { ownerOnly: boolean }) {
   return ownerOnly ? <p>Las invitaciones y la recuperación de alumnos estarán disponibles cuando terminemos de configurar el correo del gimnasio.</p> : <><form method="post" action="/api/acceso/admin-invitar"><label>Correo del alumno <input name="email" type="email" required/></label><button>Invitar</button></form><form method="post" action="/api/acceso/admin-recuperar"><label>Identificador del alumno <input name="user_id" required/></label><button>Enviar recuperación</button></form></>;
 }
-export function AdminShell({ displayName, email, role, logo, themePicker, accountActions, active = "inicio", children }: AdminProps & { active?: "inicio" | "alumnos" | "pagos" | "alertas" | "rutinas" | "ejercicios"; children: ReactNode }) {
+
+
+export function AdminShell({ displayName, email, role, logo, themePicker, accountActions, active = "inicio", children, }: AdminProps & { active?: "inicio" | "alumnos" | "pagos" | "alertas" | "vencimientos" | "comprobantes" | "rutinas" | "ejercicios"; children: ReactNode;}) {
+
   const panelLink = active === "inicio" ? "#inicio" : "/cuenta";
-  const areaLink = (id: string) => availableAreas.includes(id) ? `/${id}` : `${active === "inicio" ? "" : "/cuenta"}#${id}`;
   return <div className="dashboard" id="inicio">
     <a className="skip-link" href="#panel">Saltar al contenido</a>
     <aside className="dash-sidebar" aria-label="Barra lateral">
@@ -42,7 +45,7 @@ export function AdminShell({ displayName, email, role, logo, themePicker, accoun
       <div className="dash-nav-label">MENÚ PRINCIPAL</div>
       <nav className="dash-side-nav" aria-label="Navegación principal">
         <a href={panelLink} className={active === "inicio" ? "dash-nav-active" : undefined} aria-current={active === "inicio" ? "page" : undefined}><Icon name="home"/>Inicio</a>
-        {navigationAreas.map(area => <a href={areaLink(area.id)} key={area.id} className={active === area.id ? "dash-nav-active" : undefined} aria-current={active === area.id ? "page" : undefined}><Icon name={area.icon}/>{area.name}{!availableAreas.includes(area.id) && <span>Próximamente</span>}</a>)}
+        {navigationAreas.map(area => <a href={area.href} key={area.id} className={active === area.id ? "dash-nav-active" : undefined} aria-current={active === area.id ? "page" : undefined}><Icon name={area.icon}/>{area.name}</a>)}
         <a href="#cuenta"><Icon name="user"/>Mi cuenta</a>
       </nav>
       <div className="dash-sidebar-bottom"><span className="dash-avatar" aria-hidden="true">{displayName.charAt(0).toUpperCase()}</span><div><strong>{displayName}</strong><small>{role}</small></div></div>
@@ -55,15 +58,36 @@ export function AdminShell({ displayName, email, role, logo, themePicker, accoun
         <footer className="dash-footer"><span>CUEVA <i/> UN LUGAR PARA AVANZAR</span><span>Hecho para acompañar tu entrenamiento.</span></footer>
       </main>
     </div>
-    <nav className="dash-mobile-nav" aria-label="Navegación móvil"><a href={panelLink} aria-current={active === "inicio" ? "page" : undefined}><Icon name="home"/><span>Inicio</span></a><a href="/alumnos" aria-current={active === "alumnos" ? "page" : undefined}><Icon name="users"/><span>Alumnos</span></a><a href={areaLink("pagos")}><Icon name="wallet"/><span>Pagos</span></a><a href="/alertas" aria-current={active === "alertas" ? "page" : undefined}><Icon name="bell"/><span>Alertas</span></a><a href="/rutinas" aria-current={active === "rutinas" ? "page" : undefined}><Icon name="file"/><span>Rutinas</span></a><a href="/ejercicios" aria-current={active === "ejercicios" ? "page" : undefined}><Icon name="dumbbell"/><span>Ejercicios</span></a><a href="#cuenta"><Icon name="user"/><span>Cuenta</span></a></nav>
+    <nav className="dash-mobile-nav" aria-label="Navegación móvil">
+  <a href={panelLink} aria-current={active === "inicio" ? "page" : undefined}>
+    <Icon name="home"/><span>Inicio</span>
+  </a>
+  <a href="/alumnos" aria-current={active === "alumnos" ? "page" : undefined}>
+    <Icon name="users"/><span>Alumnos</span>
+  </a>
+  <a href="/pagos" aria-current={active === "pagos" ? "page" : undefined}>
+    <Icon name="wallet"/><span>Pagos</span>
+  </a>
+  <a href="/alertas" aria-current={active === "alertas" ? "page" : undefined}>
+    <Icon name="bell"/><span>Alertas</span>
+  </a>
+  <a href="/rutinas" aria-current={active === "rutinas" ? "page" : undefined}>
+    <Icon name="file"/><span>Rutinas</span>
+  </a>
+  <a href="/ejercicios" aria-current={active === "ejercicios" ? "page" : undefined}>
+    <Icon name="dumbbell"/><span>Ejercicios</span>
+  </a>
+  <a href="#cuenta"><Icon name="user"/><span>Cuenta</span></a>
+</nav>
+
   </div>;
 }
 export function AdminDashboard(props: AdminProps) {
   return <AdminShell {...props}>
         <div className="dash-heading"><div><p className="dash-overline"><span/> TU ESPACIO DE GESTIÓN</p><h1>Hola, {props.displayName} <span aria-hidden="true">✳</span></h1><p>Todo lo importante de tu gimnasio, en un solo lugar.</p></div><span className="dash-role"><Icon name="spark"/>{props.role}</span></div>
         <div className="dash-section-heading"><div><p className="dash-kicker">TU GIMNASIO</p><h2>Resumen general</h2></div><span className="dash-live-label"><span/> PANEL DE ADMINISTRACIÓN</span></div>
-        <div className="dash-cards">{areas.map(area => <a href={area.id === "alumnos" ? "/alumnos" : area.id === "pagos" ? "/pagos" : `#${area.id}`} className="dash-card" key={area.id}><span className="dash-card-top"><span className={`dash-card-icon icon-${area.id}`}><Icon name={area.icon}/></span><Icon name="arrow"/></span><span className="dash-card-label">{area.label}</span><strong>{area.id === "alumnos" ? "Gestionar fichas" : area.id === "pagos" ? "Gestionar cuotas" : "Sin datos aún"}</strong><span className="dash-card-note">{area.id === "alumnos" ? "Abrir listado de alumnos" : area.id === "pagos" ? "Abrir pagos y períodos" : "Disponible próximamente"}</span></a>)}</div>
-        <div className="dash-section-heading dash-areas-heading"><div><p className="dash-kicker">ORGANIZÁ TU DÍA</p><h2>Tu espacio de trabajo</h2><p>Estamos preparando las herramientas para acompañarte.</p></div></div>
-        <div className="dash-workspace">{navigationAreas.map(area => <section className="dash-area" id={area.id} key={area.id}><div className="dash-area-icon"><Icon name={area.icon}/></div><div><div className="dash-area-title"><h3>{area.name}</h3>{!availableAreas.includes(area.id) && <span>PRÓXIMAMENTE</span>}</div><p>{area.description}</p>{(area.id === "rutinas" || area.id === "ejercicios") && <a href={`/${area.id}`}>Abrir {area.id} →</a>}</div></section>)}</div>
+        <div className="dash-cards">{areas.map(area => <a href={area.href} className="dash-card" key={area.id}><span className="dash-card-top"><span className={`dash-card-icon icon-${area.id}`}><Icon name={area.icon}/></span><Icon name="arrow"/></span><span className="dash-card-label">{area.label}</span><strong>{area.action}</strong><span className="dash-card-note">{area.note}</span></a>)}</div>
+        <div className="dash-section-heading dash-areas-heading"><div><p className="dash-kicker">ORGANIZÁ TU DÍA</p><h2>Tu espacio de trabajo</h2><p>Accedé a las herramientas de gestión del gimnasio.</p></div></div>
+        <div className="dash-workspace">{navigationAreas.map(area => <section className="dash-area" id={area.id} key={area.id}><div className="dash-area-icon"><Icon name={area.icon}/></div><div><div className="dash-area-title"><h3>{area.name}</h3></div><p>{area.description}</p><a href={area.href}>Abrir {area.name.toLowerCase()} →</a></div></section>)}</div>
   </AdminShell>;
 }
