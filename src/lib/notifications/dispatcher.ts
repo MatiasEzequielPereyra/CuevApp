@@ -60,6 +60,7 @@ const SAFE_ERROR_CODES = new Set([
   "internal_unavailable",
   "missing_student_account",
   "push_unavailable",
+  "push_result_unknown",
   "push_subscription_expired",
   "missing_push_subscription",
   "notification_not_relevant",
