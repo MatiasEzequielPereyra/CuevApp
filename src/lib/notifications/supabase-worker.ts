@@ -30,7 +30,7 @@ export function createSupabaseNotificationWorker(
   let snapshotByPeriod = new Map<string, NotificationSnapshotRow>();
 
   const dispatcher: NotificationDispatcherDependencies = {
-    loadContext: async (notificationId: string): Promise<NotificationDeliveryContext> => {
+    loadContext: async (notificationId: string, delivery: ClaimedNotificationDelivery): Promise<NotificationDeliveryContext> => {
       const { data: notification, error } = await db
         .from("cueva_notifications")
         .select("period_id,reminder_days,due_on")
@@ -50,6 +50,8 @@ export function createSupabaseNotificationWorker(
         dueOn: String(notification.due_on),
         balanceCents: String(period.balance_cents),
         reminderDays: Number(notification.reminder_days) as 5 | 1,
+        deliveryId: delivery.delivery_id,
+        deliveryLeaseToken: delivery.lease_token,
       };
     },
     ...providers,
