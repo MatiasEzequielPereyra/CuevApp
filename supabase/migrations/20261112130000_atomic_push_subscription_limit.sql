@@ -51,7 +51,7 @@ begin
   for update;
 
   if found then
-    if v_existing_student_id <> p_student_id then
+    if v_existing_student_id is distinct from p_student_id then
       return query select 'endpoint_in_use'::text, null::uuid;
       return;
     end if;
