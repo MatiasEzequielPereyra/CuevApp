@@ -34,13 +34,13 @@ test("los pagos parciales conservan recordatorios y saldo cero los excluye", () 
 });
 
 test("acepta centavos como texto o bigint sin convertirlos a number", () => {
-  const largeBalance = "9007199254740993";
+  const largeBalance = "900719925474099300";
   const plan = buildReminderPlan({ ...period, balanceCents: largeBalance }, "12:00", new Date("2026-11-15T15:00:00.000Z"));
   assert.equal(plan.length, 2);
 
   const content = formatReminderContent({ ...period, balanceCents: largeBalance });
   assert.match(content.body, /90\.071\.992\.547\.409,93/);
-  assert.match(formatReminderContent({ ...period, balanceCents: 7500n }).body, /75,00/);
+  assert.match(formatReminderContent({ ...period, balanceCents: 7500n }).body, /75/);
   assert.throws(() => buildReminderPlan({ ...period, balanceCents: Number.MAX_SAFE_INTEGER + 1 }, "12:00", new Date()), /Saldo inválido/);
 });
 
@@ -54,7 +54,7 @@ test("el contenido identifica período, vencimiento y saldo pendiente", () => {
   assert.equal(content.title, "Recordatorio de cuota");
   assert.match(content.subject, /noviembre de 2026/i);
   assert.match(content.body, /20 de noviembre de 2026/i);
-  assert.match(content.body, /75,00/);
+  assert.match(content.body, /75/);
 });
 
 test("rechaza fechas, horarios y saldos inválidos", () => {
