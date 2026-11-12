@@ -248,6 +248,43 @@ test("un timeout de Web Push queda incierto y no se convierte en fallo reintenta
   assert.deepEqual(outcomes, ["unknown"]);
 });
 
+test("no reintenta un endpoint que ya agotó sus cinco intentos", async () => {
+  const vapid = vapidKeys();
+  const rows = [{ id: "sub-exhausted", endpoint: "https://push.example.test/exhausted", ...subscriptionKeys(), expires_at: null }];
+  let fetchCount = 0;
+  const db = {
+    from() {
+      return { select() { return this; }, eq() { return this; }, is() { return this; }, then(resolve) { resolve({ data: rows, error: null }); } };
+    },
+    async rpc(name) {
+      if (name === "cueva_claim_notification_push_delivery") return { data: [{
+        claimed: false, push_delivery_id: "push-exhausted", push_lease_token: null,
+        attempt_number: 5, delivery_status: "failed",
+      }], error: null };
+      throw new Error(`Unexpected RPC: ${name}`);
+    },
+  };
+  const provider = createWebPushProvider(db, {
+    ...vapid, subject: "mailto:admin@example.test",
+    fetchImpl: async () => { fetchCount += 1; return new Response(null, { status: 201 }); },
+  });
+  const result = await provider({
+    notificationId: "notification-exhausted",
+    deliveryId: "parent-exhausted",
+    deliveryLeaseToken: "parent-exhausted-lease",
+    studentId: "student-exhausted",
+    studentName: "Alumno",
+    destinationEmail: null,
+    studentUserId: "user-exhausted",
+    periodMonth: "2026-11-01",
+    dueOn: "2026-11-20",
+    balanceCents: "10000",
+    reminderDays: 1,
+  });
+  assert.deepEqual(result, { outcome: "failed", errorCode: "push_retries_exhausted" });
+  assert.equal(fetchCount, 0);
+});
+
 test("sin cuenta o sin claves VAPID no intenta enviar", async () => {
   let reads = 0;
   const db = { from() { reads += 1; throw new Error("must not read"); } };
