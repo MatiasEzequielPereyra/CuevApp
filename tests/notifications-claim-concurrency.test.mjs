@@ -8,6 +8,7 @@ const connectionString = process.env.CUEVA_TEST_DATABASE_URL
 const admin = new Client({ connectionString });
 const workers = [new Client({ connectionString }), new Client({ connectionString })];
 const unauthorized = new Client({ connectionString });
+const registrationWorkers = Array.from({ length: 12 }, () => new Client({ connectionString }));
 const suffix = randomUUID();
 const adminId = randomUUID();
 const studentIds = Array.from({ length: 9 }, () => randomUUID());
@@ -67,6 +68,35 @@ try {
       ($1,$2,'email','pending',0,now()-interval '1 minute'),
       ($3,$4,'email','pending',0,now()-interval '1 minute')
   `, [deliveryIds[0], notificationIds[0], deliveryIds[1], notificationIds[1]]);
+
+  // Concurrent device registration must serialize on the student row.
+  await Promise.all(registrationWorkers.map(client => client.connect()));
+  await Promise.all(registrationWorkers.map(async client => {
+    await client.query("select set_config('request.jwt.claims',$1,false)",
+      [JSON.stringify({ role: "service_role" })]);
+    await client.query("set role service_role");
+  }));
+  const registrations = await Promise.all(registrationWorkers.map((client, index) =>
+    client.query(
+      "select * from public.cueva_register_push_subscription($1,$2,$3,$4,null)",
+      [
+        studentIds[8],
+        `https://push.example.test/concurrent-${suffix}-${index}`,
+        "A".repeat(87),
+        "B".repeat(22),
+      ],
+    ).then(result => result.rows[0].outcome)
+  ));
+  assert.equal(registrations.filter(outcome => outcome === "registered").length, 10,
+    "exactly ten concurrent distinct endpoints are registered");
+  assert.equal(registrations.filter(outcome => outcome === "limit_reached").length, 2,
+    "concurrent requests beyond the cap are rejected");
+  const { rows: [activeDeviceCount] } = await admin.query(
+    "select count(*)::integer as count from public.cueva_push_subscriptions where student_id=$1 and revoked_at is null",
+    [studentIds[8]],
+  );
+  assert.equal(activeDeviceCount.count, 10,
+    "the active device count never exceeds ten under concurrent requests");
 
   await Promise.all(workers.map(client => client.connect()));
   await Promise.all(workers.map(client => client.query(
@@ -290,11 +320,11 @@ try {
   );
 
   process.stdout.write(
-    "PASS: concurrent claims, lease-bound finalization, idempotency, stale-token rejection, retry policy, terminal-parent recovery, and permissions are enforced.\\n",
+    "PASS: concurrent push device registration cap, concurrent claims, lease-bound finalization, idempotency, stale-token rejection, retry policy, terminal-parent recovery, and permissions are enforced.\\n",
   );
 } finally {
   if (workerTransactionsOpen) await workers[0].query("rollback").catch(() => undefined);
-  await Promise.all([...workers, unauthorized].map(client => client.end().catch(() => undefined)));
+  await Promise.all([...workers, unauthorized, ...registrationWorkers].map(client => client.end().catch(() => undefined)));
   if (adminConnected) {
     try {
       await admin.query("delete from public.cueva_notification_admin_alerts where delivery_id=any($1::uuid[])", [deliveryIds]);
