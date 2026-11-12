@@ -391,7 +391,7 @@ revoke all on function public.cueva_finalize_notification_push_delivery(uuid,uui
 grant execute on function cueva_private.finalize_notification_push_delivery(uuid,uuid,text,text,text) to service_role;
 grant execute on function public.cueva_finalize_notification_push_delivery(uuid,uuid,text,text,text) to service_role;
 
-create function cueva_private.create_notification_push_unknown_alert()
+create or replace function cueva_private.create_notification_push_unknown_alert()
 returns trigger
 language plpgsql security definer set search_path = ''
 as $$
@@ -401,16 +401,30 @@ declare
   v_period public.cueva_periods%rowtype;
   v_student public.cueva_students%rowtype;
   v_attempt smallint;
+  v_alert_type text;
 begin
-  if old.status = 'unknown' or new.status <> 'unknown' then return new; end if;
-  select parent.* into v_parent from public.cueva_notification_deliveries parent where parent.id = new.delivery_id;
+  if old.status = new.status then return new; end if;
+  if new.status = 'unknown' then
+    v_alert_type := 'provider_outcome_unknown';
+  elsif new.status = 'failed' and new.attempt_count = 5 then
+    v_alert_type := 'retries_exhausted';
+  else
+    return new;
+  end if;
+
+  select parent.* into v_parent
+  from public.cueva_notification_deliveries parent where parent.id = new.delivery_id;
   if not found then return new; end if;
-  select notification.* into v_notification from public.cueva_notifications notification where notification.id = new.notification_id;
+  select notification.* into v_notification
+  from public.cueva_notifications notification where notification.id = new.notification_id;
   if not found then return new; end if;
-  select period.* into v_period from public.cueva_periods period where period.id = v_notification.period_id;
+  select period.* into v_period
+  from public.cueva_periods period where period.id = v_notification.period_id;
   if not found then return new; end if;
-  select student.* into v_student from public.cueva_students student where student.id = v_period.student_id;
+  select student.* into v_student
+  from public.cueva_students student where student.id = v_period.student_id;
   if not found then return new; end if;
+
   v_attempt := greatest(1, least(5, v_parent.attempt_count));
   insert into public.cueva_notification_admin_alerts (
     delivery_id, notification_id, student_id, student_name, period_month,
@@ -419,17 +433,31 @@ begin
     v_parent.id, v_notification.id, v_student.id,
     concat_ws(' ', v_student.first_name, v_student.last_name), v_period.month,
     v_notification.reminder_days, 'push', v_attempt, clock_timestamp(),
-    'provider_outcome_unknown'
+    v_alert_type
   ) on conflict (delivery_id) do update
-    set alert_type = 'provider_outcome_unknown';
+    set alert_type = case
+      when public.cueva_notification_admin_alerts.alert_type = 'provider_outcome_unknown'
+        or excluded.alert_type = 'provider_outcome_unknown'
+        then 'provider_outcome_unknown'
+      else 'retries_exhausted'
+    end;
   return new;
 end;
-$;
+$$;
 revoke all on function cueva_private.create_notification_push_unknown_alert() from public, anon, authenticated, service_role;
+drop trigger if exists cueva_notification_push_unknown_admin_alert on public.cueva_notification_push_deliveries;
 create trigger cueva_notification_push_unknown_admin_alert
   after update of status on public.cueva_notification_push_deliveries
-  for each row when (old.status is distinct from new.status and new.status = 'unknown')
+  for each row
+  when (
+    old.status is distinct from new.status
+    and (
+      new.status = 'unknown'
+      or (new.status = 'failed' and new.attempt_count = 5)
+    )
+  )
   execute function cueva_private.create_notification_push_unknown_alert();
+
 
 -- Channel-level uncertainty is now also valid for Push; the device-level
 -- ledger remains the source of which individual endpoints are uncertain.
