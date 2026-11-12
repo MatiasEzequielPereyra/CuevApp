@@ -533,6 +533,9 @@ begin
     v_error_code := 'delivery_after_due_date';
   elsif p_outcome = 'skipped' then
     v_delivery_status := 'skipped';
+  elsif p_outcome = 'failed' and v_delivery.channel = 'push'
+    and p_error_code = 'push_retries_exhausted' then
+    v_delivery_status := 'failed';
   elsif v_delivery.attempt_count >= 5 then
     v_delivery_status := 'failed';
   else
