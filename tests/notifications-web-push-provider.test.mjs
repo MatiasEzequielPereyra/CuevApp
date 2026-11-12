@@ -181,7 +181,8 @@ test("sin cuenta o sin claves VAPID no intenta enviar", async () => {
     fetchImpl: async () => { throw new Error("must not fetch"); },
   });
   const context = {
-    notificationId: "notification-1", studentId: "student-1", studentName: "Alumno",
+    notificationId: "notification-1", deliveryId: "parent-1", deliveryLeaseToken: "parent-lease-1",
+    studentId: "student-1", studentName: "Alumno",
     destinationEmail: null, studentUserId: "user-1", periodMonth: "2026-11-01",
     dueOn: "2026-11-20", balanceCents: "75000", reminderDays: 5,
   };
