@@ -1,4 +1,4 @@
-import { createCipheriv, createECDH, createPrivateKey, createPublicKey, hkdfSync, randomBytes, sign } from "node:crypto";
+import { createCipheriv, createECDH, createPrivateKey, hkdfSync, randomBytes, sign } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { formatReminderContent } from "./core.ts";
 import type { NotificationDeliveryContext, ProviderResult } from "./dispatcher.ts";
@@ -33,7 +33,14 @@ function vapidPrivateKey(configuration: WebPushConfiguration) {
   if (publicBytes.length !== 65 || publicBytes[0] !== 4 || privateBytes.length !== 32) {
     throw new TypeError("Invalid VAPID key pair");
   }
-  const privateKey = createPrivateKey({
+  // Derive the public point from the private scalar. A JWK containing x/y/d
+  // does not prove that the supplied public coordinates correspond to d.
+  const ecdh = createECDH("prime256v1");
+  ecdh.setPrivateKey(privateBytes);
+  if (!ecdh.getPublicKey().equals(publicBytes)) {
+    throw new TypeError("VAPID public and private keys do not match");
+  }
+  return createPrivateKey({
     key: {
       kty: "EC",
       crv: "P-256",
@@ -43,12 +50,6 @@ function vapidPrivateKey(configuration: WebPushConfiguration) {
     },
     format: "jwk",
   });
-  const derived = createPublicKey(privateKey).export({ format: "jwk" });
-  if (derived.x !== b64url(publicBytes.subarray(1, 33))
-    || derived.y !== b64url(publicBytes.subarray(33, 65))) {
-    throw new TypeError("VAPID public and private keys do not match");
-  }
-  return privateKey;
 }
 
 /**
