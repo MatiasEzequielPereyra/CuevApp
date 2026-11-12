@@ -135,64 +135,30 @@ export async function POST(request: Request) {
     const student = await requireStudent();
     if (!student) return reply({ message: "Acceso restringido." }, 403);
 
-    const existing = await student.db.from("cueva_push_subscriptions")
-      .select("id,student_id")
-      .eq("endpoint", parsed.endpoint)
-      .maybeSingle();
-    if (existing.error) return reply({ message: "No pudimos registrar el dispositivo." }, 503);
-    if (existing.data && existing.data.student_id !== student.studentId) {
-      return reply({ message: "Este dispositivo ya está vinculado a otra cuenta." }, 409);
+    const registration = await student.db.rpc("cueva_register_push_subscription", {
+      p_student_id: student.studentId,
+      p_endpoint: parsed.endpoint,
+      p_p256dh: parsed.p256dh,
+      p_auth_secret: parsed.authSecret,
+      p_expires_at: parsed.expiresAt,
+    });
+    if (registration.error) {
+      return reply({ message: "No pudimos registrar el dispositivo." }, 503);
     }
 
-    if (existing.data) {
-      const { error } = await student.db.from("cueva_push_subscriptions")
-        .update({
-          p256dh: parsed.p256dh,
-          auth_secret: parsed.authSecret,
-          expires_at: parsed.expiresAt,
-          revoked_at: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", existing.data.id)
-        .eq("student_id", student.studentId);
-      if (error) return reply({ message: "No pudimos actualizar el dispositivo." }, 503);
-    } else {
-      const active = await student.db.from("cueva_push_subscriptions")
-        .select("id", { count: "exact", head: true })
-        .eq("student_id", student.studentId)
-        .is("revoked_at", null);
-      if (active.error) return reply({ message: "No pudimos validar los dispositivos registrados." }, 503);
-      if ((active.count ?? 0) >= 10) return reply({ message: "Alcanzaste el máximo de dispositivos registrados." }, 409);
-
-      const inserted = await student.db.from("cueva_push_subscriptions").insert({
-        student_id: student.studentId,
-        endpoint: parsed.endpoint,
-        p256dh: parsed.p256dh,
-        auth_secret: parsed.authSecret,
-        expires_at: parsed.expiresAt,
-      });
-      if (inserted.error?.code === "23505") {
-        const raced = await student.db.from("cueva_push_subscriptions")
-          .select("id,student_id")
-          .eq("endpoint", parsed.endpoint)
-          .maybeSingle();
-        if (raced.error || !raced.data || raced.data.student_id !== student.studentId) {
-          return reply({ message: "Este dispositivo ya está vinculado a otra cuenta." }, 409);
-        }
-        const updated = await student.db.from("cueva_push_subscriptions")
-          .update({
-            p256dh: parsed.p256dh,
-            auth_secret: parsed.authSecret,
-            expires_at: parsed.expiresAt,
-            revoked_at: null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", raced.data.id)
-          .eq("student_id", student.studentId);
-        if (updated.error) return reply({ message: "No pudimos actualizar el dispositivo." }, 503);
-      } else if (inserted.error) {
-        return reply({ message: "No pudimos registrar el dispositivo." }, 503);
-      }
+    const result = Array.isArray(registration.data) ? registration.data[0] : null;
+    if (!result) return reply({ message: "No pudimos registrar el dispositivo." }, 503);
+    if (result.outcome === "limit_reached") {
+      return reply({ message: "Alcanzaste el máximo de dispositivos registrados." }, 409);
+    }
+    if (result.outcome === "endpoint_in_use") {
+      return reply({ message: "Este dispositivo ya está vinculado a otra cuenta." }, 409);
+    }
+    if (result.outcome === "student_not_found") {
+      return reply({ message: "No pudimos registrar el dispositivo." }, 503);
+    }
+    if (result.outcome !== "registered" && result.outcome !== "updated") {
+      return reply({ message: "No pudimos registrar el dispositivo." }, 503);
     }
 
     const preference = await student.db.from("cueva_notification_preferences")
