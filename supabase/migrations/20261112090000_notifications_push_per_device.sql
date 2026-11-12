@@ -25,7 +25,8 @@ create table public.cueva_notification_push_deliveries (
     or (status <> 'processing' and lease_token is null and lease_expires_at is null)
   ),
   check (status = 'processing' or provider_started_at is null),
-  check (status <> 'sent' or attempt_count > 0)
+  check (status <> 'sent' or attempt_count > 0),
+  check (status <> 'failed' or attempt_count = 5)
 );
 alter table public.cueva_notification_push_deliveries enable row level security;
 revoke all on public.cueva_notification_push_deliveries from public, anon, authenticated, service_role;
