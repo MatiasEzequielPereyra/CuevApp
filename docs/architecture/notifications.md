@@ -98,7 +98,7 @@ La recuperación no reintenta indiscriminadamente: solo procesa avisos aún rele
 
 ### Exposición explícita del Data API
 
-Desde el cambio de Supabase aplicado en 2026, las tablas nuevas de `public` no deben suponerse accesibles automáticamente por PostgREST. Toda tabla de notificaciones tendrá RLS habilitado y privilegios explícitos. Las tablas operativas (entregas, intentos, ejecuciones, preferencias y suscripciones) no concederán acceso directo a `anon` ni `authenticated`; el worker accederá mediante RPCs estrechas. La bandeja interna concederá únicamente lectura y actualización del estado de lectura bajo RLS ligada a la sesión vigente y al `user_id`. Los wrappers RPC serán `SECURITY INVOKER` y se concederá `EXECUTE` solo a los roles consumidores.
+Desde el cambio de Supabase aplicado en 2026, las tablas nuevas de `public` no deben suponerse accesibles automáticamente por PostgREST. Toda tabla de notificaciones tendrá RLS habilitado y privilegios explícitos. Las tablas operativas (entregas, intentos, ejecuciones, preferencias y suscripciones) no conceden acceso directo a `anon` ni `authenticated`. El worker usa RPCs estrechas para operaciones transaccionales y lecturas financieras; además realiza lecturas y escrituras server-side puntuales con `service_role` sobre tablas operativas cuando el flujo lo requiere. Esos permisos privilegiados no se exponen al navegador y no constituyen una frontera frente a otro código que ya posea la clave. La bandeja interna concederá únicamente lectura y actualización del estado de lectura bajo RLS ligada a la sesión vigente y al `user_id`. Los wrappers RPC serán `SECURITY INVOKER` y se concederá `EXECUTE` solo a los roles consumidores.
 
 
 ## Conciliación de resultados inciertos
