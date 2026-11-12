@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createECDH, generateKeyPairSync, hkdfSync, createDecipheriv, randomBytes } from "node:crypto";
-import { encryptWebPushPayload, createWebPushProvider } from "../src/lib/notifications/web-push-provider.ts";
+import { encryptWebPushPayload, createWebPushProvider, isWebPushConfigurationAvailable } from "../src/lib/notifications/web-push-provider.ts";
 
 function subscriptionKeys() {
   const ecdh = createECDH("prime256v1");
@@ -134,4 +134,27 @@ test("sin suscripciones activas informa que no hay destino", async () => {
     destinationEmail: null, studentUserId: "user-1", periodMonth: "2026-11-01",
     dueOn: "2026-11-20", balanceCents: "75000", reminderDays: 5,
   }), { outcome: "skipped", errorCode: "missing_push_subscription" });
+});
+
+test("declara Push disponible solo con claves VAPID completas y coincidentes", () => {
+  const keys = vapidKeys();
+  const otherKeys = vapidKeys();
+  assert.equal(isWebPushConfigurationAvailable({
+    ...keys,
+    subject: "mailto:admin@example.test",
+  }), true);
+  assert.equal(isWebPushConfigurationAvailable({
+    publicKey: keys.publicKey,
+    privateKey: "",
+    subject: "mailto:admin@example.test",
+  }), false);
+  assert.equal(isWebPushConfigurationAvailable({
+    publicKey: keys.publicKey,
+    privateKey: otherKeys.privateKey,
+    subject: "mailto:admin@example.test",
+  }), false);
+  assert.equal(isWebPushConfigurationAvailable({
+    ...keys,
+    subject: "admin@example.test",
+  }), false);
 });
