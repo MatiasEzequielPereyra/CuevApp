@@ -105,7 +105,7 @@ function formatArsCents(cents: bigint): string {
   const formattedWhole = new Intl.NumberFormat("es-AR", {
     style: "currency", currency: "ARS", minimumFractionDigits: 0, maximumFractionDigits: 0,
   }).format(whole);
-  return `${formattedWhole},${fraction}`;
+  return cents % 100n === 0n ? formattedWhole : `${formattedWhole},${fraction}`;
 }
 
 export function formatReminderContent(period: NotificationPeriod) {
