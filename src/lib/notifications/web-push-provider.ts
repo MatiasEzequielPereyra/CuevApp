@@ -51,6 +51,25 @@ function vapidPrivateKey(configuration: WebPushConfiguration) {
   return privateKey;
 }
 
+/**
+ * Returns true only when the complete server-side VAPID configuration can
+ * produce valid authorization headers. The public key alone is insufficient.
+ */
+export function isWebPushConfigurationAvailable(
+  configuration: Pick<WebPushConfiguration, "publicKey" | "privateKey" | "subject">,
+): boolean {
+  if (!configuration.publicKey.trim() || !configuration.privateKey.trim()
+    || !/^mailto:.+@.+\\..+$/.test(configuration.subject)) {
+    return false;
+  }
+  try {
+    vapidPrivateKey(configuration as WebPushConfiguration);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function createVapidAuthorization(
   endpoint: string,
   configuration: WebPushConfiguration,
