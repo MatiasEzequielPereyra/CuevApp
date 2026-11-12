@@ -30,7 +30,7 @@ export type ProviderResult =
   | { outcome: "skipped"; errorCode: string };
 
 export type NotificationDispatcherDependencies = {
-  loadContext(notificationId: string): Promise<NotificationDeliveryContext>;
+  loadContext(notificationId: string, delivery: ClaimedNotificationDelivery): Promise<NotificationDeliveryContext>;
   sendEmail(context: NotificationDeliveryContext): Promise<ProviderResult>;
   createInternal(context: NotificationDeliveryContext): Promise<ProviderResult>;
   sendPush(context: NotificationDeliveryContext): Promise<ProviderResult>;
@@ -102,7 +102,7 @@ export async function dispatchClaimedDeliveries(
   await Promise.all(deliveries.map(async delivery => {
     let result: ProviderResult;
     try {
-      const context = await dependencies.loadContext(delivery.notification_id);
+      const context = await dependencies.loadContext(delivery.notification_id, delivery);
       if (delivery.channel === "email" && !(await dependencies.markEmailStarted(delivery))) {
         summary.stale += 1;
         return;
