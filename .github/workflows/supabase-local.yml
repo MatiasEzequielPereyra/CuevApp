@@ -40,6 +40,7 @@ jobs:
     env:
       MIGRATION_PATH: ${{ matrix.path }}
       RECEIPTS_VERSION: "20261107100100"
+      DB_PORT: ${{ matrix.path == 'fresh' && 56432 || 57432 }}
     defaults:
       run:
         shell: bash
@@ -70,6 +71,9 @@ jobs:
           evidence="$RUNNER_TEMP/cueva-003b-evidence"
           mkdir -p "$workdir/supabase/migrations" "$evidence"
           cp supabase/config.toml "$workdir/supabase/"
+          # Keep matrix stacks isolated even if the runner has another local
+          # PostgreSQL service bound to Supabase's default test port.
+          sed -i "s/^port = 55432$/port = $DB_PORT/" "$workdir/supabase/config.toml"
           cp -r supabase/tests "$workdir/supabase/"
           for file in supabase/migrations/*.sql; do
             name="${file##*/}"
@@ -120,14 +124,14 @@ jobs:
         run: |
           eval "$(supabase --workdir "$SUPABASE_TEST_DIR" status -o env)"
           test_db_var=CUEVA_TEST_DATABASE_URL
-          export "$test_db_var=${DB_URL:-postgresql://postgres:postgres@127.0.0.1:55432/postgres}"
+          export "$test_db_var=${DB_URL:-postgresql://postgres:postgres@127.0.0.1:$DB_PORT/postgres}"
           node tests/billing-concurrency.test.mjs | tee "$MIGRATION_EVIDENCE/concurrency.txt"
 
       - name: Verify concurrent notification claims and retry policy
         run: |
           eval "$(supabase --workdir "$SUPABASE_TEST_DIR" status -o env)"
           test_db_var=CUEVA_TEST_DATABASE_URL
-          export "$test_db_var=${DB_URL:-postgresql://postgres:postgres@127.0.0.1:55432/postgres}"
+          export "$test_db_var=${DB_URL:-postgresql://postgres:postgres@127.0.0.1:$DB_PORT/postgres}"
           node tests/notifications-claim-concurrency.test.mjs | tee "$MIGRATION_EVIDENCE/notification-claim-concurrency.txt"
 
       - name: Install Chromium for authenticated integration test
@@ -141,7 +145,7 @@ jobs:
           export API_URL="${API_URL:-${SUPABASE_URL:-http://127.0.0.1:54321}}"
           export ANON_KEY="${ANON_KEY:-${SUPABASE_ANON_KEY:-${PUBLISHABLE_KEY:-${SUPABASE_PUBLISHABLE_KEY:-}}}}"
           export CUEVA_SERVICE_KEY="${SERVICE_ROLE_KEY-${SUPABASE_SERVICE_ROLE_KEY-${SECRET_KEY-${SUPABASE_SECRET_KEY-}}}}"
-          export DB_URL="${DB_URL:-postgresql://postgres:postgres@127.0.0.1:55432/postgres}"
+          export DB_URL="${DB_URL:-postgresql://postgres:postgres@127.0.0.1:$DB_PORT/postgres}"
           : "${DB_URL:?Supabase local database URL is unavailable}"
           : "${ANON_KEY:?Supabase CLI did not provide an anonymous/publishable key}"
           : "${CUEVA_SERVICE_KEY:?Supabase CLI did not provide a service/secret key}"
