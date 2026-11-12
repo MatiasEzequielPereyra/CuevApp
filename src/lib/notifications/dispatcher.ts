@@ -21,6 +21,9 @@ export type NotificationDeliveryContext = {
   dueOn: string;
   balanceCents: string;
   reminderDays: 5 | 1;
+  /** Internal lease identity for provider-side, per-target idempotency. */
+  deliveryId?: string;
+  deliveryLeaseToken?: string;
 };
 
 export type ProviderResult =
