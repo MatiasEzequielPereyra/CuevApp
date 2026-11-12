@@ -1,14 +1,15 @@
 begin;
-select plan(20);
+select plan(22);
 
 insert into public.cueva_students(id,first_name,last_name,email,joined_on)
 values
  ('be000000-0000-4000-8000-000000000001','Push','Limit One','push-limit-one@example.test',date '2026-01-01'),
- ('be000000-0000-4000-8000-000000000002','Push','Limit Two','push-limit-two@example.test',date '2026-01-02');
+ ('be000000-0000-4000-8000-000000000002','Push','Limit Two','push-limit-two@example.test',date '2026-01-02'),
+ ('be000000-0000-4000-8000-000000000003','Push','Revoke One','push-revoke-one@example.test',date '2026-01-03');
 
 insert into public.cueva_push_subscriptions(student_id,endpoint,p256dh,auth_secret)
 values
- ('be000000-0000-4000-8000-000000000001','https://push.example.test/revoke-one',repeat('P',87),repeat('Q',22)),
+ ('be000000-0000-4000-8000-000000000003','https://push.example.test/revoke-one',repeat('P',87),repeat('Q',22)),
  ('be000000-0000-4000-8000-000000000002','https://push.example.test/revoke-two',repeat('R',87),repeat('S',22));
 
 select ok(
@@ -132,12 +133,20 @@ select ok(
   'anonymous users cannot invoke the revocation RPC'
 );
 select ok(
-  not has_table_privilege('service_role','public.cueva_push_subscriptions','SELECT'),
-  'service role has no direct read grant on push subscription storage'
+  has_table_privilege('service_role','public.cueva_push_subscriptions','SELECT'),
+  'the server worker role can read active subscriptions to dispatch push notifications'
+);
+select ok(
+  not has_table_privilege('authenticated','public.cueva_push_subscriptions','SELECT'),
+  'authenticated users cannot read push subscription storage directly'
+);
+select ok(
+  not has_table_privilege('anon','public.cueva_push_subscriptions','SELECT'),
+  'anonymous users cannot read push subscription storage directly'
 );
 select is(
   public.cueva_revoke_push_subscription(
-    'be000000-0000-4000-8000-000000000001',
+    'be000000-0000-4000-8000-000000000003',
     'https://push.example.test/revoke-one'
   ),
   'removed',
