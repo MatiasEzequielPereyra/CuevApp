@@ -420,10 +420,11 @@ begin
     concat_ws(' ', v_student.first_name, v_student.last_name), v_period.month,
     v_notification.reminder_days, 'push', v_attempt, clock_timestamp(),
     'provider_outcome_unknown'
-  ) on conflict (delivery_id) do nothing;
+  ) on conflict (delivery_id) do update
+    set alert_type = 'provider_outcome_unknown';
   return new;
 end;
-$$;
+$;
 revoke all on function cueva_private.create_notification_push_unknown_alert() from public, anon, authenticated, service_role;
 create trigger cueva_notification_push_unknown_admin_alert
   after update of status on public.cueva_notification_push_deliveries
