@@ -172,7 +172,7 @@ select is(
   (select revoked_at is null from public.cueva_push_subscriptions
    where endpoint='https://push.example.test/revoke-two'),
   true,
-  'cross-account revocation leaves the other student's device active'
+  'cross-account revocation leaves the other student''s device active'
 );
 
 reset role;
