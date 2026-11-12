@@ -211,7 +211,7 @@ export function createWebPushProvider(
       }
 
       const payload = buildPushPayload(context);
-      const results = await Promise.all(subscriptions.map(async subscription: PushSubscriptionRow): Promise<PushTargetResult> => {
+      const results = await Promise.all(subscriptions.map(async (subscription: PushSubscriptionRow): Promise<PushTargetResult> => {
         try {
           const claimResponse = await db.rpc("cueva_claim_notification_push_delivery", {
             p_delivery_id: context.deliveryId,
