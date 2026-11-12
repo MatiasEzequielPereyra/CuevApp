@@ -200,7 +200,8 @@ test("sin suscripciones activas informa que no hay destino", async () => {
     fetchImpl: async () => { throw new Error("must not fetch"); },
   });
   assert.deepEqual(await provider({
-    notificationId: "notification-1", studentId: "student-1", studentName: "Alumno",
+    notificationId: "notification-1", deliveryId: "parent-1", deliveryLeaseToken: "parent-lease-1",
+    studentId: "student-1", studentName: "Alumno",
     destinationEmail: null, studentUserId: "user-1", periodMonth: "2026-11-01",
     dueOn: "2026-11-20", balanceCents: "75000", reminderDays: 5,
   }), { outcome: "skipped", errorCode: "missing_push_subscription" });
