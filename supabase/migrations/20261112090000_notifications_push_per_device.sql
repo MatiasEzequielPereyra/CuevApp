@@ -433,7 +433,7 @@ begin
   from public.cueva_students student where student.id = v_period.student_id;
   if not found then return new; end if;
 
-  v_attempt := greatest(1, least(5, v_parent.attempt_count));
+  v_attempt := greatest(1, least(5, new.attempt_count));
   insert into public.cueva_notification_admin_alerts as current_alert (
     delivery_id, notification_id, student_id, student_name, period_month,
     reminder_days, channel, attempt_count, failed_at, alert_type
