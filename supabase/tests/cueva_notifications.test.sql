@@ -43,7 +43,8 @@ values ('b5000000-0000-4000-8000-000000000001',date '2026-11-01',10000,'b1000000
 insert into public.cueva_periods(id,student_id,month,due_on,cents,price_id,actor)
 values
  ('b6000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000001',date '2026-11-01',date '2026-11-20',10000,'b5000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001'),
- ('b6000000-0000-4000-8000-000000000002','b3000000-0000-4000-8000-000000000002',date '2026-11-01',date '2026-11-21',12000,'b5000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001');
+ ('b6000000-0000-4000-8000-000000000002','b3000000-0000-4000-8000-000000000002',date '2026-11-01',date '2026-11-21',12000,'b5000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001'),
+ ('b6000000-0000-4000-8000-000000000003','b3000000-0000-4000-8000-000000000002',date '2026-12-01',date '2026-12-20',12000,'b5000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001');
 
 insert into public.cueva_payments(id,period_id,cents,paid_on,method,actor)
 values ('b7000000-0000-4000-8000-000000000001','b6000000-0000-4000-8000-000000000001',2500,date '2026-11-10','transferencia','b1000000-0000-4000-8000-000000000001');
@@ -51,7 +52,8 @@ values ('b7000000-0000-4000-8000-000000000001','b6000000-0000-4000-8000-00000000
 insert into public.cueva_notifications(id,period_id,reminder_days,due_on,scheduled_at)
 values
  ('b8000000-0000-4000-8000-000000000001','b6000000-0000-4000-8000-000000000001',5,date '2026-11-20',timestamptz '2026-11-15 12:00:00-03'),
- ('b8000000-0000-4000-8000-000000000002','b6000000-0000-4000-8000-000000000002',5,date '2026-11-21',timestamptz '2026-11-16 12:00:00-03');
+ ('b8000000-0000-4000-8000-000000000002','b6000000-0000-4000-8000-000000000002',5,date '2026-11-21',timestamptz '2026-11-16 12:00:00-03'),
+ ('b8000000-0000-4000-8000-000000000003','b6000000-0000-4000-8000-000000000003',5,date '2026-12-20',timestamptz '2026-12-15 12:00:00-03');
 
 insert into public.cueva_notification_deliveries(
  id,notification_id,channel,status,attempt_count,next_attempt_at,last_attempt_at,lease_token,lease_expires_at,provider_started_at
@@ -60,7 +62,8 @@ insert into public.cueva_notification_deliveries(
  ('b9000000-0000-4000-8000-000000000002','b8000000-0000-4000-8000-000000000001','push','pending',1,timestamptz '2026-11-15 12:15:00-03',timestamptz '2026-11-15 12:00:00-03',null,null,null),
  ('b9000000-0000-4000-8000-000000000003','b8000000-0000-4000-8000-000000000002','internal','pending',0,timestamptz '2026-11-16 12:00:00-03',null,null,null,null),
  ('b9000000-0000-4000-8000-000000000004','b8000000-0000-4000-8000-000000000002','email','processing',1,timestamptz '2026-11-16 12:00:00-03',clock_timestamp()-interval '10 minutes',gen_random_uuid(),clock_timestamp()-interval '1 minute',clock_timestamp()-interval '5 minutes'),
- ('b9000000-0000-4000-8000-000000000005','b8000000-0000-4000-8000-000000000001','email','processing',1,timestamptz '2026-11-16 12:00:00-03',clock_timestamp()-interval '10 minutes',gen_random_uuid(),clock_timestamp()-interval '1 minute',null);
+ ('b9000000-0000-4000-8000-000000000005','b8000000-0000-4000-8000-000000000001','email','processing',1,timestamptz '2026-11-16 12:00:00-03',clock_timestamp()-interval '10 minutes',gen_random_uuid(),clock_timestamp()-interval '1 minute',null),
+ ('b9000000-0000-4000-8000-000000000006','b8000000-0000-4000-8000-000000000003','internal','pending',0,timestamptz '2026-12-15 12:00:00-03',null,null,null,null);
 
 insert into public.cueva_notification_inbox(
  id,delivery_id,notification_id,student_id,user_id,title,body
@@ -326,12 +329,12 @@ set status = 'failed',
     attempt_count = 5,
     last_error_code = 'provider_error',
     updated_at = clock_timestamp()
-where id = 'b9000000-0000-4000-8000-000000000003'
+where id = 'b9000000-0000-4000-8000-000000000006'
   and status = 'pending';
 
 select is(
   (select count(*)::integer from public.cueva_notification_admin_alerts
-   where delivery_id = 'b9000000-0000-4000-8000-000000000003'),
+   where delivery_id = 'b9000000-0000-4000-8000-000000000006'),
   1,
   'first terminal failure after five attempts creates one admin alert'
 );
@@ -368,13 +371,13 @@ select is((select count(*)::integer from public.cueva_notification_admin_alerts
   1,'uncertain provider result creates an admin reconciliation alert at the actual attempt count');
 select ok(
   (select student_name = 'Student Two'
-      and period_month = date '2026-11-01'
+      and period_month = date '2026-12-01'
       and reminder_days = 5
       and channel = 'internal'
       and attempt_count = 5
       and failed_at is not null
    from public.cueva_notification_admin_alerts
-   where delivery_id = 'b9000000-0000-4000-8000-000000000003'),
+   where delivery_id = 'b9000000-0000-4000-8000-000000000006'),
   'admin alert contains the concise student, period, reminder, channel, and exhaustion snapshot'
 );
 
@@ -406,10 +409,10 @@ select is(
 reset role;
 update public.cueva_notification_deliveries
 set status = 'failed', updated_at = clock_timestamp()
-where id = 'b9000000-0000-4000-8000-000000000003';
+where id = 'b9000000-0000-4000-8000-000000000006';
 select is(
   (select count(*)::integer from public.cueva_notification_admin_alerts
-   where delivery_id = 'b9000000-0000-4000-8000-000000000003'),
+   where delivery_id = 'b9000000-0000-4000-8000-000000000006'),
   1,
   'repeated failed-state update cannot duplicate the admin alert'
 );
