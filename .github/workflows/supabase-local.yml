@@ -7,6 +7,9 @@ on:
       - ".github/workflows/supabase-local.yml"
       - "tests/billing-concurrency.test.mjs"
       - "tests/notifications-claim-concurrency.test.mjs"
+      - "tests/notifications-push-route-http.test.mjs"
+      - "src/app/api/notifications/**"
+      - "src/lib/notifications/**"
       - "tests/e2e/**"
       - "src/app/api/pagos/**"
       - "src/components/payments/**"
@@ -159,7 +162,12 @@ jobs:
           npm run dev -- --port 3000 > /tmp/cueva-next.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          set -o pipefail
           node tests/e2e/supabase-due-date.integration.mjs | tee "$MIGRATION_EVIDENCE/authenticated-ui.txt" || {
+            cat /tmp/cueva-next.log
+            exit 1
+          }
+          node tests/e2e/notifications-push.integration.mjs | tee "$MIGRATION_EVIDENCE/notifications-push-http.txt" || {
             cat /tmp/cueva-next.log
             exit 1
           }
