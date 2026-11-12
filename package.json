@@ -14,7 +14,7 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit",
     "test:docs": "node --test tests/documents.test.mjs",
-    "test": "npm run test:docs && npm run test:notifications:core && npm run test:notifications:dispatcher && npm run test:notifications:worker && npm run test:notifications:inbox && npm run test:notifications:brevo && npm run test:notifications:webpush && npm run test:notifications:push-subscription && npm run test:notifications:worker-endpoint && npm run test:routines:model && node --test tests/due-date-preview.test.mjs tests/billing-api.test.mjs tests/payments-money.test.mjs tests/reconciliation-transport.test.mjs && npm run test:receipts && playwright test",
+    "test": "npm run test:docs && npm run test:notifications:core && npm run test:notifications:dispatcher && npm run test:notifications:worker && npm run test:notifications:inbox && npm run test:notifications:brevo && npm run test:notifications:webpush && npm run test:notifications:push-subscription && npm run test:notifications:push-route && npm run test:notifications:worker-endpoint && npm run test:routines:model && node --test tests/due-date-preview.test.mjs tests/billing-api.test.mjs tests/payments-money.test.mjs tests/reconciliation-transport.test.mjs && npm run test:receipts && playwright test",
     "test:routines:model": "node --experimental-strip-types --test experiments/cueva-006c-local/model.test.mjs",
     "test:e2e": "playwright test",
     "verify": "npm run lint && npm run typecheck && npm run build && npm test",
@@ -29,7 +29,8 @@
     "test:notifications:brevo": "node --experimental-strip-types --test tests/notifications-brevo-provider.test.mjs",
     "test:notifications:webpush": "node --experimental-strip-types --test tests/notifications-web-push-provider.test.mjs",
     "test:notifications:push-subscription": "node --experimental-strip-types --test tests/notifications-push-subscription.test.mjs",
-    "test:notifications:worker-endpoint": "node --experimental-strip-types --test tests/notifications-worker-endpoint-auth.test.mjs"
+    "test:notifications:worker-endpoint": "node --experimental-strip-types --test tests/notifications-worker-endpoint-auth.test.mjs",
+    "test:notifications:push-route": "node --experimental-strip-types --test tests/notifications-push-route-http.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
