@@ -308,6 +308,7 @@ export function createWebPushProvider(
       const sent = results.filter(result => result.status === "sent").length;
       const unknown = results.filter(result => result.status === "unknown").length;
       const expired = results.filter(result => result.status === "expired").length;
+      const terminalFailed = results.some(result => result.status === "failed" && result.attemptNumber >= 5);
       const retryable = results.some(result =>
         result.status === "processing"
         || result.status === "stale"
@@ -323,6 +324,7 @@ export function createWebPushProvider(
         };
       }
       if (unknown > 0) return { outcome: "unknown", errorCode: "push_result_unknown" };
+      if (terminalFailed) return { outcome: "failed", errorCode: "push_retries_exhausted" };
       if (results.every(result => result.status === "expired")) {
         return { outcome: "skipped", errorCode: "push_subscription_expired" };
       }
