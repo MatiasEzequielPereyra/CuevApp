@@ -1,5 +1,6 @@
 import { serviceClient, productConfig, userClient } from "@/lib/product-auth/server";
 import { parsePushEndpoint, parsePushSubscription } from "@/lib/notifications/push-subscription";
+import { isWebPushConfigurationAvailable } from "@/lib/notifications/web-push-provider";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -85,14 +86,16 @@ export async function GET() {
       .maybeSingle();
     if (error || !data) return reply({ message: "No pudimos cargar las preferencias." }, 503);
 
-    const publicKey = process.env.CUEVA_VAPID_PUBLIC_KEY ?? "";
-    const validPublicKey = /^[A-Za-z0-9_-]+$/.test(publicKey)
-      && Buffer.from(publicKey, "base64url").length === 65
-      && Buffer.from(publicKey, "base64url")[0] === 4;
+    const configuration = {
+      publicKey: process.env.CUEVA_VAPID_PUBLIC_KEY ?? "",
+      privateKey: process.env.CUEVA_VAPID_PRIVATE_KEY ?? "",
+      subject: process.env.CUEVA_VAPID_SUBJECT ?? "",
+    };
+    const available = isWebPushConfigurationAvailable(configuration);
     return reply({
       pushEnabled: data.push_enabled !== false,
-      available: validPublicKey,
-      publicKey: validPublicKey ? publicKey : null,
+      available,
+      publicKey: available ? configuration.publicKey : null,
     });
   } catch {
     return reply({ message: "No pudimos cargar las preferencias." }, 503);
