@@ -154,7 +154,7 @@ select is(
 );
 select is(
   public.cueva_revoke_push_subscription(
-    'be000000-0000-4000-8000-000000000001',
+    'be000000-0000-4000-8000-000000000003',
     'https://push.example.test/revoke-one'
   ),
   'not_found',
@@ -162,7 +162,7 @@ select is(
 );
 select is(
   public.cueva_revoke_push_subscription(
-    'be000000-0000-4000-8000-000000000001',
+    'be000000-0000-4000-8000-000000000003',
     'https://push.example.test/revoke-two'
   ),
   'not_found',
