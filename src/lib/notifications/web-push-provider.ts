@@ -155,6 +155,29 @@ function buildPushPayload(context: NotificationDeliveryContext): Buffer {
   }), "utf8");
 }
 
+type PushClaimRow = {
+  claimed: boolean;
+  push_delivery_id: string | null;
+  push_lease_token: string | null;
+  attempt_number: number | null;
+  delivery_status: string;
+};
+
+type PushFinalizeRow = {
+  finalized: boolean;
+  delivery_status: string;
+  attempt_number: number;
+};
+
+type PushTargetResult = {
+  status: string;
+  attemptNumber: number;
+};
+
+function firstRpcRow<T>(data: unknown): T | null {
+  return Array.isArray(data) && data.length > 0 ? data[0] as T : null;
+}
+
 export function createWebPushProvider(
   db: SupabaseClient,
   configuration: WebPushConfiguration,
@@ -166,8 +189,10 @@ export function createWebPushProvider(
     if (!context.studentUserId) {
       return { outcome: "skipped", errorCode: "missing_student_account" };
     }
-    if (!configuration.publicKey.trim() || !configuration.privateKey.trim()
-      || !/^mailto:.+@.+\..+$/.test(configuration.subject)) {
+    if (!isWebPushConfigurationAvailable(configuration)) {
+      return { outcome: "failed", errorCode: "push_unavailable" };
+    }
+    if (!context.deliveryId || !context.deliveryLeaseToken) {
       return { outcome: "failed", errorCode: "push_unavailable" };
     }
 
@@ -186,51 +211,123 @@ export function createWebPushProvider(
       }
 
       const payload = buildPushPayload(context);
-      const results = await Promise.all(subscriptions.map(async subscription => {
+      const results = await Promise.all(subscriptions.map(async subscription: PushSubscriptionRow): Promise<PushTargetResult> => {
         try {
-          if (subscription.expires_at && Date.parse(subscription.expires_at) <= now()) {
-            const { error: revokeError } = await db.from("cueva_push_subscriptions")
-              .update({ revoked_at: new Date(now()).toISOString() })
-              .eq("id", subscription.id)
-              .is("revoked_at", null);
-            return revokeError ? "failed" as const : "expired" as const;
-          }
-          const endpoint = new URL(subscription.endpoint);
-          if (endpoint.protocol !== "https:") return "failed" as const;
-
-          const body = encryptWebPushPayload(payload, subscription);
-          const response = await fetchImpl(subscription.endpoint, {
-            method: "POST",
-            headers: {
-              "Authorization": createVapidAuthorization(subscription.endpoint, configuration, now()),
-              "Content-Encoding": "aes128gcm",
-              "Content-Type": "application/octet-stream",
-              "TTL": "86400",
-              "Urgency": "normal",
-            },
-            body: new Uint8Array(body),
-            cache: "no-store",
-            redirect: "error",
-            signal: AbortSignal.timeout(10000),
+          const claimResponse = await db.rpc("cueva_claim_notification_push_delivery", {
+            p_delivery_id: context.deliveryId,
+            p_parent_lease_token: context.deliveryLeaseToken,
+            p_subscription_id: subscription.id,
+            p_lease_seconds: 120,
           });
-
-          if (response.status === 404 || response.status === 410) {
-            const { error: revokeError } = await db.from("cueva_push_subscriptions")
-              .update({ revoked_at: new Date(now()).toISOString() })
-              .eq("id", subscription.id)
-              .is("revoked_at", null);
-            return revokeError ? "failed" as const : "expired" as const;
+          if (claimResponse.error) return { status: "failed", attemptNumber: 0 };
+          const claim = firstRpcRow<PushClaimRow>(claimResponse.data);
+          if (!claim) return { status: "failed", attemptNumber: 0 };
+          if (!claim.claimed || !claim.push_delivery_id || !claim.push_lease_token) {
+            return { status: claim.delivery_status, attemptNumber: Number(claim.attempt_number ?? 0) };
           }
-          return response.ok ? "sent" as const : "failed" as const;
+
+          const startedResponse = await db.rpc("cueva_mark_notification_push_started", {
+            p_push_delivery_id: claim.push_delivery_id,
+            p_push_lease_token: claim.push_lease_token,
+            p_delivery_id: context.deliveryId,
+            p_parent_lease_token: context.deliveryLeaseToken,
+          });
+          if (startedResponse.error) {
+            return { status: "failed", attemptNumber: Number(claim.attempt_number ?? 0) };
+          }
+          const started = firstRpcRow<{ started: boolean }>(startedResponse.data);
+          if (!started?.started) {
+            return { status: "cancelled", attemptNumber: Number(claim.attempt_number ?? 0) };
+          }
+
+          let outcome: "sent" | "failed" | "unknown" | "expired";
+          let errorCode: string | null = null;
+          let providerReference: string | null = null;
+          try {
+            const endpoint = new URL(subscription.endpoint);
+            if (endpoint.protocol !== "https:") {
+              outcome = "failed";
+              errorCode = "push_endpoint_rejected";
+            } else {
+              const body = encryptWebPushPayload(payload, subscription);
+              const response = await fetchImpl(subscription.endpoint, {
+                method: "POST",
+                headers: {
+                  "Authorization": createVapidAuthorization(subscription.endpoint, configuration, now()),
+                  "Content-Encoding": "aes128gcm",
+                  "Content-Type": "application/octet-stream",
+                  "TTL": "86400",
+                  "Urgency": "normal",
+                },
+                body: new Uint8Array(body),
+                cache: "no-store",
+                redirect: "error",
+                signal: AbortSignal.timeout(10000),
+              });
+              providerReference = `http:${response.status}`;
+              if (response.status === 404 || response.status === 410) {
+                outcome = "expired";
+                errorCode = "push_subscription_expired";
+              } else if (response.ok) {
+                outcome = "sent";
+              } else if (response.status >= 500) {
+                outcome = "unknown";
+                errorCode = "push_result_unknown";
+              } else {
+                outcome = "failed";
+                errorCode = response.status === 429 ? "push_http_429" : "push_http_rejected";
+              }
+            }
+          } catch {
+            // A network error or timeout can happen after the push service accepted
+            // the request. Never retry that endpoint automatically.
+            outcome = "unknown";
+            errorCode = "push_result_unknown";
+          }
+
+          const finalizedResponse = await db.rpc("cueva_finalize_notification_push_delivery", {
+            p_push_delivery_id: claim.push_delivery_id,
+            p_push_lease_token: claim.push_lease_token,
+            p_outcome: outcome,
+            p_provider_reference: providerReference,
+            p_error_code: errorCode,
+          });
+          if (finalizedResponse.error) {
+            return { status: outcome === "sent" || outcome === "unknown" ? "unknown" : "failed", attemptNumber: Number(claim.attempt_number ?? 0) };
+          }
+          const finalized = firstRpcRow<PushFinalizeRow>(finalizedResponse.data);
+          if (!finalized?.finalized) {
+            return { status: outcome === "sent" || outcome === "unknown" ? "unknown" : "failed", attemptNumber: Number(claim.attempt_number ?? 0) };
+          }
+          return { status: finalized.delivery_status, attemptNumber: Number(finalized.attempt_number ?? claim.attempt_number ?? 0) };
         } catch {
-          return "failed" as const;
+          return { status: "failed", attemptNumber: 0 };
         }
       }));
 
-      const sent = results.filter(result => result === "sent").length;
-      if (sent > 0) return { outcome: "sent", providerReference: `webpush:${sent}` };
-      if (results.every(result => result === "expired")) {
+      const sent = results.filter(result => result.status === "sent").length;
+      const unknown = results.filter(result => result.status === "unknown").length;
+      const expired = results.filter(result => result.status === "expired").length;
+      const retryable = results.some(result =>
+        result.status === "processing"
+        || result.status === "stale"
+        || result.status === "failed" && result.attemptNumber < 5
+        || result.status === "pending" && result.attemptNumber < 5,
+      );
+
+      if (retryable) return { outcome: "failed", errorCode: "push_unavailable" };
+      if (sent > 0) {
+        return {
+          outcome: "sent",
+          providerReference: `webpush:sent=${sent};unknown=${unknown};expired=${expired}`,
+        };
+      }
+      if (unknown > 0) return { outcome: "unknown", errorCode: "push_result_unknown" };
+      if (results.every(result => result.status === "expired")) {
         return { outcome: "skipped", errorCode: "push_subscription_expired" };
+      }
+      if (results.every(result => result.status === "cancelled" || result.status === "expired")) {
+        return { outcome: "skipped", errorCode: "notification_not_relevant" };
       }
       return { outcome: "failed", errorCode: "push_unavailable" };
     } catch {
