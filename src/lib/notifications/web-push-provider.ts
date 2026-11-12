@@ -59,7 +59,7 @@ export function isWebPushConfigurationAvailable(
   configuration: Pick<WebPushConfiguration, "publicKey" | "privateKey" | "subject">,
 ): boolean {
   if (!configuration.publicKey.trim() || !configuration.privateKey.trim()
-    || !/^mailto:.+@.+\\..+$/.test(configuration.subject)) {
+    || !/^mailto:.+@.+\..+$/.test(configuration.subject)) {
     return false;
   }
   try {
