@@ -1,5 +1,5 @@
 begin;
-select plan(61);
+select plan(79);
 
 -- Isolated fixtures: two students, two linked identities, one administrator.
 insert into auth.users(id,aud,role,email,created_at,updated_at)
@@ -416,6 +416,219 @@ select is(
   1,
   'repeated failed-state update cannot duplicate the admin alert'
 );
+
+
+-- Per-device Web Push: independent reservations, outcomes, and uncertainty.
+insert into public.cueva_push_subscriptions(id,student_id,endpoint,p256dh,auth_secret)
+values
+ ('bc000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000002','https://push.example.test/device-one',repeat('A',87),repeat('B',22)),
+ ('bc000000-0000-4000-8000-000000000002','b3000000-0000-4000-8000-000000000002','https://push.example.test/device-two',repeat('C',87),repeat('D',22)),
+ ('bc000000-0000-4000-8000-000000000003','b3000000-0000-4000-8000-000000000002','https://push.example.test/device-three',repeat('E',87),repeat('F',22));
+
+update public.cueva_notifications
+set scheduled_at = clock_timestamp(), status = 'pending', cancellation_reason = null
+where id = 'b8000000-0000-4000-8000-000000000003';
+
+insert into public.cueva_notification_deliveries(
+ id,notification_id,channel,status,attempt_count,next_attempt_at
+) values (
+ 'b9000000-0000-4000-8000-000000000007',
+ 'b8000000-0000-4000-8000-000000000003',
+ 'push','pending',0,clock_timestamp()
+);
+
+select ok(
+ has_function_privilege('service_role','public.cueva_claim_notification_push_delivery(uuid,uuid,uuid,integer)','EXECUTE'),
+ 'service role can claim an individual push target'
+);
+select ok(
+ not has_function_privilege('authenticated','public.cueva_claim_notification_push_delivery(uuid,uuid,uuid,integer)','EXECUTE'),
+ 'authenticated cannot claim individual push targets'
+);
+
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+ (select count(*)::integer from public.cueva_claim_notification_deliveries(1,300)
+  where delivery_id='b9000000-0000-4000-8000-000000000007'),
+ 1,
+ 'worker claims the aggregate push delivery'
+);
+select set_config(
+ 'test.push_parent_lease',
+ (select lease_token::text from public.cueva_notification_deliveries
+  where id='b9000000-0000-4000-8000-000000000007'),
+ true
+);
+
+select is(
+ (select claimed from public.cueva_claim_notification_push_delivery(
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid,
+  'bc000000-0000-4000-8000-000000000001',120
+ )),
+ true,
+ 'first device receives its own atomic lease'
+);
+select set_config(
+ 'test.push_device_one_lease',
+ (select lease_token::text from public.cueva_notification_push_deliveries
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and subscription_id='bc000000-0000-4000-8000-000000000001'),
+ true
+);
+select is(
+ (select claimed from public.cueva_claim_notification_push_delivery(
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid,
+  'bc000000-0000-4000-8000-000000000002',120
+ )),
+ true,
+ 'second device receives an independent lease'
+);
+select set_config(
+ 'test.push_device_two_lease',
+ (select lease_token::text from public.cueva_notification_push_deliveries
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and subscription_id='bc000000-0000-4000-8000-000000000002'),
+ true
+);
+
+select is(
+ (select started from public.cueva_mark_notification_push_started(
+  (select id from public.cueva_notification_push_deliveries
+   where delivery_id='b9000000-0000-4000-8000-000000000007'
+     and subscription_id='bc000000-0000-4000-8000-000000000001'),
+  current_setting('test.push_device_one_lease')::uuid,
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid
+ )),
+ true,
+ 'first device records provider start under both leases'
+);
+select is(
+ (select delivery_status from public.cueva_finalize_notification_push_delivery(
+  (select id from public.cueva_notification_push_deliveries
+   where delivery_id='b9000000-0000-4000-8000-000000000007'
+     and subscription_id='bc000000-0000-4000-8000-000000000001'),
+  current_setting('test.push_device_one_lease')::uuid,
+  'sent','http:201',null
+ )),
+ 'sent',
+ 'first device success is terminal and independently recorded'
+);
+
+select is(
+ (select started from public.cueva_mark_notification_push_started(
+  (select id from public.cueva_notification_push_deliveries
+   where delivery_id='b9000000-0000-4000-8000-000000000007'
+     and subscription_id='bc000000-0000-4000-8000-000000000002'),
+  current_setting('test.push_device_two_lease')::uuid,
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid
+ )),
+ true,
+ 'second device records provider start'
+);
+select is(
+ (select delivery_status from public.cueva_finalize_notification_push_delivery(
+  (select id from public.cueva_notification_push_deliveries
+   where delivery_id='b9000000-0000-4000-8000-000000000007'
+     and subscription_id='bc000000-0000-4000-8000-000000000002'),
+  current_setting('test.push_device_two_lease')::uuid,
+  'unknown',null,'push_result_unknown'
+ )),
+ 'unknown',
+ 'uncertain device result is terminal and cannot be automatically retried'
+);
+reset role;
+
+select is(
+ (select string_agg(status,':' order by subscription_id)
+  from public.cueva_notification_push_deliveries
+  where delivery_id='b9000000-0000-4000-8000-000000000007'),
+ 'sent:unknown',
+ 'one accepted device is not overwritten by another device uncertainty'
+);
+select is(
+ (select count(*)::integer from public.cueva_notification_push_attempts
+  where push_delivery_id in (
+    select id from public.cueva_notification_push_deliveries
+    where delivery_id='b9000000-0000-4000-8000-000000000007'
+  )),
+ 2,
+ 'each device attempt is stored independently in the append-only ledger'
+);
+select is(
+ (select count(*)::integer from public.cueva_notification_admin_alerts
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and alert_type='provider_outcome_unknown' and channel='push'),
+ 1,
+ 'uncertain device outcome creates one concise push reconciliation alert'
+);
+
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+ (select claimed from public.cueva_claim_notification_push_delivery(
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid,
+  'bc000000-0000-4000-8000-000000000003',120
+ )),
+ true,
+ 'third device can be reserved without resending the first two'
+);
+select set_config(
+ 'test.push_device_three_lease',
+ (select lease_token::text from public.cueva_notification_push_deliveries
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and subscription_id='bc000000-0000-4000-8000-000000000003'),
+ true
+);
+select is(
+ (select started from public.cueva_mark_notification_push_started(
+  (select id from public.cueva_notification_push_deliveries
+   where delivery_id='b9000000-0000-4000-8000-000000000007'
+     and subscription_id='bc000000-0000-4000-8000-000000000003'),
+  current_setting('test.push_device_three_lease')::uuid,
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid
+ )),
+ true,
+ 'third device reaches the provider-start boundary'
+);
+reset role;
+
+update public.cueva_notifications
+set status='cancelled', cancellation_reason='push_cancelled_test'
+where id='b8000000-0000-4000-8000-000000000003';
+select is(
+ (select status from public.cueva_notification_push_deliveries
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and subscription_id='bc000000-0000-4000-8000-000000000003'),
+ 'unknown',
+ 'cancellation after provider start preserves the uncertain outcome'
+);
+select is(
+ (select count(*)::integer from public.cueva_notification_admin_alerts
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and alert_type='provider_outcome_unknown'),
+ 1,
+ 'multiple uncertain devices still produce only one alert per parent delivery'
+);
+
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+ (select delivery_status from public.cueva_finalize_notification_delivery(
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid,
+  'sent','webpush:sent=1;unknown=2',null
+ )),
+ 'sent',
+ 'aggregate channel can finalize sent when at least one device accepted the push'
+);
+reset role;
 
 select * from finish();
 rollback;
