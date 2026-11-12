@@ -1,5 +1,5 @@
 begin;
-select plan(78);
+select plan(81);
 
 -- Isolated fixtures: two students, two linked identities, one administrator.
 insert into auth.users(id,aud,role,email,created_at,updated_at)
@@ -464,11 +464,29 @@ select set_config(
 select is(
  (select claimed from public.cueva_claim_notification_push_delivery(
   'b9000000-0000-4000-8000-000000000007',
+  gen_random_uuid(),
+  'bc000000-0000-4000-8000-000000000001',120
+ )),
+ false,
+ 'stale parent lease cannot reserve a push target'
+);
+select is(
+ (select claimed from public.cueva_claim_notification_push_delivery(
+  'b9000000-0000-4000-8000-000000000007',
   current_setting('test.push_parent_lease')::uuid,
   'bc000000-0000-4000-8000-000000000001',120
  )),
  true,
  'first device receives its own atomic lease'
+);
+select is(
+ (select claimed from public.cueva_claim_notification_push_delivery(
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid,
+  'bc000000-0000-4000-8000-000000000001',120
+ )),
+ false,
+ 'a live per-device lease prevents concurrent duplicate claims'
 );
 select set_config(
  'test.push_device_one_lease',
@@ -540,6 +558,15 @@ select is(
  )),
  'unknown',
  'uncertain device result is terminal and cannot be automatically retried'
+);
+select is(
+ (select claimed from public.cueva_claim_notification_push_delivery(
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid,
+  'bc000000-0000-4000-8000-000000000002',120
+ )),
+ false,
+ 'unknown device outcome cannot be claimed or resent'
 );
 reset role;
 
