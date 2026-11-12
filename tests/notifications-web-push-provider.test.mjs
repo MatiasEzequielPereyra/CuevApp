@@ -248,6 +248,66 @@ test("un timeout de Web Push queda incierto y no se convierte en fallo reintenta
   assert.deepEqual(outcomes, ["unknown"]);
 });
 
+test("clasifica HTTP 5xx como incierto y HTTP 4xx como rechazo conocido", async () => {
+  const run = async (httpStatus) => {
+    const vapid = vapidKeys();
+    const rows = [{ id: `sub-${httpStatus}`, endpoint: `https://push.example.test/${httpStatus}`, ...subscriptionKeys(), expires_at: null }];
+    let recordedOutcome = null;
+    let recordedError = null;
+    const db = {
+      from() {
+        return { select() { return this; }, eq() { return this; }, is() { return this; }, then(resolve) { resolve({ data: rows, error: null }); } };
+      },
+      async rpc(name, args) {
+        if (name === "cueva_claim_notification_push_delivery") return { data: [{
+          claimed: true, push_delivery_id: `push-delivery-${httpStatus}`, push_lease_token: `push-lease-${httpStatus}`,
+          attempt_number: 1, delivery_status: "processing",
+        }], error: null };
+        if (name === "cueva_mark_notification_push_started") return { data: [{ started: true }], error: null };
+        if (name === "cueva_finalize_notification_push_delivery") {
+          recordedOutcome = args.p_outcome;
+          recordedError = args.p_error_code;
+          return { data: [{
+            finalized: true,
+            delivery_status: args.p_outcome === "unknown" ? "unknown" : "pending",
+            attempt_number: 1,
+          }], error: null };
+        }
+        throw new Error(`Unexpected RPC: ${name}`);
+      },
+    };
+    const provider = createWebPushProvider(db, {
+      ...vapid, subject: "mailto:admin@example.test",
+      fetchImpl: async () => new Response(null, { status: httpStatus }),
+    });
+    const result = await provider({
+      notificationId: `notification-${httpStatus}`,
+      deliveryId: `parent-${httpStatus}`,
+      deliveryLeaseToken: `parent-lease-${httpStatus}`,
+      studentId: `student-${httpStatus}`,
+      studentName: "Alumno",
+      destinationEmail: null,
+      studentUserId: `user-${httpStatus}`,
+      periodMonth: "2026-11-01",
+      dueOn: "2026-11-20",
+      balanceCents: "10000",
+      reminderDays: 1,
+    });
+    return { result, recordedOutcome, recordedError };
+  };
+
+  assert.deepEqual(await run(503), {
+    result: { outcome: "unknown", errorCode: "push_result_unknown" },
+    recordedOutcome: "unknown",
+    recordedError: "push_result_unknown",
+  });
+  assert.deepEqual(await run(400), {
+    result: { outcome: "failed", errorCode: "push_unavailable" },
+    recordedOutcome: "failed",
+    recordedError: "push_http_rejected",
+  });
+});
+
 test("no reintenta un endpoint que ya agotó sus cinco intentos", async () => {
   const vapid = vapidKeys();
   const rows = [{ id: "sub-exhausted", endpoint: "https://push.example.test/exhausted", ...subscriptionKeys(), expires_at: null }];
