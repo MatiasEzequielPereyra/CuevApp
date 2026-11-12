@@ -1,5 +1,5 @@
 begin;
-select plan(81);
+select plan(88);
 
 -- Isolated fixtures: two students, two linked identities, one administrator.
 insert into auth.users(id,aud,role,email,created_at,updated_at)
@@ -656,6 +656,120 @@ select is(
  'aggregate channel can finalize sent when at least one device accepted the push'
 );
 reset role;
+
+
+-- A single endpoint can exhaust its own retry budget even when the parent
+-- channel has only just been claimed. The parent must become terminal too.
+insert into public.cueva_notifications(id,period_id,reminder_days,due_on,scheduled_at)
+values (
+ 'b8000000-0000-4000-8000-000000000004',
+ 'b6000000-0000-4000-8000-000000000003',
+ 1,date '2026-12-20',clock_timestamp()
+);
+insert into public.cueva_notification_deliveries(
+ id,notification_id,channel,status,attempt_count,next_attempt_at
+) values (
+ 'b9000000-0000-4000-8000-000000000008',
+ 'b8000000-0000-4000-8000-000000000004',
+ 'push','pending',0,clock_timestamp()
+);
+insert into public.cueva_push_subscriptions(id,student_id,endpoint,p256dh,auth_secret)
+values (
+ 'bc000000-0000-4000-8000-000000000004',
+ 'b3000000-0000-4000-8000-000000000002',
+ 'https://push.example.test/device-exhausted',repeat('G',87),repeat('H',22)
+);
+insert into public.cueva_notification_push_deliveries(
+ id,delivery_id,notification_id,subscription_id,status,attempt_count,next_attempt_at
+) values (
+ 'bd000000-0000-4000-8000-000000000001',
+ 'b9000000-0000-4000-8000-000000000008',
+ 'b8000000-0000-4000-8000-000000000004',
+ 'bc000000-0000-4000-8000-000000000004',
+ 'pending',4,clock_timestamp()
+);
+insert into public.cueva_notification_push_attempts(
+ push_delivery_id,attempt_number,attempted_at,outcome,error_code
+)
+select
+ 'bd000000-0000-4000-8000-000000000001',
+ attempt_number,
+ clock_timestamp() - make_interval(mins => 60 - attempt_number),
+ 'failed',
+ 'push_http_429'
+from generate_series(1,4) as attempt_number;
+
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+ (select count(*)::integer from public.cueva_claim_notification_deliveries(1,300)
+  where delivery_id='b9000000-0000-4000-8000-000000000008'),
+ 1,
+ 'worker claims the aggregate whose device is on its fifth attempt'
+);
+select set_config(
+ 'test.push_exhausted_parent_lease',
+ (select lease_token::text from public.cueva_notification_deliveries
+  where id='b9000000-0000-4000-8000-000000000008'),
+ true
+);
+select is(
+ (select claimed from public.cueva_claim_notification_push_delivery(
+  'b9000000-0000-4000-8000-000000000008',
+  current_setting('test.push_exhausted_parent_lease')::uuid,
+  'bc000000-0000-4000-8000-000000000004',120
+ )),
+ true,
+ 'device can be claimed for its fifth and final attempt'
+);
+select set_config(
+ 'test.push_exhausted_device_lease',
+ (select lease_token::text from public.cueva_notification_push_deliveries
+  where id='bd000000-0000-4000-8000-000000000001'),
+ true
+);
+select is(
+ (select started from public.cueva_mark_notification_push_started(
+  'bd000000-0000-4000-8000-000000000001',
+  current_setting('test.push_exhausted_device_lease')::uuid,
+  'b9000000-0000-4000-8000-000000000008',
+  current_setting('test.push_exhausted_parent_lease')::uuid
+ )),
+ true,
+ 'fifth device attempt records provider start'
+);
+select is(
+ (select delivery_status from public.cueva_finalize_notification_push_delivery(
+  'bd000000-0000-4000-8000-000000000001',
+  current_setting('test.push_exhausted_device_lease')::uuid,
+  'failed','http:429','push_http_429'
+ )),
+ 'failed',
+ 'fifth known device failure becomes terminal'
+);
+select is(
+ (select count(*)::integer from public.cueva_notification_admin_alerts
+  where delivery_id='b9000000-0000-4000-8000-000000000008'
+    and alert_type='retries_exhausted' and channel='push' and attempt_count=5),
+ 1,
+ 'fifth device failure creates one retries-exhausted admin alert'
+);
+select is(
+ (select delivery_status from public.cueva_finalize_notification_delivery(
+  'b9000000-0000-4000-8000-000000000008',
+  current_setting('test.push_exhausted_parent_lease')::uuid,
+  'failed',null,'push_retries_exhausted'
+ )),
+ 'failed',
+ 'aggregate push delivery becomes terminal when all device retries are exhausted'
+);
+reset role;
+select is(
+ (select status from public.cueva_notification_deliveries
+  where id='b9000000-0000-4000-8000-000000000008'),
+ 'failed',
+ 'terminal device exhaustion does not consume redundant parent retries'
+);
 
 select * from finish();
 rollback;
