@@ -25,7 +25,8 @@ select ok(
 );
 
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
-set local role service_role;
+-- Keep the test owner for table assertions; RPC authorization is checked via
+-- the JWT role claim and the explicit EXECUTE privilege assertions above.
 
 select is(
   (select count(*)::integer
