@@ -36,7 +36,7 @@ Un resultado incierto significa que CUEVA no pudo confirmar si el proveedor exte
 
 ## Alertas por reintentos agotados
 
-Las alertas `retries_exhausted` representan cinco intentos con fallos conocidos. No son resultados inciertos del proveedor. Revisar el código de error técnico mediante el procedimiento de soporte restringido. Esta implementación tampoco ofrece reenvío manual desde el panel.
+Las alertas `retries_exhausted` representan cinco intentos con fallos conocidos, tanto de una entrega de canal como de un endpoint Push individual. No son resultados inciertos del proveedor. Revisar el código de error técnico mediante el procedimiento de soporte restringido. Esta implementación tampoco ofrece reenvío manual desde el panel.
 
 ## Límites de la versión actual
 
