@@ -530,4 +530,107 @@ begin
 end;
 $$;
 
+-- A parent lease can be released while an individual push request is still
+-- in flight (for example, worker shutdown or notification cancellation).
+-- Preserve uncertainty before the parent delivery stops being processing.
+create function cueva_private.reconcile_push_targets_after_parent_release()
+returns trigger
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_child public.cueva_notification_push_deliveries%rowtype;
+  v_now timestamptz := clock_timestamp();
+begin
+  if old.status <> 'processing' or new.status = 'processing' then return new; end if;
+  for v_child in
+    select child.* from public.cueva_notification_push_deliveries child
+    where child.delivery_id = new.id and child.status = 'processing'
+    for update
+  loop
+    if v_child.provider_started_at is not null then
+      insert into public.cueva_notification_push_attempts (
+        push_delivery_id, attempt_number, attempted_at, outcome, error_code
+      ) values (
+        v_child.id, v_child.attempt_count, coalesce(v_child.last_attempt_at, v_now),
+        'unknown', 'push_parent_lease_released_unknown'
+      ) on conflict (push_delivery_id, attempt_number) do nothing;
+      update public.cueva_notification_push_deliveries
+      set status = 'unknown', last_error_code = 'push_parent_lease_released_unknown',
+          lease_token = null, lease_expires_at = null, provider_started_at = null, updated_at = v_now
+      where id = v_child.id;
+    elsif new.status = 'pending' then
+      insert into public.cueva_notification_push_attempts (
+        push_delivery_id, attempt_number, attempted_at, outcome, error_code
+      ) values (
+        v_child.id, v_child.attempt_count, coalesce(v_child.last_attempt_at, v_now),
+        'failed', 'push_parent_lease_released_before_provider'
+      ) on conflict (push_delivery_id, attempt_number) do nothing;
+      update public.cueva_notification_push_deliveries
+      set status = case when attempt_count >= 5 then 'failed' else 'pending' end,
+          next_attempt_at = new.next_attempt_at,
+          last_error_code = 'push_parent_lease_released_before_provider',
+          lease_token = null, lease_expires_at = null, provider_started_at = null, updated_at = v_now
+      where id = v_child.id;
+    else
+      update public.cueva_notification_push_deliveries
+      set status = 'cancelled', last_error_code = 'push_parent_delivery_terminal',
+          lease_token = null, lease_expires_at = null, provider_started_at = null, updated_at = v_now
+      where id = v_child.id;
+    end if;
+  end loop;
+  return new;
+end;
+$$;
+revoke all on function cueva_private.reconcile_push_targets_after_parent_release() from public, anon, authenticated, service_role;
+create trigger cueva_notification_push_parent_release_reconcile
+  after update of status on public.cueva_notification_deliveries
+  for each row when (old.status = 'processing' and new.status <> 'processing')
+  execute function cueva_private.reconcile_push_targets_after_parent_release();
+
+-- Cancellation/completion can race an active request before its parent lease
+-- is recovered. Mark started targets uncertain immediately; never resend them.
+create function cueva_private.reconcile_push_targets_after_notification_change()
+returns trigger
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_child public.cueva_notification_push_deliveries%rowtype;
+  v_now timestamptz := clock_timestamp();
+begin
+  if new.status = 'pending' and new.due_on = old.due_on then return new; end if;
+  for v_child in
+    select child.*
+    from public.cueva_notification_push_deliveries child
+    where child.notification_id = new.id
+      and child.status in ('pending','processing')
+    for update
+  loop
+    if v_child.status = 'processing' and v_child.provider_started_at is not null then
+      insert into public.cueva_notification_push_attempts (
+        push_delivery_id, attempt_number, attempted_at, outcome, error_code
+      ) values (
+        v_child.id, v_child.attempt_count, coalesce(v_child.last_attempt_at, v_now),
+        'unknown', 'push_notification_changed_unknown'
+      ) on conflict (push_delivery_id, attempt_number) do nothing;
+      update public.cueva_notification_push_deliveries
+      set status = 'unknown', last_error_code = 'push_notification_changed_unknown',
+          lease_token = null, lease_expires_at = null, provider_started_at = null, updated_at = v_now
+      where id = v_child.id;
+    else
+      update public.cueva_notification_push_deliveries
+      set status = 'cancelled', last_error_code = 'push_notification_no_longer_pending',
+          lease_token = null, lease_expires_at = null, provider_started_at = null, updated_at = v_now
+      where id = v_child.id;
+    end if;
+  end loop;
+  return new;
+end;
+$$;
+revoke all on function cueva_private.reconcile_push_targets_after_notification_change() from public, anon, authenticated, service_role;
+create trigger cueva_notification_push_notification_change_reconcile
+  after update of status, due_on on public.cueva_notifications
+  for each row
+  when (old.status is distinct from new.status or old.due_on is distinct from new.due_on)
+  execute function cueva_private.reconcile_push_targets_after_notification_change();
+
 commit;
