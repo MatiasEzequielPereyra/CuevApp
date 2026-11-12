@@ -47,7 +47,9 @@ const handlers = createPushRouteHandlers({
   },
   async updatePreference(student, enabled) {
     const context = student as StudentContext;
-    const { data, error } = await context.db.from("cueva_notification_preferences")
+    // Preference writes must use the authenticated client so the student's
+    // own-row RLS policy remains the authorization boundary.
+    const { data, error } = await context.auth.from("cueva_notification_preferences")
       .update({ push_enabled: enabled })
       .eq("student_id", context.studentId)
       .select("push_enabled")
@@ -69,20 +71,11 @@ const handlers = createPushRouteHandlers({
   },
   async removeSubscription(student, endpoint) {
     const context = student as StudentContext;
-    const existing = await context.db.from("cueva_push_subscriptions")
-      .select("id")
-      .eq("endpoint", endpoint)
-      .eq("student_id", context.studentId)
-      .maybeSingle();
-    if (existing.error) return "error";
-    if (!existing.data) return "removed";
-
-    const { error } = await context.db.from("cueva_push_subscriptions")
-      .update({ revoked_at: new Date().toISOString() })
-      .eq("id", existing.data.id)
-      .eq("student_id", context.studentId)
-      .is("revoked_at", null);
-    return error ? "error" : "removed";
+    const { data, error } = await context.db.rpc("cueva_revoke_push_subscription", {
+      p_student_id: context.studentId,
+      p_endpoint: endpoint,
+    });
+    return error || (data !== "removed" && data !== "not_found") ? "error" : "removed";
   },
   isAvailable() {
     const configuration = {
