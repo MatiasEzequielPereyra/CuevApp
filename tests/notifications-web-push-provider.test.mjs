@@ -130,6 +130,81 @@ test("entrega por dispositivo: conserva éxito y expiración de forma independie
     ["expired", "sent"],
   );
 });
+ 
+test("un reintento selectivo no vuelve a enviar al dispositivo que ya aceptó", async () => {
+  const vapid = vapidKeys();
+  const rows = [
+    { id: "sub-sent", endpoint: "https://push.example.test/sent", ...subscriptionKeys(), expires_at: null },
+    { id: "sub-retry", endpoint: "https://push.example.test/retry", ...subscriptionKeys(), expires_at: null },
+  ];
+  const state = new Map(rows.map(row => [row.id, { status: "pending", attempt: 0 }]));
+  const fetches = [];
+  const db = {
+    from() {
+      return { select() { return this; }, eq() { return this; }, is() { return this; }, then(resolve) { resolve({ data: rows, error: null }); } };
+    },
+    async rpc(name, args) {
+      if (name === "cueva_claim_notification_push_delivery") {
+        const target = state.get(args.p_subscription_id);
+        if (target.status !== "pending") return { data: [{
+          claimed: false, push_delivery_id: `delivery-${args.p_subscription_id}`,
+          push_lease_token: null, attempt_number: target.attempt, delivery_status: target.status,
+        }], error: null };
+        target.attempt += 1;
+        target.status = "processing";
+        return { data: [{
+          claimed: true, push_delivery_id: `delivery-${args.p_subscription_id}`,
+          push_lease_token: `lease-${args.p_subscription_id}-${target.attempt}`,
+          attempt_number: target.attempt, delivery_status: "processing",
+        }], error: null };
+      }
+      if (name === "cueva_mark_notification_push_started") return { data: [{ started: true }], error: null };
+      if (name === "cueva_finalize_notification_push_delivery") {
+        const id = args.p_push_delivery_id === "delivery-sub-sent" ? "sub-sent" : "sub-retry";
+        const target = state.get(id);
+        target.status = args.p_outcome === "sent" ? "sent" : "pending";
+        return { data: [{
+          finalized: true, delivery_status: target.status, attempt_number: target.attempt,
+        }], error: null };
+      }
+      throw new Error(`Unexpected RPC: ${name}`);
+    },
+  };
+  const provider = createWebPushProvider(db, {
+    ...vapid, subject: "mailto:admin@example.test",
+    fetchImpl: async url => {
+      fetches.push(url);
+      if (url.endsWith("/retry") && fetches.filter(item => item.endsWith("/retry")).length === 1) {
+        return new Response(null, { status: 429 });
+      }
+      return new Response(null, { status: 201 });
+    },
+  });
+  const context = {
+    notificationId: "notification-retry",
+    deliveryId: "parent-retry",
+    deliveryLeaseToken: "parent-lease-first",
+    studentId: "student-retry",
+    studentName: "Alumno",
+    destinationEmail: null,
+    studentUserId: "user-retry",
+    periodMonth: "2026-11-01",
+    dueOn: "2026-11-20",
+    balanceCents: "10000",
+    reminderDays: 1,
+  };
+
+  assert.deepEqual(await provider(context), { outcome: "failed", errorCode: "push_unavailable" });
+  assert.equal(state.get("sub-sent").status, "sent");
+  assert.equal(state.get("sub-retry").status, "pending");
+
+  assert.deepEqual(await provider({ ...context, deliveryLeaseToken: "parent-lease-second" }), {
+    outcome: "sent",
+    providerReference: "webpush:sent=2;unknown=0;expired=0",
+  });
+  assert.equal(fetches.filter(url => url.endsWith("/sent")).length, 1);
+  assert.equal(fetches.filter(url => url.endsWith("/retry")).length, 2);
+});
 
 test("un timeout de Web Push queda incierto y no se convierte en fallo reintentable", async () => {
   const vapid = vapidKeys();
