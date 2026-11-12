@@ -426,7 +426,7 @@ begin
   if not found then return new; end if;
 
   v_attempt := greatest(1, least(5, v_parent.attempt_count));
-  insert into public.cueva_notification_admin_alerts (
+  insert into public.cueva_notification_admin_alerts as current_alert (
     delivery_id, notification_id, student_id, student_name, period_month,
     reminder_days, channel, attempt_count, failed_at, alert_type
   ) values (
@@ -436,7 +436,7 @@ begin
     v_alert_type
   ) on conflict (delivery_id) do update
     set alert_type = case
-      when public.cueva_notification_admin_alerts.alert_type = 'provider_outcome_unknown'
+      when current_alert.alert_type = 'provider_outcome_unknown'
         or excluded.alert_type = 'provider_outcome_unknown'
         then 'provider_outcome_unknown'
       else 'retries_exhausted'
