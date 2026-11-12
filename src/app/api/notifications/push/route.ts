@@ -1,12 +1,9 @@
 import { serviceClient, productConfig, userClient } from "@/lib/product-auth/server";
-import { parsePushEndpoint, parsePushSubscription } from "@/lib/notifications/push-subscription";
 import { isWebPushConfigurationAvailable } from "@/lib/notifications/web-push-provider";
+import { createPushRouteHandlers } from "@/lib/notifications/push-route-handlers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const headers = { "Cache-Control": "private, no-store" };
-const reply = (data: object, status = 200) => Response.json(data, { status, headers });
 
 type StudentContext = {
   auth: Awaited<ReturnType<typeof userClient>>;
@@ -34,169 +31,73 @@ async function requireStudent(): Promise<StudentContext | null> {
   return { auth, db: serviceClient(), studentId: ownPreference.data.student_id as string };
 }
 
-async function readJson(request: Request, maxBytes: number): Promise<unknown | null> {
-  if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) return null;
-  const declared = request.headers.get("content-length");
-  if (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > maxBytes)) return null;
-  const reader = request.body?.getReader();
-  if (!reader) return null;
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      size += value.byteLength;
-      if (size > maxBytes) {
-        await reader.cancel().catch(() => {});
-        return null;
-      }
-      chunks.push(value);
-    }
-  } catch {
-    return null;
-  } finally {
-    reader.releaseLock();
-  }
-  const bytes = new Uint8Array(size);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  try {
-    return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
-  } catch {
-    return null;
-  }
-}
-
-function sameOrigin(request: Request): boolean {
-  const cfg = productConfig();
-  return !!cfg && request.headers.get("origin") === cfg.origin;
-}
-
-export async function GET() {
-  try {
-    const student = await requireStudent();
-    if (!student) return reply({ message: "Acceso restringido." }, 403);
-    const { data, error } = await student.auth.from("cueva_notification_preferences")
+const handlers = createPushRouteHandlers({
+  sameOrigin(request) {
+    const cfg = productConfig();
+    return !!cfg && request.headers.get("origin") === cfg.origin;
+  },
+  requireStudent,
+  async readPreference(student) {
+    const context = student as StudentContext;
+    const { data, error } = await context.auth.from("cueva_notification_preferences")
       .select("push_enabled")
-      .eq("student_id", student.studentId)
+      .eq("student_id", context.studentId)
       .maybeSingle();
-    if (error || !data) return reply({ message: "No pudimos cargar las preferencias." }, 503);
+    return error || !data ? null : { pushEnabled: data.push_enabled !== false };
+  },
+  async updatePreference(student, enabled) {
+    const context = student as StudentContext;
+    const { data, error } = await context.db.from("cueva_notification_preferences")
+      .update({ push_enabled: enabled })
+      .eq("student_id", context.studentId)
+      .select("push_enabled")
+      .maybeSingle();
+    return !error && !!data && data.push_enabled === enabled;
+  },
+  async registerSubscription(student, subscription) {
+    const context = student as StudentContext;
+    const { data, error } = await context.db.rpc("cueva_register_push_subscription", {
+      p_student_id: context.studentId,
+      p_endpoint: subscription.endpoint,
+      p_p256dh: subscription.p256dh,
+      p_auth_secret: subscription.authSecret,
+      p_expires_at: subscription.expiresAt,
+    });
+    if (error) return "error";
+    const result = Array.isArray(data) ? data[0] : null;
+    return result?.outcome ?? "error";
+  },
+  async removeSubscription(student, endpoint) {
+    const context = student as StudentContext;
+    const existing = await context.db.from("cueva_push_subscriptions")
+      .select("id")
+      .eq("endpoint", endpoint)
+      .eq("student_id", context.studentId)
+      .maybeSingle();
+    if (existing.error) return "error";
+    if (!existing.data) return "removed";
 
+    const { error } = await context.db.from("cueva_push_subscriptions")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("id", existing.data.id)
+      .eq("student_id", context.studentId)
+      .is("revoked_at", null);
+    return error ? "error" : "removed";
+  },
+  isAvailable() {
     const configuration = {
       publicKey: process.env.CUEVA_VAPID_PUBLIC_KEY ?? "",
       privateKey: process.env.CUEVA_VAPID_PRIVATE_KEY ?? "",
       subject: process.env.CUEVA_VAPID_SUBJECT ?? "",
     };
-    const available = isWebPushConfigurationAvailable(configuration);
-    return reply({
-      pushEnabled: data.push_enabled !== false,
-      available,
-      publicKey: available ? configuration.publicKey : null,
-    });
-  } catch {
-    return reply({ message: "No pudimos cargar las preferencias." }, 503);
-  }
-}
+    return isWebPushConfigurationAvailable(configuration);
+  },
+  publicKey() {
+    return process.env.CUEVA_VAPID_PUBLIC_KEY ?? "";
+  },
+});
 
-export async function PUT(request: Request) {
-  if (!sameOrigin(request)) return reply({ message: "Solicitud no permitida." }, 403);
-  const input = await readJson(request, 256);
-  if (!input || typeof input !== "object" || Array.isArray(input)
-    || typeof (input as Record<string, unknown>).enabled !== "boolean") {
-    return reply({ message: "Preferencia inválida." }, 400);
-  }
-  try {
-    const student = await requireStudent();
-    if (!student) return reply({ message: "Acceso restringido." }, 403);
-    const enabled = (input as { enabled: boolean }).enabled;
-    const { data, error } = await student.db.from("cueva_notification_preferences")
-      .update({ push_enabled: enabled })
-      .eq("student_id", student.studentId)
-      .select("push_enabled")
-      .maybeSingle();
-    if (error || !data) return reply({ message: "No pudimos actualizar la preferencia." }, 503);
-    return reply({ pushEnabled: data.push_enabled === true });
-  } catch {
-    return reply({ message: "No pudimos actualizar la preferencia." }, 503);
-  }
-}
-
-export async function POST(request: Request) {
-  if (!sameOrigin(request)) return reply({ message: "Solicitud no permitida." }, 403);
-  const input = await readJson(request, 8192);
-  const parsed = parsePushSubscription(input);
-  if (!parsed) return reply({ message: "La suscripción del dispositivo no es válida." }, 400);
-
-  try {
-    const student = await requireStudent();
-    if (!student) return reply({ message: "Acceso restringido." }, 403);
-
-    const registration = await student.db.rpc("cueva_register_push_subscription", {
-      p_student_id: student.studentId,
-      p_endpoint: parsed.endpoint,
-      p_p256dh: parsed.p256dh,
-      p_auth_secret: parsed.authSecret,
-      p_expires_at: parsed.expiresAt,
-    });
-    if (registration.error) {
-      return reply({ message: "No pudimos registrar el dispositivo." }, 503);
-    }
-
-    const result = Array.isArray(registration.data) ? registration.data[0] : null;
-    if (!result) return reply({ message: "No pudimos registrar el dispositivo." }, 503);
-    if (result.outcome === "limit_reached") {
-      return reply({ message: "Alcanzaste el máximo de dispositivos registrados." }, 409);
-    }
-    if (result.outcome === "endpoint_in_use") {
-      return reply({ message: "Este dispositivo ya está vinculado a otra cuenta." }, 409);
-    }
-    if (result.outcome === "student_not_found") {
-      return reply({ message: "No pudimos registrar el dispositivo." }, 503);
-    }
-    if (result.outcome !== "registered" && result.outcome !== "updated") {
-      return reply({ message: "No pudimos registrar el dispositivo." }, 503);
-    }
-
-    const preference = await student.db.from("cueva_notification_preferences")
-      .update({ push_enabled: true })
-      .eq("student_id", student.studentId);
-    if (preference.error) return reply({ message: "El dispositivo quedó registrado, pero no pudimos activar la preferencia." }, 503);
-    return reply({ registered: true });
-  } catch {
-    return reply({ message: "No pudimos registrar el dispositivo." }, 503);
-  }
-}
-
-export async function DELETE(request: Request) {
-  if (!sameOrigin(request)) return reply({ message: "Solicitud no permitida." }, 403);
-  const input = await readJson(request, 4096);
-  const endpoint = input && typeof input === "object" && !Array.isArray(input)
-    ? parsePushEndpoint((input as Record<string, unknown>).endpoint)
-    : null;
-  if (!endpoint) return reply({ message: "Dispositivo inválido." }, 400);
-
-  try {
-    const student = await requireStudent();
-    if (!student) return reply({ message: "Acceso restringido." }, 403);
-    const existing = await student.db.from("cueva_push_subscriptions")
-      .select("id")
-      .eq("endpoint", endpoint)
-      .eq("student_id", student.studentId)
-      .maybeSingle();
-    if (existing.error) return reply({ message: "No pudimos desvincular el dispositivo." }, 503);
-    if (!existing.data) return reply({ removed: true });
-
-    const { error } = await student.db.from("cueva_push_subscriptions")
-      .update({ revoked_at: new Date().toISOString() })
-      .eq("id", existing.data.id)
-      .eq("student_id", student.studentId)
-      .is("revoked_at", null);
-    return error ? reply({ message: "No pudimos desvincular el dispositivo." }, 503) : reply({ removed: true });
-  } catch {
-    return reply({ message: "No pudimos desvincular el dispositivo." }, 503);
-  }
-}
+export const GET = handlers.GET;
+export const PUT = handlers.PUT;
+export const POST = handlers.POST;
+export const DELETE = handlers.DELETE;
