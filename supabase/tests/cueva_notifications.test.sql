@@ -488,6 +488,7 @@ select is(
  false,
  'a live per-device lease prevents concurrent duplicate claims'
 );
+reset role;
 select set_config(
  'test.push_device_one_lease',
  (select lease_token::text from public.cueva_notification_push_deliveries
@@ -495,6 +496,7 @@ select set_config(
     and subscription_id='bc000000-0000-4000-8000-000000000001'),
  true
 );
+set local role service_role;
 select is(
  (select claimed from public.cueva_claim_notification_push_delivery(
   'b9000000-0000-4000-8000-000000000007',
@@ -504,6 +506,7 @@ select is(
  true,
  'second device receives an independent lease'
 );
+reset role;
 select set_config(
  'test.push_device_two_lease',
  (select lease_token::text from public.cueva_notification_push_deliveries
@@ -511,12 +514,17 @@ select set_config(
     and subscription_id='bc000000-0000-4000-8000-000000000002'),
  true
 );
+set local role service_role;
 
+reset role;
+select set_config('test.push_device_one_id',
+ (select id::text from public.cueva_notification_push_deliveries
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and subscription_id='bc000000-0000-4000-8000-000000000001'),true);
+set local role service_role;
 select is(
  (select started from public.cueva_mark_notification_push_started(
-  (select id from public.cueva_notification_push_deliveries
-   where delivery_id='b9000000-0000-4000-8000-000000000007'
-     and subscription_id='bc000000-0000-4000-8000-000000000001'),
+  current_setting('test.push_device_one_id')::uuid,
   current_setting('test.push_device_one_lease')::uuid,
   'b9000000-0000-4000-8000-000000000007',
   current_setting('test.push_parent_lease')::uuid
@@ -526,9 +534,7 @@ select is(
 );
 select is(
  (select delivery_status from public.cueva_finalize_notification_push_delivery(
-  (select id from public.cueva_notification_push_deliveries
-   where delivery_id='b9000000-0000-4000-8000-000000000007'
-     and subscription_id='bc000000-0000-4000-8000-000000000001'),
+  current_setting('test.push_device_one_id')::uuid,
   current_setting('test.push_device_one_lease')::uuid,
   'sent','http:201',null
  )),
@@ -536,11 +542,15 @@ select is(
  'first device success is terminal and independently recorded'
 );
 
+reset role;
+select set_config('test.push_device_two_id',
+ (select id::text from public.cueva_notification_push_deliveries
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and subscription_id='bc000000-0000-4000-8000-000000000002'),true);
+set local role service_role;
 select is(
  (select started from public.cueva_mark_notification_push_started(
-  (select id from public.cueva_notification_push_deliveries
-   where delivery_id='b9000000-0000-4000-8000-000000000007'
-     and subscription_id='bc000000-0000-4000-8000-000000000002'),
+  current_setting('test.push_device_two_id')::uuid,
   current_setting('test.push_device_two_lease')::uuid,
   'b9000000-0000-4000-8000-000000000007',
   current_setting('test.push_parent_lease')::uuid
@@ -550,9 +560,7 @@ select is(
 );
 select is(
  (select delivery_status from public.cueva_finalize_notification_push_delivery(
-  (select id from public.cueva_notification_push_deliveries
-   where delivery_id='b9000000-0000-4000-8000-000000000007'
-     and subscription_id='bc000000-0000-4000-8000-000000000002'),
+  current_setting('test.push_device_two_id')::uuid,
   current_setting('test.push_device_two_lease')::uuid,
   'unknown',null,'push_result_unknown'
  )),
@@ -605,6 +613,7 @@ select is(
  true,
  'third device can be reserved without resending the first two'
 );
+reset role;
 select set_config(
  'test.push_device_three_lease',
  (select lease_token::text from public.cueva_notification_push_deliveries
@@ -612,11 +621,14 @@ select set_config(
     and subscription_id='bc000000-0000-4000-8000-000000000003'),
  true
 );
+select set_config('test.push_device_three_id',
+ (select id::text from public.cueva_notification_push_deliveries
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and subscription_id='bc000000-0000-4000-8000-000000000003'),true);
+set local role service_role;
 select is(
  (select started from public.cueva_mark_notification_push_started(
-  (select id from public.cueva_notification_push_deliveries
-   where delivery_id='b9000000-0000-4000-8000-000000000007'
-     and subscription_id='bc000000-0000-4000-8000-000000000003'),
+  current_setting('test.push_device_three_id')::uuid,
   current_setting('test.push_device_three_lease')::uuid,
   'b9000000-0000-4000-8000-000000000007',
   current_setting('test.push_parent_lease')::uuid
