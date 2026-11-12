@@ -262,7 +262,6 @@ begin
     or exists (
       select 1 from public.cueva_notification_preferences preference
       where preference.student_id = v_period.student_id and preference.push_enabled = false
-    ) then
     )
     or not exists (
       select 1 from public.cueva_push_subscriptions subscription
