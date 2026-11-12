@@ -734,12 +734,14 @@ select is(
  true,
  'device can be claimed for its fifth and final attempt'
 );
+reset role;
 select set_config(
  'test.push_exhausted_device_lease',
  (select lease_token::text from public.cueva_notification_push_deliveries
   where id='bd000000-0000-4000-8000-000000000001'),
  true
 );
+set local role service_role;
 select is(
  (select started from public.cueva_mark_notification_push_started(
   'bd000000-0000-4000-8000-000000000001',
