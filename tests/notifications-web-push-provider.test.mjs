@@ -23,13 +23,13 @@ function decryptWebPushPayload(encryptedValue, subscription) {
   const tag = encrypted.subarray(-16);
   const sharedSecret = subscription.ecdh.computeSecret(serverPublicKey);
   const keyInfo = Buffer.concat([
-    Buffer.from("WebPush: info\\0"),
+    Buffer.from("WebPush: info\0"),
     Buffer.from(subscription.p256dh, "base64url"),
     serverPublicKey,
   ]);
   const ikm = Buffer.from(hkdfSync("sha256", sharedSecret, Buffer.from(subscription.auth_secret, "base64url"), keyInfo, 32));
-  const cek = Buffer.from(hkdfSync("sha256", ikm, salt, Buffer.from("Content-Encoding: aes128gcm\\0"), 16));
-  const nonce = Buffer.from(hkdfSync("sha256", ikm, salt, Buffer.from("Content-Encoding: nonce\\0"), 12));
+  const cek = Buffer.from(hkdfSync("sha256", ikm, salt, Buffer.from("Content-Encoding: aes128gcm\0"), 16));
+  const nonce = Buffer.from(hkdfSync("sha256", ikm, salt, Buffer.from("Content-Encoding: nonce\0"), 12));
   const decipher = createDecipheriv("aes-128-gcm", cek, nonce);
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(ciphertext), decipher.final()]).subarray(0, -1).toString("utf8");
