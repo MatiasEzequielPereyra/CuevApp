@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { Exercise } from "@/lib/routines/types";
 import { VideoLink } from "@/components/routines/plan-view";
 export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = false }: { onSelectMany?: (exercises: Exercise[]) => void; capacity?: number; videosOnly?: boolean }) {
@@ -17,6 +17,8 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
   const nameInput = useRef<HTMLInputElement>(null);
   const editorTrigger = useRef<HTMLButtonElement>(null);
   const createButton = useRef<HTMLButtonElement>(null);
+  const instanceId = useId();
+  const editorTitleId = `${instanceId}-editor-title`;
   useEffect(() => { selectCurrent.current = onSelectMany; }, [onSelectMany]);
   const selecting = !!onSelectMany;
   const managing = !selecting && !videosOnly;
@@ -130,13 +132,16 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
       : searched ? "No encontramos ejercicios para esa búsqueda." : "Todavía no hay ejercicios en el catálogo."}</p>}
     {rows.length > 0 && <ul className="exercise-results">
       {rows.map(exercise => {
+        const statusId = `${instanceId}-${exercise.id}-status`;
+        const descriptionId = `${instanceId}-${exercise.id}-description`;
+        const details = [exercise.active ? "" : statusId, exercise.description ? descriptionId : ""].filter(Boolean).join(" ");
         const info = <>
           <strong>{exercise.name}</strong>
-          {!exercise.active && <small>Inactivo</small>}
-          {exercise.description && <span className="exercise-description">{exercise.description}</span>}
+          {!exercise.active && <small id={statusId}>Inactivo</small>}
+          {exercise.description && <span id={descriptionId} className="exercise-description">{exercise.description}</span>}
         </>;
         return <li key={exercise.id}>
-          {managing ? <button type="button" className="exercise-open" aria-label={exercise.name} aria-haspopup="dialog" disabled={pending}
+          {managing ? <button type="button" className="exercise-open" aria-label={exercise.name} aria-describedby={details || undefined} aria-haspopup="dialog" disabled={pending}
             onClick={event => openEditor(exercise, event.currentTarget)}>{info}</button> : <div className="exercise-info">{info}</div>}
           <div className="exercise-row-actions">
             {exercise.video_url || exercise.video_path ? <VideoLink id={exercise.id} /> : <small>Sin video disponible.</small>}
@@ -155,10 +160,10 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
       <p>{selected.length} seleccionados. Se agregan en el orden de selección.</p>
       <button type="button" disabled={pending || !selected.length || selected.length > capacity} onClick={() => onSelectMany?.(selected)}>Agregar seleccionados al bloque</button>
     </>}
-    {managing && <dialog ref={editorDialog} className="exercise-dialog" aria-labelledby="exercise-editor-title"
+    {managing && <dialog ref={editorDialog} className="exercise-dialog" aria-labelledby={editorTitleId}
       onCancel={event => { event.preventDefault(); closeEditor(); }}>
       <header className="exercise-dialog-heading">
-        <h2 id="exercise-editor-title">{editing ? "Editar ejercicio" : "Nuevo ejercicio"}</h2>
+        <h2 id={editorTitleId}>{editing ? "Editar ejercicio" : "Nuevo ejercicio"}</h2>
         <button type="button" disabled={pending} onClick={closeEditor}>Cerrar</button>
       </header>
       {editor}
