@@ -37,7 +37,9 @@ export function createInternalInboxProvider(db: SupabaseClient) {
     if (!context.studentUserId) {
       return { outcome: "skipped", errorCode: "missing_student_account" };
     }
-    if (!context.deliveryId || !context.deliveryLeaseToken) {
+    const deliveryId = context.deliveryId;
+    const leaseToken = context.deliveryLeaseToken;
+    if (!deliveryId || !leaseToken) {
       return { outcome: "failed", errorCode: "internal_unavailable" };
     }
 
@@ -48,12 +50,12 @@ export function createInternalInboxProvider(db: SupabaseClient) {
       // amount used to build this payload, all under the billing transaction
       // lock. Rebuild a few times if another partial payment wins the race.
       for (let attempt = 0; attempt < 3; attempt += 1) {
-        const payload = buildInternalInboxPayload(currentContext.deliveryId, currentContext);
+        const payload = buildInternalInboxPayload(deliveryId, currentContext);
         if (!payload) return { outcome: "skipped", errorCode: "missing_student_account" };
 
         const { data, error } = await db.rpc("cueva_create_notification_inbox_guarded", {
-          p_delivery_id: currentContext.deliveryId,
-          p_lease_token: currentContext.deliveryLeaseToken,
+          p_delivery_id: deliveryId,
+          p_lease_token: leaseToken,
           p_student_id: currentContext.studentId,
           p_user_id: currentContext.studentUserId,
           p_title: payload.title,
@@ -70,7 +72,7 @@ export function createInternalInboxProvider(db: SupabaseClient) {
           reason?: string | null;
         };
         if (result.created === true) {
-          return { outcome: "sent", providerReference: `inbox:${currentContext.deliveryId}` };
+          return { outcome: "sent", providerReference: `inbox:${deliveryId}` };
         }
         if (result.reason !== "balance_changed" || result.balance_cents == null
           || !/^[0-9]+$/.test(String(result.balance_cents))
