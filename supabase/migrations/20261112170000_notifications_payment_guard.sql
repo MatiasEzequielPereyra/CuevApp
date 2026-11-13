@@ -43,6 +43,14 @@ begin
     return;
   end if;
 
+  -- Keep the same parent-delivery -> notification lock order used by
+  -- finalization. The advisory lock already excludes financial writes.
+  perform delivery.id
+  from public.cueva_notification_deliveries delivery
+  where delivery.notification_id = p_notification_id
+  order by delivery.id
+  for update;
+
   select notification.* into v_notification
   from public.cueva_notifications notification
   where notification.id = p_notification_id
