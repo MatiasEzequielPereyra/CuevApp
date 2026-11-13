@@ -118,7 +118,7 @@ export async function dispatchClaimedDeliveries(
           return;
         }
         if (typeof start !== "boolean" && typeof start.balanceCents === "string"
-          && /^[1-9]\\d*$/.test(start.balanceCents)) {
+          && /^[1-9][0-9]*$/.test(start.balanceCents)) {
           context = { ...context, balanceCents: start.balanceCents };
         }
       }
