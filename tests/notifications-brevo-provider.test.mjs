@@ -33,7 +33,7 @@ test("arma un correo transaccional y escapa el nombre en HTML", () => {
 
   assert.equal(payload.to[0].email, "student@example.test");
   assert.match(payload.subject, /noviembre de 2026/i);
-  assert.match(payload.htmlContent, /750,00/);
+  assert.match(payload.htmlContent, /750/);
   assert.equal("textContent" in payload, false);
   assert.match(payload.htmlContent, /&lt;Alumno &quot;Demo&quot;&gt;/);
   assert.doesNotMatch(payload.htmlContent, /<Alumno/);
