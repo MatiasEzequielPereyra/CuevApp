@@ -842,11 +842,21 @@ insert into public.cueva_notification_push_deliveries(
  'bd000000-0000-4000-8000-000000000002',
  clock_timestamp()+interval '5 minutes'
 );
-update public.cueva_notification_deliveries
-set status='processing',attempt_count=1,
-    lease_token='b9000000-0000-4000-8000-000000000009',
-    lease_expires_at=clock_timestamp()+interval '5 minutes'
-where id='b9000000-0000-4000-8000-000000000006';
+insert into public.cueva_notifications(id,period_id,reminder_days,due_on,scheduled_at)
+values (
+ 'b8000000-0000-4000-8000-000000000006',
+ 'b6000000-0000-4000-8000-000000000003',
+ 1,date '2026-12-20',clock_timestamp()
+);
+insert into public.cueva_notification_deliveries(
+ id,notification_id,channel,status,attempt_count,next_attempt_at,lease_token,lease_expires_at
+) values (
+ 'b9000000-0000-4000-8000-000000000011',
+ 'b8000000-0000-4000-8000-000000000006',
+ 'internal','processing',1,clock_timestamp(),
+ 'b9000000-0000-4000-8000-000000000011',
+ clock_timestamp()+interval '5 minutes'
+);
 
 reset role;
 select ok(
@@ -899,8 +909,8 @@ select is(
 );
 select is(
  (select created from public.cueva_create_notification_inbox_guarded(
-  'b9000000-0000-4000-8000-000000000006',
-  'b9000000-0000-4000-8000-000000000009',
+  'b9000000-0000-4000-8000-000000000011',
+  'b9000000-0000-4000-8000-000000000011',
   'b3000000-0000-4000-8000-000000000002',
   'b1000000-0000-4000-8000-000000000003',
   'Recordatorio de cuota','Tu cuota de diciembre tiene un saldo pendiente de $ 120.',
@@ -912,7 +922,7 @@ select is(
 reset role;
 select is(
  (select count(*)::integer from public.cueva_notification_inbox
-  where delivery_id='b9000000-0000-4000-8000-000000000006'),
+  where delivery_id='b9000000-0000-4000-8000-000000000011'),
  1,
  'guarded inbox creation persists exactly one item for its delivery'
 );
