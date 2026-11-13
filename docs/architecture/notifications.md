@@ -89,6 +89,15 @@ El esquema se separará por responsabilidad:
 - **Ejecuciones y recuperación:** registro separado de inicio/fin, recuperación tras indisponibilidad, decisión (envío tardío o descarte) y motivo.
 - **Alertas operativas:** una fila por entrega de canal que transiciona por primera vez a fallo definitivo tras cinco intentos conocidos, o ante un resultado incierto de un proveedor externo. Para Push, cualquier endpoint incierto o que agote sus cinco intentos conocidos genera una alerta agregada única para la entrega padre, aunque otro dispositivo haya recibido el aviso. Si coexisten fallos agotados e incertidumbre, la alerta conserva la prioridad de resultado incierto. Los resultados inciertos generan alerta aunque la notificación padre se haya cancelado o el vencimiento haya pasado; permanecen terminales y nunca se reintentan automáticamente. Triggers transaccionales cubren la finalización normal, la cancelación y la recuperación de leases. La bandeja y su snapshot funcional son exclusivos de administradores con sesión vigente; los intentos y códigos técnicos permanecen fuera del acceso de la interfaz.
 
+### Serialización con pagos y reversiones
+
+Las escrituras financieras de `cueva_private.billing_write` (pagos y reversiones) toman el advisory transaction lock `903004001`. La RPC privada `guard_notification_period` utiliza el mismo bloqueo y vuelve a calcular el saldo efectivo desde pagos menos pagos revertidos, además de comprobar estado activo y vencimiento. El lock se mantiene hasta el final de la transacción.
+
+- Email y Push vuelven a validar elegibilidad al registrar `provider_started_at`; el marcador de inicio y la escritura financiera quedan ordenados por el mismo lock.
+- La bandeja interna se crea mediante `cueva_create_notification_inbox_guarded`, que valida lease, saldo y contenido e inserta el ítem dentro de la misma transacción. Si un pago parcial cambió el saldo desde el snapshot, devuelve el saldo actualizado y el worker reconstruye el mensaje antes de reintentar la inserción.
+- Si el pago o la reversión se confirma primero, la entrega no cruza el inicio del proveedor y la notificación pendiente se cancela transaccionalmente. Si el marcador de inicio del proveedor se confirma primero, el intento externo ya se considera iniciado; la transacción financiera posterior no puede retirar una solicitud que puede estar en tránsito. Los resultados inciertos siguen siendo terminales y requieren conciliación.
+- El worker nunca mantiene un bloqueo financiero abierto durante una llamada HTTP a Brevo o a un servicio Push.
+
 ### Ventanas y reintentos
 
 El worker se ejecuta cada cinco minutos, pero compara contra la hora local configurada (inicialmente 12:00). La frecuencia del cron no adelanta ni desplaza el horario. Para cada período abierto reconcilia ambas identidades (5 días y 1 día) con el vencimiento actual y saldo actual. El primer intento ocurre al llegar el horario; tras cada fallo se programa el siguiente intento a 15 min, 30 min, 60 min y 3 h. El intento inicial más esos cuatro reintentos son cinco intentos máximos. Agotados, la entrega queda fallida definitivamente y se genera una alerta administrativa.
