@@ -20,6 +20,10 @@ No se adopta Vercel Cron/Schedules para este proceso porque el plan Hobby no adm
 6. **Web Push:** Vercel firma y cifra los mensajes; el navegador/PWA administra permisos y suscripciones.
 7. **Postgres:** mantiene períodos, saldo fuente, idempotencia, bandeja interna, preferencias, suscripciones, intentos y auditoría.
 
+### Idempotencia de correo Brevo
+
+La API transaccional recibe `headers.idempotencyKey` (camelCase) dentro del JSON, con el UUID v4 estable de la notificación. Brevo mantiene la clave durante 30 minutos. Una respuesta `400 duplicate_parameter` confirma que la clave ya fue procesada y se registra como aceptación idempotente; no se reintenta ni se genera una alerta falsa de fallo. Los timeouts y HTTP 5xx siguen siendo resultados inciertos y requieren conciliación.
+
 ## Reglas funcionales preservadas
 
 - Zona horaria America/Argentina/Buenos_Aires; horario inicial 12:00.
