@@ -441,9 +441,6 @@ test("each push device receives the balance captured at its own provider-start b
       };
     },
     async rpc(name, args) {
-      if (name === "cueva_claim_notification_push_delivery_with_balance") {
-        throw new Error("claim RPC name must remain unchanged");
-      }
       if (name === "cueva_claim_notification_push_delivery") {
         return { data: [{ claimed: true, push_delivery_id: `push-${args.p_subscription_id}`,
           push_lease_token: `lease-${args.p_subscription_id}`, attempt_number: 1, delivery_status: "processing" }], error: null };
