@@ -6,7 +6,7 @@
 
 do $$
 declare
-  required_column record;
+  required_column text[];
   required_columns constant text[][] := array[
     array['cueva_students', 'id'],
     array['cueva_students', 'first_name'],
