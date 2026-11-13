@@ -5,6 +5,7 @@ import styles from "./notification-schedule-settings.module.css";
 
 export function NotificationScheduleSettings({ initialTime }: { initialTime: string | null }) {
   const [sendTime, setSendTime] = useState(initialTime ?? "12:00");
+  const [savedTime, setSavedTime] = useState(initialTime);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -23,6 +24,7 @@ export function NotificationScheduleSettings({ initialTime }: { initialTime: str
         throw new Error(result?.message ?? "No pudimos guardar el horario.");
       }
       setSendTime(result.sendTime);
+      setSavedTime(result.sendTime);
       setMessage("Horario actualizado. Los avisos pendientes y aún no procesados adoptaron el nuevo horario.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No pudimos guardar el horario.");
@@ -53,7 +55,7 @@ export function NotificationScheduleSettings({ initialTime }: { initialTime: str
               onChange={event => setSendTime(event.target.value)}
               disabled={busy}
             />
-            <button type="submit" disabled={busy || sendTime === initialTime}>
+            <button type="submit" disabled={busy || sendTime === savedTime}>
               {busy ? "Guardando…" : "Guardar horario"}
             </button>
           </div>
