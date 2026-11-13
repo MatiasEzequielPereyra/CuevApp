@@ -4,6 +4,7 @@ import { pesos } from "@/lib/payments/money";
 import { productConfig, userClient } from "@/lib/product-auth/server";
 import { ReceiptUpload } from "@/components/receipts/receipt-upload";
 import { PushNotificationSettings } from "@/components/notifications/push-notification-settings";
+import { NotificationInbox, type NotificationInboxItem } from "@/components/notifications/notification-inbox";
 import { receiptState, type Receipt } from "@/lib/receipts/contracts";
 
 export const dynamic = "force-dynamic";
@@ -75,15 +76,21 @@ export default async function MembershipPage() {
     return <main className="shell"><h1>Acceso restringido</h1><Link href="/cuenta">Mi cuenta</Link></main>;
   }
 
-  const [{ data: snapshot, error: readError }, receiptPeriods] = await Promise.all([
+  const [{ data: snapshot, error: readError }, receiptPeriods, inboxResult] = await Promise.all([
     client.rpc("cueva_membership_snapshot"),
     client.rpc("cueva_receipt_periods"),
+    client.from("cueva_notification_inbox")
+      .select("id,title,body,created_at,read_at")
+      .order("created_at", { ascending: false })
+      .limit(50),
   ]);
   const data = snapshot as Membership | null;
   const files = receiptPeriods.error ? null : receiptPeriods.data as Record<string, ReceiptPeriod> | null;
+  const inboxItems = inboxResult.error ? null : (inboxResult.data ?? []) as NotificationInboxItem[];
   return <StudentShell active="membresia">
     <div className="dash-heading"><div><h1>Mi Membresía</h1><p>Consultá tu cuota y los pagos registrados por el gimnasio.</p></div></div>
     <PushNotificationSettings />
+    <NotificationInbox items={inboxItems} />
     {readError || !data ? <section className="dash-account">
       <div><h2>No pudimos cargar tu membresía</h2><p>Si el problema continúa, consultá con el gimnasio.</p></div>
       <Link href="/mi-membresia">Reintentar</Link>
