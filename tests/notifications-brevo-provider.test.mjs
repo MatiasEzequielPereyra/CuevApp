@@ -58,7 +58,7 @@ test("envía mediante el endpoint transaccional de Brevo y conserva su referenci
   const body = JSON.parse(request.init.body);
   assert.equal(body.sender.email, "avisos@example.test");
   assert.equal(body.to[0].email, "student@example.test");
-  assert.deepEqual(body.headers, { IdempotencyKey: context().notificationId });
+  assert.deepEqual(body.headers, { idempotencyKey: context().notificationId });
 });
 
 test("no realiza llamadas si falta el destinatario o la configuración", async () => {
@@ -121,6 +121,6 @@ test("reutiliza la misma clave de idempotencia en cada intento lógico", async (
   await provider(context());
 
   assert.equal(payloads.length, 2);
-  assert.equal(payloads[0].headers.IdempotencyKey, context().notificationId);
-  assert.equal(payloads[1].headers.IdempotencyKey, payloads[0].headers.IdempotencyKey);
+  assert.equal(payloads[0].headers.idempotencyKey, context().notificationId);
+  assert.equal(payloads[1].headers.idempotencyKey, payloads[0].headers.idempotencyKey);
 });
