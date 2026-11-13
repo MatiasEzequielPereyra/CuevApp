@@ -4,6 +4,7 @@ import { AdminShell } from "@/components/dashboard/admin-dashboard";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { ThemePicker } from "@/components/theme/theme-picker";
 import styles from "./admin-alerts.module.css";
+import { NotificationScheduleSettings } from "@/components/notifications/notification-schedule-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -48,13 +49,19 @@ export default async function AdminAlertsPage() {
   const profile = await auth.from("cueva_profiles").select("role").maybeSingle();
   if (profile.error || profile.data?.role !== "admin") notFound();
 
-  const { data, error } = await auth
-    .from("cueva_notification_admin_alerts")
-    .select("id,alert_type,student_name,period_month,reminder_days,channel,attempt_count,failed_at")
-    .order("failed_at", { ascending: false })
-    .limit(100);
+  const [{ data, error }, { data: settings, error: settingsError }] = await Promise.all([
+    auth
+      .from("cueva_notification_admin_alerts")
+      .select("id,alert_type,student_name,period_month,reminder_days,channel,attempt_count,failed_at")
+      .order("failed_at", { ascending: false })
+      .limit(100),
+    auth.from("cueva_notification_settings").select("send_time").eq("singleton", true).maybeSingle(),
+  ]);
 
   const alerts = (data ?? []) as AdminAlert[];
+  const initialSendTime = settingsError || typeof settings?.send_time !== "string"
+    ? null
+    : settings.send_time.slice(0, 5);
   const displayName = typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name.trim()
     ? user.user_metadata.full_name.trim()
     : user.email ?? "Administrador";
@@ -68,6 +75,8 @@ export default async function AdminAlertsPage() {
       logo={<BrandMark size={42} />}
       themePicker={<ThemePicker />}
     >
+      <NotificationScheduleSettings initialTime={initialSendTime} />
+
       <div className={styles.heading}>
         <div>
           <p className="dash-overline"><span /> OPERACIÓN DEL GIMNASIO</p>
