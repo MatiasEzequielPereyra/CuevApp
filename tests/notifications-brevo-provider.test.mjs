@@ -124,3 +124,18 @@ test("reutiliza la misma clave de idempotencia en cada intento lógico", async (
   assert.equal(payloads[0].headers.idempotencyKey, context().notificationId);
   assert.equal(payloads[1].headers.idempotencyKey, payloads[0].headers.idempotencyKey);
 });
+
+
+test("trata duplicate_parameter de Brevo como confirmación idempotente, no como reintento", async () => {
+  const provider = createBrevoEmailProvider(configuration({
+    fetchImpl: async () => Response.json({
+      code: "duplicate_parameter",
+      message: "Email for the idempotency key has already been processed",
+    }, { status: 400 }),
+  }));
+
+  assert.deepEqual(await provider(context()), {
+    outcome: "sent",
+    providerReference: "brevo:idempotency-replay",
+  });
+});
