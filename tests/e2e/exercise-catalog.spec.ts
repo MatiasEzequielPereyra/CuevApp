@@ -53,7 +53,7 @@ async function catalogFixture(page: Page, origin: string, theme: string, videosO
   let failedFirstSearch = false;
   for (let i = 1; i <= extraRows; i++) {
     const id = randomUUID();
-    rows.set(id, { id, name: `Ejercicio de prueba ${i}`, description: "Descripción de ejemplo", revision: 1, active: true, video_url: null, video_path: null });
+    rows.set(id, { id, name: `Ejercicio de prueba ${i}`, description: "Descripción de ejemplo", revision: 1, active: i < extraRows, video_url: null, video_path: null });
   }
   if (videosOnly) {
     rows.set(firstId, { ...rows.get(firstId)!, video_url: youtube });
@@ -234,6 +234,7 @@ for (const [width, theme] of [[360, "light"], [1440, "dark"]] as const) {
     const row = page.getByRole("button", { name: "Ejercicio de prueba 36", exact: true });
     await expect(page.getByRole("button", { name: "Editar Ejercicio de prueba 36" })).toHaveCount(0);
     await expect(row).toHaveAttribute("aria-haspopup", "dialog");
+    await expect(row).toHaveAccessibleDescription("Inactivo Descripción de ejemplo");
     await row.focus();
     await page.keyboard.press("Enter");
     const editor = page.getByRole("dialog", { name: "Editar ejercicio" });
