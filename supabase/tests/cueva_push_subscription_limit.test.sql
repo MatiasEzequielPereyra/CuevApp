@@ -1,11 +1,14 @@
 begin;
-select plan(22);
+select plan(23);
 
 insert into public.cueva_students(id,first_name,last_name,email,joined_on)
 values
  ('be000000-0000-4000-8000-000000000001','Push','Limit One','push-limit-one@example.test',date '2026-01-01'),
  ('be000000-0000-4000-8000-000000000002','Push','Limit Two','push-limit-two@example.test',date '2026-01-02'),
  ('be000000-0000-4000-8000-000000000003','Push','Revoke One','push-revoke-one@example.test',date '2026-01-03');
+
+insert into public.cueva_push_subscriptions(student_id,endpoint,p256dh,auth_secret,expires_at)
+values ('be000000-0000-4000-8000-000000000001','https://push.example.test/expired-device',repeat('T',87),repeat('U',22),clock_timestamp()-interval '1 day');
 
 insert into public.cueva_push_subscriptions(student_id,endpoint,p256dh,auth_secret)
 values
@@ -31,22 +34,33 @@ select set_config('request.jwt.claims','{"role":"service_role"}',true);
 
 select is(
   (select count(*)::integer
-   from generate_series(1,10) as device(number)
+   from generate_series(1,9) as device(number)
    cross join lateral public.cueva_register_push_subscription(
      'be000000-0000-4000-8000-000000000001',
      'https://push.example.test/atomic-' || device.number,
      repeat('A',87),repeat('B',22),null
    ) registration
    where registration.outcome='registered'),
-  10,
-  'ten distinct devices can be registered for one student'
+  9,
+  'nine current devices can be registered alongside one expired subscription'
 );
 
 select is(
   (select count(*)::integer from public.cueva_push_subscriptions
-   where student_id='be000000-0000-4000-8000-000000000001' and revoked_at is null),
-  10,
-  'the student has exactly ten active devices after registration'
+   where student_id='be000000-0000-4000-8000-000000000001' and revoked_at is null
+     and (expires_at is null or expires_at > clock_timestamp())),
+  9,
+  'the expired subscription does not count as an active device'
+);
+
+select is(
+  (select outcome from public.cueva_register_push_subscription(
+    'be000000-0000-4000-8000-000000000001',
+    'https://push.example.test/atomic-ten',
+    repeat('C',87),repeat('D',22),null
+  )),
+  'registered',
+  'an expired subscription does not prevent registering the tenth active device'
 );
 
 select is(
