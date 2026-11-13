@@ -64,7 +64,7 @@ export function createSupabaseNotificationWorker(
       throwIfError(error, "No se pudo registrar el inicio del envío de correo");
       const row = Array.isArray(data) ? data[0] : null;
       return row?.started === true && typeof row.balance_cents === "string"
-        && /^[1-9]\\d*$/.test(row.balance_cents)
+        && /^[1-9][0-9]*$/.test(row.balance_cents)
         ? { started: true, balanceCents: row.balance_cents }
         : { started: false, balanceCents: null };
     },
