@@ -32,12 +32,14 @@ export type ProviderResult =
   | { outcome: "unknown"; errorCode: string }
   | { outcome: "skipped"; errorCode: string };
 
+export type NotificationStartResult = boolean | { started: boolean; balanceCents?: string | null };
+
 export type NotificationDispatcherDependencies = {
   loadContext(notificationId: string, delivery: ClaimedNotificationDelivery): Promise<NotificationDeliveryContext>;
   sendEmail(context: NotificationDeliveryContext): Promise<ProviderResult>;
   createInternal(context: NotificationDeliveryContext): Promise<ProviderResult>;
   sendPush(context: NotificationDeliveryContext): Promise<ProviderResult>;
-  markEmailStarted(delivery: ClaimedNotificationDelivery): Promise<boolean>;
+  markEmailStarted(delivery: ClaimedNotificationDelivery): Promise<NotificationStartResult>;
   finalize(
     delivery: ClaimedNotificationDelivery,
     result: ProviderResult,
@@ -107,10 +109,18 @@ export async function dispatchClaimedDeliveries(
   await Promise.all(deliveries.map(async delivery => {
     let result: ProviderResult;
     try {
-      const context = await dependencies.loadContext(delivery.notification_id, delivery);
-      if (delivery.channel === "email" && !(await dependencies.markEmailStarted(delivery))) {
-        summary.stale += 1;
-        return;
+      let context = await dependencies.loadContext(delivery.notification_id, delivery);
+      if (delivery.channel === "email") {
+        const start = await dependencies.markEmailStarted(delivery);
+        const started = typeof start === "boolean" ? start : start.started;
+        if (!started) {
+          summary.stale += 1;
+          return;
+        }
+        if (typeof start !== "boolean" && typeof start.balanceCents === "string"
+          && /^[1-9]\\d*$/.test(start.balanceCents)) {
+          context = { ...context, balanceCents: start.balanceCents };
+        }
       }
       result = await providerFor(delivery.channel, dependencies)(context);
       if (result.outcome !== "sent" && result.outcome !== "failed" && result.outcome !== "unknown" && result.outcome !== "skipped") {
