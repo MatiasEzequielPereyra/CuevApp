@@ -7,6 +7,7 @@ import {
   type NotificationDeliveryContext,
   type ProviderResult,
   type ClaimedNotificationDelivery,
+  type NotificationStartResult,
 } from "./dispatcher.ts";
 import {
   type NotificationSnapshotRow,
@@ -55,14 +56,17 @@ export function createSupabaseNotificationWorker(
       };
     },
     ...providers,
-    markEmailStarted: async delivery => {
-      const { data, error } = await db.rpc("cueva_mark_notification_delivery_started", {
+    markEmailStarted: async (delivery): Promise<NotificationStartResult> => {
+      const { data, error } = await db.rpc("cueva_mark_notification_delivery_started_with_balance", {
         p_delivery_id: delivery.delivery_id,
         p_lease_token: delivery.lease_token,
       });
       throwIfError(error, "No se pudo registrar el inicio del envío de correo");
       const row = Array.isArray(data) ? data[0] : null;
-      return row?.started === true;
+      return row?.started === true && typeof row.balance_cents === "string"
+        && /^[1-9]\\d*$/.test(row.balance_cents)
+        ? { started: true, balanceCents: row.balance_cents }
+        : { started: false, balanceCents: null };
     },
     finalize: async (delivery: ClaimedNotificationDelivery, result: ProviderResult) => {
       const { data, error } = await db.rpc("cueva_finalize_notification_delivery", {
