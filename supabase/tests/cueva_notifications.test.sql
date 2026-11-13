@@ -1,5 +1,5 @@
 begin;
-select plan(96);
+select plan(100);
 
 -- Isolated fixtures: two students, two linked identities, one administrator.
 insert into auth.users(id,aud,role,email,created_at,updated_at)
@@ -845,6 +845,13 @@ insert into public.cueva_notification_push_deliveries(
 update public.cueva_periods
 set due_on = date '2026-12-22'
 where id = 'b6000000-0000-4000-8000-000000000003';
+insert into public.cueva_payments(id,period_id,cents,paid_on,method,actor)
+values (
+ 'b7000000-0000-4000-8000-000000000004',
+ 'b6000000-0000-4000-8000-000000000003',
+ 3000,date '2026-11-12','transferencia',
+ 'b1000000-0000-4000-8000-000000000001'
+);
 insert into public.cueva_notifications(id,period_id,reminder_days,due_on,scheduled_at)
 values (
  'b8000000-0000-4000-8000-000000000006',
@@ -858,6 +865,34 @@ insert into public.cueva_notification_deliveries(
  'b8000000-0000-4000-8000-000000000006',
  'internal','processing',1,clock_timestamp(),
  'b9000000-0000-4000-8000-000000000053',
+ clock_timestamp()+interval '5 minutes'
+);
+insert into public.cueva_notification_deliveries(
+ id,notification_id,channel,status,attempt_count,next_attempt_at,lease_token,lease_expires_at
+) values
+ (
+  'b9000000-0000-4000-8000-000000000054',
+  'b8000000-0000-4000-8000-000000000006',
+  'email','processing',1,clock_timestamp(),
+  'b9000000-0000-4000-8000-000000000054',
+  clock_timestamp()+interval '5 minutes'
+ ),
+ (
+  'b9000000-0000-4000-8000-000000000055',
+  'b8000000-0000-4000-8000-000000000006',
+  'push','processing',1,clock_timestamp(),
+  'b9000000-0000-4000-8000-000000000055',
+  clock_timestamp()+interval '5 minutes'
+);
+insert into public.cueva_notification_push_deliveries(
+ id,delivery_id,notification_id,subscription_id,status,attempt_count,next_attempt_at,lease_token,lease_expires_at
+) values (
+ 'bd000000-0000-4000-8000-000000000003',
+ 'b9000000-0000-4000-8000-000000000055',
+ 'b8000000-0000-4000-8000-000000000006',
+ 'bc000000-0000-4000-8000-000000000006',
+ 'processing',1,clock_timestamp(),
+ 'bd000000-0000-4000-8000-000000000003',
  clock_timestamp()+interval '5 minutes'
 );
 
@@ -916,8 +951,8 @@ select is(
   'b9000000-0000-4000-8000-000000000053',
   'b3000000-0000-4000-8000-000000000002',
   'b1000000-0000-4000-8000-000000000003',
-  'Recordatorio de cuota','Tu cuota de diciembre tiene un saldo pendiente de $ 120.',
-  12000
+  'Recordatorio de cuota','Tu cuota de diciembre tiene un saldo pendiente de $ 90.',
+  9000
  )),
  true,
  'internal inbox is created atomically when a partial or unpaid balance remains'
@@ -929,6 +964,35 @@ select is(
  1,
  'guarded inbox creation persists exactly one item for its delivery'
 );
+select ok(
+ has_function_privilege('service_role','public.cueva_mark_notification_delivery_started_with_balance(uuid,uuid)','EXECUTE'),
+ 'service role can read the serialized balance when starting email'
+);
+select ok(
+ not has_function_privilege('authenticated','public.cueva_mark_notification_delivery_started_with_balance(uuid,uuid)','EXECUTE'),
+ 'authenticated cannot execute the balance-aware email start RPC'
+);
+select is(
+ (select started::text || ':' || balance_cents
+  from public.cueva_mark_notification_delivery_started_with_balance(
+   'b9000000-0000-4000-8000-000000000054',
+   'b9000000-0000-4000-8000-000000000054'
+  )),
+ 'true:9000',
+ 'email start returns the current partial-payment balance instead of the stale snapshot'
+);
+select is(
+ (select started::text || ':' || balance_cents
+  from public.cueva_mark_notification_push_started_with_balance(
+   'bd000000-0000-4000-8000-000000000003',
+   'bd000000-0000-4000-8000-000000000003',
+   'b9000000-0000-4000-8000-000000000055',
+   'b9000000-0000-4000-8000-000000000055'
+  )),
+ 'true:9000',
+ 'each push device start returns the current partial-payment balance'
+);
+
 
 select * from finish();
 rollback;
