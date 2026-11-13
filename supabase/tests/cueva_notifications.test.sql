@@ -1,5 +1,5 @@
 begin;
-select plan(88);
+select plan(96);
 
 -- Isolated fixtures: two students, two linked identities, one administrator.
 insert into auth.users(id,aud,role,email,created_at,updated_at)
@@ -783,6 +783,138 @@ select is(
   where id='b9000000-0000-4000-8000-000000000008'),
  'failed',
  'terminal device exhaustion does not consume redundant parent retries'
+);
+
+
+-- Payment writes and notification starts share the same advisory transaction
+-- lock. A fully paid period cannot cross any provider-start boundary.
+insert into public.cueva_payments(id,period_id,cents,paid_on,method,actor)
+values (
+ 'b7000000-0000-4000-8000-000000000003',
+ 'b6000000-0000-4000-8000-000000000002',
+ 12000,date '2026-11-12','transferencia',
+ 'b1000000-0000-4000-8000-000000000001'
+);
+insert into public.cueva_notifications(id,period_id,reminder_days,due_on,scheduled_at)
+values (
+ 'b8000000-0000-4000-8000-000000000005',
+ 'b6000000-0000-4000-8000-000000000002',
+ 1,date '2026-11-21',clock_timestamp()
+);
+insert into public.cueva_notification_deliveries(
+ id,notification_id,channel,status,attempt_count,next_attempt_at,lease_token,lease_expires_at
+) values
+ (
+  'b9000000-0000-4000-8000-000000000007',
+  'b8000000-0000-4000-8000-000000000005',
+  'email','processing',1,clock_timestamp(),
+  'b9000000-0000-4000-8000-000000000007',
+  clock_timestamp()+interval '5 minutes'
+ ),
+ (
+  'b9000000-0000-4000-8000-000000000008',
+  'b8000000-0000-4000-8000-000000000005',
+  'internal','processing',1,clock_timestamp(),
+  'b9000000-0000-4000-8000-000000000008',
+  clock_timestamp()+interval '5 minutes'
+ ),
+ (
+  'b9000000-0000-4000-8000-000000000010',
+  'b8000000-0000-4000-8000-000000000005',
+  'push','processing',1,clock_timestamp(),
+  'b9000000-0000-4000-8000-000000000010',
+  clock_timestamp()+interval '5 minutes'
+ );
+insert into public.cueva_push_subscriptions(id,student_id,endpoint,p256dh,auth_secret)
+values (
+ 'bc000000-0000-4000-8000-000000000006',
+ 'b3000000-0000-4000-8000-000000000002',
+ 'https://push.example.test/payment-guard',repeat('J',87),repeat('K',22)
+);
+insert into public.cueva_notification_push_deliveries(
+ id,delivery_id,notification_id,subscription_id,status,attempt_count,next_attempt_at,lease_token,lease_expires_at
+) values (
+ 'bd000000-0000-4000-8000-000000000002',
+ 'b9000000-0000-4000-8000-000000000010',
+ 'b8000000-0000-4000-8000-000000000005',
+ 'bc000000-0000-4000-8000-000000000006',
+ 'processing',1,clock_timestamp(),
+ 'bd000000-0000-4000-8000-000000000002',
+ clock_timestamp()+interval '5 minutes'
+);
+update public.cueva_notification_deliveries
+set status='processing',attempt_count=1,
+    lease_token='b9000000-0000-4000-8000-000000000009',
+    lease_expires_at=clock_timestamp()+interval '5 minutes'
+where id='b9000000-0000-4000-8000-000000000006';
+
+reset role;
+select ok(
+ has_function_privilege('service_role','public.cueva_create_notification_inbox_guarded(uuid,uuid,uuid,uuid,text,text,bigint)','EXECUTE'),
+ 'service role can execute the payment-guarded inbox RPC'
+);
+select ok(
+ not has_function_privilege('authenticated','public.cueva_create_notification_inbox_guarded(uuid,uuid,uuid,uuid,text,text,bigint)','EXECUTE'),
+ 'authenticated cannot execute the payment-guarded inbox RPC'
+);
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+ (select started from public.cueva_mark_notification_delivery_started(
+  'b9000000-0000-4000-8000-000000000007',
+  'b9000000-0000-4000-8000-000000000007'
+ )),
+ false,
+ 'email cannot start after the period has been fully paid'
+);
+reset role;
+select is(
+ (select status from public.cueva_notifications where id='b8000000-0000-4000-8000-000000000005'),
+ 'cancelled',
+ 'a stale paid reminder is atomically cancelled at the provider boundary'
+);
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+ (select started from public.cueva_mark_notification_push_started(
+  'bd000000-0000-4000-8000-000000000002',
+  'bd000000-0000-4000-8000-000000000002',
+  'b9000000-0000-4000-8000-000000000010',
+  'b9000000-0000-4000-8000-000000000010'
+ )),
+ false,
+ 'push cannot start after the period has been fully paid'
+);
+select is(
+ (select created from public.cueva_create_notification_inbox_guarded(
+  'b9000000-0000-4000-8000-000000000008',
+  'b9000000-0000-4000-8000-000000000008',
+  'b3000000-0000-4000-8000-000000000002',
+  'b1000000-0000-4000-8000-000000000003',
+  'Recordatorio de cuota','Tu cuota tiene saldo pendiente.',
+  12000
+ )),
+ false,
+ 'internal inbox cannot be created after the period has been fully paid'
+);
+select is(
+ (select created from public.cueva_create_notification_inbox_guarded(
+  'b9000000-0000-4000-8000-000000000006',
+  'b9000000-0000-4000-8000-000000000009',
+  'b3000000-0000-4000-8000-000000000002',
+  'b1000000-0000-4000-8000-000000000003',
+  'Recordatorio de cuota','Tu cuota de diciembre tiene un saldo pendiente de $ 120.',
+  12000
+ )),
+ true,
+ 'internal inbox is created atomically when a partial or unpaid balance remains'
+);
+reset role;
+select is(
+ (select count(*)::integer from public.cueva_notification_inbox
+  where delivery_id='b9000000-0000-4000-8000-000000000006'),
+ 1,
+ 'guarded inbox creation persists exactly one item for its delivery'
 );
 
 select * from finish();
