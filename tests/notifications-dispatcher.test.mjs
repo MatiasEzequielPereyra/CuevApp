@@ -128,3 +128,18 @@ test("no llama al proveedor si la reserva ya no es válida al marcar el inicio",
   assert.equal(result.stale, 1);
   assert.equal(result.finalized, 0);
 });
+
+
+test("email payload uses the balance serialized with the provider-start marker", async () => {
+  let sentBalance = null;
+  const deps = dependencies({
+    markEmailStarted: async () => ({ started: true, balanceCents: "50000" }),
+    sendEmail: async current => {
+      sentBalance = current.balanceCents;
+      return { outcome: "sent" };
+    },
+  });
+
+  await dispatchClaimedDeliveries([delivery("email")], deps);
+  assert.equal(sentBalance, "50000");
+});
