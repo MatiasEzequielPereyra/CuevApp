@@ -387,6 +387,45 @@ test("sin cuenta o sin claves VAPID no intenta enviar", async () => {
   assert.equal(reads, 0);
 });
 
+test("ignora suscripciones con expiración pasada sin reclamar ni enviar", async () => {
+  const rows = [{
+    id: "sub-expired",
+    endpoint: "https://push.example.test/expired",
+    ...subscriptionKeys(),
+    expires_at: "2026-11-01T00:00:00.000Z",
+  }];
+  let rpcCalls = 0;
+  let fetchCalls = 0;
+  const db = {
+    from() {
+      return { select() { return this; }, eq() { return this; }, is() { return this; }, then(resolve) { resolve({ data: rows, error: null }); } };
+    },
+    async rpc() { rpcCalls += 1; throw new Error("an expired subscription must not be claimed"); },
+  };
+  const provider = createWebPushProvider(db, {
+    ...vapidKeys(),
+    subject: "mailto:admin@example.test",
+    now: () => Date.parse("2026-11-12T12:00:00.000Z"),
+    fetchImpl: async () => { fetchCalls += 1; return new Response(null, { status: 201 }); },
+  });
+  const result = await provider({
+    notificationId: "notification-expired",
+    deliveryId: "parent-expired",
+    deliveryLeaseToken: "parent-expired-lease",
+    studentId: "student-expired",
+    studentName: "Alumno",
+    destinationEmail: null,
+    studentUserId: "user-expired",
+    periodMonth: "2026-11-01",
+    dueOn: "2026-11-20",
+    balanceCents: "10000",
+    reminderDays: 1,
+  });
+  assert.deepEqual(result, { outcome: "skipped", errorCode: "missing_push_subscription" });
+  assert.equal(rpcCalls, 0);
+  assert.equal(fetchCalls, 0);
+});
+
 test("sin suscripciones activas informa que no hay destino", async () => {
   const db = { from() { return { select() { return this; }, eq() { return this; }, is() { return this; }, then(resolve) { resolve({ data: [], error: null }); } }; } };
   const provider = createWebPushProvider(db, {
