@@ -37,29 +37,49 @@ export function createInternalInboxProvider(db: SupabaseClient) {
     if (!context.studentUserId) {
       return { outcome: "skipped", errorCode: "missing_student_account" };
     }
+    if (!context.deliveryId || !context.deliveryLeaseToken) {
+      return { outcome: "failed", errorCode: "internal_unavailable" };
+    }
 
     try {
-      const { data: delivery, error: deliveryError } = await db
-        .from("cueva_notification_deliveries")
-        .select("id")
-        .eq("notification_id", context.notificationId)
-        .eq("channel", "internal")
-        .maybeSingle();
-      if (deliveryError || !delivery?.id) {
-        return { outcome: "failed", errorCode: "internal_unavailable" };
-      }
+      let currentContext = context;
+      // A partial payment may commit after the worker snapshot. The guarded
+      // RPC returns the current balance and inserts only if it matches the
+      // amount used to build this payload, all under the billing transaction
+      // lock. Rebuild a few times if another partial payment wins the race.
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const payload = buildInternalInboxPayload(currentContext.deliveryId, currentContext);
+        if (!payload) return { outcome: "skipped", errorCode: "missing_student_account" };
 
-      const payload = buildInternalInboxPayload(delivery.id as string, context);
-      if (!payload) return { outcome: "skipped", errorCode: "missing_student_account" };
-
-      const { error } = await db
-        .from("cueva_notification_inbox")
-        .upsert(payload, {
-          onConflict: "delivery_id",
-          ignoreDuplicates: true,
+        const { data, error } = await db.rpc("cueva_create_notification_inbox_guarded", {
+          p_delivery_id: currentContext.deliveryId,
+          p_lease_token: currentContext.deliveryLeaseToken,
+          p_student_id: currentContext.studentId,
+          p_user_id: currentContext.studentUserId,
+          p_title: payload.title,
+          p_body: payload.body,
+          p_expected_balance_cents: currentContext.balanceCents,
         });
-      if (error) return { outcome: "failed", errorCode: "internal_unavailable" };
-      return { outcome: "sent", providerReference: `inbox:${delivery.id}` };
+        if (error || !Array.isArray(data) || data.length === 0) {
+          return { outcome: "failed", errorCode: "internal_unavailable" };
+        }
+
+        const result = data[0] as {
+          created?: boolean;
+          balance_cents?: string | number;
+          reason?: string | null;
+        };
+        if (result.created === true) {
+          return { outcome: "sent", providerReference: `inbox:${currentContext.deliveryId}` };
+        }
+        if (result.reason !== "balance_changed" || result.balance_cents == null
+          || !/^[0-9]+$/.test(String(result.balance_cents))
+          || BigInt(result.balance_cents) <= 0n) {
+          return { outcome: "skipped", errorCode: "notification_not_relevant" };
+        }
+        currentContext = { ...currentContext, balanceCents: String(result.balance_cents) };
+      }
+      return { outcome: "failed", errorCode: "internal_unavailable" };
     } catch {
       return { outcome: "failed", errorCode: "internal_unavailable" };
     }
