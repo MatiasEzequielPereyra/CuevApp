@@ -88,6 +88,15 @@ export function createBrevoEmailProvider(configuration: BrevoEmailConfiguration)
         return { outcome: "unknown", errorCode: "brevo_result_unknown" };
       }
       if (!response.ok) {
+        if (response.status === 400) {
+          const error: unknown = await response.json().catch(() => null);
+          if (error && typeof error === "object"
+            && "code" in error && error.code === "duplicate_parameter") {
+            // Brevo confirms that this UUID was already processed inside its
+            // 30-minute idempotency window; do not retry or alert as a failure.
+            return { outcome: "sent", providerReference: "brevo:idempotency-replay" };
+          }
+        }
         return {
           outcome: "failed",
           errorCode: response.status === 429 ? "brevo_unavailable" : "brevo_rejected",
