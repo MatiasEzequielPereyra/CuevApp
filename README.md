@@ -61,11 +61,10 @@ La [comparación del logo](evidence/logo-comparison.html) se abre como HTML loca
 
 ## Alcance y decisiones abiertas
 
-La pantalla informa que las funciones del gimnasio están en desarrollo. No hay
-cuentas, datos reales, administración, SQL, pagos, emails, videos operativos,
-manifest de instalación ni service worker. Solo se guarda la preferencia de tema
-en este navegador. Sin JavaScript el contenido se mantiene y el tema sigue al sistema.
+El acceso usa correo obligatorio, invitación administrativa y contraseña elegida
+por el alumno. El DNI es opcional en la ficha administrativa. Las invitaciones
+se envían mediante el SMTP de Brevo configurado en Supabase.
 
-La paleta gris, el layout, CSS nativo y el SVG reconstruido fueron aceptados para la fundación. El SVG sigue siendo una reconstrucción, no el maestro vectorial original. Identidad DNI sin email, proveedor
-de correo, retención, límites de video y hosting se resolverán en sus tracks.
-No reintroducir QR/push/estadísticas avanzadas en V1.
+El backlog registra los pendientes de operación y producto. La activación alojada
+de CUEVA-005, el registro de entrenamientos y la lectura de rutinas sin conexión
+siguen pendientes. El SVG de la marca es la reconstrucción aceptada para la fundación.
