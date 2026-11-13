@@ -15,7 +15,7 @@ type BrevoEmailPayload = {
   to: Array<{ email: string }>;
   subject: string;
   htmlContent: string;
-  headers: { IdempotencyKey: string };
+  headers: { idempotencyKey: string };
 };
 
 function escapeHtml(value: string): string {
@@ -45,7 +45,7 @@ export function buildBrevoEmailPayload(
     to: [{ email: context.destinationEmail.trim() }],
     subject: content.subject,
     htmlContent: `<p>Hola ${escapeHtml(context.studentName)},</p><p>${escapeHtml(content.body)}</p><p>Este es un aviso automático de CUEVA.</p>`,
-    headers: { IdempotencyKey: context.notificationId },
+    headers: { idempotencyKey: context.notificationId },
   };
 }
 
