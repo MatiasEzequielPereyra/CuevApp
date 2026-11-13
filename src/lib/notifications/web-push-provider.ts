@@ -207,7 +207,9 @@ export function createWebPushProvider(
       if (error || !Array.isArray(data)) {
         return { outcome: "failed", errorCode: "push_unavailable" };
       }
-      const subscriptions = data as PushSubscriptionRow[];
+      const subscriptions = (data as PushSubscriptionRow[]).filter(subscription =>
+        subscription.expires_at === null || Date.parse(subscription.expires_at) > now(),
+      );
       if (subscriptions.length === 0) {
         return { outcome: "skipped", errorCode: "missing_push_subscription" };
       }
