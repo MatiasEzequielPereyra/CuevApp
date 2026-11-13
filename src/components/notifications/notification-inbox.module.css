@@ -1,0 +1,115 @@
+.panel {
+  display: grid;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  padding: 1.25rem;
+  border: 1px solid var(--line, #deded8);
+  border-radius: 1rem;
+  background: var(--surface, #fff);
+}
+
+.heading,
+.itemHeading,
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+.heading h2 {
+  margin: .15rem 0;
+}
+
+.heading p,
+.body {
+  margin: .25rem 0 0;
+}
+
+.kicker {
+  color: var(--muted, #666);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+
+.count,
+.newLabel,
+.readLabel {
+  flex: 0 0 auto;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.count,
+.newLabel {
+  border-radius: 999px;
+  padding: .35rem .65rem;
+  background: var(--soft-surface, #f1f1ed);
+}
+
+.list {
+  display: grid;
+  gap: .75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list li {
+  display: grid;
+  gap: .6rem;
+  padding: 1rem;
+  border: 1px solid var(--line, #deded8);
+  border-radius: .8rem;
+}
+
+.unread {
+  border-inline-start: 3px solid var(--accent, #555) !important;
+}
+
+.read {
+  opacity: .82;
+}
+
+.itemHeading h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.body {
+  line-height: 1.5;
+}
+
+.footer {
+  flex-wrap: wrap;
+  color: var(--muted, #666);
+  font-size: .82rem;
+}
+
+.footer button {
+  border: 0;
+  border-radius: .5rem;
+  padding: .45rem .7rem;
+  color: var(--button-text, #fff);
+  background: var(--button-bg, #292929);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.footer button:disabled {
+  cursor: wait;
+  opacity: .6;
+}
+
+.empty,
+.message {
+  margin: 0;
+  color: var(--muted, #666);
+}
+
+@media (max-width: 520px) {
+  .panel { padding: 1rem; }
+  .heading { align-items: flex-start; }
+}

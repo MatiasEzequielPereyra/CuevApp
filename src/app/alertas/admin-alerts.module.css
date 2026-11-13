@@ -1,0 +1,21 @@
+.heading { display:flex; align-items:flex-end; justify-content:space-between; gap:24px; }
+.heading h1 { margin:0; font-size:clamp(30px,3vw,42px); letter-spacing:-.045em; line-height:1.12; }
+.heading > div > p:last-child { margin:12px 0 0; color:var(--dash-muted); font-size:14px; line-height:1.55; }
+.count { flex:none; padding:9px 12px; border:1px solid var(--dash-border); border-radius:9px; color:var(--dash-accent); background:var(--dash-panel); font-size:12px; font-weight:700; }
+.list { display:grid; gap:13px; margin-top:34px; }
+.card { padding:22px; border:1px solid var(--dash-border); border-radius:13px; background:var(--dash-panel); }
+.cardTop { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+.eyebrow { color:var(--dash-muted); font-size:9px; font-weight:800; letter-spacing:.12em; }
+.card h2 { margin:8px 0 0; font-size:19px; letter-spacing:-.025em; }
+.status { flex:none; padding:7px 10px; border-radius:8px; color:#9a4b24; background:#fff0e8; font-size:10px; font-weight:800; }
+:root[data-theme="dark"] .status { color:#ffc09f; background:#452b20; }
+.details { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-top:22px; padding-top:18px; border-top:1px solid var(--dash-border); }
+.details span { display:grid; gap:6px; color:var(--dash-text); font-size:13px; }
+.details strong { color:var(--dash-muted); font-size:10px; font-weight:700; }
+.date { margin:17px 0 0; color:var(--dash-muted); font-size:11px; }
+.empty { display:grid; justify-items:center; gap:10px; margin-top:34px; padding:46px 24px; border:1px dashed var(--dash-border); border-radius:13px; background:var(--dash-panel); text-align:center; }
+.empty h2 { margin:0; font-size:17px; }
+.empty p { margin:0; color:var(--dash-muted); font-size:13px; line-height:1.5; }
+.emptyIcon { display:grid; place-items:center; width:42px; height:42px; border-radius:50%; color:var(--dash-accent); background:var(--dash-accent-soft); font-size:21px; font-weight:700; }
+@media(max-width:760px) { .heading { align-items:flex-start; flex-direction:column; gap:15px; } .details { grid-template-columns:repeat(2,minmax(0,1fr)); } .card { padding:18px; } }
+@media(max-width:380px) { .cardTop { flex-direction:column; } .details { gap:12px; } }

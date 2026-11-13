@@ -63,12 +63,22 @@ const { default: membershipPage } = loadExport("src/app/mi-membresia/page.tsx", 
   "@/components/routines/student-shell": shell,
   "@/lib/payments/money": { pesos },
   "@/components/receipts/receipt-upload": upload,
+  "@/components/notifications/push-notification-settings": { PushNotificationSettings: () => null },
+  "@/components/notifications/notification-inbox": { NotificationInbox: () => null },
   "@/lib/receipts/contracts": receiptContracts,
   "@/lib/product-auth/server": {
     productConfig: () => ({}),
     userClient: async () => ({
       auth: { getUser: async () => ({ data: { user: { id: "fixture" } } }) },
-      from: () => ({ select: () => ({ maybeSingle: async () => ({ data: { role: "alumno" } }) }) }),
+      from: (table: string) => ({
+        select: () => table === "cueva_profiles"
+          ? { maybeSingle: async () => ({ data: { role: "alumno" }, error: null }) }
+          : {
+              order: () => ({
+                limit: async () => ({ data: [], error: null }),
+              }),
+            },
+      }),
       rpc: async (name: string) => ({ data: name === "cueva_receipt_periods" ? receiptPeriods : fixtures }),
     }),
   },

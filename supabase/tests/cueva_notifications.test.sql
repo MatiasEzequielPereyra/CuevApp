@@ -1,0 +1,998 @@
+begin;
+select plan(100);
+
+-- Isolated fixtures: two students, two linked identities, one administrator.
+insert into auth.users(id,aud,role,email,created_at,updated_at)
+values
+ ('b1000000-0000-4000-8000-000000000001','authenticated','authenticated','notifications-admin@example.test',now(),now()),
+ ('b1000000-0000-4000-8000-000000000002','authenticated','authenticated','notifications-student-one@example.test',now(),now()),
+ ('b1000000-0000-4000-8000-000000000003','authenticated','authenticated','notifications-student-two@example.test',now(),now());
+
+insert into auth.sessions(id,user_id,created_at,updated_at)
+values
+ ('b2000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001',now(),now()),
+ ('b2000000-0000-4000-8000-000000000002','b1000000-0000-4000-8000-000000000002',now(),now()),
+ ('b2000000-0000-4000-8000-000000000003','b1000000-0000-4000-8000-000000000003',now(),now());
+
+insert into cueva_private.access_state(user_id,ready,session_not_before)
+values
+ ('b1000000-0000-4000-8000-000000000001',true,now()-interval '1 minute'),
+ ('b1000000-0000-4000-8000-000000000002',true,now()-interval '1 minute'),
+ ('b1000000-0000-4000-8000-000000000003',true,now()-interval '1 minute');
+
+insert into public.cueva_profiles(user_id,role)
+values
+ ('b1000000-0000-4000-8000-000000000001','admin'),
+ ('b1000000-0000-4000-8000-000000000002','alumno'),
+ ('b1000000-0000-4000-8000-000000000003','alumno');
+
+insert into public.cueva_students(id,first_name,last_name,email,joined_on)
+values
+ ('b3000000-0000-4000-8000-000000000001','Student','One','notifications-student-one@example.test',date '2026-01-01'),
+ ('b3000000-0000-4000-8000-000000000002','Student','Two','notifications-student-two@example.test',date '2026-01-02');
+
+insert into public.cueva_student_invitations(
+ student_id,email,user_id,state,lease,requested_by
+) values
+ ('b3000000-0000-4000-8000-000000000001','notifications-student-one@example.test','b1000000-0000-4000-8000-000000000002','sent','b4000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001'),
+ ('b3000000-0000-4000-8000-000000000002','notifications-student-two@example.test','b1000000-0000-4000-8000-000000000003','sent','b4000000-0000-4000-8000-000000000002','b1000000-0000-4000-8000-000000000001');
+
+insert into public.cueva_prices(id,effective_month,cents,actor)
+values ('b5000000-0000-4000-8000-000000000001',date '2026-11-01',10000,'b1000000-0000-4000-8000-000000000001');
+
+insert into public.cueva_periods(id,student_id,month,due_on,cents,price_id,actor)
+values
+ ('b6000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000001',date '2026-11-01',date '2026-11-20',10000,'b5000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001'),
+ ('b6000000-0000-4000-8000-000000000002','b3000000-0000-4000-8000-000000000002',date '2026-11-01',date '2026-11-21',12000,'b5000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001'),
+ ('b6000000-0000-4000-8000-000000000003','b3000000-0000-4000-8000-000000000002',date '2026-12-01',date '2026-12-20',12000,'b5000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001');
+
+insert into public.cueva_payments(id,period_id,cents,paid_on,method,actor)
+values ('b7000000-0000-4000-8000-000000000001','b6000000-0000-4000-8000-000000000001',2500,date '2026-11-10','transferencia','b1000000-0000-4000-8000-000000000001');
+
+insert into public.cueva_notifications(id,period_id,reminder_days,due_on,scheduled_at)
+values
+ ('b8000000-0000-4000-8000-000000000001','b6000000-0000-4000-8000-000000000001',5,date '2026-11-20',timestamptz '2026-11-15 12:00:00-03'),
+ ('b8000000-0000-4000-8000-000000000002','b6000000-0000-4000-8000-000000000002',5,date '2026-11-21',timestamptz '2026-11-16 12:00:00-03'),
+ ('b8000000-0000-4000-8000-000000000003','b6000000-0000-4000-8000-000000000003',5,date '2026-12-20',timestamptz '2026-12-15 12:00:00-03');
+
+insert into public.cueva_notification_deliveries(
+ id,notification_id,channel,status,attempt_count,next_attempt_at,last_attempt_at,lease_token,lease_expires_at,provider_started_at
+) values
+ ('b9000000-0000-4000-8000-000000000001','b8000000-0000-4000-8000-000000000001','internal','pending',0,timestamptz '2026-11-15 12:00:00-03',null,null,null,null),
+ ('b9000000-0000-4000-8000-000000000002','b8000000-0000-4000-8000-000000000001','push','pending',1,timestamptz '2026-11-15 12:15:00-03',timestamptz '2026-11-15 12:00:00-03',null,null,null),
+ ('b9000000-0000-4000-8000-000000000003','b8000000-0000-4000-8000-000000000002','internal','pending',0,timestamptz '2026-11-16 12:00:00-03',null,null,null,null),
+ ('b9000000-0000-4000-8000-000000000004','b8000000-0000-4000-8000-000000000002','email','processing',1,timestamptz '2026-11-16 12:00:00-03',clock_timestamp()-interval '10 minutes',gen_random_uuid(),clock_timestamp()-interval '1 minute',clock_timestamp()-interval '5 minutes'),
+ ('b9000000-0000-4000-8000-000000000005','b8000000-0000-4000-8000-000000000001','email','processing',1,timestamptz '2026-11-16 12:00:00-03',clock_timestamp()-interval '10 minutes',gen_random_uuid(),clock_timestamp()-interval '1 minute',null),
+ ('b9000000-0000-4000-8000-000000000006','b8000000-0000-4000-8000-000000000003','internal','pending',0,timestamptz '2026-12-15 12:00:00-03',null,null,null,null);
+
+insert into public.cueva_notification_inbox(
+ id,delivery_id,notification_id,student_id,user_id,title,body
+) values
+ ('ba000000-0000-4000-8000-000000000001','b9000000-0000-4000-8000-000000000001','b8000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000002','Recordatorio de cuota','Tu período tiene saldo pendiente.');
+
+-- Student one: own preference and inbox only; cannot read operational tables.
+select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000002',true);
+select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000002','role','authenticated','session_id','b2000000-0000-4000-8000-000000000002')::text,true);
+set local role authenticated;
+
+select is((select count(*)::integer from public.cueva_notification_preferences),1,'student can read their own push preference');
+select is((select count(*)::integer from public.cueva_notification_inbox),1,'student can read their own internal inbox');
+select is((select count(*)::integer from public.cueva_notification_inbox where id='ba000000-0000-4000-8000-000000000001'),1,'own inbox row is visible');
+update public.cueva_notification_preferences set push_enabled=false where student_id='b3000000-0000-4000-8000-000000000001';
+select is((select push_enabled from public.cueva_notification_preferences where student_id='b3000000-0000-4000-8000-000000000001'),false,'student can disable push for their own account');
+update public.cueva_notification_preferences set push_enabled=false where student_id='b3000000-0000-4000-8000-000000000002';
+-- RLS correctly hides the other student's row from this SELECT. Inspect the
+-- persisted value as the database test owner to prove the UPDATE changed nothing.
+reset role;
+select is((select push_enabled from public.cueva_notification_preferences where student_id='b3000000-0000-4000-8000-000000000002'),true,'student cannot change another student preference');
+set local role authenticated;
+update public.cueva_notification_inbox set read_at=clock_timestamp() where id='ba000000-0000-4000-8000-000000000001';
+select ok((select read_at is not null from public.cueva_notification_inbox where id='ba000000-0000-4000-8000-000000000001'),'student can mark own inbox item as read');
+select throws_ok($$select * from public.cueva_notifications$$,'42501',null,'student cannot query operational notification rows');
+select throws_ok($$select * from public.cueva_notification_deliveries$$,'42501',null,'student cannot query delivery rows');
+
+reset role;
+select ok(has_function_privilege('service_role','public.cueva_notifications_worker_snapshot()','EXECUTE'),'service role can execute the worker snapshot');
+select ok(not has_function_privilege('authenticated','public.cueva_notifications_worker_snapshot()','EXECUTE'),'authenticated cannot execute the worker snapshot');
+select ok(not has_function_privilege('anon','public.cueva_notifications_worker_snapshot()','EXECUTE'),'anon cannot execute the worker snapshot');
+select ok(has_table_privilege('service_role','public.cueva_notification_settings','SELECT'),'worker can read the common schedule');
+select ok(has_table_privilege('service_role','public.cueva_notification_preferences','SELECT'),'worker can read push preferences');
+
+-- Both admins use the authenticated schedule RPC; only untouched pending work moves.
+select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000001',true);
+select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000001','role','authenticated','session_id','b2000000-0000-4000-8000-000000000001')::text,true);
+set local role authenticated;
+select is(public.cueva_update_notification_schedule(time '13:00'),time '13:00','administrator can change the common send time');
+
+-- Operational notification tables are intentionally not readable by admins
+-- through the Data API. Inspect the RPC effects as the database test owner.
+reset role;
+select is((select send_time from public.cueva_notification_settings where singleton),time '13:00','new common send time is persisted');
+select is((select count(*)::integer from public.cueva_notification_audit where action='schedule_changed' and actor_id='b1000000-0000-4000-8000-000000000001'),1,'schedule change is audited with its actor');
+select is((select scheduled_at from public.cueva_notifications where id='b8000000-0000-4000-8000-000000000001'),timestamptz '2026-11-15 13:00:00-03','pending notification schedule follows the configured local time');
+select is((select next_attempt_at from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000001'),timestamptz '2026-11-15 13:00:00-03','unattempted delivery schedule is updated');
+select is((select next_attempt_at from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000002'),timestamptz '2026-11-15 12:15:00-03','delivery with a previous attempt keeps its retry schedule');
+
+reset role;
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select results_eq(
+ $$select balance_cents from public.cueva_notifications_worker_snapshot() where period_id='b6000000-0000-4000-8000-000000000001'$$,
+ $$values (7500::bigint)$$,
+ 'worker snapshot returns current balance after partial payment without exposing payment history'
+);
+
+reset role;
+select throws_ok($$insert into public.cueva_notifications(id,period_id,reminder_days,due_on,scheduled_at) values ('b8000000-0000-4000-8000-000000000003','b6000000-0000-4000-8000-000000000001',5,date '2026-11-20',now())$$,'23505',null,'logical notification identity is unique by period, type, and due date');
+select throws_ok($$insert into public.cueva_notification_deliveries(id,notification_id,channel,status,attempt_count,next_attempt_at,lease_token) values ('b9000000-0000-4000-8000-000000000004','b8000000-0000-4000-8000-000000000002','push','processing',0,now(),gen_random_uuid())$$,'23514',null,'processing delivery requires both lease token and expiry');
+select throws_ok($$insert into public.cueva_notification_inbox(id,delivery_id,notification_id,student_id,user_id,title,body) values ('ba000000-0000-4000-8000-000000000002','b9000000-0000-4000-8000-000000000001','b8000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000002','b1000000-0000-4000-8000-000000000003','Wrong owner','Should fail')$$,'23514',null,'internal inbox enforces the delivery, student, and linked user relationship');
+
+
+-- Atomic worker claims: only service_role may reserve due deliveries.
+reset role;
+select ok(
+  has_function_privilege('service_role','public.cueva_claim_notification_deliveries(integer,integer)','EXECUTE'),
+  'service role can claim notification deliveries'
+);
+select ok(
+  not has_function_privilege('authenticated','public.cueva_claim_notification_deliveries(integer,integer)','EXECUTE'),
+  'authenticated cannot claim notification deliveries'
+);
+select ok(
+  not has_function_privilege('anon','public.cueva_claim_notification_deliveries(integer,integer)','EXECUTE'),
+  'anon cannot claim notification deliveries'
+);
+
+-- A provider-started email must remain reconcilable even if its parent was
+-- cancelled and the due date has since passed.
+update public.cueva_notifications
+set status = 'cancelled', cancellation_reason = 'cancelled_test', due_on = date '2026-11-10'
+where id = 'b8000000-0000-4000-8000-000000000002';
+
+update public.cueva_notifications
+set scheduled_at = clock_timestamp()
+where id = 'b8000000-0000-4000-8000-000000000001';
+update public.cueva_notification_deliveries
+set next_attempt_at = clock_timestamp()
+where id = 'b9000000-0000-4000-8000-000000000001';
+
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+  (select count(*)::integer from public.cueva_claim_notification_deliveries(1,300)),
+  1,
+  'worker atomically claims one due delivery'
+);
+reset role;
+select is(
+  (select status from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000001'),
+  'processing',
+  'claimed delivery moves to processing'
+);
+select is(
+  (select attempt_count::integer from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000001'),
+  1,
+  'claim increments the attempt counter exactly once'
+);
+select ok(
+  (select lease_token is not null and lease_expires_at > clock_timestamp()
+   from public.cueva_notification_deliveries
+   where id='b9000000-0000-4000-8000-000000000001'),
+  'claim assigns a live unique lease'
+);
+
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+  (select count(*)::integer from public.cueva_claim_notification_deliveries(1,300)),
+  0,
+  'active lease prevents the same delivery from being claimed again'
+);
+reset role;
+
+update public.cueva_notification_deliveries
+set lease_expires_at = clock_timestamp() - interval '1 second'
+where id='b9000000-0000-4000-8000-000000000001';
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+  (select count(*)::integer from public.cueva_claim_notification_deliveries(1,300)),
+  0,
+  'expired lease is recovered but delayed for its retry interval'
+);
+reset role;
+select is(
+  (select count(*)::integer from public.cueva_notification_attempts
+   where delivery_id='b9000000-0000-4000-8000-000000000001'
+     and attempt_number=1 and outcome='unknown' and error_code='lease_expired'),
+  1,
+  'expired lease is recorded as an unknown attempt'
+);
+select is((select status from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000005'),
+  'pending','expired email lease before provider start remains retryable');
+select is((select outcome || ':' || error_code from public.cueva_notification_attempts where delivery_id='b9000000-0000-4000-8000-000000000005' and attempt_number=1),
+  'failed:email_lease_expired_before_provider','pre-provider lease expiry is recorded as a retryable failure');
+select is((select status from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000004'),
+  'failed','expired email lease after provider start is terminal to prevent a duplicate send');
+select is((select count(*)::integer from public.cueva_notification_admin_alerts where delivery_id='b9000000-0000-4000-8000-000000000004' and alert_type='provider_outcome_unknown'),
+  1,'expired email lease after provider start creates an admin reconciliation alert');
+select is(
+  (select status from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000001'),
+  'pending',
+  'expired lease returns to pending when retries remain and due date is future'
+);
+
+
+-- Lease-safe finalization: only the active service worker may persist an outcome.
+reset role;
+select ok(
+  has_function_privilege('service_role','public.cueva_finalize_notification_delivery(uuid,uuid,text,text,text)','EXECUTE'),
+  'service role can finalize notification deliveries'
+);
+select ok(
+  not has_function_privilege('authenticated','public.cueva_finalize_notification_delivery(uuid,uuid,text,text,text)','EXECUTE'),
+  'authenticated cannot finalize notification deliveries'
+);
+select ok(
+  not has_function_privilege('anon','public.cueva_finalize_notification_delivery(uuid,uuid,text,text,text)','EXECUTE'),
+  'anon cannot finalize notification deliveries'
+);
+
+update public.cueva_notification_deliveries
+set next_attempt_at = clock_timestamp()
+where id = 'b9000000-0000-4000-8000-000000000001'
+  and status = 'pending';
+
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+  (select count(*)::integer from public.cueva_claim_notification_deliveries(1,300)),
+  1,
+  'worker can reclaim a retry after its backoff is due'
+);
+select set_config(
+  'test.cueva_notification_lease_token',
+  (select lease_token::text from public.cueva_notification_deliveries
+   where id='b9000000-0000-4000-8000-000000000001'),
+  true
+);
+select is(
+  (select finalized from public.cueva_finalize_notification_delivery(
+    'b9000000-0000-4000-8000-000000000001',
+    current_setting('test.cueva_notification_lease_token')::uuid,
+    'sent',
+    'provider-test-001',
+    null
+  )),
+  true,
+  'active lease can be finalized as sent'
+);
+select is(
+  (select status from public.cueva_notification_deliveries
+   where id='b9000000-0000-4000-8000-000000000001'),
+  'sent',
+  'successful finalization clears processing state and marks delivery sent'
+);
+select is(
+  (select count(*)::integer from public.cueva_notification_attempts
+   where delivery_id='b9000000-0000-4000-8000-000000000001'
+     and attempt_number=2 and outcome='sent' and provider_reference='provider-test-001'),
+  1,
+  'successful finalization appends exactly one provider outcome'
+);
+select is(
+  (select finalized from public.cueva_finalize_notification_delivery(
+    'b9000000-0000-4000-8000-000000000001',
+    current_setting('test.cueva_notification_lease_token')::uuid,
+    'sent',
+    'provider-test-001',
+    null
+  )),
+  false,
+  'duplicate finalization is a safe no-op'
+);
+select is(
+  (select count(*)::integer from public.cueva_notification_attempts
+   where delivery_id='b9000000-0000-4000-8000-000000000001'
+     and attempt_number=2),
+  1,
+  'duplicate finalization does not duplicate the attempt ledger'
+);
+reset role;
+select ok(
+  (select bool_and(recorded_at is not null)
+   from public.cueva_notification_attempts
+   where delivery_id='b9000000-0000-4000-8000-000000000001'),
+  'attempt ledger records when each outcome was persisted'
+);
+select set_config('request.jwt.claims','{"role":"authenticated"}',true);
+set local role authenticated;
+select throws_ok(
+  $$select * from public.cueva_finalize_notification_delivery(
+    'b9000000-0000-4000-8000-000000000001',
+    gen_random_uuid(),
+    'sent',
+    null,
+    null
+  )$$,
+  '42501',
+  null,
+  'non-worker role cannot invoke finalization'
+);
+reset role;
+
+
+-- Exhausted deliveries create one concise admin alert transactionally.
+reset role;
+update public.cueva_notification_deliveries
+set status = 'failed',
+    attempt_count = 5,
+    last_error_code = 'provider_error',
+    updated_at = clock_timestamp()
+where id = 'b9000000-0000-4000-8000-000000000006'
+  and status = 'pending';
+
+select is(
+  (select count(*)::integer from public.cueva_notification_admin_alerts
+   where delivery_id = 'b9000000-0000-4000-8000-000000000006'),
+  1,
+  'first terminal failure after five attempts creates one admin alert'
+);
+
+-- An uncertain Brevo response is terminal before exhausting retries.
+update public.cueva_notifications set scheduled_at = clock_timestamp()
+where id = 'b8000000-0000-4000-8000-000000000002';
+update public.cueva_notification_deliveries set next_attempt_at = clock_timestamp()
+where id = 'b9000000-0000-4000-8000-000000000005';
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is((select count(*)::integer from public.cueva_claim_notification_deliveries(1,300)),1,
+  'worker claims the email delivery for uncertain-outcome test');
+select ok(has_function_privilege('service_role','public.cueva_mark_notification_delivery_started(uuid,uuid)','EXECUTE'),
+  'service role can mark provider dispatch start');
+select ok(not has_function_privilege('authenticated','public.cueva_mark_notification_delivery_started(uuid,uuid)','EXECUTE'),
+  'authenticated cannot mark provider dispatch start');
+select is((select started from public.cueva_mark_notification_delivery_started(
+  'b9000000-0000-4000-8000-000000000005',
+  (select lease_token from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000005')
+)), true, 'active email lease can persist provider start');
+-- Cancellation/expiry after the provider-start marker cannot erase uncertainty.
+update public.cueva_notifications
+set status = 'cancelled', cancellation_reason = 'cancelled_test', due_on = date '2026-11-10'
+where id = 'b8000000-0000-4000-8000-000000000001';
+select is((select delivery_status from public.cueva_finalize_notification_delivery(
+  'b9000000-0000-4000-8000-000000000005',
+  (select lease_token from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000005'),
+  'unknown',null,'brevo_result_unknown'
+)), 'failed', 'uncertain Brevo result becomes terminal instead of retryable');
+reset role;
+select is((select count(*)::integer from public.cueva_notification_admin_alerts
+  where delivery_id='b9000000-0000-4000-8000-000000000005' and alert_type='provider_outcome_unknown' and attempt_count=2),
+  1,'uncertain provider result creates an admin reconciliation alert at the actual attempt count');
+select ok(
+  (select student_name = 'Student Two'
+      and period_month = date '2026-12-01'
+      and reminder_days = 5
+      and channel = 'internal'
+      and attempt_count = 5
+      and failed_at is not null
+   from public.cueva_notification_admin_alerts
+   where delivery_id = 'b9000000-0000-4000-8000-000000000006'),
+  'admin alert contains the concise student, period, reminder, channel, and exhaustion snapshot'
+);
+
+select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000001',true);
+select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000001','role','authenticated','session_id','b2000000-0000-4000-8000-000000000001')::text,true);
+set local role authenticated;
+select is(
+  (select count(*)::integer from public.cueva_notification_admin_alerts),
+  3,
+  'administrator with a valid session can read operational alerts'
+);
+select throws_ok(
+  $$select * from public.cueva_notification_attempts$$,
+  '42501',
+  null,
+  'administrator UI cannot read the restricted technical attempt ledger'
+);
+
+reset role;
+select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000002',true);
+select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000002','role','authenticated','session_id','b2000000-0000-4000-8000-000000000002')::text,true);
+set local role authenticated;
+select is(
+  (select count(*)::integer from public.cueva_notification_admin_alerts),
+  0,
+  'student cannot read administrative operational alerts'
+);
+
+reset role;
+update public.cueva_notification_deliveries
+set status = 'failed', updated_at = clock_timestamp()
+where id = 'b9000000-0000-4000-8000-000000000006';
+select is(
+  (select count(*)::integer from public.cueva_notification_admin_alerts
+   where delivery_id = 'b9000000-0000-4000-8000-000000000006'),
+  1,
+  'repeated failed-state update cannot duplicate the admin alert'
+);
+
+
+-- Per-device Web Push: independent reservations, outcomes, and uncertainty.
+insert into public.cueva_push_subscriptions(id,student_id,endpoint,p256dh,auth_secret)
+values
+ ('bc000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000002','https://push.example.test/device-one',repeat('A',87),repeat('B',22)),
+ ('bc000000-0000-4000-8000-000000000002','b3000000-0000-4000-8000-000000000002','https://push.example.test/device-two',repeat('C',87),repeat('D',22)),
+ ('bc000000-0000-4000-8000-000000000003','b3000000-0000-4000-8000-000000000002','https://push.example.test/device-three',repeat('E',87),repeat('F',22));
+
+update public.cueva_notifications
+set scheduled_at = clock_timestamp(), status = 'pending', cancellation_reason = null
+where id = 'b8000000-0000-4000-8000-000000000003';
+
+insert into public.cueva_notification_deliveries(
+ id,notification_id,channel,status,attempt_count,next_attempt_at
+) values (
+ 'b9000000-0000-4000-8000-000000000007',
+ 'b8000000-0000-4000-8000-000000000003',
+ 'push','pending',0,clock_timestamp()
+);
+
+select ok(
+ has_function_privilege('service_role','public.cueva_claim_notification_push_delivery(uuid,uuid,uuid,integer)','EXECUTE'),
+ 'service role can claim an individual push target'
+);
+select ok(
+ not has_function_privilege('authenticated','public.cueva_claim_notification_push_delivery(uuid,uuid,uuid,integer)','EXECUTE'),
+ 'authenticated cannot claim individual push targets'
+);
+
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+ (select count(*)::integer from public.cueva_claim_notification_deliveries(1,300)
+  where delivery_id='b9000000-0000-4000-8000-000000000007'),
+ 1,
+ 'worker claims the aggregate push delivery'
+);
+select set_config(
+ 'test.push_parent_lease',
+ (select lease_token::text from public.cueva_notification_deliveries
+  where id='b9000000-0000-4000-8000-000000000007'),
+ true
+);
+
+select is(
+ (select claimed from public.cueva_claim_notification_push_delivery(
+  'b9000000-0000-4000-8000-000000000007',
+  gen_random_uuid(),
+  'bc000000-0000-4000-8000-000000000001',120
+ )),
+ false,
+ 'stale parent lease cannot reserve a push target'
+);
+select is(
+ (select claimed from public.cueva_claim_notification_push_delivery(
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid,
+  'bc000000-0000-4000-8000-000000000001',120
+ )),
+ true,
+ 'first device receives its own atomic lease'
+);
+select is(
+ (select claimed from public.cueva_claim_notification_push_delivery(
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid,
+  'bc000000-0000-4000-8000-000000000001',120
+ )),
+ false,
+ 'a live per-device lease prevents concurrent duplicate claims'
+);
+reset role;
+select set_config(
+ 'test.push_device_one_lease',
+ (select lease_token::text from public.cueva_notification_push_deliveries
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and subscription_id='bc000000-0000-4000-8000-000000000001'),
+ true
+);
+set local role service_role;
+select is(
+ (select claimed from public.cueva_claim_notification_push_delivery(
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid,
+  'bc000000-0000-4000-8000-000000000002',120
+ )),
+ true,
+ 'second device receives an independent lease'
+);
+reset role;
+select set_config(
+ 'test.push_device_two_lease',
+ (select lease_token::text from public.cueva_notification_push_deliveries
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and subscription_id='bc000000-0000-4000-8000-000000000002'),
+ true
+);
+set local role service_role;
+
+reset role;
+select set_config('test.push_device_one_id',
+ (select id::text from public.cueva_notification_push_deliveries
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and subscription_id='bc000000-0000-4000-8000-000000000001'),true);
+set local role service_role;
+select is(
+ (select started from public.cueva_mark_notification_push_started(
+  current_setting('test.push_device_one_id')::uuid,
+  current_setting('test.push_device_one_lease')::uuid,
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid
+ )),
+ true,
+ 'first device records provider start under both leases'
+);
+select is(
+ (select delivery_status from public.cueva_finalize_notification_push_delivery(
+  current_setting('test.push_device_one_id')::uuid,
+  current_setting('test.push_device_one_lease')::uuid,
+  'sent','http:201',null
+ )),
+ 'sent',
+ 'first device success is terminal and independently recorded'
+);
+
+reset role;
+select set_config('test.push_device_two_id',
+ (select id::text from public.cueva_notification_push_deliveries
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and subscription_id='bc000000-0000-4000-8000-000000000002'),true);
+set local role service_role;
+select is(
+ (select started from public.cueva_mark_notification_push_started(
+  current_setting('test.push_device_two_id')::uuid,
+  current_setting('test.push_device_two_lease')::uuid,
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid
+ )),
+ true,
+ 'second device records provider start'
+);
+select is(
+ (select delivery_status from public.cueva_finalize_notification_push_delivery(
+  current_setting('test.push_device_two_id')::uuid,
+  current_setting('test.push_device_two_lease')::uuid,
+  'unknown',null,'push_result_unknown'
+ )),
+ 'unknown',
+ 'uncertain device result is terminal and cannot be automatically retried'
+);
+select is(
+ (select claimed from public.cueva_claim_notification_push_delivery(
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid,
+  'bc000000-0000-4000-8000-000000000002',120
+ )),
+ false,
+ 'unknown device outcome cannot be claimed or resent'
+);
+reset role;
+
+select is(
+ (select string_agg(status,':' order by subscription_id)
+  from public.cueva_notification_push_deliveries
+  where delivery_id='b9000000-0000-4000-8000-000000000007'),
+ 'sent:unknown',
+ 'one accepted device is not overwritten by another device uncertainty'
+);
+select is(
+ (select count(*)::integer from public.cueva_notification_push_attempts
+  where push_delivery_id in (
+    select id from public.cueva_notification_push_deliveries
+    where delivery_id='b9000000-0000-4000-8000-000000000007'
+  )),
+ 2,
+ 'each device attempt is stored independently in the append-only ledger'
+);
+select is(
+ (select count(*)::integer from public.cueva_notification_admin_alerts
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and alert_type='provider_outcome_unknown' and channel='push'),
+ 1,
+ 'uncertain device outcome creates one concise push reconciliation alert'
+);
+
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+ (select claimed from public.cueva_claim_notification_push_delivery(
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid,
+  'bc000000-0000-4000-8000-000000000003',120
+ )),
+ true,
+ 'third device can be reserved without resending the first two'
+);
+reset role;
+select set_config(
+ 'test.push_device_three_lease',
+ (select lease_token::text from public.cueva_notification_push_deliveries
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and subscription_id='bc000000-0000-4000-8000-000000000003'),
+ true
+);
+select set_config('test.push_device_three_id',
+ (select id::text from public.cueva_notification_push_deliveries
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and subscription_id='bc000000-0000-4000-8000-000000000003'),true);
+set local role service_role;
+select is(
+ (select started from public.cueva_mark_notification_push_started(
+  current_setting('test.push_device_three_id')::uuid,
+  current_setting('test.push_device_three_lease')::uuid,
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid
+ )),
+ true,
+ 'third device reaches the provider-start boundary'
+);
+reset role;
+
+update public.cueva_notifications
+set status='cancelled', cancellation_reason='push_cancelled_test'
+where id='b8000000-0000-4000-8000-000000000003';
+select is(
+ (select status from public.cueva_notification_push_deliveries
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and subscription_id='bc000000-0000-4000-8000-000000000003'),
+ 'unknown',
+ 'cancellation after provider start preserves the uncertain outcome'
+);
+select is(
+ (select count(*)::integer from public.cueva_notification_admin_alerts
+  where delivery_id='b9000000-0000-4000-8000-000000000007'
+    and alert_type='provider_outcome_unknown'),
+ 1,
+ 'multiple uncertain devices still produce only one alert per parent delivery'
+);
+
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+ (select delivery_status from public.cueva_finalize_notification_delivery(
+  'b9000000-0000-4000-8000-000000000007',
+  current_setting('test.push_parent_lease')::uuid,
+  'sent','webpush:sent=1;unknown=2',null
+ )),
+ 'sent',
+ 'aggregate channel can finalize sent when at least one device accepted the push'
+);
+reset role;
+
+
+-- A single endpoint can exhaust its own retry budget even when the parent
+-- channel has only just been claimed. The parent must become terminal too.
+insert into public.cueva_notifications(id,period_id,reminder_days,due_on,scheduled_at)
+values (
+ 'b8000000-0000-4000-8000-000000000004',
+ 'b6000000-0000-4000-8000-000000000003',
+ 1,date '2026-12-20',clock_timestamp()
+);
+insert into public.cueva_notification_deliveries(
+ id,notification_id,channel,status,attempt_count,next_attempt_at
+) values (
+ 'b9000000-0000-4000-8000-000000000008',
+ 'b8000000-0000-4000-8000-000000000004',
+ 'push','pending',0,clock_timestamp()
+);
+insert into public.cueva_push_subscriptions(id,student_id,endpoint,p256dh,auth_secret)
+values (
+ 'bc000000-0000-4000-8000-000000000004',
+ 'b3000000-0000-4000-8000-000000000002',
+ 'https://push.example.test/device-exhausted',repeat('G',87),repeat('H',22)
+);
+insert into public.cueva_notification_push_deliveries(
+ id,delivery_id,notification_id,subscription_id,status,attempt_count,next_attempt_at
+) values (
+ 'bd000000-0000-4000-8000-000000000001',
+ 'b9000000-0000-4000-8000-000000000008',
+ 'b8000000-0000-4000-8000-000000000004',
+ 'bc000000-0000-4000-8000-000000000004',
+ 'pending',4,clock_timestamp()
+);
+insert into public.cueva_notification_push_attempts(
+ push_delivery_id,attempt_number,attempted_at,outcome,error_code
+)
+select
+ 'bd000000-0000-4000-8000-000000000001',
+ attempt_number,
+ clock_timestamp() - make_interval(mins => 60 - attempt_number),
+ 'failed',
+ 'push_http_429'
+from generate_series(1,4) as attempt_number;
+
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+ (select count(*)::integer from public.cueva_claim_notification_deliveries(1,300)
+  where delivery_id='b9000000-0000-4000-8000-000000000008'),
+ 1,
+ 'worker claims the aggregate whose device is on its fifth attempt'
+);
+select set_config(
+ 'test.push_exhausted_parent_lease',
+ (select lease_token::text from public.cueva_notification_deliveries
+  where id='b9000000-0000-4000-8000-000000000008'),
+ true
+);
+select is(
+ (select claimed from public.cueva_claim_notification_push_delivery(
+  'b9000000-0000-4000-8000-000000000008',
+  current_setting('test.push_exhausted_parent_lease')::uuid,
+  'bc000000-0000-4000-8000-000000000004',120
+ )),
+ true,
+ 'device can be claimed for its fifth and final attempt'
+);
+reset role;
+select set_config(
+ 'test.push_exhausted_device_lease',
+ (select lease_token::text from public.cueva_notification_push_deliveries
+  where id='bd000000-0000-4000-8000-000000000001'),
+ true
+);
+set local role service_role;
+select is(
+ (select started from public.cueva_mark_notification_push_started(
+  'bd000000-0000-4000-8000-000000000001',
+  current_setting('test.push_exhausted_device_lease')::uuid,
+  'b9000000-0000-4000-8000-000000000008',
+  current_setting('test.push_exhausted_parent_lease')::uuid
+ )),
+ true,
+ 'fifth device attempt records provider start'
+);
+select is(
+ (select delivery_status from public.cueva_finalize_notification_push_delivery(
+  'bd000000-0000-4000-8000-000000000001',
+  current_setting('test.push_exhausted_device_lease')::uuid,
+  'failed','http:429','push_http_429'
+ )),
+ 'failed',
+ 'fifth known device failure becomes terminal'
+);
+select is(
+ (select count(*)::integer from public.cueva_notification_admin_alerts
+  where delivery_id='b9000000-0000-4000-8000-000000000008'
+    and alert_type='retries_exhausted' and channel='push' and attempt_count=5),
+ 1,
+ 'fifth device failure creates one retries-exhausted admin alert'
+);
+select is(
+ (select delivery_status from public.cueva_finalize_notification_delivery(
+  'b9000000-0000-4000-8000-000000000008',
+  current_setting('test.push_exhausted_parent_lease')::uuid,
+  'failed',null,'push_retries_exhausted'
+ )),
+ 'failed',
+ 'aggregate push delivery becomes terminal when all device retries are exhausted'
+);
+reset role;
+select is(
+ (select status from public.cueva_notification_deliveries
+  where id='b9000000-0000-4000-8000-000000000008'),
+ 'failed',
+ 'terminal device exhaustion does not consume redundant parent retries'
+);
+
+
+-- Payment writes and notification starts share the same advisory transaction
+-- lock. A fully paid period cannot cross any provider-start boundary.
+insert into public.cueva_payments(id,period_id,cents,paid_on,method,actor)
+values (
+ 'b7000000-0000-4000-8000-000000000003',
+ 'b6000000-0000-4000-8000-000000000002',
+ 12000,date '2026-11-12','transferencia',
+ 'b1000000-0000-4000-8000-000000000001'
+);
+insert into public.cueva_notifications(id,period_id,reminder_days,due_on,scheduled_at)
+values (
+ 'b8000000-0000-4000-8000-000000000005',
+ 'b6000000-0000-4000-8000-000000000002',
+ 1,date '2026-11-21',clock_timestamp()
+);
+insert into public.cueva_notification_deliveries(
+ id,notification_id,channel,status,attempt_count,next_attempt_at,lease_token,lease_expires_at
+) values
+ (
+  'b9000000-0000-4000-8000-000000000050',
+  'b8000000-0000-4000-8000-000000000005',
+  'email','processing',1,clock_timestamp(),
+  'b9000000-0000-4000-8000-000000000050',
+  clock_timestamp()+interval '5 minutes'
+ ),
+ (
+  'b9000000-0000-4000-8000-000000000051',
+  'b8000000-0000-4000-8000-000000000005',
+  'internal','processing',1,clock_timestamp(),
+  'b9000000-0000-4000-8000-000000000051',
+  clock_timestamp()+interval '5 minutes'
+ ),
+ (
+  'b9000000-0000-4000-8000-000000000052',
+  'b8000000-0000-4000-8000-000000000005',
+  'push','processing',1,clock_timestamp(),
+  'b9000000-0000-4000-8000-000000000052',
+  clock_timestamp()+interval '5 minutes'
+ );
+insert into public.cueva_push_subscriptions(id,student_id,endpoint,p256dh,auth_secret)
+values (
+ 'bc000000-0000-4000-8000-000000000006',
+ 'b3000000-0000-4000-8000-000000000002',
+ 'https://push.example.test/payment-guard',repeat('J',87),repeat('K',22)
+);
+insert into public.cueva_notification_push_deliveries(
+ id,delivery_id,notification_id,subscription_id,status,attempt_count,next_attempt_at,lease_token,lease_expires_at
+) values (
+ 'bd000000-0000-4000-8000-000000000002',
+ 'b9000000-0000-4000-8000-000000000052',
+ 'b8000000-0000-4000-8000-000000000005',
+ 'bc000000-0000-4000-8000-000000000006',
+ 'processing',1,clock_timestamp(),
+ 'bd000000-0000-4000-8000-000000000002',
+ clock_timestamp()+interval '5 minutes'
+);
+update public.cueva_periods
+set due_on = date '2026-12-22'
+where id = 'b6000000-0000-4000-8000-000000000003';
+insert into public.cueva_payments(id,period_id,cents,paid_on,method,actor)
+values (
+ 'b7000000-0000-4000-8000-000000000004',
+ 'b6000000-0000-4000-8000-000000000003',
+ 3000,date '2026-11-12','transferencia',
+ 'b1000000-0000-4000-8000-000000000001'
+);
+insert into public.cueva_notifications(id,period_id,reminder_days,due_on,scheduled_at)
+values (
+ 'b8000000-0000-4000-8000-000000000006',
+ 'b6000000-0000-4000-8000-000000000003',
+ 1,date '2026-12-22',clock_timestamp()
+);
+insert into public.cueva_notification_deliveries(
+ id,notification_id,channel,status,attempt_count,next_attempt_at,lease_token,lease_expires_at
+) values (
+ 'b9000000-0000-4000-8000-000000000053',
+ 'b8000000-0000-4000-8000-000000000006',
+ 'internal','processing',1,clock_timestamp(),
+ 'b9000000-0000-4000-8000-000000000053',
+ clock_timestamp()+interval '5 minutes'
+);
+insert into public.cueva_notification_deliveries(
+ id,notification_id,channel,status,attempt_count,next_attempt_at,lease_token,lease_expires_at
+) values
+ (
+  'b9000000-0000-4000-8000-000000000054',
+  'b8000000-0000-4000-8000-000000000006',
+  'email','processing',1,clock_timestamp(),
+  'b9000000-0000-4000-8000-000000000054',
+  clock_timestamp()+interval '5 minutes'
+ ),
+ (
+  'b9000000-0000-4000-8000-000000000055',
+  'b8000000-0000-4000-8000-000000000006',
+  'push','processing',1,clock_timestamp(),
+  'b9000000-0000-4000-8000-000000000055',
+  clock_timestamp()+interval '5 minutes'
+);
+insert into public.cueva_notification_push_deliveries(
+ id,delivery_id,notification_id,subscription_id,status,attempt_count,next_attempt_at,lease_token,lease_expires_at
+) values (
+ 'bd000000-0000-4000-8000-000000000003',
+ 'b9000000-0000-4000-8000-000000000055',
+ 'b8000000-0000-4000-8000-000000000006',
+ 'bc000000-0000-4000-8000-000000000006',
+ 'processing',1,clock_timestamp(),
+ 'bd000000-0000-4000-8000-000000000003',
+ clock_timestamp()+interval '5 minutes'
+);
+
+reset role;
+select ok(
+ has_function_privilege('service_role','public.cueva_create_notification_inbox_guarded(uuid,uuid,uuid,uuid,text,text,bigint)','EXECUTE'),
+ 'service role can execute the payment-guarded inbox RPC'
+);
+select ok(
+ not has_function_privilege('authenticated','public.cueva_create_notification_inbox_guarded(uuid,uuid,uuid,uuid,text,text,bigint)','EXECUTE'),
+ 'authenticated cannot execute the payment-guarded inbox RPC'
+);
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+ (select started from public.cueva_mark_notification_delivery_started(
+  'b9000000-0000-4000-8000-000000000050',
+  'b9000000-0000-4000-8000-000000000050'
+ )),
+ false,
+ 'email cannot start after the period has been fully paid'
+);
+reset role;
+select is(
+ (select status from public.cueva_notifications where id='b8000000-0000-4000-8000-000000000005'),
+ 'cancelled',
+ 'a stale paid reminder is atomically cancelled at the provider boundary'
+);
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select is(
+ (select started from public.cueva_mark_notification_push_started(
+  'bd000000-0000-4000-8000-000000000002',
+  'bd000000-0000-4000-8000-000000000002',
+  'b9000000-0000-4000-8000-000000000052',
+  'b9000000-0000-4000-8000-000000000052'
+ )),
+ false,
+ 'push cannot start after the period has been fully paid'
+);
+select is(
+ (select created from public.cueva_create_notification_inbox_guarded(
+  'b9000000-0000-4000-8000-000000000051',
+  'b9000000-0000-4000-8000-000000000051',
+  'b3000000-0000-4000-8000-000000000002',
+  'b1000000-0000-4000-8000-000000000003',
+  'Recordatorio de cuota','Tu cuota tiene saldo pendiente.',
+  12000
+ )),
+ false,
+ 'internal inbox cannot be created after the period has been fully paid'
+);
+select is(
+ (select created from public.cueva_create_notification_inbox_guarded(
+  'b9000000-0000-4000-8000-000000000053',
+  'b9000000-0000-4000-8000-000000000053',
+  'b3000000-0000-4000-8000-000000000002',
+  'b1000000-0000-4000-8000-000000000003',
+  'Recordatorio de cuota','Tu cuota de diciembre tiene un saldo pendiente de $ 90.',
+  9000
+ )),
+ true,
+ 'internal inbox is created atomically when a partial or unpaid balance remains'
+);
+reset role;
+select is(
+ (select count(*)::integer from public.cueva_notification_inbox
+  where delivery_id='b9000000-0000-4000-8000-000000000053'),
+ 1,
+ 'guarded inbox creation persists exactly one item for its delivery'
+);
+select ok(
+ has_function_privilege('service_role','public.cueva_mark_notification_delivery_started_with_balance(uuid,uuid)','EXECUTE'),
+ 'service role can read the serialized balance when starting email'
+);
+select ok(
+ not has_function_privilege('authenticated','public.cueva_mark_notification_delivery_started_with_balance(uuid,uuid)','EXECUTE'),
+ 'authenticated cannot execute the balance-aware email start RPC'
+);
+select is(
+ (select started::text || ':' || balance_cents
+  from public.cueva_mark_notification_delivery_started_with_balance(
+   'b9000000-0000-4000-8000-000000000054',
+   'b9000000-0000-4000-8000-000000000054'
+  )),
+ 'true:9000',
+ 'email start returns the current partial-payment balance instead of the stale snapshot'
+);
+select is(
+ (select started::text || ':' || balance_cents
+  from public.cueva_mark_notification_push_started_with_balance(
+   'bd000000-0000-4000-8000-000000000003',
+   'bd000000-0000-4000-8000-000000000003',
+   'b9000000-0000-4000-8000-000000000055',
+   'b9000000-0000-4000-8000-000000000055'
+  )),
+ 'true:9000',
+ 'each push device start returns the current partial-payment balance'
+);
+
+
+select * from finish();
+rollback;

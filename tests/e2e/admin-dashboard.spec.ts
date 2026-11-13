@@ -29,6 +29,10 @@ const exercisesFixture = renderToStaticMarkup(React.createElement(AdminShell, {
   ...fixtureProps, active: "ejercicios",
 }, React.createElement("h1", null, "Ejercicios")));
 
+const alertsFixture = renderToStaticMarkup(React.createElement(AdminShell, {
+  ...fixtureProps, active: "alertas",
+}, React.createElement("h1", null, "Alertas operativas")));
+
 async function loadDashboard(page: Page, theme: "light" | "dark" = "dark", markup = fixture) {
   // A blank document prevents pending Next hydration from changing the synthetic fixture.
   await page.goto("about:blank");
@@ -50,6 +54,7 @@ for (const width of [360, 390, 768, 1440]) {
         const sidebar = page.getByRole("navigation", { name: "Navegación principal" });
         await expect(sidebar.getByRole("link", { name: "Vencimientos", exact: true })).toHaveAttribute("href", "/pagos?vista=vencimientos");
         await expect(sidebar.getByRole("link", { name: "Comprobantes", exact: true })).toHaveAttribute("href", "/pagos/comprobantes");
+        await expect(sidebar.getByRole("link", { name: "Alertas", exact: true })).toHaveAttribute("href", "/alertas");
       }
       await expect(page.getByRole("button", { name: "Cerrar sesión" })).toHaveCount(1);
       const navigation = page.getByRole("navigation", { name: width <= 680 ? "Navegación móvil" : "Navegación principal" });
@@ -113,4 +118,24 @@ test("Ejercicios tiene su propia sección activa en la navegación móvil", asyn
   const nav = page.getByRole("navigation", { name: "Navegación móvil" });
   await expect(nav.getByRole("link", { name: "Ejercicios", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(nav.getByRole("link", { name: "Rutinas", exact: true })).not.toHaveAttribute("aria-current", "page");
+});
+
+
+test("Alertas operativas está disponible y se marca como sección activa en escritorio y móvil", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await loadDashboard(page, "dark", alertsFixture);
+  const sidebar = page.getByRole("navigation", { name: "Navegación principal" });
+  const desktopAlerts = sidebar.getByRole("link", { name: "Alertas", exact: true });
+  await expect(desktopAlerts).toBeVisible();
+  await expect(desktopAlerts).toHaveAttribute("href", "/alertas");
+  await expect(desktopAlerts).toHaveAttribute("aria-current", "page");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await loadDashboard(page, "dark", alertsFixture);
+  const nav = page.getByRole("navigation", { name: "Navegación móvil" });
+  const alerts = nav.getByRole("link", { name: "Alertas", exact: true });
+  await expect(alerts).toBeVisible();
+  await expect(alerts).toHaveAttribute("href", "/alertas");
+  await expect(alerts).toHaveAttribute("aria-current", "page");
+  await expect(nav.getByRole("link", { name: "Inicio", exact: true })).not.toHaveAttribute("aria-current", "page");
 });
