@@ -109,7 +109,8 @@ select is(
 
 select is(
   (select count(*)::integer from public.cueva_push_subscriptions
-   where student_id='be000000-0000-4000-8000-000000000001' and revoked_at is null),
+   where student_id='be000000-0000-4000-8000-000000000001' and revoked_at is null
+     and (expires_at is null or expires_at > clock_timestamp())),
   10,
   'reactivating an endpoint preserves the ten-device active limit'
 );
