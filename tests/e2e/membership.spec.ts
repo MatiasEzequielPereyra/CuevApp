@@ -69,7 +69,15 @@ const { default: membershipPage } = loadExport("src/app/mi-membresia/page.tsx", 
     productConfig: () => ({}),
     userClient: async () => ({
       auth: { getUser: async () => ({ data: { user: { id: "fixture" } } }) },
-      from: () => ({ select: () => ({ maybeSingle: async () => ({ data: { role: "alumno" } }) }) }),
+      from: (table: string) => ({
+        select: () => table === "cueva_profiles"
+          ? { maybeSingle: async () => ({ data: { role: "alumno" }, error: null }) }
+          : {
+              order: () => ({
+                limit: async () => ({ data: [], error: null }),
+              }),
+            },
+      }),
       rpc: async (name: string) => ({ data: name === "cueva_receipt_periods" ? receiptPeriods : fixtures }),
     }),
   },
