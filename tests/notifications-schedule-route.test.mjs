@@ -8,7 +8,7 @@ function makeHarness(options = {}) {
   const state = {
     admin: options.admin !== false,
     updated: null,
-    updateResult: options.updateResult ?? "13:45:00",
+    updateResult: Object.hasOwn(options, "updateResult") ? options.updateResult : "13:45:00",
     authCalls: 0,
   };
   const handlers = createNotificationScheduleHandlers({
