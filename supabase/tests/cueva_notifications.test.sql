@@ -805,24 +805,24 @@ insert into public.cueva_notification_deliveries(
  id,notification_id,channel,status,attempt_count,next_attempt_at,lease_token,lease_expires_at
 ) values
  (
-  'b9000000-0000-4000-8000-000000000007',
+  'b9000000-0000-4000-8000-000000000050',
   'b8000000-0000-4000-8000-000000000005',
   'email','processing',1,clock_timestamp(),
-  'b9000000-0000-4000-8000-000000000007',
+  'b9000000-0000-4000-8000-000000000050',
   clock_timestamp()+interval '5 minutes'
  ),
  (
-  'b9000000-0000-4000-8000-000000000008',
+  'b9000000-0000-4000-8000-000000000051',
   'b8000000-0000-4000-8000-000000000005',
   'internal','processing',1,clock_timestamp(),
-  'b9000000-0000-4000-8000-000000000008',
+  'b9000000-0000-4000-8000-000000000051',
   clock_timestamp()+interval '5 minutes'
  ),
  (
-  'b9000000-0000-4000-8000-000000000010',
+  'b9000000-0000-4000-8000-000000000052',
   'b8000000-0000-4000-8000-000000000005',
   'push','processing',1,clock_timestamp(),
-  'b9000000-0000-4000-8000-000000000010',
+  'b9000000-0000-4000-8000-000000000052',
   clock_timestamp()+interval '5 minutes'
  );
 insert into public.cueva_push_subscriptions(id,student_id,endpoint,p256dh,auth_secret)
@@ -835,7 +835,7 @@ insert into public.cueva_notification_push_deliveries(
  id,delivery_id,notification_id,subscription_id,status,attempt_count,next_attempt_at,lease_token,lease_expires_at
 ) values (
  'bd000000-0000-4000-8000-000000000002',
- 'b9000000-0000-4000-8000-000000000010',
+ 'b9000000-0000-4000-8000-000000000052',
  'b8000000-0000-4000-8000-000000000005',
  'bc000000-0000-4000-8000-000000000006',
  'processing',1,clock_timestamp(),
@@ -851,10 +851,10 @@ values (
 insert into public.cueva_notification_deliveries(
  id,notification_id,channel,status,attempt_count,next_attempt_at,lease_token,lease_expires_at
 ) values (
- 'b9000000-0000-4000-8000-000000000011',
+ 'b9000000-0000-4000-8000-000000000053',
  'b8000000-0000-4000-8000-000000000006',
  'internal','processing',1,clock_timestamp(),
- 'b9000000-0000-4000-8000-000000000011',
+ 'b9000000-0000-4000-8000-000000000053',
  clock_timestamp()+interval '5 minutes'
 );
 
@@ -871,8 +871,8 @@ select set_config('request.jwt.claims','{"role":"service_role"}',true);
 set local role service_role;
 select is(
  (select started from public.cueva_mark_notification_delivery_started(
-  'b9000000-0000-4000-8000-000000000007',
-  'b9000000-0000-4000-8000-000000000007'
+  'b9000000-0000-4000-8000-000000000050',
+  'b9000000-0000-4000-8000-000000000050'
  )),
  false,
  'email cannot start after the period has been fully paid'
@@ -889,16 +889,16 @@ select is(
  (select started from public.cueva_mark_notification_push_started(
   'bd000000-0000-4000-8000-000000000002',
   'bd000000-0000-4000-8000-000000000002',
-  'b9000000-0000-4000-8000-000000000010',
-  'b9000000-0000-4000-8000-000000000010'
+  'b9000000-0000-4000-8000-000000000052',
+  'b9000000-0000-4000-8000-000000000052'
  )),
  false,
  'push cannot start after the period has been fully paid'
 );
 select is(
  (select created from public.cueva_create_notification_inbox_guarded(
-  'b9000000-0000-4000-8000-000000000008',
-  'b9000000-0000-4000-8000-000000000008',
+  'b9000000-0000-4000-8000-000000000051',
+  'b9000000-0000-4000-8000-000000000051',
   'b3000000-0000-4000-8000-000000000002',
   'b1000000-0000-4000-8000-000000000003',
   'Recordatorio de cuota','Tu cuota tiene saldo pendiente.',
@@ -909,8 +909,8 @@ select is(
 );
 select is(
  (select created from public.cueva_create_notification_inbox_guarded(
-  'b9000000-0000-4000-8000-000000000011',
-  'b9000000-0000-4000-8000-000000000011',
+  'b9000000-0000-4000-8000-000000000053',
+  'b9000000-0000-4000-8000-000000000053',
   'b3000000-0000-4000-8000-000000000002',
   'b1000000-0000-4000-8000-000000000003',
   'Recordatorio de cuota','Tu cuota de diciembre tiene un saldo pendiente de $ 120.',
@@ -922,7 +922,7 @@ select is(
 reset role;
 select is(
  (select count(*)::integer from public.cueva_notification_inbox
-  where delivery_id='b9000000-0000-4000-8000-000000000011'),
+  where delivery_id='b9000000-0000-4000-8000-000000000053'),
  1,
  'guarded inbox creation persists exactly one item for its delivery'
 );
