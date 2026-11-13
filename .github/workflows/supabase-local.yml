@@ -41,10 +41,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        path: [fresh, upgrade]
+        path: [fresh, upgrade, hosted-compatible]
     env:
       MIGRATION_PATH: ${{ matrix.path }}
       RECEIPTS_VERSION: "20261107100100"
+      NOTIFICATIONS_VERSION: "20261109232059"
     defaults:
       run:
         shell: bash
@@ -83,9 +84,21 @@ jobs:
           for file in supabase/migrations/*.sql; do
             name="${file##*/}"
             version="${name%%_*}"
-            if [[ "$MIGRATION_PATH" == fresh || "$version" < "$RECEIPTS_VERSION" || "$version" == "$RECEIPTS_VERSION" ]]; then
-              cp "$file" "$workdir/supabase/migrations/"
-            fi
+            case "$MIGRATION_PATH" in
+              fresh)
+                cp "$file" "$workdir/supabase/migrations/"
+                ;;
+              upgrade)
+                if [[ "$version" < "$RECEIPTS_VERSION" || "$version" == "$RECEIPTS_VERSION" ]]; then
+                  cp "$file" "$workdir/supabase/migrations/"
+                fi
+                ;;
+              hosted-compatible)
+                if [[ "$version" < "$NOTIFICATIONS_VERSION" ]]; then
+                  cp "$file" "$workdir/supabase/migrations/"
+                fi
+                ;;
+            esac
           done
           echo "SUPABASE_TEST_DIR=$workdir" >> "$GITHUB_ENV"
           echo "MIGRATION_EVIDENCE=$evidence" >> "$GITHUB_ENV"
@@ -93,6 +106,25 @@ jobs:
             cat "$RUNNER_TEMP/supabase-start.log" | tee "$evidence/supabase-start.log"
             exit 1
           fi
+
+      - name: Verify the deployed pre-notifications schema contract
+        if: matrix.path == 'hosted-compatible'
+        run: |
+          db=supabase_db_cuevapp-ci
+          supabase --workdir "$SUPABASE_TEST_DIR" migration list --local | tee "$MIGRATION_EVIDENCE/hosted-baseline-migrations.txt"
+          docker exec -i "$db" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/standalone-tests/hosted-schema-compatibility.sql \
+            | tee "$MIGRATION_EVIDENCE/hosted-schema-compatibility.txt"
+          docker exec -i "$db" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -v seed=true \
+            < supabase/standalone-tests/receipts-due-dates.sql \
+            | tee "$MIGRATION_EVIDENCE/hosted-baseline-fixtures.txt"
+
+      - name: Apply CUEVA-005 migrations to the deployed-schema-compatible baseline
+        if: matrix.path == 'hosted-compatible'
+        run: |
+          cp supabase/migrations/*.sql "$SUPABASE_TEST_DIR/supabase/migrations/"
+          supabase --workdir "$SUPABASE_TEST_DIR" migration up --local 2>&1 \
+            | tee "$MIGRATION_EVIDENCE/hosted-compatible-upgrade.txt"
 
       - name: Seed and upgrade the database with Comprobantes already applied
         if: matrix.path == 'upgrade'
@@ -188,5 +220,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cueva-003b-migrations-${{ matrix.path }}
+          name: cueva-migrations-${{ matrix.path }}
           path: ${{ runner.temp }}/cueva-003b-evidence/
