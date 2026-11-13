@@ -842,11 +842,14 @@ insert into public.cueva_notification_push_deliveries(
  'bd000000-0000-4000-8000-000000000002',
  clock_timestamp()+interval '5 minutes'
 );
+update public.cueva_periods
+set due_on = date '2026-12-22'
+where id = 'b6000000-0000-4000-8000-000000000003';
 insert into public.cueva_notifications(id,period_id,reminder_days,due_on,scheduled_at)
 values (
  'b8000000-0000-4000-8000-000000000006',
  'b6000000-0000-4000-8000-000000000003',
- 1,date '2026-12-20',clock_timestamp()
+ 1,date '2026-12-22',clock_timestamp()
 );
 insert into public.cueva_notification_deliveries(
  id,notification_id,channel,status,attempt_count,next_attempt_at,lease_token,lease_expires_at
