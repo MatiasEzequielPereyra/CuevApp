@@ -47,6 +47,12 @@ test("rechaza identificadores inválidos", async () => {
   assert.equal(state.authCalls, 0);
 });
 
+test("rechaza cuerpos mayores al límite permitido", async () => {
+  const { handlers, state } = makeHarness();
+  assert.equal((await handlers.PATCH(request({ id: notificationId, extra: "x".repeat(300) }))).status, 400);
+  assert.equal(state.authCalls, 0);
+});
+
 test("requiere un alumno autenticado", async () => {
   const { handlers, state } = makeHarness({ student: false });
   assert.equal((await handlers.PATCH(request({ id: notificationId }))).status, 403);
