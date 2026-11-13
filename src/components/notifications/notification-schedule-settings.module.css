@@ -1,0 +1,73 @@
+.panel {
+  display: grid;
+  gap: .85rem;
+  margin: 1.5rem 0;
+  padding: 1.25rem;
+  border: 1px solid var(--line, #deded8);
+  border-radius: 1rem;
+  background: var(--surface, #fff);
+}
+
+.panel h2 {
+  margin: .15rem 0;
+}
+
+.panel p {
+  margin: .25rem 0 0;
+  line-height: 1.5;
+}
+
+.kicker {
+  color: var(--muted, #666);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+
+.form {
+  display: grid;
+  gap: .5rem;
+  max-width: 28rem;
+}
+
+.form label {
+  font-weight: 650;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
+}
+
+.controls input,
+.controls button {
+  min-height: 2.7rem;
+  border: 1px solid var(--line, #deded8);
+  border-radius: .55rem;
+  padding: .5rem .75rem;
+  font: inherit;
+}
+
+.controls input {
+  min-width: 9rem;
+  background: var(--surface, #fff);
+  color: inherit;
+}
+
+.controls button {
+  color: var(--button-text, #fff);
+  background: var(--button-bg, #292929);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.controls button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.message {
+  color: var(--muted, #666);
+  font-size: .9rem;
+}
