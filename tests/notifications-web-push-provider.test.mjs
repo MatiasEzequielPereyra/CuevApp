@@ -13,6 +13,28 @@ function subscriptionKeys() {
   };
 }
 
+
+function decryptWebPushPayload(encryptedValue, subscription) {
+  const encrypted = Buffer.from(encryptedValue);
+  const salt = encrypted.subarray(0, 16);
+  const keyLength = encrypted[20];
+  const serverPublicKey = encrypted.subarray(21, 21 + keyLength);
+  const ciphertext = encrypted.subarray(21 + keyLength, -16);
+  const tag = encrypted.subarray(-16);
+  const sharedSecret = subscription.ecdh.computeSecret(serverPublicKey);
+  const keyInfo = Buffer.concat([
+    Buffer.from("WebPush: info\\0"),
+    Buffer.from(subscription.p256dh, "base64url"),
+    serverPublicKey,
+  ]);
+  const ikm = Buffer.from(hkdfSync("sha256", sharedSecret, Buffer.from(subscription.auth_secret, "base64url"), keyInfo, 32));
+  const cek = Buffer.from(hkdfSync("sha256", ikm, salt, Buffer.from("Content-Encoding: aes128gcm\\0"), 16));
+  const nonce = Buffer.from(hkdfSync("sha256", ikm, salt, Buffer.from("Content-Encoding: nonce\\0"), 12));
+  const decipher = createDecipheriv("aes-128-gcm", cek, nonce);
+  decipher.setAuthTag(tag);
+  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).subarray(0, -1).toString("utf8");
+}
+
 function vapidKeys() {
   const pair = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
   const jwk = pair.privateKey.export({ format: "jwk" });
@@ -83,7 +105,7 @@ test("entrega por dispositivo: conserva éxito y expiración de forma independie
           delivery_status: "processing",
         }], error: null };
       }
-      if (name === "cueva_mark_notification_push_started") return { data: [{ started: true }], error: null };
+      if (name === "cueva_mark_notification_push_started_with_balance") return { data: [{ started: true, balance_cents: "10000" }], error: null };
       if (name === "cueva_finalize_notification_push_delivery") {
         const status = args.p_outcome === "sent" ? "sent" : "expired";
         return { data: [{ finalized: true, delivery_status: status, attempt_number: 1 }], error: null };
@@ -123,7 +145,7 @@ test("entrega por dispositivo: conserva éxito y expiración de forma independie
   assert.equal(calls[0].init.headers["Content-Encoding"], "aes128gcm");
   assert.match(calls[0].init.headers.Authorization, /^vapid t=/);
   assert.equal(rpcCalls.filter(call => call.name === "cueva_claim_notification_push_delivery").length, 2);
-  assert.equal(rpcCalls.filter(call => call.name === "cueva_mark_notification_push_started").length, 2);
+  assert.equal(rpcCalls.filter(call => call.name === "cueva_mark_notification_push_started_with_balance").length, 2);
   assert.equal(rpcCalls.filter(call => call.name === "cueva_finalize_notification_push_delivery").length, 2);
   assert.deepEqual(
     rpcCalls.filter(call => call.name === "cueva_finalize_notification_push_delivery").map(call => call.args.p_outcome).sort(),
@@ -158,7 +180,7 @@ test("un reintento selectivo no vuelve a enviar al dispositivo que ya aceptó", 
           attempt_number: target.attempt, delivery_status: "processing",
         }], error: null };
       }
-      if (name === "cueva_mark_notification_push_started") return { data: [{ started: true }], error: null };
+      if (name === "cueva_mark_notification_push_started_with_balance") return { data: [{ started: true, balance_cents: "10000" }], error: null };
       if (name === "cueva_finalize_notification_push_delivery") {
         const id = args.p_push_delivery_id === "delivery-sub-sent" ? "sub-sent" : "sub-retry";
         const target = state.get(id);
@@ -219,7 +241,7 @@ test("un timeout de Web Push queda incierto y no se convierte en fallo reintenta
         claimed: true, push_delivery_id: "push-delivery-timeout", push_lease_token: "push-lease-timeout",
         attempt_number: 1, delivery_status: "processing",
       }], error: null };
-      if (name === "cueva_mark_notification_push_started") return { data: [{ started: true }], error: null };
+      if (name === "cueva_mark_notification_push_started_with_balance") return { data: [{ started: true, balance_cents: "10000" }], error: null };
       if (name === "cueva_finalize_notification_push_delivery") {
         outcomes.push(args.p_outcome);
         return { data: [{ finalized: true, delivery_status: "unknown", attempt_number: 1 }], error: null };
@@ -263,7 +285,7 @@ test("clasifica HTTP 5xx como incierto y HTTP 4xx como rechazo conocido", async 
           claimed: true, push_delivery_id: `push-delivery-${httpStatus}`, push_lease_token: `push-lease-${httpStatus}`,
           attempt_number: 1, delivery_status: "processing",
         }], error: null };
-        if (name === "cueva_mark_notification_push_started") return { data: [{ started: true }], error: null };
+        if (name === "cueva_mark_notification_push_started_with_balance") return { data: [{ started: true, balance_cents: "10000" }], error: null };
         if (name === "cueva_finalize_notification_push_delivery") {
           recordedOutcome = args.p_outcome;
           recordedError = args.p_error_code;
@@ -400,4 +422,72 @@ test("declara Push disponible solo con claves VAPID completas y coincidentes", (
     ...keys,
     subject: "admin@example.test",
   }), false);
+});
+
+
+test("each push device receives the balance captured at its own provider-start boundary", async () => {
+  const vapid = vapidKeys();
+  const rows = [
+    { id: "sub-current-a", endpoint: "https://push.example.test/current-a", ...subscriptionKeys(), expires_at: null },
+    { id: "sub-current-b", endpoint: "https://push.example.test/current-b", ...subscriptionKeys(), expires_at: null },
+  ];
+  const requests = [];
+  let startedCount = 0;
+  const db = {
+    from() {
+      return {
+        select() { return this; }, eq() { return this; }, is() { return this; },
+        then(resolve) { resolve({ data: rows, error: null }); },
+      };
+    },
+    async rpc(name, args) {
+      if (name === "cueva_claim_notification_push_delivery_with_balance") {
+        throw new Error("claim RPC name must remain unchanged");
+      }
+      if (name === "cueva_claim_notification_push_delivery") {
+        return { data: [{ claimed: true, push_delivery_id: `push-${args.p_subscription_id}`,
+          push_lease_token: `lease-${args.p_subscription_id}`, attempt_number: 1, delivery_status: "processing" }], error: null };
+      }
+      if (name === "cueva_mark_notification_push_started_with_balance") {
+        startedCount += 1;
+        return { data: [{ started: true, balance_cents: startedCount === 1 ? "75000" : "50000" }], error: null };
+      }
+      if (name === "cueva_finalize_notification_push_delivery") {
+        return { data: [{ finalized: true, delivery_status: "sent", attempt_number: 1 }], error: null };
+      }
+      throw new Error(`Unexpected RPC: ${name}`);
+    },
+  };
+  const provider = createWebPushProvider(db, {
+    ...vapid,
+    subject: "mailto:admin@example.test",
+    fetchImpl: async (url, init) => {
+      requests.push({ url, body: init.body });
+      return new Response(null, { status: 201 });
+    },
+  });
+
+  const result = await provider({
+    notificationId: "notification-current-balance",
+    deliveryId: "parent-current-balance",
+    deliveryLeaseToken: "parent-current-balance-lease",
+    studentId: "student-current-balance",
+    studentName: "Alumno",
+    destinationEmail: null,
+    studentUserId: "user-current-balance",
+    periodMonth: "2026-11-01",
+    dueOn: "2026-11-20",
+    balanceCents: "120000",
+    reminderDays: 1,
+  });
+
+  assert.equal(result.outcome, "sent");
+  assert.equal(requests.length, 2);
+  const bodies = requests.map(request => {
+    const row = rows.find(item => item.endpoint === request.url);
+    return decryptWebPushPayload(request.body, row);
+  }).sort();
+  assert.match(bodies[0], /500/);
+  assert.match(bodies[1], /750/);
+  assert.equal(startedCount, 2);
 });
