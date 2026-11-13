@@ -1,5 +1,14 @@
 # Backlog de CUEVA
 
+## Estado vigente — 2026-11-13
+
+Rutinas por días y bloques, biblioteca de ejercicios y videos, Mi Membresía,
+comprobantes, vencimientos y mejoras de Pagos ya están en el código publicado.
+CUEVA-005 está integrado en `main`. Queda pendiente el rollout de notificaciones
+en Supabase y la verificación de envíos reales. Los estados locales de abajo son
+históricos. Ver [checkpoint](checkpoint.md) para el estado observado de GitHub,
+Vercel y Supabase.
+
 ## Incremento vigente — CUEVA-006C, 2026-11-06
 
 REVIEW local: catálogo de rutinas/plantillas, días, bloques con vueltas comunes,

@@ -1,5 +1,39 @@
 # Checkpoint CUEVA
 
+## Estado verificado del repositorio — 2026-11-13
+
+`main` de implementación `8471e39cda6a6e4feb1b24dcb9ded438f0bc9464`.
+Vercel Production `dpl_EnCA8Daua7gjXJYNzwymPyPAULfw` READY sirve ese SHA en
+`cueva-gym.vercel.app`. CI de `main` aprobada en Verify foundation, Membership
+SQL y Supabase local migrations. El alias confirma la versión publicada del
+código. La operación de cada función depende también de su esquema y entorno.
+
+| Alcance | Integración | Estado observado |
+| --- | --- | --- |
+| Rutinas estructuradas, por días y bloques | [PR33](https://github.com/MatiasEzequielPereyra/CuevApp/pull/33), [PR34](https://github.com/MatiasEzequielPereyra/CuevApp/pull/34) | Código publicado, migraciones de rutinas y videos registradas. [Cierre de 006B](CUEVA-006B-closeout.md) y preflight de 006C más abajo. |
+| Ejercicios y biblioteca de videos | [PR35](https://github.com/MatiasEzequielPereyra/CuevApp/pull/35) | Código publicado. |
+| Mi Membresía y comprobantes privados | [PR36](https://github.com/MatiasEzequielPereyra/CuevApp/pull/36), [PR37](https://github.com/MatiasEzequielPereyra/CuevApp/pull/37) | Código publicado y migraciones `cueva_membership_read` y `cueva_payment_receipts` registradas. |
+| Vencimientos y gestión de pagos | [PR38](https://github.com/MatiasEzequielPereyra/CuevApp/pull/38), [PR41](https://github.com/MatiasEzequielPereyra/CuevApp/pull/41), [PR42](https://github.com/MatiasEzequielPereyra/CuevApp/pull/42) | Código publicado y migración `cueva_003b_due_dates` registrada. |
+| Notificaciones y alertas | [PR45](https://github.com/MatiasEzequielPereyra/CuevApp/pull/45) | Código integrado y publicado. El historial alojado termina en `20261111190623 cueva_003b_due_dates`. Las migraciones CUEVA-005 y su operación alojada siguen pendientes de [preflight y rollout](../operations/CUEVA-005-rollout-checklist.md). |
+
+En esta actualización se verificaron GitHub, el alias de Vercel y el historial
+Supabase del proyecto CUEVA. Los recorridos alojados de usuario no se repitieron.
+
+Se retiraron ocho ramas remotas con cambios integrados y la rama temporal de
+validación de [PR44](https://github.com/MatiasEzequielPereyra/CuevApp/pull/44).
+Ese PR se cerró porque el menú y la prueba de Alertas ya están en `main` por PR45.
+Se limpiaron ocho ramas locales integradas o equivalentes sin worktree activo.
+Quedaron tres ramas remotas documentales con contenido propio:
+
+- `codex/cueva-dashboard-002` conserva un encargo antiguo de navegación por rol.
+- `docs/cueva-004-requirements` conserva borradores y cambios al contexto maestro. La especificación vigente está en [Finanzas, comprobantes y notificaciones](../product/CUEVA-FINANZAS-COMPROBANTES-NOTIFICACIONES-V1.md).
+- `docs/cueva-work-plans` conserva planes de coordinación de Mati y Facu con una base anterior a las entregas actuales.
+
+SKILLS_SELECTED / SKILLS_APPLIED: `cueva-acceptance-audit`, `cueva-release` y `pr`.
+SKILL_SOURCES: [auditoría](../../.agents/skills/cueva-acceptance-audit/SKILL.md),
+[release](../../.agents/skills/cueva-release/SKILL.md) y skill `pr` de host.
+Los estados REVIEW inferiores corresponden a entregas históricas.
+
 ## CUEVA-006C — aceptación independiente y preparación alojada
 
 Candidato de runtime `38e450d439c2545474b02a0e643065cdb1c319cd`: **ACCEPTED**.
