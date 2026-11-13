@@ -64,6 +64,7 @@ const { default: membershipPage } = loadExport("src/app/mi-membresia/page.tsx", 
   "@/lib/payments/money": { pesos },
   "@/components/receipts/receipt-upload": upload,
   "@/components/notifications/push-notification-settings": { PushNotificationSettings: () => null },
+  "@/components/notifications/notification-inbox": { NotificationInbox: () => null },
   "@/lib/receipts/contracts": receiptContracts,
   "@/lib/product-auth/server": {
     productConfig: () => ({}),
