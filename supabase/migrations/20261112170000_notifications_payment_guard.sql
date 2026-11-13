@@ -329,6 +329,8 @@ end;
 $$;
 revoke all on function cueva_private.create_notification_inbox_guarded(uuid,uuid,uuid,uuid,text,text,bigint)
   from public, anon, authenticated, service_role;
+grant execute on function cueva_private.create_notification_inbox_guarded(uuid,uuid,uuid,uuid,text,text,bigint)
+  to service_role;
 
 create function public.cueva_create_notification_inbox_guarded(
   p_delivery_id uuid,
