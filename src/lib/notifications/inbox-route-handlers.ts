@@ -14,10 +14,40 @@ function reply(data: object, status = 200) {
 }
 
 async function readNotificationId(request: Request): Promise<string | null> {
+  if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) return null;
+  const declaredLength = request.headers.get("content-length");
+  if (declaredLength !== null
+    && (!/^\\d+$/.test(declaredLength) || Number(declaredLength) > 256)) return null;
+  const reader = request.body?.getReader();
+  if (!reader) return null;
+
+  const chunks: Uint8Array[] = [];
+  let size = 0;
   try {
-    const body = await request.text();
-    if (body.length > 256) return null;
-    const input: unknown = JSON.parse(body);
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > 256) {
+        await reader.cancel().catch(() => {});
+        return null;
+      }
+      chunks.push(value);
+    }
+  } catch {
+    return null;
+  } finally {
+    reader.releaseLock();
+  }
+
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try {
+    const input: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
     if (!input || typeof input !== "object" || Array.isArray(input)) return null;
     const id = (input as Record<string, unknown>).id;
     return typeof id === "string" && uuidPattern.test(id) ? id : null;
