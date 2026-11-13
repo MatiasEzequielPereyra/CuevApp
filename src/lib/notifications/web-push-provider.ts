@@ -163,6 +163,8 @@ type PushClaimRow = {
   delivery_status: string;
 };
 
+type PushStartRow = { started: boolean; balance_cents: string | null };
+
 type PushFinalizeRow = {
   finalized: boolean;
   delivery_status: string;
@@ -210,7 +212,6 @@ export function createWebPushProvider(
         return { outcome: "skipped", errorCode: "missing_push_subscription" };
       }
 
-      const payload = buildPushPayload(context);
       const results = await Promise.all(subscriptions.map(async (subscription: PushSubscriptionRow): Promise<PushTargetResult> => {
         try {
           const claimResponse = await db.rpc("cueva_claim_notification_push_delivery", {
@@ -226,7 +227,7 @@ export function createWebPushProvider(
             return { status: claim.delivery_status, attemptNumber: Number(claim.attempt_number ?? 0) };
           }
 
-          const startedResponse = await db.rpc("cueva_mark_notification_push_started", {
+          const startedResponse = await db.rpc("cueva_mark_notification_push_started_with_balance", {
             p_push_delivery_id: claim.push_delivery_id,
             p_push_lease_token: claim.push_lease_token,
             p_delivery_id: context.deliveryId,
@@ -235,10 +236,14 @@ export function createWebPushProvider(
           if (startedResponse.error) {
             return { status: "failed", attemptNumber: Number(claim.attempt_number ?? 0) };
           }
-          const started = firstRpcRow<{ started: boolean }>(startedResponse.data);
+          const started = firstRpcRow<PushStartRow>(startedResponse.data);
           if (!started?.started) {
             return { status: "cancelled", attemptNumber: Number(claim.attempt_number ?? 0) };
           }
+          if (typeof started.balance_cents !== "string" || !/^[1-9][0-9]*$/.test(started.balance_cents)) {
+            return { status: "failed", attemptNumber: Number(claim.attempt_number ?? 0) };
+          }
+          const payload = buildPushPayload({ ...context, balanceCents: started.balance_cents });
 
           let outcome: "sent" | "failed" | "unknown" | "expired";
           let errorCode: string | null = null;
