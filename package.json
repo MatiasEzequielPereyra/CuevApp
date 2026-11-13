@@ -25,7 +25,7 @@
     "test:notifications:core": "node --experimental-strip-types --test tests/notifications-core.test.mjs",
     "test:notifications:dispatcher": "node --experimental-strip-types --test tests/notifications-dispatcher.test.mjs",
     "test:notifications:worker": "node --experimental-strip-types --test tests/notifications-worker.test.mjs",
-    "test:notifications:inbox": "node --experimental-strip-types --test tests/notifications-inbox-provider.test.mjs",
+    "test:notifications:inbox": "node --experimental-strip-types --test tests/notifications-inbox-provider.test.mjs tests/notifications-inbox-route.test.mjs",
     "test:notifications:brevo": "node --experimental-strip-types --test tests/notifications-brevo-provider.test.mjs",
     "test:notifications:webpush": "node --experimental-strip-types --test tests/notifications-web-push-provider.test.mjs",
     "test:notifications:push-subscription": "node --experimental-strip-types --test tests/notifications-push-subscription.test.mjs",
