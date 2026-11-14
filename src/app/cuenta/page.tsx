@@ -24,7 +24,8 @@ export default async function AccountPage() {
   if (error || !user) return <main><h1>Ingresá para continuar</h1></main>;
   const profile = await auth.from("cueva_profiles").select("role").maybeSingle();
   if (profile.error || !profile.data) return <main><h1>Acceso no disponible</h1></main>;
-  if (profile.data.role !== "admin") {
+  if (profile.data.role !== "admin" && profile.data.role !== "alumno") return <main><h1>Acceso restringido</h1></main>;
+  if (profile.data.role === "alumno") {
     const [{ data: membership, error: membershipError }, inboxCount] = await Promise.all([
       auth.rpc("cueva_membership_snapshot"),
       auth.from("cueva_notification_inbox").select("id", { count: "exact", head: true }).is("read_at", null),
