@@ -203,7 +203,7 @@ test("Cerrar sesión desde el menú envía un POST al flujo de acceso", async ({
   if (!baseURL) throw new Error("La prueba requiere un origen local.");
   await page.route(`${baseURL}/cuenta-menu-fixture`, route => route.fulfill({
     contentType: "text/html; charset=utf-8",
-    body: `<!doctype html><html lang="es-AR" data-theme="dark"><head><style>${css}</style></head><body>${routinesFixture}</body></html>`,
+    body: Buffer.from(`<!doctype html><html lang="es-AR" data-theme="dark"><head><meta charset="utf-8"><style>${css}</style></head><body>${routinesFixture}</body></html>`, "utf8"),
   }));
   await page.route(`${baseURL}/api/acceso/salir`, route => route.fulfill({ body: "Solicitud recibida" }));
 

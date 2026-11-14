@@ -9,7 +9,7 @@ export function AdminProfileMenu({ accountLink, children }: { accountLink: strin
       {children}
     </button>
     <div id="admin-profile-menu" className="dash-profile-menu" popover="auto">
-      <a href={accountLink} onClick={event => {
+      <a href={accountLink} tabIndex={0} onClick={event => {
         event.currentTarget.closest<HTMLDivElement>("[popover]")?.hidePopover();
       }}>
         Ir a tu cuenta
