@@ -59,7 +59,12 @@ select ok(has_function_privilege('authenticated','public.cueva_student_assigned_
  'authenticated can call the public assigned-exercises RPC');
 select ok(not has_function_privilege('anon','public.cueva_student_assigned_exercises()','EXECUTE'),
  'anonymous users cannot call the assigned-exercises RPC');
-select ok(not has_function_privilege('public','public.cueva_student_assigned_exercises()','EXECUTE'),
+select ok(not exists(
+ select 1
+ from pg_proc p
+ cross join lateral aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) privilege
+ where p.oid='public.cueva_student_assigned_exercises()'::regprocedure
+   and privilege.grantee=0 and privilege.privilege_type='EXECUTE'),
  'PUBLIC has no execute grant on the assigned-exercises RPC');
 
 select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000002',true);
