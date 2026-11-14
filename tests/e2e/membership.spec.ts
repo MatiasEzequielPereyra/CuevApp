@@ -93,7 +93,7 @@ test("Mi Membresía muestra el pago, el vencimiento y el saldo en el celular", a
   await expect(page.getByRole("heading", { name: "Mi Membresía" })).toBeVisible();
   const nav = page.getByRole("navigation", { name: "Navegación del alumno" });
   await expect(nav.getByRole("link", { name: "Mi Membresía" })).toHaveAttribute("aria-current", "page");
-  await expect(nav.getByRole("link", { name: "Mi rutina" })).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Entrenamiento" })).toBeVisible();
   await expect(page.locator('time[datetime="2026-11-05"]').first()).toBeVisible();
   await expect(page.locator('time[datetime="2026-11-09"]')).toBeVisible();
   await expect(page.getByText(pesos(fixtures.current.balance), { exact: true })).toBeVisible();
