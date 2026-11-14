@@ -45,7 +45,7 @@ export default async function AccountPage() {
             ? <p>El estado de tu membresía no está disponible por el momento.</p>
             : <><p>{summary.active ? "Membresía activa" : "Membresía inactiva"}</p>
               {summary.current ? <dl>
-                <div><dt>Próximo vencimiento</dt><dd>{due}</dd></div>
+                <div><dt>Vencimiento del período</dt><dd>{due}</dd></div>
                 <div><dt>Saldo del período</dt><dd>{pesos(balance ?? "0")}</dd></div>
               </dl> : <p>No hay un período de cuota actual registrado.</p>}
             </>}
