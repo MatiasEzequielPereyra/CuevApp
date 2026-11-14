@@ -7,12 +7,21 @@ import { createRequire } from "node:module";
 import ts from "typescript";
 
 // Render the real server component with synthetic props. No auth bypass route or real account is used.
-const source = readFileSync("src/components/dashboard/admin-dashboard.tsx", "utf8");
-const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+const transpile = (path: string) => ts.transpileModule(readFileSync(path, "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
+}).outputText;
+const requireFixture = createRequire(__filename);
+const menuModule = { exports: {} };
+new Function("require", "module", "exports", transpile("src/components/dashboard/admin-profile-menu.tsx"))(
+  (id: string) => id === "./admin-profile-menu.css" ? {} : requireFixture(id), menuModule, menuModule.exports,
+);
 const componentModule = { exports: {} as { AdminDashboard: React.ComponentType<Record<string, unknown>>; AdminShell: React.ComponentType<Record<string, unknown>> } };
-new Function("require", "module", "exports", output)(createRequire(__filename), componentModule, componentModule.exports);
+new Function("require", "module", "exports", transpile("src/components/dashboard/admin-dashboard.tsx"))(
+  (id: string) => id === "./admin-profile-menu" ? menuModule.exports : requireFixture(id), componentModule, componentModule.exports,
+);
 const { AdminDashboard, AdminShell } = componentModule.exports;
-const css = readFileSync("src/app/globals.css", "utf8");
+const css = ["src/app/globals.css", "src/components/dashboard/admin-profile-menu.css"]
+  .map(path => readFileSync(path, "utf8")).join("\n");
 const svg = readFileSync("public/brand/cueva-symbol.svg", "utf8");
 const fixtureProps = {
   displayName: "Alex", email: "alex@example.test", role: "Administrador",
@@ -56,6 +65,7 @@ for (const width of [360, 390, 768, 1440]) {
         await expect(sidebar.getByRole("link", { name: "Comprobantes", exact: true })).toHaveAttribute("href", "/pagos/comprobantes");
         await expect(sidebar.getByRole("link", { name: "Alertas", exact: true })).toHaveAttribute("href", "/alertas");
       }
+      await expect(page.getByRole("heading", { name: "Tu perfil" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Cerrar sesión" })).toHaveCount(1);
       const navigation = page.getByRole("navigation", { name: width <= 680 ? "Navegación móvil" : "Navegación principal" });
       const exercises = navigation.getByRole("link", { name: "Ejercicios", exact: true });
@@ -138,4 +148,71 @@ test("Alertas operativas está disponible y se marca como sección activa en esc
   await expect(alerts).toHaveAttribute("href", "/alertas");
   await expect(alerts).toHaveAttribute("aria-current", "page");
   await expect(nav.getByRole("link", { name: "Inicio", exact: true })).not.toHaveAttribute("aria-current", "page");
+});
+
+for (const { width, theme } of [{ width: 360, theme: "light" }, { width: 1440, theme: "dark" }] as const) {
+  test(`el menú de cuenta funciona desde una sección a ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 840 });
+    await loadDashboard(page, theme, routinesFixture);
+    await expect(page.getByRole("heading", { name: "Tu perfil" })).toHaveCount(0);
+    const navigation = page.getByRole("navigation", { name: width === 360 ? "Navegación móvil" : "Navegación principal" });
+    await expect(navigation.getByRole("link", { name: width === 360 ? "Cuenta" : "Mi cuenta", exact: true }))
+      .toHaveAttribute("href", "/cuenta#cuenta");
+
+    const trigger = page.getByRole("button", { name: "Opciones de cuenta" });
+    const popover = page.locator("#admin-profile-menu");
+    const account = popover.getByRole("link", { name: "Ir a tu cuenta" });
+    const signOut = popover.getByRole("button", { name: "Cerrar sesión" });
+    await expect(popover).toBeHidden();
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+    await expect(popover).toBeVisible();
+    await expect(account).toHaveAttribute("href", "/cuenta#cuenta");
+    await page.keyboard.press("Tab");
+    await expect(account).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(signOut).toBeFocused();
+    expect(await signOut.evaluate(button => {
+      const form = (button as HTMLButtonElement).form;
+      return [form?.method, form?.getAttribute("action")];
+    })).toEqual(["post", "/api/acceso/salir"]);
+    expect(await popover.evaluate(menu => {
+      const rect = menu.getBoundingClientRect();
+      return rect.left >= 0 && rect.right <= innerWidth;
+    })).toBe(true);
+    expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+    await page.keyboard.press("Escape");
+    await expect(popover).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await trigger.click();
+    await expect(popover).toBeVisible();
+    await page.getByRole("heading", { name: "Rutinas" }).click();
+    await expect(popover).toBeHidden();
+  });
+}
+
+test("el menú en Inicio enlaza a Tu perfil", async ({ page }) => {
+  await loadDashboard(page);
+  await page.getByRole("button", { name: "Opciones de cuenta" }).click();
+  await page.getByRole("link", { name: "Ir a tu cuenta" }).click();
+  await expect(page).toHaveURL(/#cuenta$/);
+  await expect(page.getByRole("heading", { name: "Tu perfil" })).toBeInViewport();
+});
+
+test("Cerrar sesión desde el menú envía un POST al flujo de acceso", async ({ page, baseURL }) => {
+  if (!baseURL) throw new Error("La prueba requiere un origen local.");
+  await page.route(`${baseURL}/cuenta-menu-fixture`, route => route.fulfill({
+    contentType: "text/html; charset=utf-8",
+    body: Buffer.from(`<!doctype html><html lang="es-AR" data-theme="dark"><head><meta charset="utf-8"><style>${css}</style></head><body>${routinesFixture}</body></html>`, "utf8"),
+  }));
+  await page.route(`${baseURL}/api/acceso/salir`, route => route.fulfill({ body: "Solicitud recibida" }));
+
+  await page.goto(`${baseURL}/cuenta-menu-fixture`);
+  await page.getByRole("button", { name: "Opciones de cuenta" }).click();
+  const request = page.waitForRequest(`${baseURL}/api/acceso/salir`);
+  await page.getByRole("button", { name: "Cerrar sesión" }).click();
+  const signOut = await request;
+  expect(signOut.method()).toBe("POST");
+  expect(signOut.headers().origin).toBe(baseURL);
+  await expect(page.getByText("Solicitud recibida")).toBeVisible();
 });

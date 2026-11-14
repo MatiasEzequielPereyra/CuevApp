@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { AdminProfileMenu } from "./admin-profile-menu";
 
 type IconName = "home" | "users" | "calendar" | "wallet" | "file" | "user" | "arrow" | "spark" | "dumbbell" | "bell";
 const paths: Record<IconName, ReactNode> = {
@@ -37,7 +38,9 @@ export function AdminAccountActions({ ownerOnly }: { ownerOnly: boolean }) {
 
 export function AdminShell({ displayName, email, role, logo, themePicker, accountActions, active = "inicio", children, }: AdminProps & { active?: "inicio" | "alumnos" | "pagos" | "alertas" | "vencimientos" | "comprobantes" | "rutinas" | "ejercicios"; children: ReactNode;}) {
 
-  const panelLink = active === "inicio" ? "#inicio" : "/cuenta";
+  const isHome = active === "inicio";
+  const panelLink = isHome ? "#inicio" : "/cuenta";
+  const accountLink = isHome ? "#cuenta" : "/cuenta#cuenta";
   return <div className="dashboard" id="inicio">
     <a className="skip-link" href="#panel">Saltar al contenido</a>
     <aside className="dash-sidebar" aria-label="Barra lateral">
@@ -47,15 +50,15 @@ export function AdminShell({ displayName, email, role, logo, themePicker, accoun
         <a href={panelLink} className={active === "inicio" ? "dash-nav-active" : undefined} aria-current={active === "inicio" ? "page" : undefined}><Icon name="home"/>Inicio</a>
         {navigationAreas.map(area => <a href={area.href} key={area.id} className={active === area.id ? "dash-nav-active" : undefined} aria-current={active === area.id ? "page" : undefined}><Icon name={area.icon}/>{area.name}</a>)}
         <a href="/alertas" className={active === "alertas" ? "dash-nav-active" : undefined} aria-current={active === "alertas" ? "page" : undefined}><Icon name="bell"/>Alertas</a>
-        <a href="#cuenta"><Icon name="user"/>Mi cuenta</a>
+        <a href={accountLink}><Icon name="user"/>Mi cuenta</a>
       </nav>
       <div className="dash-sidebar-bottom"><span className="dash-avatar" aria-hidden="true">{displayName.charAt(0).toUpperCase()}</span><div><strong>{displayName}</strong><small>{role}</small></div></div>
     </aside>
     <div className="dash-content">
-      <header className="dash-header"><div className="dash-mobile-brand">{logo}<span>CUEVA</span></div><div className="dash-breadcrumb">CUEVA <span>/</span> {navigationAreas.find(area => area.id === active)?.name ?? "Panel de administración"}</div><div className="dash-header-actions">{themePicker}<a href="#cuenta" className="dash-profile-link" aria-label="Ir a mi cuenta"><Icon name="user"/></a></div></header>
+      <header className="dash-header"><div className="dash-mobile-brand">{logo}<span>CUEVA</span></div><div className="dash-breadcrumb">CUEVA <span>/</span> {navigationAreas.find(area => area.id === active)?.name ?? "Panel de administración"}</div><div className="dash-header-actions">{themePicker}<AdminProfileMenu accountLink={accountLink}><Icon name="user"/></AdminProfileMenu></div></header>
       <main className="dash-main" id="panel" tabIndex={-1}>
         {children}
-        <section className="dash-account" id="cuenta"><div><p className="dash-kicker">TU CUENTA</p><h2>Tu perfil</h2><p>Sesión iniciada como <strong>{email}</strong></p><span className="dash-account-role">{role}</span></div><form method="post" action="/api/acceso/salir"><button type="submit" className="dash-signout">Cerrar sesión <Icon name="arrow"/></button></form>{accountActions && <div className="dash-account-actions">{accountActions}</div>}</section>
+        {isHome && <section className="dash-account" id="cuenta" tabIndex={-1}><div><p className="dash-kicker">TU CUENTA</p><h2>Tu perfil</h2><p>Sesión iniciada como <strong>{email}</strong></p><span className="dash-account-role">{role}</span></div><form method="post" action="/api/acceso/salir"><button type="submit" className="dash-signout">Cerrar sesión <Icon name="arrow"/></button></form>{accountActions && <div className="dash-account-actions">{accountActions}</div>}</section>}
         <footer className="dash-footer"><span>CUEVA <i/> UN LUGAR PARA AVANZAR</span><span>Hecho para acompañar tu entrenamiento.</span></footer>
       </main>
     </div>
@@ -78,7 +81,7 @@ export function AdminShell({ displayName, email, role, logo, themePicker, accoun
   <a href="/ejercicios" aria-current={active === "ejercicios" ? "page" : undefined}>
     <Icon name="dumbbell"/><span>Ejercicios</span>
   </a>
-  <a href="#cuenta"><Icon name="user"/><span>Cuenta</span></a>
+  <a href={accountLink}><Icon name="user"/><span>Cuenta</span></a>
 </nav>
 
   </div>;
