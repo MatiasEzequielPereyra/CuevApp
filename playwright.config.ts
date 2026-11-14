@@ -10,7 +10,7 @@ export default defineConfig({
   use: { baseURL: "http://127.0.0.1:3000", trace: "retain-on-failure" },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "webkit", testMatch: "**/admin-dashboard.spec.ts", use: { ...devices["Desktop Safari"] } },
+    { name: "webkit", testMatch: ["**/admin-dashboard.spec.ts", "**/admin-students.spec.ts"], use: { ...devices["Desktop Safari"] } },
   ],
   webServer: {
     command: "npm run start",

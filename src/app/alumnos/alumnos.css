@@ -1,0 +1,315 @@
+.students-page {
+  display: grid;
+  gap: 16px;
+  max-width: 1060px;
+  margin-inline: auto;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.dash-main:has(.students-page) {
+  padding-block-start: 22px;
+}
+
+.students-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.students-page h1 {
+  min-width: 0;
+  font-size: clamp(30px, 4vw, 44px);
+  letter-spacing: -.035em;
+  line-height: 1.15;
+}
+
+.students-page h2 {
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.students-muted,
+.students-page .students-panel p:not([role]),
+.students-details dt {
+  color: var(--dash-muted);
+}
+
+.students-page :is(.students-action, .students-back, .dash-signout) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--dash-border);
+  border-radius: 9px;
+  background: var(--dash-panel);
+  color: var(--dash-text);
+  font: inherit;
+  font-size: .875rem;
+  font-weight: 650;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.students-page :is(.students-action, .students-back, .dash-signout):hover:not(:disabled) {
+  border-color: var(--dash-accent);
+  background: var(--dash-accent-soft);
+}
+
+.students-page .students-primary {
+  border-color: #514bdc;
+  background: #514bdc;
+  color: #fff;
+}
+
+.students-page .students-primary:hover:not(:disabled) {
+  background: #4642cb;
+}
+
+.students-page .students-back {
+  justify-self: start;
+  padding-inline: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--dash-accent);
+}
+
+.students-page :is(a, button, input, select):focus-visible {
+  outline: 2px solid var(--dash-accent);
+  outline-offset: 2px;
+}
+
+.students-page .students-panel,
+.students-page .students-search {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--dash-border);
+  border-radius: 14px;
+  background: var(--dash-panel);
+  margin: 0;
+  max-width: none;
+}
+
+.students-page .students-feedback {
+  border-inline-start: 3px solid var(--dash-accent);
+  border-radius: 4px;
+  background: var(--dash-accent-soft);
+  padding: 9px 12px;
+  font-size: .875rem;
+}
+
+.students-search label,
+.students-form-fields label {
+  font-weight: 650;
+}
+
+.students-search-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.students-page :is(.students-search, .student-form) :is(input:not([type="checkbox"]), select) {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 9px 10px;
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  background: var(--dash-bg);
+  color: var(--dash-text);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.students-page input::placeholder {
+  color: var(--dash-muted);
+  opacity: 1;
+}
+
+.students-list-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.students-page .students-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 8px;
+}
+
+.students-page .students-list a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 64px;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  color: var(--dash-text);
+}
+
+.students-page .students-list a:hover {
+  border-color: var(--dash-accent);
+  background: var(--dash-panel-alt);
+}
+
+.students-row-identity {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.students-row-identity strong {
+  font-size: .95rem;
+  line-height: 1.35;
+}
+
+.students-page .students-row-email {
+  color: var(--dash-muted);
+  font-size: .875rem;
+  line-height: 1.4;
+}
+
+.students-row-end {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.students-page .students-status {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: var(--dash-panel-alt);
+  color: var(--dash-muted);
+  font-size: .75rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.students-page .students-status[data-active="true"] {
+  background: var(--dash-accent-soft);
+  color: var(--dash-accent);
+}
+
+.students-result .students-action,
+.students-page .student-form > button {
+  justify-self: start;
+}
+
+.students-profile-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.students-details {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.students-details dt {
+  font-size: .8125rem;
+  font-weight: 650;
+}
+
+.students-details dd {
+  margin: 3px 0 0;
+}
+
+.students-invitation p,
+.students-danger p {
+  font-size: .875rem;
+}
+
+.students-page .students-invitation [role="status"],
+.students-page .student-delete > p {
+  margin-block-start: 8px;
+}
+
+.students-page .student-delete {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.students-page .student-delete-trigger {
+  border-color: #bd6169;
+}
+
+.students-page button:disabled {
+  cursor: not-allowed;
+}
+
+.students-page .student-delete-dialog p + p {
+  margin-block-start: 8px;
+}
+
+.students-form-fields,
+.students-form-field,
+.students-form-invitation {
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+}
+
+.students-page .students-form-fields label {
+  min-width: 0;
+  gap: 5px;
+}
+
+.students-form-invitation {
+  border-top: 1px solid var(--dash-border);
+  padding-block-start: 10px;
+}
+
+.students-page label.student-invite-option {
+  min-height: 44px;
+  cursor: pointer;
+}
+
+@media (min-width: 681px) {
+  .dash-main:has(.students-page) {
+    padding-block-start: 34px;
+  }
+
+  .students-page {
+    gap: 20px;
+  }
+
+  .students-page .students-panel,
+  .students-page .students-search {
+    padding: 20px;
+  }
+
+  .students-profile-actions {
+    grid-template-columns: repeat(3, max-content);
+  }
+
+  .students-details,
+  .students-form-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .students-page .students-list a {
+    padding-inline: 18px;
+  }
+}
