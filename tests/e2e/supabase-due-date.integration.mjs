@@ -98,11 +98,11 @@ try {
   })));
   const page = await context.newPage();
   await page.goto(`${origin}/cuenta`);
-  const cards = page.locator(".dash-cards");
-  await cards.getByRole("link", { name: /Comprobantes de pago/ }).click();
+  const cards = page.getByRole("navigation", { name: "Secciones de administración" });
+  await cards.getByRole("link", { name: "Comprobantes", exact: true }).click();
   await page.getByRole("heading", { name: "Comprobantes de pago", exact: true }).waitFor({ state: "visible" });
   await page.goto(`${origin}/cuenta`);
-  await cards.getByRole("link", { name: /Vencimientos por alumno/ }).click();
+  await cards.getByRole("link", { name: "Vencimientos", exact: true }).click();
   await page.getByRole("heading", { name: "Vencimientos", exact: true }).waitFor({ state: "visible" });
   await page.getByLabel("Buscar alumno").fill("Integration");
   await page.getByRole("button", { name: "Buscar", exact: true }).click();
