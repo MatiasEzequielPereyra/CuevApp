@@ -9,8 +9,10 @@ export default defineConfig({
   reporter: [["list"], ["json", { outputFile: "test-results/results.json" }]],
   use: { baseURL: "http://127.0.0.1:3000", trace: "retain-on-failure" },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    { name: "chromium", testIgnore: "**/admin-students.spec.ts", use: { ...devices["Desktop Chrome"] } },
     { name: "webkit", testMatch: "**/admin-dashboard.spec.ts", use: { ...devices["Desktop Safari"] } },
+    { name: "students-chromium", testMatch: "**/admin-students.spec.ts", use: { ...devices["Desktop Chrome"] } },
+    { name: "students-webkit", dependencies: ["students-chromium"], testMatch: "**/admin-students.spec.ts", use: { ...devices["Desktop Safari"] } },
   ],
   webServer: {
     command: "npm run start",
