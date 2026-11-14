@@ -1,13 +1,25 @@
+.dashboard .dash-admin-header {
+  --admin-header-height: 68px;
+  --admin-header-padding: 20px;
+  --profile-trigger-size: 44px;
+  height: var(--admin-header-height);
+  padding-inline: var(--admin-header-padding);
+}
+
 .dashboard .dash-profile-trigger {
+  flex: none;
+  width: var(--profile-trigger-size);
+  height: var(--profile-trigger-size);
   background: var(--dash-panel);
   cursor: pointer;
-  min-width: 44px;
-  min-height: 44px;
 }
 
 .dashboard .dash-profile-menu {
-  inset: 72px clamp(24px, 4vw, 64px) auto auto;
-  width: min(210px, calc(100vw - 40px));
+  /* Absolute positioning in the top layer follows the document when it scrolls. */
+  position: absolute;
+  inset: calc((var(--admin-header-height) - 1px + var(--profile-trigger-size)) / 2 + 10px)
+    var(--admin-header-padding) auto auto;
+  width: min(210px, calc(100vw - 2 * var(--admin-header-padding)));
   margin: 0;
   padding: 6px;
   border: 1px solid var(--dash-border);
@@ -17,15 +29,10 @@
   box-shadow: 0 10px 24px rgb(0 0 0 / .18);
 }
 
-@media (max-width: 680px) {
-  .dashboard .dash-profile-menu { inset: 62px 20px auto auto; }
-}
-
-@supports (top: anchor(bottom)) {
-  .dashboard .dash-profile-menu {
-    inset: auto;
-    top: calc(anchor(bottom) + 8px);
-    right: anchor(right);
+@media (min-width: 681px) {
+  .dashboard .dash-admin-header {
+    --admin-header-height: 80px;
+    --admin-header-padding: clamp(24px, 4vw, 64px);
   }
 }
 

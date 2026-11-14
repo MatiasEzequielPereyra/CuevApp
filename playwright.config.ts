@@ -8,7 +8,10 @@ export default defineConfig({
   workers: 2,
   reporter: [["list"], ["json", { outputFile: "test-results/results.json" }]],
   use: { baseURL: "http://127.0.0.1:3000", trace: "retain-on-failure" },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    { name: "webkit", testMatch: "**/admin-dashboard.spec.ts", use: { ...devices["Desktop Safari"] } },
+  ],
   webServer: {
     command: "npm run start",
     url: "http://127.0.0.1:3000",

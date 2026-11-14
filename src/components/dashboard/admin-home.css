@@ -1,0 +1,137 @@
+.dash-home .dash-main {
+  padding-block-start: 22px;
+}
+
+.dash-home .dash-home-greeting {
+  font-size: clamp(27px, 3.5vw, 40px);
+  line-height: 1.16;
+  letter-spacing: -.035em;
+  overflow-wrap: anywhere;
+}
+
+.dash-home-access {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-block-start: 18px;
+}
+
+.dash-home-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  min-height: 112px;
+  padding: 12px;
+  border: 1px solid var(--dash-border);
+  border-radius: 14px;
+  background: var(--dash-panel);
+  color: var(--dash-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.dash-home-card .dash-card-icon {
+  width: 34px;
+  height: 34px;
+  margin-block-end: 9px;
+}
+
+.dash-home-card strong {
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.dash-home-card-description {
+  margin-block-start: 4px;
+  color: var(--dash-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.dash-home-card:hover {
+  border-color: var(--dash-accent);
+  background: var(--dash-panel-alt);
+}
+
+.dash-home :is(.dash-home-card, .dash-home-profile):focus-visible {
+  outline: 2px solid var(--dash-accent);
+  outline-offset: 2px;
+}
+
+.dash-home .dash-sidebar-bottom strong {
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+}
+
+.dash-home .dash-home-profile {
+  align-items: flex-start;
+  gap: 14px;
+  margin-block-start: 24px;
+  padding: 16px;
+  border-radius: 14px;
+  scroll-margin-block: 16px;
+}
+
+.dash-home-profile > div {
+  min-width: 0;
+}
+
+.dash-home .dash-home-profile h2 {
+  margin-block-start: 5px;
+  line-height: 1.22;
+  letter-spacing: -.025em;
+}
+
+.dash-home .dash-home-profile p:not(.dash-kicker) {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.dash-home-profile label {
+  min-width: 0;
+}
+
+@media (max-width: 680px) {
+  .dash-home .dash-main {
+    padding-block-end: calc(92px + env(safe-area-inset-bottom));
+  }
+
+  .dash-home .dash-home-profile {
+    scroll-margin-block-end: calc(80px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (min-width: 681px) {
+  .dash-home .dash-main {
+    padding-block-start: 32px;
+  }
+
+  .dash-home-access {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-block-start: 24px;
+  }
+
+  .dash-home-card {
+    min-height: 136px;
+    padding: 18px;
+  }
+
+  .dash-home-card strong {
+    font-size: 17px;
+  }
+
+  .dash-home .dash-home-profile {
+    margin-block-start: 32px;
+    padding: 24px;
+  }
+}
+
+@media (min-width: 1120px) {
+  .dash-home-access {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
