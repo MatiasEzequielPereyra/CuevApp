@@ -1,6 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { once } from "node:events";
 import { signIn, startStudentsApp, studentFixture } from "./admin-students-fixture";
 
 test.describe.configure({ mode: "serial", timeout: 60_000 });
@@ -12,25 +11,20 @@ const longEmail = `${"administracion".repeat(4)}@${"gimnasio".repeat(6)}.example
 const shortId = "44444444-4444-4444-8444-444444444444";
 let origin: string;
 let fixture: Awaited<ReturnType<typeof studentFixture>>;
-let app: ReturnType<typeof startStudentsApp>;
+let app: Awaited<ReturnType<typeof startStudentsApp>>;
 
-test.beforeAll(async ({ browserName }) => {
-  origin = `http://127.0.0.1:${browserName === "webkit" ? 3235 : 3234}`;
+test.beforeAll(async () => {
+  origin = "http://127.0.0.1:3234";
   fixture = await studentFixture();
-  app = startStudentsApp(origin, fixture.endpoint, browserName);
+  app = startStudentsApp(origin, fixture.endpoint);
   await expect.poll(async () => {
-    if (app.exitCode !== null) throw new Error(`El servidor de Alumnos salió con código ${app.exitCode}.`);
+    if (app.processHandle.exitCode !== null) throw new Error(`El servidor de Alumnos salió con código ${app.processHandle.exitCode}.`);
     try { return (await fetch(`${origin}/alumnos`)).status; } catch { return 0; }
   }, { timeout: 55_000 }).toBe(200);
 });
 
 test.afterAll(async () => {
-  if (app && app.exitCode === null && app.signalCode === null) {
-    const stopped = once(app, "exit");
-    app.kill();
-    await stopped;
-  }
-  await fixture?.close();
+  try { await app?.close(); } finally { await fixture?.close(); }
 });
 
 test.beforeEach(async ({ context }) => {
@@ -50,6 +44,12 @@ function studentRow(page: Page) {
     .getByRole("link", { name: `${lastName}, ${firstName}`, exact: true });
 }
 
+async function expectAccessible(page: Page) {
+  await expect(page).toHaveTitle(/CUEVA/);
+  const result = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
+  expect(result.violations).toEqual([]);
+}
+
 async function noOverflow(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 }
@@ -61,14 +61,14 @@ for (const width of [360, 390, 1440]) {
       await page.emulateMedia({ colorScheme: theme });
       await page.goto(`${origin}/alumnos`);
       await expect(page.getByRole("heading", { name: "Alumnos", exact: true })).toBeVisible();
+      await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
       await expect(page.getByRole("link", { name: "Nuevo alumno" })).toBeInViewport();
       await expect(page.getByRole("textbox", { name: "Buscar alumnos" })).toBeInViewport();
       await expect(studentRow(page)).toHaveAccessibleDescription(`${longEmail} Activo`);
       await expect(page.getByRole("link", { name: "Prueba, Bruno" })).toHaveAccessibleDescription("bruno@example.test Inactivo");
       await expect(studentRow(page).locator("a, button")).toHaveCount(0);
       await noOverflow(page);
-      const axe = () => new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
-      expect((await axe()).violations).toEqual([]);
+      await expectAccessible(page);
       await page.screenshot({ path: `evidence/runs/students-list-${browserName}-${width}-${theme}.png` });
 
       if (width < 681) await studentRow(page).getByText(longEmail, { exact: true }).tap();
@@ -78,7 +78,7 @@ for (const width of [360, 390, 1440]) {
       await expect(page.getByText("Comprobantes: próximamente.")).toHaveCount(0);
       await expect(page.getByRole("region", { name: "Datos de la ficha" }).getByText(longEmail)).toBeVisible();
       await noOverflow(page);
-      expect((await axe()).violations).toEqual([]);
+      await expectAccessible(page);
       await page.screenshot({ path: `evidence/runs/students-profile-${browserName}-${width}-${theme}.png`, fullPage: true });
 
       await page.getByRole("link", { name: "Editar ficha" }).click();
@@ -87,7 +87,7 @@ for (const width of [360, 390, 1440]) {
       await expect(page.getByLabel("Correo electrónico")).toHaveValue(longEmail);
       await expect(page.getByRole("checkbox", { name: /Enviar invitación/ })).toHaveCount(0);
       await noOverflow(page);
-      expect((await axe()).violations).toEqual([]);
+      await expectAccessible(page);
       await page.screenshot({ path: `evidence/runs/students-edit-${browserName}-${width}-${theme}.png`, fullPage: true });
     });
   }
@@ -131,7 +131,7 @@ test("estados sin resultados, lista vacía, ficha ausente y reintento de carga",
 
   fixture.setLoadError(true);
   await page.goto(`${origin}/alumnos?q=bruno`);
-  await expect(page.getByRole("alert")).toContainText("No pudimos cargar los alumnos");
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("No pudimos cargar los alumnos");
   await expect(page.getByRole("textbox", { name: "Buscar alumnos" })).toHaveValue("bruno");
   await expect(page.getByRole("link", { name: "Reintentar" })).toHaveAttribute("href", "/alumnos?q=bruno");
   fixture.setLoadError(false);
@@ -152,7 +152,7 @@ test("alta, error de guardado, edición e invitación con servicios sintéticos"
   await noOverflow(page);
   fixture.setSaveError(true);
   await page.getByRole("button", { name: "Guardar ficha" }).tap();
-  await expect(page.getByRole("alert")).toContainText("No se pudo guardar");
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("No se pudo guardar");
   await expect(page.getByLabel("Correo electrónico")).toHaveValue(email);
   expect(fixture.events).toEqual([]);
   fixture.setSaveError(false);

@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { BrowserContext } from "@playwright/test";
 import type { Student } from "../../src/components/students/student-form";
@@ -112,22 +113,21 @@ export async function signIn(context: BrowserContext, origin: string) {
   await context.addCookies([{ name: "sb-127-auth-token", value, url: origin, httpOnly: true, sameSite: "Lax" }]);
 }
 
-export function startStudentsApp(origin: string, endpoint: string, browserName: string) {
-  const { hostname, port } = new URL(origin);
-  // Keep the two development builds out of the production build used by the rest of Playwright.
+export function startStudentsApp(origin: string, endpoint: string) {
+  // Next isolates its development build from the production server used by the other suites.
   const entry = `
     const { createServer } = require("node:http");
     const next = require("next");
-    const [hostname, port, distDir] = process.argv.slice(1);
+    const { hostname, port } = new URL(process.env.CUEVA_PRODUCT_ORIGIN);
     const server = createServer((request, response) => handle(request, response));
-    const app = next({ dev: true, hostname, port: Number(port), httpServer: server, conf: { distDir } });
+    const app = next({ dev: true, dir: process.cwd(), hostname, port: Number(port), httpServer: server });
     const handle = app.getRequestHandler();
     app.prepare().then(() => server.listen(Number(port), hostname)).catch(error => {
       console.error(error);
       process.exitCode = 1;
     });
   `;
-  return spawn(process.execPath, ["-e", entry, hostname, port, `.next/students-${browserName}`], {
+  const processHandle = spawn(process.execPath, ["-e", entry], {
     stdio: ["ignore", "inherit", "inherit"], windowsHide: true,
     env: {
       ...process.env,
@@ -144,4 +144,13 @@ export function startStudentsApp(origin: string, endpoint: string, browserName: 
       CUEVA_SERVICE_KEY: "synthetic-service",
     },
   });
+  return {
+    processHandle,
+    async close() {
+      if (processHandle.exitCode !== null || processHandle.signalCode !== null) return;
+      const stopped = once(processHandle, "exit");
+      processHandle.kill();
+      await stopped;
+    },
+  };
 }
