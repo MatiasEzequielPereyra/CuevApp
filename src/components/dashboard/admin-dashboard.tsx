@@ -41,7 +41,7 @@ export function AdminShell({ displayName, email, role, logo, themePicker, accoun
   const panelLink = isHome ? "#inicio" : "/cuenta";
   const accountLink = isHome ? "#cuenta" : "/cuenta#cuenta";
   return <div className={isHome ? "dashboard dash-home" : "dashboard"} id="inicio">
-    <a className="skip-link" href="#panel">Saltar al contenido</a>
+    <a className="skip-link" href="#panel" tabIndex={0}>Saltar al contenido</a>
     <aside className="dash-sidebar" aria-label="Barra lateral">
       <a href={panelLink} className="dash-brand" aria-label="CUEVA, inicio">{logo}<span>CUEVA <small>GESTIÓN DE GIMNASIO</small></span></a>
       <div className="dash-nav-label">MENÚ PRINCIPAL</div>
@@ -89,7 +89,7 @@ export function AdminDashboard(props: AdminProps) {
     <h1 className="dash-home-greeting">Hola, {props.displayName}</h1>
     <nav className="dash-home-access" aria-label="Secciones de administración">
       {navigationAreas.map(area => (
-        <a className="dash-home-card" href={area.href} key={area.id} aria-labelledby={`home-label-${area.id}`} aria-describedby={`home-description-${area.id}`}>
+        <a className="dash-home-card" href={area.href} key={area.id} tabIndex={0} aria-labelledby={`home-label-${area.id}`} aria-describedby={`home-description-${area.id}`}>
           <span className={`dash-card-icon icon-${area.id}`}><Icon name={area.icon}/></span>
           <strong id={`home-label-${area.id}`}>{area.name}</strong>
           <span className="dash-home-card-description" id={`home-description-${area.id}`}>{area.description}</span>

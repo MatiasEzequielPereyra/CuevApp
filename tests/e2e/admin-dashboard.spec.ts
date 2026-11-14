@@ -6,6 +6,8 @@ import { readFileSync, mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import ts from "typescript";
 
+test.use({ hasTouch: true });
+
 // Render the real server component with synthetic props. No auth bypass route or real account is used.
 const transpile = (path: string) => ts.transpileModule(readFileSync(path, "utf8"), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
@@ -109,7 +111,7 @@ for (const width of [360, 390, 1440]) {
 test("el panel permite navegar por teclado hasta cuenta y salir", async ({ page }) => {
   await loadDashboard(page);
   const skipLink = page.getByRole("link", { name: "Saltar al contenido" });
-  await skipLink.focus();
+  await page.keyboard.press("Tab");
   await expect(skipLink).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("main")).toBeFocused();
@@ -176,8 +178,6 @@ test("Alertas operativas está disponible y se marca como sección activa en esc
   await expect(alerts).toHaveAttribute("aria-current", "page");
   await expect(nav.getByRole("link", { name: "Inicio", exact: true })).not.toHaveAttribute("aria-current", "page");
 });
-
-test.use({ hasTouch: true });
 
 for (const { width, theme } of [{ width: 360, theme: "light" }, { width: 390, theme: "dark" }, { width: 1440, theme: "dark" }] as const) {
   test(`el menú de cuenta funciona desde una sección a ${width}px`, async ({ page }) => {
@@ -246,7 +246,7 @@ for (const width of [360, 390]) {
   });
 }
 
-test("una tarjeta completa navega desde el icono, el relleno y el teclado", async ({ page, baseURL, browserName }) => {
+test("una tarjeta completa navega desde el icono, el relleno y el teclado", async ({ page, baseURL }) => {
   if (!baseURL) throw new Error("La prueba requiere un origen local.");
   await page.setViewportSize({ width: 390, height: 740 });
   const dashboardUrl = new URL("/inicio-fixture", baseURL).href;
@@ -267,8 +267,6 @@ test("una tarjeta completa navega desde el icono, el relleno y el teclado", asyn
     else {
       await grid.getByRole("link", { name: "Alumnos" }).focus();
       await page.keyboard.press("Tab");
-      // WebKit’s default tab navigation skips links unless full keyboard access is enabled.
-      if (browserName === "webkit") await card.focus();
       await expect(card).toBeFocused();
       await expect(card).toHaveCSS("outline-style", "solid");
       await expect(card).toHaveCSS("outline-width", "2px");
