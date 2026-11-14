@@ -1,5 +1,27 @@
 # Checkpoint CUEVA
 
+## CUEVA-UX-ALUMNOS · Publicado · 2026-11-14
+
+[PR #52](https://github.com/MatiasEzequielPereyra/CuevApp/pull/52), base `c0641123bc7112e6dad0ee7f142c9e341042242a`,
+HEAD auditado `37601aa4aa1fd59a1b16eb3cb429a53d74cc26ab`, squash en `main` `65e7a54d290aea687e9838c359978b1340fb9bd4`.
+[Vercel Production](https://vercel.com/matiasezequielpereyras-projects/cueva-app/4KNJac1yqKJ8AwAvuetLdJMNcrzM)
+`dpl_4KNJac1yqKJ8AwAvuetLdJMNcrzM` READY. El alias
+[cueva-gym.vercel.app](https://cueva-gym.vercel.app) sirvió el SHA de integración.
+
+El listado permite abrir la ficha desde toda la fila. La ficha reúne edición,
+rutina y pagos, muestra el estado de invitación y conserva la eliminación
+protegida al final. Alta y edición comparten diseño y conservan el DNI opcional.
+
+[CI](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43618845954) del HEAD aprobado con
+112 pruebas Playwright y [tres recorridos Supabase local](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43618846036).
+La auditoría independiente cubrió 32 combinaciones de pantalla, navegador
+y tema con datos sintéticos. En producción respondieron ingreso, logo y
+manifiesto, y Alumnos y Nuevo alumno bloquearon el acceso sin sesión.
+El flujo autenticado de escritura se verificó en el entorno de pruebas.
+
+Próxima tarea propuesta. CUEVA-UX-RUTINAS, revisión móvil del catálogo y del
+recorrido de asignar, editar y publicar desde la ficha del alumno.
+
 ## Estado verificado del repositorio — 2026-11-13
 
 `main` de implementación `8471e39cda6a6e4feb1b24dcb9ded438f0bc9464`.
