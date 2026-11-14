@@ -151,6 +151,57 @@ test("la navegación móvil llega a Rutinas por teclado y marca la sección acti
   await expect(mobileNav.getByRole("link", { name: "Inicio", exact: true })).not.toHaveAttribute("aria-current", "page");
 });
 
+test("Inicio queda centrado en la navegación móvil con el logo de CUEVA", async ({ page }) => {
+  const nav = page.getByRole("navigation", { name: "Navegación móvil" });
+  const home = nav.getByRole("link", { name: "Inicio", exact: true });
+  const alerts = nav.getByRole("link", { name: "Alertas", exact: true });
+  const routines = nav.getByRole("link", { name: "Rutinas", exact: true });
+
+  for (const width of [320, 360, 390, 680]) {
+    await page.setViewportSize({ width, height: 740 });
+    for (const theme of ["light", "dark"] as const) {
+      await loadDashboard(page, theme);
+      await expect(nav.getByRole("link")).toHaveText([
+        "Alumnos", "Pagos", "Alertas", "Inicio", "Rutinas", "Ejercicios", "Cuenta",
+      ]);
+      await expect(home).toHaveAttribute("href", "#inicio");
+      await expect(home).toHaveAttribute("aria-current", "page");
+      await expect(home.locator("img.brand-mark")).toBeVisible();
+
+      const geometry = await nav.evaluate((bar) => {
+        const bounds = bar.getBoundingClientRect();
+        const links = [...bar.querySelectorAll("a")].map((link) => link.getBoundingClientRect());
+        const homeBounds = bar.querySelector(".dash-mobile-home")!.getBoundingClientRect();
+        const mark = bar.querySelector(".dash-mobile-home-mark img")!.getBoundingClientRect();
+        const icon = bar.querySelector(".dash-icon")!.getBoundingClientRect();
+        return {
+          centerOffset: Math.abs(homeBounds.left + homeBounds.width / 2 - bounds.left - bounds.width / 2),
+          minTapWidth: Math.min(...links.map((link) => link.width)),
+          minTapHeight: Math.min(...links.map((link) => link.height)),
+          markWidth: mark.width,
+          sideIconWidth: icon.width,
+        };
+      });
+      expect(geometry.centerOffset).toBeLessThanOrEqual(1);
+      expect(geometry.minTapWidth).toBeGreaterThanOrEqual(44);
+      expect(geometry.minTapHeight).toBeGreaterThanOrEqual(44);
+      expect(geometry.markWidth).toBeGreaterThan(geometry.sideIconWidth);
+
+      await alerts.focus();
+      await page.keyboard.press("Tab");
+      await expect(home).toBeFocused();
+      await expect(home).toHaveCSS("outline-offset", "-2px");
+      await page.keyboard.press("Tab");
+      await expect(routines).toBeFocused();
+    }
+  }
+
+  await loadDashboard(page, "dark", routinesFixture);
+  await expect(home).toHaveAttribute("href", "/cuenta");
+  await expect(home).not.toHaveAttribute("aria-current", "page");
+  await expect(routines).toHaveAttribute("aria-current", "page");
+});
+
 test("Ejercicios tiene su propia sección activa en la navegación móvil", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await loadDashboard(page, "light", exercisesFixture);
