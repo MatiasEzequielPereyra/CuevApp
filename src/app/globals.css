@@ -635,3 +635,17 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
   .student-routine-nav { justify-content: flex-start; gap: 8px; overflow-x: auto; padding-inline: 12px; }
   .student-routine-nav a { flex: 1 0 auto; padding-inline: 9px; font-size: 11px; }
 }
+
+
+/* Student exercise library: only the current published assignment is rendered. */
+.student-exercise-library { display:block; }
+.student-exercise-library > h2 { margin:0; }
+.student-exercise-library > p { margin-top:8px; color:var(--dash-muted); font-size:13px; }
+.student-exercise-list { display:grid; gap:0; margin:18px 0 0; padding:0; list-style:none; }
+.student-exercise-list li { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; padding:16px 0; border-top:1px solid var(--dash-border); }
+.student-exercise-list li > div { min-width:0; }
+.student-exercise-list h3 { margin:0; font-size:15px; }
+.student-exercise-list li p { margin-top:7px; color:var(--dash-muted); font-size:13px; line-height:1.55; overflow-wrap:anywhere; }
+.student-exercise-list a { flex-shrink:0; color:var(--dash-accent); font-size:12px; font-weight:700; }
+.student-exercise-list span { flex-shrink:0; color:var(--dash-muted); font-size:12px; }
+@media (max-width:600px) { .student-exercise-list li { flex-direction:column; gap:10px; } }
