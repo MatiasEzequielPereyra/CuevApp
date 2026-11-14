@@ -30,7 +30,7 @@ export default async function MyRoutine() {
           <p>Ejercicios incluidos en tu rutina publicada.</p>
           {assigned.error ? <p role="status">No pudimos cargar la información de tus ejercicios. Tu rutina sigue disponible.</p>
             : assigned.data?.length ? <ul className="student-exercise-list">
-              {assigned.data.map(exercise => <li key={exercise.id}>
+              {assigned.data.map((exercise: { id: string; name: string; description: string | null; has_video: boolean }) => <li key={exercise.id}>
                 <div><h3>{exercise.name}</h3>{exercise.description && <p>{exercise.description}</p>}</div>
                 {exercise.has_video ? <VideoLink id={exercise.id}/> : <span>Video no disponible</span>}
               </li>)}
