@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { signIn, startStudentsApp, studentFixture } from "./admin-students-fixture";
+import { routineEditorFixture } from "./routine-editor-fixture";
 
 test.describe.configure({ mode: "serial", timeout: 60_000 });
 test.use({ hasTouch: true });
@@ -12,10 +13,11 @@ const shortId = "44444444-4444-4444-8444-444444444444";
 let origin: string;
 let fixture: Awaited<ReturnType<typeof studentFixture>>;
 let app: Awaited<ReturnType<typeof startStudentsApp>>;
+const routines = routineEditorFixture();
 
 test.beforeAll(async () => {
   origin = "http://127.0.0.1:3234";
-  fixture = await studentFixture();
+  fixture = await studentFixture(routines.handle);
   app = startStudentsApp(origin, fixture.endpoint);
   await expect.poll(async () => {
     if (app.processHandle.exitCode !== null) throw new Error(`El servidor de Alumnos salió con código ${app.processHandle.exitCode}.`);
@@ -28,6 +30,7 @@ test.afterAll(async () => {
 });
 
 test.beforeEach(async ({ context }) => {
+  routines.reset();
   fixture.rows.clear();
   fixture.invitations.clear();
   fixture.protectedIds.clear();
@@ -200,3 +203,101 @@ test("eliminación protegida y confirmación explícita de una ficha vacía", as
   expect(fixture.rows.has(shortId)).toBe(false);
   expect(fixture.events).toEqual(["delete"]);
 });
+
+const workoutBlocks = [
+  ["Sentadilla", "Press militar"],
+  ["Plancha", "Remo", "Peso muerto"],
+  ["Flexiones", "Press militar"],
+  ["Remo", "Sentadilla", "Plancha"],
+];
+
+for (const width of [360, 390, 1440]) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`rutina de cuatro bloques a ${width}px / ${theme}`, async ({ page, browser, browserName }) => {
+      await page.setViewportSize({ width, height: 790 });
+      await page.emulateMedia({ colorScheme: theme });
+      await page.goto(`${origin}/rutinas?alumno=${shortId}`);
+      const editor = page.getByRole("region", { name: "Editor de rutina" });
+      await expect(editor.getByText("Usar plantilla")).toBeVisible();
+      await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+      const chooseDay = async (name: string) => {
+        await editor.getByRole("button", { name: "+ Día", exact: true }).click();
+        const input = editor.getByRole("textbox", { name: "Nombre del nuevo día" });
+        await expect(input).toBeFocused();
+        await input.fill(name);
+        await input.press("Enter");
+      };
+      await chooseDay("Empuje");
+      const addBlock = editor.getByRole("button", { name: "+ Bloque", exact: true });
+      await expect(addBlock).toBeFocused();
+      await addBlock.press("Enter");
+      let picker = page.getByRole("dialog", { name: "Nuevo bloque" });
+      await expect(picker.getByRole("checkbox", { name: "Sentadilla", exact: true })).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(picker).toHaveCount(0);
+      await expect(addBlock).toBeFocused();
+      await expect(editor.getByRole("region", { name: "Bloque 1", exact: true })).toHaveCount(0);
+
+      for (const [index, names] of workoutBlocks.entries()) {
+        if (width < 500) await addBlock.tap(); else await addBlock.click();
+        picker = page.getByRole("dialog", { name: "Nuevo bloque" });
+        for (const name of names) await picker.getByRole("checkbox", { name, exact: true }).check();
+        await picker.getByRole("button", { name: `Agregar ${names.length} ejercicios` }).click();
+        const card = editor.getByRole("region", { name: `Bloque ${index + 1}`, exact: true });
+        await expect(card.getByText("3 vueltas", { exact: true })).toBeVisible();
+        const rows = card.getByRole("listitem");
+        await expect(rows).toHaveCount(names.length);
+        for (const [item, name] of names.entries()) await expect(rows.nth(item)).toContainText(name);
+        await expect(card.getByLabel("Tipo de objetivo")).toBeHidden();
+        await expect(picker).toHaveCount(0);
+      }
+      const firstBlock = editor.getByRole("region", { name: "Bloque 1", exact: true });
+      await firstBlock.getByRole("button", { name: /Sentadilla/ }).click();
+      await firstBlock.getByLabel("Peso objetivo (kg)").fill("40");
+      await firstBlock.getByRole("button", { name: /Press militar/ }).click();
+      await firstBlock.getByLabel("Tipo de objetivo").selectOption("time");
+      await firstBlock.getByLabel("Duración", { exact: true }).fill("45");
+      await firstBlock.getByRole("button", { name: /Press militar/ }).click();
+      await expect(firstBlock.getByText("45 s", { exact: true })).toBeVisible();
+      await chooseDay("Tirón");
+      await expect(firstBlock).toHaveCount(0);
+      await editor.getByRole("button", { name: "Empuje", exact: true }).click();
+      await expect(firstBlock).toBeVisible();
+      await editor.getByText("Vista previa del borrador", { exact: true }).click();
+      await expect(editor.getByText("45 segundos", { exact: true })).toBeVisible();
+      await editor.getByText("Vista previa del borrador", { exact: true }).click();
+      await noOverflow(page);
+
+      const publish = editor.getByRole("button", { name: "Publicar rutina", exact: true });
+      await expect(publish).toBeEnabled();
+      await publish.click();
+      await expect(editor.getByText("Rutina publicada.", { exact: true })).toBeVisible();
+      expect(routines.operations.filter(step => step === "publish")).toHaveLength(1);
+      await page.screenshot({ path: test.info().outputPath(`rutina-${browserName}-${width}-${theme}.png`), fullPage: true });
+
+      if (width === 360 && theme === "light") {
+        const learner = await browser.newContext({ viewport: { width, height: 790 } });
+        try {
+          await signIn(learner, origin, routines.studentUser);
+          const studentPage = await learner.newPage();
+          await studentPage.goto(`${origin}/mi-rutina`);
+          await expect(studentPage.getByRole("heading", { name: "Mi rutina", exact: true })).toBeVisible();
+          await expect(studentPage.getByText("45 segundos", { exact: true })).toBeVisible();
+          await firstBlock.getByRole("button", { name: /Press militar/ }).click();
+          await firstBlock.getByLabel("Duración", { exact: true }).fill("55");
+          await expect(publish).toBeEnabled();
+          await studentPage.reload();
+          await expect(studentPage.getByText("45 segundos", { exact: true })).toBeVisible();
+          await expect(studentPage.getByText("55 segundos", { exact: true })).toHaveCount(0);
+          await publish.click();
+          await expect(editor.getByText("Rutina publicada.", { exact: true })).toBeVisible();
+          await studentPage.reload();
+          await expect(studentPage.getByText("55 segundos", { exact: true })).toBeVisible();
+          expect(routines.operations.filter(step => step === "publish")).toHaveLength(2);
+        } finally {
+          await learner.close();
+        }
+      }
+    });
+  }
+}
