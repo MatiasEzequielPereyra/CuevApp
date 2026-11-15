@@ -71,9 +71,10 @@ function loadStudentPage(path: string) {
 
 test("la navegación del alumno contiene las cinco secciones y marca la activa", async ({ page }) => {
   const markup = renderToStaticMarkup(
-    <shell.StudentShell active="notificaciones">
-      <h1>Notificaciones</h1>
-    </shell.StudentShell>,
+    React.createElement(shell.StudentShell, {
+      active: "notificaciones",
+      children: React.createElement("h1", null, "Notificaciones"),
+    }),
   );
   await page.setContent(markup);
 
