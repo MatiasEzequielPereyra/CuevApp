@@ -1,5 +1,38 @@
 # Checkpoint CUEVA
 
+## CUEVA-UX-MI-RUTINA · Publicado · 2026-11-15
+
+[PR #55](https://github.com/MatiasEzequielPereyra/CuevApp/pull/55), base `2036d41d7209362ab85cb7a16fed9f3197a5d3eb`,
+HEAD auditado `00977d70c57c23fea999fe87e4ec7cc7d880ef0b`, squash en `main` `a1d2da659def5570e35a2a0833dc9ee91dadc802`.
+[Vercel Production](https://vercel.com/matiasezequielpereyras-projects/cueva-app/GRdZUYn3ruqAeJDXUAxabXBvDomK)
+`dpl_GRdZUYn3ruqAeJDXUAxabXBvDomK` READY. El alias `cueva-gym.vercel.app` sirvió el SHA de integración.
+
+La vista del alumno muestra un día publicado a la vez, con bloques, vueltas,
+objetivos y observaciones. La fila con video autorizado abre un reproductor
+y devuelve el foco y la posición al cerrarlo. Se conservaron las series V1
+y la vista previa administrativa.
+
+Supabase Hosted registró `20261115154313 cueva_my_routine_video_ids`, que corresponde
+a `20261115160000_cueva_my_routine_video_ids.sql` en Git. Son dos funciones sin
+escrituras en tablas de negocio. El wrapper público usa SECURITY INVOKER y el
+helper privado valida titularidad y última publicación. Se verificaron
+grants, ausencia de resultados sin identidad y Storage privado. Para revertir,
+primero se vuelve al deployment previo y, si se requiere, se pueden retirar
+las dos funciones en orden público, privado, sin cascada.
+
+[CI general](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43730553795) aprobó 124
+pruebas y [Supabase local](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43730553767)
+aprobó las tres bases. Se probó reproducción real desde Storage local con dos
+alumnos sintéticos. YouTube usó un reproductor simulado. La auditoría
+independiente cubrió 12 combinaciones, incluida la recuperación de un 503.
+En producción, la rutina pidió sesión, el endpoint de video rechazó la
+solicitud anónima y respondieron ingreso y logo.
+
+[PR #53](https://github.com/MatiasEzequielPereyra/CuevApp/pull/53) queda abierto. Hay que reconciliar
+`src/app/mi-rutina/page.tsx` con esta versión y ejecutar CI sobre el resultado.
+El HEAD `b9d1cd8` aprobó Verify foundation y falló el laboratorio SQL en el
+fixture de Notificaciones que esta integración ya aísla.
+
 ## CUEVA-UX-RUTINAS-EDITOR · Publicado · 2026-11-15
 
 [PR #54](https://github.com/MatiasEzequielPereyra/CuevApp/pull/54), base `ed5aec52ff2ad18c7082c7c1138dc8d37e226366`,
