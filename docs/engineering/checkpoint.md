@@ -1,5 +1,27 @@
 # Checkpoint CUEVA
 
+## CUEVA-UX-RUTINAS-EDITOR · Publicado · 2026-11-15
+
+[PR #54](https://github.com/MatiasEzequielPereyra/CuevApp/pull/54), base `ed5aec52ff2ad18c7082c7c1138dc8d37e226366`,
+HEAD auditado `9baa9d5223fa82affd327b1329502fa360297c58`, squash en `main` `b64b4e152f0246bf835fd0eeb36757bf1f837bf6`.
+[Vercel Production](https://vercel.com/matiasezequielpereyras-projects/cueva-app/Hoxdy33sXTehBugQYea4z72i9iy4)
+`dpl_Hoxdy33sXTehBugQYea4z72i9iy4` READY. El alias `cueva-gym.vercel.app` sirvió el SHA de integración.
+
+El editor de plantillas y rutinas de alumnos muestra un día de nombre libre a la vez.
+«+ Bloque» abre el catálogo con selección múltiple; al confirmar se crea el bloque
+con tres vueltas editables y se vuelve al mismo día. El flujo habitual cubre
+cuatro bloques de dos o tres ejercicios combinados. Los objetivos aparecen
+resumidos y se ajustan tocando el ejercicio. Se mantienen el autoguardado, las
+copias independientes, los datos anteriores y la publicación explícita.
+
+[CI general](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43726015050)
+aprobó 124 pruebas de navegador con 12 casos nuevos y las
+[tres variantes de Supabase local](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43726015058).
+La auditoría independiente reprodujo el armado y publicación, la separación del
+borrador, la copia de plantillas, el legado V1, orden y vueltas, y error/conflicto
+de guardado. Se verificó `/mi-rutina` con una sesión de alumno sintética. En
+producción se comprobó acceso restringido sin sesión y respuesta de ingreso y logo.
+
 ## CUEVA-UX-ALUMNOS · Publicado · 2026-11-14
 
 [PR #52](https://github.com/MatiasEzequielPereyra/CuevApp/pull/52), base `c0641123bc7112e6dad0ee7f142c9e341042242a`,
