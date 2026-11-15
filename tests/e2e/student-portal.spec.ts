@@ -32,7 +32,7 @@ const shell = loadExport("src/components/routines/student-shell.tsx", {
     BrandMark: () => React.createElement("span", null, "CUEVA"),
   },
   "@/components/theme/theme-picker": { ThemePicker: () => null },
-}) as { StudentShell: (props: { children: React.ReactNode; active?: string }) => React.ReactElement };
+}) as { StudentShell: (props: { children?: React.ReactNode; active?: string }) => React.ReactElement };
 
 const deniedClient = () => ({
   auth: {
@@ -71,10 +71,11 @@ function loadStudentPage(path: string) {
 
 test("la navegación del alumno contiene las cinco secciones y marca la activa", async ({ page }) => {
   const markup = renderToStaticMarkup(
-    React.createElement(shell.StudentShell, {
-      active: "notificaciones",
-      children: React.createElement("h1", null, "Notificaciones"),
-    }),
+    React.createElement(
+      shell.StudentShell,
+      { active: "notificaciones" },
+      React.createElement("h1", null, "Notificaciones"),
+    ),
   );
   await page.setContent(markup);
 
