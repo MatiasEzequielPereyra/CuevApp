@@ -156,6 +156,12 @@ update public.cueva_notification_deliveries
 set next_attempt_at = clock_timestamp()
 where id = 'b9000000-0000-4000-8000-000000000001';
 
+-- Keep the separate Push retry out of the internal-delivery claim scenario.
+-- The Push scenario makes this delivery due explicitly below.
+update public.cueva_notification_deliveries
+set next_attempt_at = clock_timestamp() + interval '1 day'
+where id = 'b9000000-0000-4000-8000-000000000002';
+
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
 set local role service_role;
 select is(
