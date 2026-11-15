@@ -269,17 +269,7 @@ try {
     await browser.close();
   }
 } finally {
-  try {
-    for (const table of ["cueva_routine_publications", "cueva_routine_drafts", "cueva_student_invitations"]) {
-      await db.query(`delete from public.${table} where student_id=any($1::uuid[])`, [students]);
-    }
-    await db.query("delete from public.cueva_students where id=any($1::uuid[])", [students]);
-    await db.query("delete from public.cueva_exercises where id=any($1::uuid[])", [exercises.map(item => item.id)]);
-    await checked(bucket.remove([path]));
-    await db.query("delete from public.cueva_profiles where user_id=any($1::uuid[])", [accounts]);
-    await db.query("delete from cueva_private.access_state where user_id=any($1::uuid[])", [accounts]);
-    for (const id of accounts) await checked(service.auth.admin.deleteUser(id));
-  } finally {
-    await db.end();
-  }
+  // This workflow owns a disposable Supabase stack. Leave its immutable
+  // publications intact until the runner removes the stack.
+  await db.end();
 }
