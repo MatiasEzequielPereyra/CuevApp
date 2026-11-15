@@ -247,10 +247,12 @@ try {
 
     const editor = await adminContext.newPage();
     await editor.goto(`${origin}/rutinas?alumno=${students[0]}`);
-    await editor.getByText("Vista previa del borrador", { exact: true }).click();
-    await expect(editor.getByLabel("Día de entrenamiento")).toBeVisible();
-    await expect(editor.getByRole("link", { name: "Consultar video" }).first()).toBeVisible();
-    await editor.getByText("Vista previa del borrador", { exact: true }).click();
+    const previewToggle = editor.getByText("Vista previa del borrador", { exact: true });
+    await previewToggle.click();
+    const preview = editor.locator("details[open]").filter({ has: previewToggle });
+    await expect(preview.getByRole("combobox", { name: "Día de entrenamiento" })).toBeVisible();
+    await expect(preview.getByRole("link", { name: "Consultar video" }).first()).toBeVisible();
+    await previewToggle.click();
     await editor.getByText("Observaciones de la rutina", { exact: true }).click();
     const observations = editor.getByRole("textbox", { name: "Observaciones de la rutina" });
     await observations.fill("Texto nuevo después de publicar");

@@ -184,9 +184,14 @@ jobs:
       - name: Install Chromium for authenticated integration test
         run: npx playwright install --with-deps chromium
 
-      - name: Install WebKit for Mi rutina
+      - name: Install WebKit and generate the synthetic video
         if: matrix.path == 'fresh'
-        run: npx playwright install --with-deps webkit
+        run: |
+          npx playwright install --with-deps webkit
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          video="$(mktemp --suffix=.webm)"
+          ffmpeg -v error -y -f lavfi -i color=c=blue:s=320x180:r=24:d=3 -an -c:v libvpx "$video"
+          echo "CUEVA_TEST_VIDEO=$video" >> "$GITHUB_ENV"
 
       - name: Run authenticated UI-to-Supabase integration
         run: |
@@ -222,8 +227,6 @@ jobs:
           }
 
           if [[ "$MIGRATION_PATH" == fresh ]]; then
-            export CUEVA_TEST_VIDEO="$(mktemp --suffix=.webm)"
-            ffmpeg -v error -y -f lavfi -i color=c=blue:s=320x180:r=24:d=3 -an -c:v libvpx "$CUEVA_TEST_VIDEO"
             node tests/e2e/mi-rutina.integration.mjs | tee "$MIGRATION_EVIDENCE/mi-rutina.txt" || {
               cat /tmp/cueva-next.log
               exit 1
