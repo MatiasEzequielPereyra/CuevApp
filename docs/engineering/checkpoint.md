@@ -1,5 +1,24 @@
 # Checkpoint CUEVA
 
+## CUEVA-PWA-LOGIN · Publicado · 2026-11-15
+
+[PR #57](https://github.com/MatiasEzequielPereyra/CuevApp/pull/57), base `cbdb9052be2221cd4e1db9e5760bdd007a6e855d`,
+HEAD auditado `19f6545540f53919f3d639757152a0819651684c`, squash `f5dc70bbbae5af3a5e12f4e517410787f870f24c`.
+[Vercel Production](https://vercel.com/matiasezequielpereyras-projects/cueva-app/7wPr8tz1PkAzFMyj4SVLwaDPavci)
+`dpl_7wPr8tz1PkAzFMyj4SVLwaDPavci` READY en `cueva-gym.vercel.app`.
+
+El ícono instalado sigue abriendo `/cuenta`. La entrada redirige a `/ingresar`
+sin sesión válida y abre el panel correspondiente con sesión activa.
+En producción, la entrada anónima devolvió HTTP 307 sin caché y llegó al
+formulario habilitado con HTTP 200 en una redirección. El manifiesto conservó
+`start_url=/cuenta` y modo standalone.
+
+[CI general](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43771266757) aprobó 126
+pruebas. Chromium y WebKit cubrieron la navegación inicial desde el manifiesto
+con sesiones sintéticas de alumno, administrador y sin sesión.
+[Supabase local](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43771266825) aprobó las
+tres variantes. La comprobación alojada fue HTTP sin credenciales.
+
 ## CUEVA-UX-MI-RUTINA · Publicado · 2026-11-15
 
 [PR #55](https://github.com/MatiasEzequielPereyra/CuevApp/pull/55), base `2036d41d7209362ab85cb7a16fed9f3197a5d3eb`,
