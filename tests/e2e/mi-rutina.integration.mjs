@@ -25,7 +25,6 @@ const old = exercises[7];
 const youtube = "https://youtu.be/ABCDEFGHIJK";
 const path = `${press.id}/${randomUUID()}.webm`;
 const bucket = service.storage.from("cueva-exercise-videos");
-const accounts = [];
 const password = `CuevA-${suffix}-9!`;
 const startNote = "Descansá entre bloques.\nTomá agua.";
 
@@ -38,7 +37,6 @@ async function checked(operation) {
 async function createAccount(role) {
   const email = `rutina-${randomUUID()}@example.test`;
   const { user } = await checked(service.auth.admin.createUser({ email, password, email_confirm: true }));
-  accounts.push(user.id);
   await db.query("insert into public.cueva_profiles(user_id,role) values($1,$2)", [user.id, role]);
   await db.query("insert into cueva_private.access_state(user_id,ready,session_not_before) values($1,true,now()-interval '1 minute')", [user.id]);
   const cookies = new Map();
