@@ -156,6 +156,13 @@ update public.cueva_notification_deliveries
 set next_attempt_at = clock_timestamp()
 where id = 'b9000000-0000-4000-8000-000000000001';
 
+-- Keep the existing Push retry outside this claim window. Its historical
+-- 12:15 timestamp becomes eligible later in the day and could otherwise be
+-- selected before the delivery this test is explicitly asserting.
+update public.cueva_notification_deliveries
+set next_attempt_at = clock_timestamp() + interval '1 day'
+where id = 'b9000000-0000-4000-8000-000000000002';
+
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
 set local role service_role;
 select is(
