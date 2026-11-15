@@ -19,7 +19,9 @@ async function readJson(request: IncomingMessage) {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-export async function studentFixture() {
+type ExtraRoute = (request: IncomingMessage, url: URL) => Promise<{ body: unknown; status?: number } | undefined>;
+
+export async function studentFixture(extraRoute?: ExtraRoute) {
   const rows = new Map<string, Student>();
   const invitations = new Map<string, string>();
   const protectedIds = new Set<string>();
@@ -33,6 +35,8 @@ export async function studentFixture() {
     const id = url.searchParams.get("id")?.slice(3) ?? "";
     const object = request.headers.accept?.includes("vnd.pgrst.object");
     try {
+      const extra = await extraRoute?.(request, url);
+      if (extra) return json(response, extra.body, extra.status);
       if (path === "/user") return json(response, { user: sessionUser });
       if (path === "/cueva_profiles") return json(response, [{ role: "admin" }]);
       if (path === "/cueva_students" && request.method === "GET") {
@@ -105,11 +109,11 @@ export async function studentFixture() {
   };
 }
 
-export async function signIn(context: BrowserContext, origin: string) {
+export async function signIn(context: BrowserContext, origin: string, user = sessionUser) {
   const encoded = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
   const expires = Math.floor(Date.now() / 1000) + 3600;
-  const access_token = `${encoded({ alg: "HS256", typ: "JWT" })}.${encoded({ sub: adminId, exp: expires })}.synthetic`;
-  const value = `base64-${encoded({ access_token, refresh_token: "synthetic", expires_at: expires, user: sessionUser })}`;
+  const access_token = `${encoded({ alg: "HS256", typ: "JWT" })}.${encoded({ sub: user.id, exp: expires })}.synthetic`;
+  const value = `base64-${encoded({ access_token, refresh_token: "synthetic", expires_at: expires, user })}`;
   await context.addCookies([{ name: "sb-127-auth-token", value, url: origin, httpOnly: true, sameSite: "Lax" }]);
 }
 
