@@ -57,6 +57,31 @@ async function noOverflow(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 }
 
+test("la entrada instalada abre el ingreso o la cuenta según la sesión", async ({ context, page }) => {
+  await page.setViewportSize({ width: 390, height: 820 });
+  const response = await context.request.get(`${origin}/manifest.webmanifest`);
+  expect(response.ok()).toBe(true);
+  const manifest = await response.json();
+  expect(manifest).toMatchObject({ start_url: "/cuenta", scope: "/", display: "standalone" });
+  const start = new URL(manifest.start_url, origin).href;
+
+  await context.clearCookies();
+  await page.goto(start);
+  await expect(page).toHaveURL(`${origin}/ingresar`);
+  await expect(page.getByRole("heading", { name: "Ingresá a tu cuenta" })).toBeVisible();
+
+  await signIn(context, origin);
+  await page.goto(start);
+  await expect(page).toHaveURL(start);
+  await expect(page.getByRole("heading", { name: "Hola, Admin de prueba" })).toBeVisible();
+
+  await context.clearCookies();
+  await signIn(context, origin, routines.studentUser);
+  await page.goto(start);
+  await expect(page).toHaveURL(start);
+  await expect(page.getByRole("heading", { name: "Tu cuenta" })).toBeVisible();
+});
+
 for (const width of [360, 390, 1440]) {
   for (const theme of ["light", "dark"] as const) {
     test(`listado, ficha y edición a ${width}px / ${theme}`, async ({ page, browserName }) => {

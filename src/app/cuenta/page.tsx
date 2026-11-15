@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { productConfig, userClient } from "@/lib/product-auth/server";
 import { AdminAccountActions, AdminDashboard } from "@/components/dashboard/admin-dashboard";
 import { BrandMark } from "@/components/brand/brand-mark";
@@ -12,7 +12,7 @@ export default async function AccountPage() {
   if (!cfg) notFound();
   const auth = await userClient(true);
   const { data: { user }, error } = await auth.auth.getUser();
-  if (error || !user) return <main><h1>Ingresá para continuar</h1></main>;
+  if (error || !user) redirect("/ingresar");
   const profile = await auth.from("cueva_profiles").select("role").maybeSingle();
   if (profile.error || !profile.data) return <main><h1>Acceso no disponible</h1></main>;
   if (profile.data.role !== "admin") return <StudentShell><div className="dash-heading"><div><p className="dash-overline">BIENVENIDO A CUEVA</p><h1>Tu cuenta</h1><p>{user.email}</p></div><span className="dash-role">Alumno</span></div><section className="dash-account"><div><h2>Tu entrenamiento</h2><p>Consultá la planificación publicada por el gimnasio.</p><Link className="routine-account-link" href="/mi-rutina">Mi rutina →</Link></div></section><section className="dash-account"><div><h2>Tu membresía</h2><p>Consultá tu cuota, vencimiento e historial de pagos.</p><Link className="routine-account-link" href="/mi-membresia">Mi Membresía →</Link></div></section></StudentShell>;
