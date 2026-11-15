@@ -1,7 +1,10 @@
-import { PlanView } from "@/components/routines/plan-view";
+import { StudentPlan } from "@/components/routines/student-plan";
+import type { Plan } from "@/lib/routines/types";
 import Link from "next/link";
 import { productConfig, userClient } from "@/lib/product-auth/server";
 import { StudentShell } from "@/components/routines/student-shell";
+
+import "./mi-rutina.css";
 
 export const dynamic = "force-dynamic";
 export default async function MyRoutine() {
@@ -14,5 +17,40 @@ export default async function MyRoutine() {
   // RLS uses the captured fiche–Auth UUID binding and exposes only the latest
   // published revision. No email lookup and no service-role client.
   const result = await client.from("cueva_routine_publications").select("content,plan,published_at").order("draft_revision", { ascending: false }).limit(1).maybeSingle();
-  return <StudentShell active="rutina"><div className="dash-heading"><div><p className="dash-overline">TU ENTRENAMIENTO</p><h1>Mi rutina</h1></div></div>{result.error ? <section className="dash-account"><h2>No pudimos cargar tu rutina</h2><p>Intentá nuevamente en unos instantes.</p><Link href="/mi-rutina">Reintentar</Link></section> : result.data ? <article className="routine-reading"><p>Publicada el <time dateTime={result.data.published_at}>{new Date(result.data.published_at).toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" })}</time></p><PlanView plan={result.data.plan}/>{result.data.content && <><h2>Observaciones</h2><pre>{result.data.content}</pre></>}</article> : <section className="dash-account"><h2>Tu rutina está en preparación</h2><p>Cuando el gimnasio la publique, vas a poder consultarla acá.</p></section>}</StudentShell>;
+  const publication = result.data;
+  const plan = publication?.plan as Plan | null | undefined;
+  const videos = plan ? await client.rpc("cueva_my_routine_video_ids") : null;
+  const videoIds: string[] = !videos?.error && Array.isArray(videos?.data) ? videos.data : [];
+
+  return (
+    <StudentShell active="rutina">
+      <div className="my-routine">
+        <header className="my-routine-heading">
+          <h1>Mi rutina</h1>
+          {publication && (
+            <p>Publicada el <time dateTime={publication.published_at}>{new Date(publication.published_at).toLocaleDateString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" })}</time></p>
+          )}
+        </header>
+        {result.error ? (
+          <section className="my-routine-panel">
+            <h2>No pudimos cargar tu rutina</h2>
+            <p>Intentá nuevamente en unos instantes.</p>
+            <a href="/mi-rutina">Reintentar</a>
+          </section>
+        ) : publication ? (
+          <>
+            {videos?.error && <p role="status">No pudimos consultar los videos. Podés seguir tu rutina o <a href="/mi-rutina">reintentar</a>.</p>}
+            {plan && <StudentPlan key={publication.published_at} plan={plan} videoIds={videoIds} />}
+            {publication.content && <section className="my-routine-panel my-routine-notes"><h2>Observaciones</h2><p>{publication.content}</p></section>}
+            {!plan && !publication.content && <p>La publicación todavía no tiene ejercicios ni observaciones.</p>}
+          </>
+        ) : (
+          <section className="my-routine-panel">
+            <h2>Tu rutina está en preparación</h2>
+            <p>Cuando el gimnasio la publique, vas a poder consultarla acá.</p>
+          </section>
+        )}
+      </div>
+    </StudentShell>
+  );
 }

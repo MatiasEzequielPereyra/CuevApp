@@ -35,6 +35,7 @@ export function routineEditorFixture() {
         case "/cueva_routine_templates": return { body: [starter] };
         case "/cueva_routine_drafts": return { body: asRow(draft.revision ? draft : null) };
         case "/cueva_routine_publications": return { body: asRow(publication) };
+        case "/rpc/cueva_my_routine_video_ids": return { body: [] };
         case "/cueva_exercises": {
           const query = url.searchParams.get("name")?.slice(7, -1).toLowerCase() ?? "";
           return { body: exercises.filter(exercise => exercise.name.toLowerCase().includes(query)) };

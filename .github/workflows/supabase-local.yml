@@ -184,6 +184,10 @@ jobs:
       - name: Install Chromium for authenticated integration test
         run: npx playwright install --with-deps chromium
 
+      - name: Install WebKit for Mi rutina
+        if: matrix.path == 'fresh'
+        run: npx playwright install --with-deps webkit
+
       - name: Run authenticated UI-to-Supabase integration
         run: |
           eval "$(supabase --workdir "$SUPABASE_TEST_DIR" status -o env)"
@@ -202,6 +206,7 @@ jobs:
           export CUEVA_PRODUCT_ORIGIN="http://127.0.0.1:3000"
           export CUEVA_AUTH_URL="$API_URL/auth/v1"
           export CUEVA_REST_URL="$API_URL/rest/v1"
+          export CUEVA_LAB_STORAGE_ORIGIN="$API_URL"
           export NEXT_TELEMETRY_DISABLED=1
           npm run dev -- --port 3000 > /tmp/cueva-next.log 2>&1 &
           server_pid=$!
@@ -215,6 +220,15 @@ jobs:
             cat /tmp/cueva-next.log
             exit 1
           }
+
+          if [[ "$MIGRATION_PATH" == fresh ]]; then
+            export CUEVA_TEST_VIDEO="$(mktemp --suffix=.webm)"
+            ffmpeg -v error -y -f lavfi -i color=c=blue:s=320x180:r=24:d=3 -an -c:v libvpx "$CUEVA_TEST_VIDEO"
+            node tests/e2e/mi-rutina.integration.mjs | tee "$MIGRATION_EVIDENCE/mi-rutina.txt" || {
+              cat /tmp/cueva-next.log
+              exit 1
+            }
+          fi
 
       - name: Upload migration evidence
         if: always()
