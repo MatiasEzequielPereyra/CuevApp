@@ -384,12 +384,12 @@ test("texto libre vincula menciones por UUID y publica la instantánea", async (
   const directSuggestion = editor.getByRole("option", { name: "Remo" });
   await expect(directSuggestion).toBeVisible();
   await directSuggestion.click();
-  await expect(textarea).toHaveValue("Sentadilla\\nRemo");
+  await expect(textarea).toHaveValue("Sentadilla\nRemo");
   await expect(editor.getByText("2 menciones vinculadas")).toBeVisible();
   await expect.poll(() => routines.operations).toEqual(["draft"]);
   await editor.getByRole("button", { name: "Publicar rutina" }).click();
   await expect(editor.getByText("Rutina publicada.")).toBeVisible();
   await expect.poll(() => routines.operations).toEqual(["draft", "publish"]);
   await editor.getByText("Última rutina publicada").click();
-  await expect(editor.locator("pre").last()).toHaveText("Sentadilla\\nRemo");
+  await expect(editor.locator("pre").last()).toHaveText("Sentadilla\nRemo");
 });
