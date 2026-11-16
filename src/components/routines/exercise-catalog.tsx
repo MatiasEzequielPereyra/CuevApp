@@ -2,7 +2,12 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { Exercise } from "@/lib/routines/types";
 import { VideoLink } from "@/components/routines/plan-view";
-export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = false }: { onSelectMany?: (exercises: Exercise[]) => void; capacity?: number; videosOnly?: boolean }) {
+export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = false, compactPicker = false }: {
+  onSelectMany?: (exercises: Exercise[]) => void;
+  capacity?: number;
+  videosOnly?: boolean;
+  compactPicker?: boolean;
+}) {
   const [query, setQuery] = useState("");
   const [rows, setRows] = useState<Exercise[]>([]), [selected, setSelected] = useState<Exercise[]>([]);
   const [next, setNext] = useState<number | null>(null), [searched, setSearched] = useState("");
@@ -44,7 +49,10 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
       if (!r.ok) { setMessage(data.message); return; }
       const e: Exercise = data.exercise; setEditing(e); setName(e.name); setDescription(e.description); setVideo(e.video_url ?? ""); setVideoPath(e.video_path); setActive(e.active);
       setRows(previous => previous.some(row => row.id === e.id) ? previous.map(row => row.id === e.id ? e : row) : [...previous, e]); setMessage("Ejercicio guardado. Las rutinas conservan sus objetivos y nombres.");
-      if (e.active && selectCurrent.current) setSelected(previous => [...previous.filter(x => x.id !== e.id), e]);
+      if (e.active && selectCurrent.current) setSelected(previous => {
+        if (previous.some(item => item.id === e.id)) return previous.map(item => item.id === e.id ? e : item);
+        return previous.length < capacity ? [...previous, e] : previous;
+      });
     } catch { setMessage("No recibimos confirmación. Reintentá con la misma identidad."); }
     finally { busy.current = false; setPending(false); }
   }
@@ -85,7 +93,7 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
     event.preventDefault();
     void save();
   }}>
-    {!managing && <h3>{editing ? "Editar ejercicio" : "Crear ejercicio"}</h3>}
+    {!managing && !compactPicker && <h3>{editing ? "Editar ejercicio" : "Crear ejercicio"}</h3>}
     <label>Nombre del ejercicio<input required maxLength={120} ref={nameInput} value={name} disabled={pending} onChange={event => setName(event.target.value)} /></label>
     <label>Descripción del ejercicio<textarea maxLength={2000} value={description} disabled={pending} onChange={event => setDescription(event.target.value)} /></label>
     <label>
@@ -140,6 +148,16 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
           {!exercise.active && <small id={statusId}>Inactivo</small>}
           {exercise.description && <span id={descriptionId} className="exercise-description">{exercise.description}</span>}
         </>;
+        const checked = selected.some(item => item.id === exercise.id);
+        if (selecting && compactPicker) return <li key={exercise.id} className="routine-picker-row">
+          <label>
+            <input type="checkbox" checked={checked}
+              disabled={pending || !exercise.active || (selected.length >= capacity && !checked)}
+              onChange={event => setSelected(previous => event.target.checked ? [...previous, exercise] : previous.filter(item => item.id !== exercise.id))} />
+            <strong>{exercise.name}</strong>
+          </label>
+          {(exercise.video_url || exercise.video_path) && <VideoLink id={exercise.id} />}
+        </li>;
         return <li key={exercise.id}>
           {managing ? <button type="button" className="exercise-open" aria-label={exercise.name} aria-describedby={details || undefined} aria-haspopup="dialog" disabled={pending}
             onClick={event => openEditor(exercise, event.currentTarget)}>{info}</button> : <div className="exercise-info">{info}</div>}
@@ -156,10 +174,18 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
       })}
     </ul>}
     {next !== null && <button type="button" disabled={pending} onClick={() => void search(searched, next)}>Mostrar más {videosOnly ? "videos" : "ejercicios"}</button>}
-    {selecting && <>
-      <p>{selected.length} seleccionados. Se agregan en el orden de selección.</p>
-      <button type="button" disabled={pending || !selected.length || selected.length > capacity} onClick={() => onSelectMany?.(selected)}>Agregar seleccionados al bloque</button>
-    </>}
+    {selecting && compactPicker && <details className="routine-picker-new">
+      <summary>Crear un ejercicio</summary>
+      {editor}
+    </details>}
+    {selecting && <div className={compactPicker ? "routine-picker-confirm" : undefined}>
+      {!compactPicker && <p>{selected.length} seleccionados. Se agregan en el orden de selección.</p>}
+      <button type="button" className={compactPicker ? "routine-primary" : undefined}
+        disabled={pending || !selected.length || selected.length > capacity} onClick={() => onSelectMany?.(selected)}>
+        {compactPicker && selected.length ? `Agregar ${selected.length} ${selected.length === 1 ? "ejercicio" : "ejercicios"}`
+          : compactPicker ? "Agregar ejercicios" : "Agregar seleccionados al bloque"}
+      </button>
+    </div>}
     {managing && <dialog ref={editorDialog} className="exercise-dialog" aria-labelledby={editorTitleId}
       onCancel={event => { event.preventDefault(); closeEditor(); }}>
       <header className="exercise-dialog-heading">
@@ -168,6 +194,6 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
       </header>
       {editor}
     </dialog>}
-    {selecting && editor}
+    {selecting && !compactPicker && editor}
   </section>;
 }

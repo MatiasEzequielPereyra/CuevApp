@@ -61,26 +61,27 @@ export function AdminShell({ displayName, email, role, logo, themePicker, accoun
       </main>
     </div>
     <nav className="dash-mobile-nav" aria-label="Navegación móvil">
-  <a href={panelLink} aria-current={active === "inicio" ? "page" : undefined}>
-    <Icon name="home"/><span>Inicio</span>
-  </a>
-  <a href="/alumnos" aria-current={active === "alumnos" ? "page" : undefined}>
-    <Icon name="users"/><span>Alumnos</span>
-  </a>
-  <a href="/pagos" aria-current={active === "pagos" ? "page" : undefined}>
-    <Icon name="wallet"/><span>Pagos</span>
-  </a>
-  <a href="/alertas" aria-current={active === "alertas" ? "page" : undefined}>
-    <Icon name="bell"/><span>Alertas</span>
-  </a>
-  <a href="/rutinas" aria-current={active === "rutinas" ? "page" : undefined}>
-    <Icon name="file"/><span>Rutinas</span>
-  </a>
-  <a href="/ejercicios" aria-current={active === "ejercicios" ? "page" : undefined}>
-    <Icon name="dumbbell"/><span>Ejercicios</span>
-  </a>
-  <a href={accountLink}><Icon name="user"/><span>Cuenta</span></a>
-</nav>
+      <a href="/alumnos" tabIndex={0} aria-current={active === "alumnos" ? "page" : undefined}>
+        <Icon name="users"/><span>Alumnos</span>
+      </a>
+      <a href="/pagos" tabIndex={0} aria-current={active === "pagos" ? "page" : undefined}>
+        <Icon name="wallet"/><span>Pagos</span>
+      </a>
+      <a href="/alertas" tabIndex={0} aria-current={active === "alertas" ? "page" : undefined}>
+        <Icon name="bell"/><span>Alertas</span>
+      </a>
+      <a className="dash-mobile-home" href={panelLink} tabIndex={0} aria-current={isHome ? "page" : undefined}>
+        <span className="dash-mobile-home-mark" aria-hidden="true">{logo}</span>
+        <span>Inicio</span>
+      </a>
+      <a href="/rutinas" tabIndex={0} aria-current={active === "rutinas" ? "page" : undefined}>
+        <Icon name="file"/><span>Rutinas</span>
+      </a>
+      <a href="/ejercicios" tabIndex={0} aria-current={active === "ejercicios" ? "page" : undefined}>
+        <Icon name="dumbbell"/><span>Ejercicios</span>
+      </a>
+      <a href={accountLink} tabIndex={0}><Icon name="user"/><span>Cuenta</span></a>
+    </nav>
 
   </div>;
 }

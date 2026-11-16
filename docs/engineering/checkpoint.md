@@ -1,5 +1,101 @@
 # Checkpoint CUEVA
 
+## CUEVA-PWA-LOGIN · Publicado · 2026-11-15
+
+[PR #57](https://github.com/MatiasEzequielPereyra/CuevApp/pull/57), base `cbdb9052be2221cd4e1db9e5760bdd007a6e855d`,
+HEAD auditado `19f6545540f53919f3d639757152a0819651684c`, squash `f5dc70bbbae5af3a5e12f4e517410787f870f24c`.
+[Vercel Production](https://vercel.com/matiasezequielpereyras-projects/cueva-app/7wPr8tz1PkAzFMyj4SVLwaDPavci)
+`dpl_7wPr8tz1PkAzFMyj4SVLwaDPavci` READY en `cueva-gym.vercel.app`.
+
+El ícono instalado sigue abriendo `/cuenta`. La entrada redirige a `/ingresar`
+sin sesión válida y abre el panel correspondiente con sesión activa.
+En producción, la entrada anónima devolvió HTTP 307 sin caché y llegó al
+formulario habilitado con HTTP 200 en una redirección. El manifiesto conservó
+`start_url=/cuenta` y modo standalone.
+
+[CI general](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43771266757) aprobó 126
+pruebas. Chromium y WebKit cubrieron la navegación inicial desde el manifiesto
+con sesiones sintéticas de alumno, administrador y sin sesión.
+[Supabase local](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43771266825) aprobó las
+tres variantes. La comprobación alojada fue HTTP sin credenciales.
+
+## CUEVA-UX-MI-RUTINA · Publicado · 2026-11-15
+
+[PR #55](https://github.com/MatiasEzequielPereyra/CuevApp/pull/55), base `2036d41d7209362ab85cb7a16fed9f3197a5d3eb`,
+HEAD auditado `00977d70c57c23fea999fe87e4ec7cc7d880ef0b`, squash en `main` `a1d2da659def5570e35a2a0833dc9ee91dadc802`.
+[Vercel Production](https://vercel.com/matiasezequielpereyras-projects/cueva-app/GRdZUYn3ruqAeJDXUAxabXBvDomK)
+`dpl_GRdZUYn3ruqAeJDXUAxabXBvDomK` READY. El alias `cueva-gym.vercel.app` sirvió el SHA de integración.
+
+La vista del alumno muestra un día publicado a la vez, con bloques, vueltas,
+objetivos y observaciones. La fila con video autorizado abre un reproductor
+y devuelve el foco y la posición al cerrarlo. Se conservaron las series V1
+y la vista previa administrativa.
+
+Supabase Hosted registró `20261115154313 cueva_my_routine_video_ids`, que corresponde
+a `20261115160000_cueva_my_routine_video_ids.sql` en Git. Son dos funciones sin
+escrituras en tablas de negocio. El wrapper público usa SECURITY INVOKER y el
+helper privado valida titularidad y última publicación. Se verificaron
+grants, ausencia de resultados sin identidad y Storage privado. Para revertir,
+primero se vuelve al deployment previo y, si se requiere, se pueden retirar
+las dos funciones en orden público, privado, sin cascada.
+
+[CI general](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43730553795) aprobó 124
+pruebas y [Supabase local](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43730553767)
+aprobó las tres bases. Se probó reproducción real desde Storage local con dos
+alumnos sintéticos. YouTube usó un reproductor simulado. La auditoría
+independiente cubrió 12 combinaciones, incluida la recuperación de un 503.
+En producción, la rutina pidió sesión, el endpoint de video rechazó la
+solicitud anónima y respondieron ingreso y logo.
+
+[PR #53](https://github.com/MatiasEzequielPereyra/CuevApp/pull/53) queda abierto. Hay que reconciliar
+`src/app/mi-rutina/page.tsx` con esta versión y ejecutar CI sobre el resultado.
+El HEAD `b9d1cd8` aprobó Verify foundation y falló el laboratorio SQL en el
+fixture de Notificaciones que esta integración ya aísla.
+
+## CUEVA-UX-RUTINAS-EDITOR · Publicado · 2026-11-15
+
+[PR #54](https://github.com/MatiasEzequielPereyra/CuevApp/pull/54), base `ed5aec52ff2ad18c7082c7c1138dc8d37e226366`,
+HEAD auditado `9baa9d5223fa82affd327b1329502fa360297c58`, squash en `main` `b64b4e152f0246bf835fd0eeb36757bf1f837bf6`.
+[Vercel Production](https://vercel.com/matiasezequielpereyras-projects/cueva-app/Hoxdy33sXTehBugQYea4z72i9iy4)
+`dpl_Hoxdy33sXTehBugQYea4z72i9iy4` READY. El alias `cueva-gym.vercel.app` sirvió el SHA de integración.
+
+El editor de plantillas y rutinas de alumnos muestra un día de nombre libre a la vez.
+«+ Bloque» abre el catálogo con selección múltiple; al confirmar se crea el bloque
+con tres vueltas editables y se vuelve al mismo día. El flujo habitual cubre
+cuatro bloques de dos o tres ejercicios combinados. Los objetivos aparecen
+resumidos y se ajustan tocando el ejercicio. Se mantienen el autoguardado, las
+copias independientes, los datos anteriores y la publicación explícita.
+
+[CI general](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43726015050)
+aprobó 124 pruebas de navegador con 12 casos nuevos y las
+[tres variantes de Supabase local](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43726015058).
+La auditoría independiente reprodujo el armado y publicación, la separación del
+borrador, la copia de plantillas, el legado V1, orden y vueltas, y error/conflicto
+de guardado. Se verificó `/mi-rutina` con una sesión de alumno sintética. En
+producción se comprobó acceso restringido sin sesión y respuesta de ingreso y logo.
+
+## CUEVA-UX-ALUMNOS · Publicado · 2026-11-14
+
+[PR #52](https://github.com/MatiasEzequielPereyra/CuevApp/pull/52), base `c0641123bc7112e6dad0ee7f142c9e341042242a`,
+HEAD auditado `37601aa4aa1fd59a1b16eb3cb429a53d74cc26ab`, squash en `main` `65e7a54d290aea687e9838c359978b1340fb9bd4`.
+[Vercel Production](https://vercel.com/matiasezequielpereyras-projects/cueva-app/4KNJac1yqKJ8AwAvuetLdJMNcrzM)
+`dpl_4KNJac1yqKJ8AwAvuetLdJMNcrzM` READY. El alias
+[cueva-gym.vercel.app](https://cueva-gym.vercel.app) sirvió el SHA de integración.
+
+El listado permite abrir la ficha desde toda la fila. La ficha reúne edición,
+rutina y pagos, muestra el estado de invitación y conserva la eliminación
+protegida al final. Alta y edición comparten diseño y conservan el DNI opcional.
+
+[CI](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43618845954) del HEAD aprobado con
+112 pruebas Playwright y [tres recorridos Supabase local](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43618846036).
+La auditoría independiente cubrió 32 combinaciones de pantalla, navegador
+y tema con datos sintéticos. En producción respondieron ingreso, logo y
+manifiesto, y Alumnos y Nuevo alumno bloquearon el acceso sin sesión.
+El flujo autenticado de escritura se verificó en el entorno de pruebas.
+
+Próxima tarea propuesta. CUEVA-UX-RUTINAS, revisión móvil del catálogo y del
+recorrido de asignar, editar y publicar desde la ficha del alumno.
+
 ## Estado verificado del repositorio — 2026-11-13
 
 `main` de implementación `8471e39cda6a6e4feb1b24dcb9ded438f0bc9464`.
