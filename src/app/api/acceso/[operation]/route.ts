@@ -109,8 +109,15 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
       await inviteStudent(auth,student.data.id);
       return redirect(`/alumnos?id=${student.data.id}`);
     }
-    const target = String(form.get("user_id") ?? "");
-    if (!uuid(target)) return fail(400);
+    const email = String(form.get("email") ?? "").trim().toLowerCase();
+    if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return fail(400);
+    const student = await service.from("cueva_students").select("id").eq("email", email).maybeSingle();
+    if (student.error) return fail(503);
+    if (!student.data?.id) return fail(404);
+    const invitation = await service.from("cueva_student_invitations").select("user_id").eq("student_id", student.data.id).maybeSingle();
+    if (invitation.error) return fail(503);
+    const target = invitation.data?.user_id;
+    if (!target || !uuid(target)) return fail(404);
     const targetProfile = await service.from("cueva_profiles").select("role").eq("user_id", target).maybeSingle();
     if (targetProfile.error || targetProfile.data?.role !== "alumno") return fail(403);
     const op = randomUUID();
