@@ -18,6 +18,8 @@ type TextDocument = {
   mentions: Array<{ exercise_id: string; start: number; end: number; text: string }>;
   revision: number;
   save_id?: string;
+  publication_id?: string;
+  student_id?: string;
 };
 
 function isStudent(request: IncomingMessage) {
@@ -87,6 +89,7 @@ export function routineEditorFixture() {
             format: payload.p_format, text_content: payload.p_text_content,
             block_content: payload.p_content, mentions: payload.p_mentions,
             revision: draft.revision, save_id: payload.p_operation,
+            publication_id: publication.id, student_id: shortId,
           };
           operations.push("publish");
           return { body: { ...publication, ...publicationText } };
