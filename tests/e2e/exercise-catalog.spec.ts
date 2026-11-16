@@ -239,7 +239,6 @@ test("la biblioteca muestra videos de YouTube y galería y permite buscarlos", a
   expect(Buffer.from(received)).toEqual(videoBytes);
 
   await library.getByLabel("Buscar ejercicio").fill("plancha");
-  await library.getByRole("button", { name: "Buscar", exact: true }).click();
   await expect(library.getByText("No encontramos videos para esa búsqueda.")).toBeVisible();
 });
 
