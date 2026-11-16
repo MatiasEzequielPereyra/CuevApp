@@ -1,5 +1,20 @@
 # Backlog de CUEVA
 
+## Estado vigente reconciliado — 2026-11-16
+
+HEAD de `main`: `640324bc0fbf97b0777ddd7080c33ff13c378e45`. PR #53 está integrado; el portal del alumno y la RPC de ejercicios asignados ya forman parte del código de `main`. Esto no equivale a afirmar que los componentes de Supabase Hosted estén aplicados: la última evidencia alojada registrada en PR #59 observó ausentes `cueva_notification_inbox` y `cueva_student_assigned_exercises()`. Mantener el rollout alojado y sus pruebas postflight como pendiente hasta verificarlo.
+
+Estado de tracks a distinguir:
+
+- CUEVA-003B Vencimientos: integrado y cerrado como baseline; no reabrir ni modificar.
+- CUEVA-004 / Mi Membresía y comprobantes: funcionalidades integradas en código; consultar el checkpoint y el estado alojado antes de afirmar operación completa.
+- CUEVA-005 Notificaciones: código integrado en `main`; rollout alojado y verificación de envíos reales pendientes. No confundir con “NOT_STARTED” de la tabla histórica inferior.
+- CUEVA-006 Rutinas: editor, publicación, biblioteca y lectura de la última rutina están integrados; el registro persistente de resultados/historial del alumno y la experiencia retomable siguen siendo trabajo pendiente.
+- CUEVA-008 / PWA: instalación y entrada desde el ícono están implementadas; la lectura offline segura de rutinas y la aceptación integral siguen pendientes de validar.
+
+Las tablas y estados de las secciones inferiores describen planificación histórica de octubre/noviembre y no prevalecen sobre este resumen ni sobre los cierres posteriores del checkpoint. No usarlos como estado actual sin una nueva auditoría.
+
+
 ## Estado vigente — 2026-11-13
 
 Rutinas por días y bloques, biblioteca de ejercicios y videos, Mi Membresía,
