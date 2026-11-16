@@ -36,17 +36,25 @@ export async function GET(req: Request) {
   const id = params.get("id") ?? "";
   if (!uuid.test(id)) return reply({ message: "Identificador inválido." }, 400);
   const template = params.get("kind") === "template";
-  const routineQuery = template
-    ? client.from("cueva_routine_templates").select("content,revision,title,plan").eq("id", id).maybeSingle()
-    : client.from("cueva_routine_drafts").select("content,revision,plan").eq("student_id", id).maybeSingle();
+  type RoutineRow = { content: string; revision: number; plan?: unknown; title?: string };
+  const routineQuery = async (): Promise<{ data: RoutineRow | null; error: unknown }> => {
+    if (template) {
+      const result = await client.from("cueva_routine_templates")
+        .select("content,revision,title,plan").eq("id", id).maybeSingle();
+      return { data: result.data as RoutineRow | null, error: result.error };
+    }
+    const result = await client.from("cueva_routine_drafts")
+      .select("content,revision,plan").eq("student_id", id).maybeSingle();
+    return { data: result.data as RoutineRow | null, error: result.error };
+  };
   const [routineResult, textResult] = await Promise.all([
-    routineQuery,
+    routineQuery(),
     client.from("cueva_routine_text_drafts")
       .select("format,text_content,block_content,mentions,revision")
       .eq("kind", template ? "template" : "draft").eq("owner_id", id).maybeSingle(),
   ]);
   if (routineResult.error || textResult.error) return reply({ message: "No pudimos cargar la revisión. Tu texto sigue en el editor." }, 503);
-  const data = routineResult.data as { content: string; revision: number; plan?: unknown; title?: string } | null;
+  const data = routineResult.data;
   const textDocument = textResult.data;
   return reply({ note: {
     ...(data ?? { content: "", revision: 0, ...(template ? { title: "" } : {}) }),
