@@ -36,15 +36,18 @@ export async function GET(req: Request) {
   const id = params.get("id") ?? "";
   if (!uuid.test(id)) return reply({ message: "Identificador inválido." }, 400);
   const template = params.get("kind") === "template";
-  const [{ data, error }, { data: textDocument, error: textError }] = await Promise.all([
-    client.from(template ? "cueva_routine_templates" : "cueva_routine_drafts")
-      .select(template ? "content,revision,title,plan" : "content,revision,plan")
-      .eq(template ? "id" : "student_id", id).maybeSingle(),
+  const routineQuery = template
+    ? client.from("cueva_routine_templates").select("content,revision,title,plan").eq("id", id).maybeSingle()
+    : client.from("cueva_routine_drafts").select("content,revision,plan").eq("student_id", id).maybeSingle();
+  const [routineResult, textResult] = await Promise.all([
+    routineQuery,
     client.from("cueva_routine_text_drafts")
       .select("format,text_content,block_content,mentions,revision")
       .eq("kind", template ? "template" : "draft").eq("owner_id", id).maybeSingle(),
   ]);
-  if (error || textError) return reply({ message: "No pudimos cargar la revisión. Tu texto sigue en el editor." }, 503);
+  if (routineResult.error || textResult.error) return reply({ message: "No pudimos cargar la revisión. Tu texto sigue en el editor." }, 503);
+  const data = routineResult.data as { content: string; revision: number; plan?: unknown; title?: string } | null;
+  const textDocument = textResult.data;
   return reply({ note: {
     ...(data ?? { content: "", revision: 0, ...(template ? { title: "" } : {}) }),
     content: textDocument?.block_content ?? data?.content ?? "",
