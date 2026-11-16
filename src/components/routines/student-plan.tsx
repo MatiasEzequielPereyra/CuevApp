@@ -6,7 +6,7 @@ import type { LegacyTarget, Plan, Target } from "@/lib/routines/types";
 type VideoSource = { kind: "storage"; src: string } | { kind: "youtube"; id: string; url: string };
 type Playback = { state: "loading" } | { state: "ready"; source: VideoSource } | { state: "error"; message: string; url?: string };
 
-function ExerciseDetails({ exercise, description }: { exercise: Target | LegacyTarget; description?: string }) {
+function ExerciseDetails({ exercise, description }: { exercise: Target | LegacyTarget; description: string | undefined }) {
   return (
     <span className="my-routine-exercise-detail">
       <strong>{exercise.name}</strong>
