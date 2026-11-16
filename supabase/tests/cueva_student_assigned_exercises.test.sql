@@ -1,5 +1,5 @@
 begin;
-select plan(25);
+select plan(28);
 
 -- Stable test identities and sessions. All fixtures are rolled back at the end.
 insert into auth.users(id,aud,role,email,created_at,updated_at) values
@@ -139,6 +139,12 @@ select throws_ok($$select public.cueva_routine_text_write(
 
 select throws_ok($$select public.cueva_routine_text_write(
  'draft','b3000000-0000-4000-8000-000000000001',1,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000003',null,'text','Press banca',
+ '[{"exercise_id":"not-a-uuid","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)$$,'22023',null,'invalid exercise UUIDs are rejected by the database');
+
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',1,'Notas de bloque',null,
  'ba000000-0000-4000-8000-000000000002',null,'text','Press banca',
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":99,"text":"Press banca"}]'::jsonb
 )$$,'22023',null,'invalid mention offsets are rejected in the database');
@@ -146,6 +152,13 @@ select throws_ok($$select public.cueva_routine_text_write(
 
 select is((select count(*)::integer from public.cueva_student_assigned_exercises()),0,
  'administrator cannot use the student RPC to read exercise assignments');
+
+select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000003',true);
+select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000003','role','authenticated','session_id','b2000000-0000-4000-8000-000000000003')::text,true);
+select throws_ok($select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',0,'',null,
+ 'ba000000-0000-4000-8000-000000000004',null,'blocks','', '[]'::jsonb
+)$,'42501',null,'an authenticated student cannot write routine text');
 
 -- A valid session without a cueva_profiles role is also denied by the owner check.
 select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000004',true);
@@ -157,8 +170,12 @@ reset role;
 set local role anon;
 select throws_ok($$select * from public.cueva_student_assigned_exercises()$$,'42501',null,
  'anonymous execution is rejected by database privileges');
-select throws_ok($$select * from public.cueva_student_mentioned_exercises()$$,'42501',null,
+select throws_ok($select * from public.cueva_student_mentioned_exercises()$,'42501',null,
  'anonymous mention lookup is rejected by database privileges');
+select throws_ok($select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',0,'',null,
+ 'ba000000-0000-4000-8000-000000000005',null,'blocks','', '[]'::jsonb
+)$,'42501',null,'anonymous routine text writes are rejected by database privileges');
 reset role;
 
 select * from finish();
