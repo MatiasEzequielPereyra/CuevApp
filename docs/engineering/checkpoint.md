@@ -27,6 +27,31 @@ SKILLS_SELECTED / SKILLS_APPLIED: `cueva-acceptance-audit`, `cueva-release`,
 `cueva-supabase-security`, `cueva-finance` y `supabase:supabase`.
 SKILL_SOURCES: `.agents/skills/<nombre>/SKILL.md` y guía Supabase de host.
 
+## CUEVA-005 · Preflight auditado · 2026-11-16
+
+Entrega del ejecutor `6187e64560f3f9e1dbe89af14da5381130dd41ef` sobre
+`0da414beb60610ced8ab4f3768021061aceb8aea`. La base de integración incluye
+el portal publicado en `640324bc0fbf97b0777ddd7080c33ff13c378e45` (PR #53).
+
+Auditoría nativa independiente PASS con las extensiones reales en contenedores
+aislados: dos POST HTTP 204, mismo job e historial conservado después de
+reanudar, otro job intacto y rechazo de cambios de permisos y configuración.
+El ensayo del auditor redujo el intervalo a 12 segundos únicamente en memoria.
+El ejecutor registró el recorrido a cinco minutos.
+[Control de cola](../operations/CUEVA-005-queue-preflight.sql) ·
+[Control de Cron](../operations/CUEVA-005-cron-control.sql) ·
+[Ensayo nativo](../../tests/cueva-005-cron-native.ps1).
+
+Hosted conserva las 18 migraciones anteriores. Faltan las doce de Notificaciones
+y la RPC de ejercicios asignados del portal. Cron y los envíos alojados siguen
+pendientes. La verificación y el respaldo previos a la primera aplicación se
+detallan en la [guía operativa](../operations/CUEVA-005-rollout-checklist.md).
+
+SKILLS_SELECTED / SKILLS_APPLIED: `cueva-acceptance-audit`,
+`cueva-supabase-security`, `cueva-finance`, `cueva-release`,
+`supabase:supabase` y `pr`.
+SKILL_SOURCES: `.agents/skills/<nombre>/SKILL.md` y guías de host.
+
 ## CUEVA-PWA-LOGIN · Publicado · 2026-11-15
 
 [PR #57](https://github.com/MatiasEzequielPereyra/CuevApp/pull/57), base `cbdb9052be2221cd4e1db9e5760bdd007a6e855d`,
