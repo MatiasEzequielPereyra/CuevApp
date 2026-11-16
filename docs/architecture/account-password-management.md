@@ -13,7 +13,7 @@ Los usuarios con rol `alumno` y `admin` pueden cambiar la contraseña de su prop
 
 ## Recuperación administrativa de alumnos
 
-La recuperación de la contraseña de un alumno es un flujo separado: el administrador solicita que Supabase Auth envíe un enlace de recuperación al correo del alumno. El administrador nunca ve ni define la nueva contraseña. La operación existente valida que el usuario destino tenga rol `alumno` y aplica el mecanismo privado de recuperación de invitaciones.
+La recuperación de la contraseña de un alumno es un flujo separado: el administrador busca la ficha por correo y solicita que Supabase Auth envíe un enlace al correo asociado a la invitación vinculada. La API resuelve la relación ficha-invitación-cuenta Auth y vuelve a comprobar que el usuario destino tenga rol `alumno`. El administrador nunca ve ni define la nueva contraseña; se aplica el mecanismo privado de recuperación de invitaciones.
 
 El envío de invitaciones y recuperaciones continúa sujeto a la configuración de correo del gimnasio. Cuando el entorno está en modo `ownerOnly`, estas operaciones permanecen deshabilitadas hasta completar esa configuración; el cambio de contraseña propio sigue disponible.
 
