@@ -17,12 +17,14 @@ export async function StudentRoutine({ id }: { id: string }) {
   ]);
   const draftInitial = draft.data ? {
     ...draft.data,
+    content: draftText.data?.block_content ?? draft.data.content,
     format: draftText.data?.format ?? "blocks",
     text_content: draftText.data?.text_content ?? "",
     mentions: draftText.data?.mentions ?? [],
   } : { content: "", revision: 0, format: "blocks" as const, text_content: "", mentions: [] };
   const publicationInitial = publication.data ? {
     ...publication.data,
+    content: publicationText.data?.find(item => item.publication_id === publication.data?.id)?.block_content ?? publication.data.content,
     format: publicationText.data?.find(item => item.publication_id === publication.data?.id)?.format ?? "blocks",
     text_content: publicationText.data?.find(item => item.publication_id === publication.data?.id)?.text_content ?? "",
     mentions: publicationText.data?.find(item => item.publication_id === publication.data?.id)?.mentions ?? [],
@@ -30,7 +32,7 @@ export async function StudentRoutine({ id }: { id: string }) {
   const templateMap = new Map((templateTexts.data ?? []).map(item => [item.owner_id, item]));
   const templateInitial = (templates.data ?? []).map(item => {
     const text = templateMap.get(item.id);
-    return { ...item, format: text?.format ?? "blocks", text_content: text?.text_content ?? "", mentions: text?.mentions ?? [] };
+    return { ...item, content: text?.block_content ?? item.content, format: text?.format ?? "blocks", text_content: text?.text_content ?? "", mentions: text?.mentions ?? [] };
   });
   return <RoutineShell email={user?.email ?? "Cuenta de CUEVA"}><Link href={`/alumnos?id=${id}`}>← Ficha del alumno</Link><div className="dash-heading"><div><p className="dash-overline">PLANIFICACIÓN DEL ALUMNO</p><h1>Rutina de {student.data?.first_name} {student.data?.last_name}</h1></div></div>
     {student.error || draft.error || publication.error || templates.error || draftText.error || publicationText.error || templateTexts.error ? <p role="alert">No pudimos cargar la rutina. Reintentá.</p> : !student.data ? <p>No se encontró la ficha.</p> : <><NoteEditor key={id} id={id} initial={draftInitial as Note} publication={publicationInitial as Publication | null} templates={templateInitial as Template[]}/></>}
