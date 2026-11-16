@@ -131,17 +131,17 @@ select is((public.cueva_routine_text_write(
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
 )->>'revision')::integer,1,'exact retries return the same text revision');
 
-select throws_ok($select public.cueva_routine_text_write(
+select throws_ok($$select public.cueva_routine_text_write(
  'draft','b3000000-0000-4000-8000-000000000001',0,'Notas de bloque',null,
  'ba000000-0000-4000-8000-000000000001',null,'text','Press banca',
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000002","start":0,"end":11,"text":"Press banca"}]'::jsonb
-)$,'40001',null,'a reused save ID cannot replace mention UUIDs');
+)$$,'40001',null,'a reused save ID cannot replace mention UUIDs');
 
-select throws_ok($select public.cueva_routine_text_write(
+select throws_ok($$select public.cueva_routine_text_write(
  'draft','b3000000-0000-4000-8000-000000000001',1,'Notas de bloque',null,
  'ba000000-0000-4000-8000-000000000002',null,'text','Press banca',
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":99,"text":"Press banca"}]'::jsonb
-)$,'22023',null,'invalid mention offsets are rejected in the database');
+)$$,'22023',null,'invalid mention offsets are rejected in the database');
 
 
 select is((select count(*)::integer from public.cueva_student_assigned_exercises()),0,
@@ -157,7 +157,7 @@ reset role;
 set local role anon;
 select throws_ok($$select * from public.cueva_student_assigned_exercises()$$,'42501',null,
  'anonymous execution is rejected by database privileges');
-select throws_ok($select * from public.cueva_student_mentioned_exercises()$,'42501',null,
+select throws_ok($$select * from public.cueva_student_mentioned_exercises()$$,'42501',null,
  'anonymous mention lookup is rejected by database privileges');
 reset role;
 
