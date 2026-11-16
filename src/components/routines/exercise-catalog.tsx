@@ -31,6 +31,7 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
   const [active, setActive] = useState(true), [editing, setEditing] = useState<Exercise | null>(null), [message, setMessage] = useState("");
   const [videoPath, setVideoPath] = useState<string | null>(null);
   const busy = useRef(false), newId = useRef<string | null>(null);
+  const latestQuery = useRef("");
   const selectCurrent = useRef(onSelectMany), mounted = useRef(true);
   const editorDialog = useRef<HTMLDialogElement>(null);
   const nameInput = useRef<HTMLInputElement>(null);
@@ -56,9 +57,20 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
       if (!r.ok) { setSearchError(data.message || "No pudimos consultar el catálogo. Podés reintentar."); return; }
       setRows(previous => offset ? [...new Map([...previous, ...data.exercises].map((e: Exercise) => [e.id, e])).values()] : data.exercises); setNext(data.next); setSearched(q); setLoaded(true);
     } catch { if (mounted.current) setSearchError("No pudimos consultar el catálogo. Podés reintentar."); }
-    finally { busy.current = false; if (mounted.current) setPending(false); }
+    finally {
+      busy.current = false;
+      if (mounted.current) {
+        setPending(false);
+        if (latestQuery.current !== q) void search(latestQuery.current);
+      }
+    }
   }, [selecting, videosOnly]);
-  useEffect(() => { mounted.current = true; const timer = setTimeout(() => { void search(""); }, 0); return () => { clearTimeout(timer); mounted.current = false; }; }, [search]);
+  useEffect(() => {
+    mounted.current = true;
+    const timer = setTimeout(() => { void search(query); }, 180);
+    return () => { clearTimeout(timer); };
+  }, [query, search]);
+  useEffect(() => () => { mounted.current = false; }, []);
   async function save() {
     if (busy.current) return;
     busy.current = true; setPending(true); setMessage(""); newId.current ??= crypto.randomUUID();
@@ -189,14 +201,13 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
       </label>
       {invalidRounds && <p id={`${instanceId}-rounds-error`} className="routine-picker-error">Ingresá un número entero de 1 a 30.</p>}
     </div>}
-    <form className="routine-catalog-search" onSubmit={event => { event.preventDefault(); void search(query); }}>
-      <label>Buscar ejercicio<input type="search" value={query} maxLength={120} onChange={event => setQuery(event.target.value)} /></label>
+    <div className="routine-catalog-search">
+      <label>Buscar ejercicio<input type="search" value={query} maxLength={120} onChange={event => { latestQuery.current = event.target.value; setQuery(event.target.value); }} placeholder="Escribí las primeras letras…" /></label>
       <div className="exercise-search-actions">
-        <button disabled={pending}>Buscar</button>
         {managing && <button type="button" className="exercise-primary" ref={createButton} disabled={pending}
           onClick={event => openEditor(null, event.currentTarget)}>Nuevo ejercicio</button>}
       </div>
-    </form>
+    </div>
     {searchError && <p className="exercise-feedback" role="alert">{searchError}</p>}
     {!loaded && !searchError && <p className="exercise-feedback" role="status">Cargando {videosOnly ? "videos" : "ejercicios"}…</p>}
     {loaded && !rows.length && !searchError && <p className="exercise-feedback">{videosOnly
