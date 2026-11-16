@@ -10,6 +10,7 @@ create table public.cueva_routine_text_drafts (
   text_content text not null default '' check (length(text_content) <= 40000),
   block_content text not null default '' check (length(block_content) <= 40000),
   mentions jsonb not null default '[]'::jsonb check (jsonb_typeof(mentions) = 'array'),
+  save_id uuid not null,
   updated_by uuid not null references auth.users(id),
   updated_at timestamptz not null default clock_timestamp(),
   primary key (kind, owner_id)
@@ -246,9 +247,9 @@ begin
   end if;
 
   insert into public.cueva_routine_text_drafts (
-    kind, owner_id, revision, format, text_content, block_content, mentions, updated_by, updated_at
+    kind, owner_id, revision, format, text_content, block_content, mentions, save_id, updated_by, updated_at
   ) values (
-    p_kind, p_id, v_revision, p_format, p_text_content, p_content, p_mentions, auth.uid(), clock_timestamp()
+    p_kind, p_id, v_revision, p_format, p_text_content, p_content, p_mentions, p_operation, auth.uid(), clock_timestamp()
   )
   on conflict (kind, owner_id) do update set
     revision = excluded.revision,
@@ -256,9 +257,20 @@ begin
     text_content = excluded.text_content,
     block_content = excluded.block_content,
     mentions = excluded.mentions,
+    save_id = excluded.save_id,
     updated_by = excluded.updated_by,
     updated_at = excluded.updated_at
-  where public.cueva_routine_text_drafts.revision <= excluded.revision;
+  where public.cueva_routine_text_drafts.revision + 1 = excluded.revision;
+
+  if not exists (
+    select 1 from public.cueva_routine_text_drafts d
+    where d.kind = p_kind and d.owner_id = p_id
+      and d.revision = v_revision and d.save_id = p_operation
+      and d.format = p_format and d.text_content = p_text_content
+      and d.block_content = p_content and d.mentions = p_mentions
+  ) then
+    raise exception 'El documento de texto cambió en otra ventana' using errcode = '40001';
+  end if;
 
   return v_result || jsonb_build_object(
     'format', p_format,
