@@ -364,3 +364,25 @@ for (const width of [360, 390, 1440]) {
     });
   }
 }
+
+
+test("texto libre vincula menciones por UUID y publica la instantánea", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 820 });
+  await page.goto(`${origin}/rutinas?alumno=${shortId}`);
+  const editor = page.getByRole("region", { name: "Editor de rutina" });
+  await expect(editor.getByText("Usar plantilla")).toBeVisible();
+  await editor.getByRole("button", { name: "Texto libre" }).click();
+  const textarea = editor.getByRole("textbox", { name: "Rutina en texto libre" });
+  await textarea.fill("@Sentadilla");
+  const suggestion = editor.getByRole("option", { name: "Sentadilla" });
+  await expect(suggestion).toBeVisible();
+  await suggestion.click();
+  await expect(textarea).toHaveValue("Sentadilla");
+  await expect(editor.getByText("1 mención vinculada")).toBeVisible();
+  await expect.poll(() => routines.operations).toEqual(["draft"]);
+  await editor.getByRole("button", { name: "Publicar rutina" }).click();
+  await expect(editor.getByText("Rutina publicada.")).toBeVisible();
+  await expect.poll(() => routines.operations).toEqual(["draft", "publish"]);
+  await editor.getByText("Última rutina publicada").click();
+  await expect(editor.locator("pre").last()).toHaveText("Sentadilla");
+});
