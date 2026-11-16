@@ -280,7 +280,6 @@ for (const width of [360, 390, 1440]) {
           await expect(squatWeight).toHaveValue("");
           await squatWeight.fill("42,5");
           await picker.getByRole("searchbox", { name: "Buscar ejercicio" }).fill("Press militar");
-          await picker.getByRole("button", { name: "Buscar", exact: true }).click();
           await expect(picker.getByRole("list", { name: "Seleccionados fuera de la búsqueda" }).getByRole("textbox")).toHaveValue("42,5");
           await picker.getByRole("checkbox", { name: "Press militar", exact: true }).check();
           await rounds.fill("0");
