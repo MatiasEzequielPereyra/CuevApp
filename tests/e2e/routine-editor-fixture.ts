@@ -58,8 +58,9 @@ export function routineEditorFixture() {
         case "/rpc/cueva_my_routine_video_ids": return { body: [] };
         case "/rpc/cueva_student_mentioned_exercises": return { body: [] };
         case "/cueva_exercises": {
-          const query = url.searchParams.get("name")?.slice(7, -1).toLowerCase() ?? "";
-          return { body: exercises.filter(exercise => exercise.name.toLowerCase().includes(query)) };
+          const filter = url.searchParams.get("name") ?? "";
+          const query = filter.startsWith("ilike.") ? filter.slice(6).replaceAll("%", "").toLowerCase() : "";
+          return { body: exercises.filter(exercise => exercise.name.toLowerCase().startsWith(query)) };
         }
         case "/rpc/cueva_routine_text_write": {
           const buffers: Buffer[] = [];
