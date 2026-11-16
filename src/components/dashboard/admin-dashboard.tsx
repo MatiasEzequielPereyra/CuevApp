@@ -39,7 +39,7 @@ export function AdminAccountActions({ ownerOnly, passwordChanged = false }: { ow
       <PasswordChangeForm />
       {passwordChanged && <p role="status">Tu contraseña se actualizó correctamente.</p>}
     </section>
-    {ownerOnly ? <p>Las invitaciones y la recuperación de alumnos estarán disponibles cuando terminemos de configurar el correo del gimnasio.</p> : <><form method="post" action="/api/acceso/admin-invitar"><label>Correo del alumno <input name="email" type="email" required/></label><button>Invitar</button></form><form method="post" action="/api/acceso/admin-recuperar"><label>Identificador del alumno <input name="user_id" required/></label><button>Enviar recuperación</button></form></>}
+    {ownerOnly ? <p>Las invitaciones y la recuperación de alumnos estarán disponibles cuando terminemos de configurar el correo del gimnasio.</p> : <><form method="post" action="/api/acceso/admin-invitar"><label>Correo del alumno <input name="email" type="email" required/></label><button>Invitar</button></form><form method="post" action="/api/acceso/admin-recuperar"><label>Correo del alumno <input name="email" type="email" maxLength={254} autoComplete="email" required/></label><button>Enviar enlace de recuperación</button></form></>}
   </>;
 }
 
