@@ -83,10 +83,15 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
       });
       const verified = await verifier.auth.signInWithPassword({ email: current.data.user.email, password: currentPassword });
       verifiedUserId = verified.data.user?.id;
+      if (verified.error || verifiedUserId !== current.data.user.id || !verified.data.session) return fail(401);
+      const established = await auth.auth.setSession({
+        access_token: verified.data.session.access_token,
+        refresh_token: verified.data.session.refresh_token,
+      });
+      if (established.error || established.data.user?.id !== current.data.user.id) return fail(401);
     } catch {
       return fail(503);
     }
-    if (verifiedUserId !== current.data.user.id) return fail(401);
 
     const changed = await auth.auth.updateUser({ password: newPassword });
     if (changed.error || changed.data.user?.id !== current.data.user.id) return fail(503);
