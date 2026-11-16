@@ -1,5 +1,12 @@
 # CUEVA
 
+## Estado actual del producto — 2026-11-16
+
+El portal del alumno ya está integrado en `main` (PR #53): Inicio, Mi Membresía, Entrenamiento, Notificaciones y Mi perfil. La integración de código no acredita por sí sola que las funciones/tablas correspondientes estén aplicadas en Supabase Hosted.
+
+CUEVA-005 está integrado en el código; el rollout alojado y la verificación de envíos reales siguen pendientes. También continúan pendientes el registro/historial de resultados de entrenamiento y la consulta offline segura de rutinas. CUEVA-003B Vencimientos se conserva como baseline cerrado.
+
+
 Fundación de la aplicación del gimnasio. CUEVA-001A fue aceptada e integrada en el PR #1. La página está publicada en [cueva-gym.vercel.app](https://cueva-gym.vercel.app). Ver el checkpoint para la evidencia y el siguiente encargo.
 
 El código publicado incluye rutinas por días y bloques, biblioteca de ejercicios
