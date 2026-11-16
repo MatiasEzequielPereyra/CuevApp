@@ -6,9 +6,9 @@ Los usuarios con rol `alumno` y `admin` pueden cambiar la contraseña de su prop
 
 - Se exige sesión vigente, rol permitido y origen de la petición coincidente con el origen configurado.
 - Se solicita la contraseña actual, una contraseña nueva de al menos 8 caracteres y su confirmación.
-- La contraseña actual se verifica con Supabase Auth mediante un cliente público efímero y sin persistencia de sesión. La identidad autenticada debe coincidir con el usuario de la sesión existente.
+- La contraseña actual se verifica con Supabase Auth mediante un cliente público efímero y sin persistencia automática. Solo si la identidad coincide con la sesión existente, su sesión recién autenticada se transfiere al cliente SSR de la petición para completar el cambio con una autenticación reciente.
 - Solo después de esa comprobación, la sesión autenticada actual ejecuta `auth.updateUser({ password })`.
-- El flujo no usa service role, no modifica tablas de perfiles y no guarda contraseñas en la base de datos.
+- El flujo no usa service role, no revoca globalmente las sesiones, no modifica tablas de perfiles y no guarda contraseñas en la base de datos.
 - Las contraseñas no se escriben en logs ni se devuelven en respuestas.
 
 ## Recuperación administrativa de alumnos
