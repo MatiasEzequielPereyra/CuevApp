@@ -9,9 +9,19 @@ export type Block = { id: string; name: string; rounds: number; exercises: Targe
 export type Day = { id: string; name: string; blocks: Block[] };
 export type PlanV2 = { version: 2; days: Day[] };
 export type Plan = { version: 1; blocks: LegacyBlock[] } | PlanV2;
-export type Note = { content: string; revision: number; title?: string; plan?: Plan | null };
+export type RoutineFormat = "blocks" | "text";
+export type RoutineMention = { exercise_id: string; start: number; end: number; text: string };
+export type Note = {
+  content: string;
+  revision: number;
+  title?: string;
+  plan?: Plan | null;
+  format?: RoutineFormat;
+  text_content?: string;
+  mentions?: RoutineMention[];
+};
 export type Template = Note & { id: string; title: string };
-export type Publication = { id: string; content: string; plan?: Plan | null; draft_revision: number; published_at: string };
+export type Publication = { id: string; content: string; plan?: Plan | null; draft_revision: number; published_at: string; format?: RoutineFormat; text_content?: string; mentions?: RoutineMention[] };
 export const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const canonical = (value: unknown): unknown => Array.isArray(value) ? value.map(canonical) : value && typeof value === "object" ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => [k, canonical(v)])) : value;
 export const planKey = (plan?: Plan | null) => JSON.stringify(canonical(plan ?? null));
