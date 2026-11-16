@@ -9,9 +9,9 @@ type SearchRange = { start: number; end: number; query: string } | null;
 
 function searchRange(value: string, cursor: number): SearchRange {
   const before = value.slice(0, cursor);
-  const at = before.match(/(?:^|\\s)@([^@\\n]*)$/);
+  const at = before.match(/(?:^|\s)@([^@\n]*)$/);
   if (at) return { start: cursor - at[1].length - 1, end: cursor, query: at[1].trim() };
-  const prefix = before.match(/(?:^|\\s)([^\\s@]+)$/);
+  const prefix = before.match(/(?:^|\s)([^\s@]+)$/);
   if (prefix && prefix[1].length >= 2) return { start: cursor - prefix[1].length, end: cursor, query: prefix[1] };
   return null;
 }
@@ -101,7 +101,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
         setRange(searchRange(value, event.currentTarget.selectionStart));
       }}
       onKeyDown={onKeyDown}
-      placeholder={"Escribí la rutina completa…\\n\\nPodés mencionar ejercicios con @ o escribir su nombre."} />
+      placeholder={"Escribí la rutina completa…\n\nPodés mencionar ejercicios con @ o escribir su nombre."} />
     {range && (pending || error || results.length > 0) && <div className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos">
       {pending && <p role="status">Buscando ejercicios…</p>}
       {error && <p role="alert">{error}</p>}
