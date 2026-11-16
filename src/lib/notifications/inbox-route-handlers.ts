@@ -17,7 +17,7 @@ async function readNotificationId(request: Request): Promise<string | null> {
   if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) return null;
   const declaredLength = request.headers.get("content-length");
   if (declaredLength !== null
-    && (!/^\\d+$/.test(declaredLength) || Number(declaredLength) > 256)) return null;
+    && (!/^\d+$/.test(declaredLength) || Number(declaredLength) > 256)) return null;
   const reader = request.body?.getReader();
   if (!reader) return null;
 
