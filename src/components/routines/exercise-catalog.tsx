@@ -2,14 +2,28 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { Exercise } from "@/lib/routines/types";
 import { VideoLink } from "@/components/routines/plan-view";
-export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = false, compactPicker = false }: {
-  onSelectMany?: (exercises: Exercise[]) => void;
+
+export type BlockSettings = { rounds: number; weightsKg: ReadonlyMap<string, number | null> };
+
+function parseWeight(value: string) {
+  const input = value.trim();
+  if (!input) return null;
+  if (!/^(?:[0-9]+(?:[.,][0-9]{1,2})?|[.,][0-9]{1,2})$/.test(input)) return NaN;
+  const weight = Number(input.replace(",", "."));
+  return weight <= 2000 ? weight : NaN;
+}
+
+export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = false, compactPicker = false, configureRounds = false }: {
+  onSelectMany?: (exercises: Exercise[], settings: BlockSettings) => void;
   capacity?: number;
   videosOnly?: boolean;
   compactPicker?: boolean;
+  configureRounds?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [rows, setRows] = useState<Exercise[]>([]), [selected, setSelected] = useState<Exercise[]>([]);
+  const [rounds, setRounds] = useState("3");
+  const [weights, setWeights] = useState<Record<string, string>>({});
   const [next, setNext] = useState<number | null>(null), [searched, setSearched] = useState("");
   const [loaded, setLoaded] = useState(false), [pending, setPending] = useState(false);
   const [searchError, setSearchError] = useState("");
@@ -27,6 +41,11 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
   useEffect(() => { selectCurrent.current = onSelectMany; }, [onSelectMany]);
   const selecting = !!onSelectMany;
   const managing = !selecting && !videosOnly;
+  const blockRounds = Number(rounds);
+  const invalidRounds = configureRounds && (!Number.isInteger(blockRounds) || blockRounds < 1 || blockRounds > 30);
+  const selectedWeights = new Map(selected.map(exercise => [exercise.id, parseWeight(weights[exercise.id] ?? "")]));
+  const invalidWeights = [...selectedWeights.values()].some(Number.isNaN);
+  const selectedOutsideResults = compactPicker ? selected.filter(exercise => !rows.some(row => row.id === exercise.id)) : [];
   const search = useCallback(async (q: string, offset = 0) => {
     if (busy.current) return;
     busy.current = true; setPending(true); setSearchError("");
@@ -89,6 +108,43 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
     else createButton.current?.focus();
   }
 
+  function pickerRow(exercise: Exercise) {
+    const checked = selectedWeights.has(exercise.id);
+    const weightError = Number.isNaN(selectedWeights.get(exercise.id));
+    const weightErrorId = `${instanceId}-${exercise.id}-weight-error`;
+    return <li key={exercise.id} className="routine-picker-row">
+      <label>
+        <input type="checkbox" checked={checked}
+          disabled={pending || (!exercise.active && !checked) || (selected.length >= capacity && !checked)}
+          onChange={event => {
+            const marked = event.target.checked;
+            setSelected(previous => marked ? [...previous, exercise] : previous.filter(item => item.id !== exercise.id));
+            if (!marked) setWeights(previous => {
+              const next = { ...previous };
+              delete next[exercise.id];
+              return next;
+            });
+          }} />
+        <strong>{exercise.name}</strong>
+      </label>
+      {(exercise.video_url || exercise.video_path) && <span className="routine-picker-video"><VideoLink id={exercise.id} /></span>}
+      {checked && <div className="routine-picker-weight">
+        <label>Peso (kg)
+          <input type="text" inputMode="decimal" placeholder="Opcional" maxLength={10}
+            aria-label={`Peso (kg) de ${exercise.name}`}
+            aria-invalid={weightError}
+            aria-describedby={weightError ? weightErrorId : undefined}
+            value={weights[exercise.id] ?? ""}
+            onChange={event => {
+              const value = event.target.value;
+              setWeights(previous => ({ ...previous, [exercise.id]: value }));
+            }} />
+        </label>
+        {weightError && <p id={weightErrorId} className="routine-picker-error">Ingresá de 0 a 2000 kg con hasta 2 decimales.</p>}
+      </div>}
+    </li>;
+  }
+
   const editor = <form className="routine-catalog-form" onSubmit={event => {
     event.preventDefault();
     void save();
@@ -125,6 +181,14 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
 
   return <section className={`exercise-catalog${selecting ? "" : " exercise-management"}`}
     aria-label={videosOnly ? "Biblioteca de videos" : selecting ? "Seleccionar ejercicios" : "Catálogo de ejercicios"}>
+    {configureRounds && <div className="routine-picker-rounds">
+      <label>Vueltas del bloque
+        <input type="number" min={1} max={30} step={1} required value={rounds}
+          aria-invalid={invalidRounds} aria-describedby={invalidRounds ? `${instanceId}-rounds-error` : undefined}
+          onChange={event => setRounds(event.target.value)} />
+      </label>
+      {invalidRounds && <p id={`${instanceId}-rounds-error`} className="routine-picker-error">Ingresá un número entero de 1 a 30.</p>}
+    </div>}
     <form className="routine-catalog-search" onSubmit={event => { event.preventDefault(); void search(query); }}>
       <label>Buscar ejercicio<input type="search" value={query} maxLength={120} onChange={event => setQuery(event.target.value)} /></label>
       <div className="exercise-search-actions">
@@ -138,8 +202,12 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
     {loaded && !rows.length && !searchError && <p className="exercise-feedback">{videosOnly
       ? (searched ? "No encontramos videos para esa búsqueda." : "Todavía no hay ejercicios con video. Podés agregar uno desde el catálogo.")
       : searched ? "No encontramos ejercicios para esa búsqueda." : "Todavía no hay ejercicios en el catálogo."}</p>}
+    {selectedOutsideResults.length > 0 && <ul className="exercise-results" aria-label="Seleccionados fuera de la búsqueda">
+      {selectedOutsideResults.map(pickerRow)}
+    </ul>}
     {rows.length > 0 && <ul className="exercise-results">
       {rows.map(exercise => {
+        if (selecting && compactPicker) return pickerRow(exercise);
         const statusId = `${instanceId}-${exercise.id}-status`;
         const descriptionId = `${instanceId}-${exercise.id}-description`;
         const details = [exercise.active ? "" : statusId, exercise.description ? descriptionId : ""].filter(Boolean).join(" ");
@@ -148,16 +216,6 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
           {!exercise.active && <small id={statusId}>Inactivo</small>}
           {exercise.description && <span id={descriptionId} className="exercise-description">{exercise.description}</span>}
         </>;
-        const checked = selected.some(item => item.id === exercise.id);
-        if (selecting && compactPicker) return <li key={exercise.id} className="routine-picker-row">
-          <label>
-            <input type="checkbox" checked={checked}
-              disabled={pending || !exercise.active || (selected.length >= capacity && !checked)}
-              onChange={event => setSelected(previous => event.target.checked ? [...previous, exercise] : previous.filter(item => item.id !== exercise.id))} />
-            <strong>{exercise.name}</strong>
-          </label>
-          {(exercise.video_url || exercise.video_path) && <VideoLink id={exercise.id} />}
-        </li>;
         return <li key={exercise.id}>
           {managing ? <button type="button" className="exercise-open" aria-label={exercise.name} aria-describedby={details || undefined} aria-haspopup="dialog" disabled={pending}
             onClick={event => openEditor(exercise, event.currentTarget)}>{info}</button> : <div className="exercise-info">{info}</div>}
@@ -181,7 +239,8 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
     {selecting && <div className={compactPicker ? "routine-picker-confirm" : undefined}>
       {!compactPicker && <p>{selected.length} seleccionados. Se agregan en el orden de selección.</p>}
       <button type="button" className={compactPicker ? "routine-primary" : undefined}
-        disabled={pending || !selected.length || selected.length > capacity} onClick={() => onSelectMany?.(selected)}>
+        disabled={pending || !selected.length || selected.length > capacity || invalidRounds || invalidWeights}
+        onClick={() => onSelectMany?.(selected, { rounds: blockRounds, weightsKg: selectedWeights })}>
         {compactPicker && selected.length ? `Agregar ${selected.length} ${selected.length === 1 ? "ejercicio" : "ejercicios"}`
           : compactPicker ? "Agregar ejercicios" : "Agregar seleccionados al bloque"}
       </button>

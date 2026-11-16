@@ -257,7 +257,13 @@ for (const width of [360, 390, 1440]) {
       await expect(addBlock).toBeFocused();
       await addBlock.press("Enter");
       let picker = page.getByRole("dialog", { name: "Nuevo bloque" });
-      await expect(picker.getByRole("checkbox", { name: "Sentadilla", exact: true })).toBeVisible();
+      const rounds = picker.getByRole("spinbutton", { name: "Vueltas del bloque" });
+      const squatWeight = picker.getByRole("textbox", { name: "Peso (kg) de Sentadilla" });
+      const squat = picker.getByRole("checkbox", { name: "Sentadilla", exact: true });
+      await expect(rounds).toHaveValue("3");
+      await rounds.fill("7");
+      await squat.press("Space");
+      await squatWeight.fill("90");
       await page.keyboard.press("Escape");
       await expect(picker).toHaveCount(0);
       await expect(addBlock).toBeFocused();
@@ -266,19 +272,49 @@ for (const width of [360, 390, 1440]) {
       for (const [index, names] of workoutBlocks.entries()) {
         if (width < 500) await addBlock.tap(); else await addBlock.click();
         picker = page.getByRole("dialog", { name: "Nuevo bloque" });
-        for (const name of names) await picker.getByRole("checkbox", { name, exact: true }).check();
-        await picker.getByRole("button", { name: `Agregar ${names.length} ejercicios` }).click();
+        const submit = picker.getByRole("button", { name: `Agregar ${names.length} ejercicios` });
+        await expect(rounds).toHaveValue("3");
+        if (index === 0) {
+          await expect(squat).not.toBeChecked();
+          await squat.check();
+          await expect(squatWeight).toHaveValue("");
+          await squatWeight.fill("42,5");
+          await picker.getByRole("searchbox", { name: "Buscar ejercicio" }).fill("Press militar");
+          await picker.getByRole("button", { name: "Buscar", exact: true }).click();
+          await expect(picker.getByRole("list", { name: "Seleccionados fuera de la búsqueda" }).getByRole("textbox")).toHaveValue("42,5");
+          await picker.getByRole("checkbox", { name: "Press militar", exact: true }).check();
+          await rounds.fill("0");
+          await expect(submit).toBeDisabled();
+          await rounds.fill("5");
+          await squatWeight.fill("42,555");
+          await expect(submit).toBeDisabled();
+          await squatWeight.fill("42,5");
+          await picker.getByRole("textbox", { name: "Peso (kg) de Press militar" }).fill("0");
+          await noOverflow(page);
+        } else {
+          for (const name of names) await picker.getByRole("checkbox", { name, exact: true }).check();
+          if (index === 1) await picker.getByRole("textbox", { name: "Peso (kg) de Plancha" }).fill("0");
+        }
+        await submit.click();
         const card = editor.getByRole("region", { name: `Bloque ${index + 1}`, exact: true });
-        await expect(card.getByText("3 vueltas", { exact: true })).toBeVisible();
+        await expect(card.getByText(index === 0 ? "5 vueltas" : "3 vueltas", { exact: true })).toBeVisible();
         const rows = card.getByRole("listitem");
         await expect(rows).toHaveCount(names.length);
         for (const [item, name] of names.entries()) await expect(rows.nth(item)).toContainText(name);
+        if (index === 0) {
+          await expect(rows.nth(0)).toContainText("42.5 kg");
+          await expect(rows.nth(1)).toContainText("0 kg");
+        }
+        if (index === 1) {
+          await expect(rows.nth(0)).toContainText("0 kg");
+          await expect(rows.nth(1)).not.toContainText(" kg");
+        }
         await expect(card.getByLabel("Tipo de objetivo")).toBeHidden();
         await expect(picker).toHaveCount(0);
       }
       const firstBlock = editor.getByRole("region", { name: "Bloque 1", exact: true });
       await firstBlock.getByRole("button", { name: /Sentadilla/ }).click();
-      await firstBlock.getByLabel("Peso objetivo (kg)").fill("40");
+      await expect(firstBlock.getByLabel("Peso objetivo (kg)")).toHaveValue("42.5");
       await firstBlock.getByRole("button", { name: /Press militar/ }).click();
       await firstBlock.getByLabel("Tipo de objetivo").selectOption("time");
       await firstBlock.getByLabel("Duración", { exact: true }).fill("45");
@@ -307,6 +343,9 @@ for (const width of [360, 390, 1440]) {
           const studentPage = await learner.newPage();
           await studentPage.goto(`${origin}/mi-rutina`);
           await expect(studentPage.getByRole("heading", { name: "Mi rutina", exact: true })).toBeVisible();
+          await expect(studentPage.getByText("5 vueltas", { exact: true })).toBeVisible();
+          await expect(studentPage.getByText("42.5 kg", { exact: true })).toBeVisible();
+          await expect(studentPage.getByText("0 kg", { exact: true })).toBeVisible();
           await expect(studentPage.getByText("45 segundos", { exact: true })).toBeVisible();
           await firstBlock.getByRole("button", { name: /Press militar/ }).click();
           await firstBlock.getByLabel("Duración", { exact: true }).fill("55");
