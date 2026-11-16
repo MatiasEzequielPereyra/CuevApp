@@ -1,5 +1,5 @@
 begin;
-select plan(28);
+select plan(29);
 
 -- Stable test identities and sessions. All fixtures are rolled back at the end.
 insert into auth.users(id,aud,role,email,created_at,updated_at) values
@@ -33,12 +33,12 @@ insert into public.cueva_student_invitations(student_id,email,user_id,state,leas
  ('b3000000-0000-4000-8000-000000000001','routine-student-a@example.test','b1000000-0000-4000-8000-000000000002','sent','b4000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001'),
  ('b3000000-0000-4000-8000-000000000002','routine-student-b@example.test','b1000000-0000-4000-8000-000000000003','sent','b4000000-0000-4000-8000-000000000002','b1000000-0000-4000-8000-000000000001');
 
-insert into public.cueva_exercises(id,name,revision,updated_by,description,video_url) values
- ('b5000000-0000-4000-8000-000000000001','Press banca',1,'b1000000-0000-4000-8000-000000000001','Ejercicio vigente','https://youtu.be/abcdefghijk'),
- ('b5000000-0000-4000-8000-000000000002','Sentadilla',1,'b1000000-0000-4000-8000-000000000001','Segundo ejercicio vigente',null),
- ('b5000000-0000-4000-8000-000000000003','Ejercicio anterior',1,'b1000000-0000-4000-8000-000000000001','Solo en publicación vieja',null),
- ('b5000000-0000-4000-8000-000000000004','Ejercicio de B',1,'b1000000-0000-4000-8000-000000000001','Asignado a otro alumno',null),
- ('b5000000-0000-4000-8000-000000000005','Catálogo sin asignar',1,'b1000000-0000-4000-8000-000000000001','No debe aparecer',null);
+insert into public.cueva_exercises(id,name,revision,updated_by,description,video_url,active) values
+ ('b5000000-0000-4000-8000-000000000001','Press banca',1,'b1000000-0000-4000-8000-000000000001','Ejercicio vigente','https://youtu.be/abcdefghijk',true),
+ ('b5000000-0000-4000-8000-000000000002','Sentadilla',1,'b1000000-0000-4000-8000-000000000001','Segundo ejercicio vigente',null,true),
+ ('b5000000-0000-4000-8000-000000000003','Ejercicio anterior',1,'b1000000-0000-4000-8000-000000000001','Solo en publicación vieja',null,true),
+ ('b5000000-0000-4000-8000-000000000004','Ejercicio de B',1,'b1000000-0000-4000-8000-000000000001','Asignado a otro alumno',null,true),
+ ('b5000000-0000-4000-8000-000000000005','Catálogo sin asignar',1,'b1000000-0000-4000-8000-000000000001','No debe aparecer',null,false);
 
 -- A has an older publication and a newer one. The latest plan deliberately
 -- repeats Press banca in two blocks to assert the RPC returns distinct exercises.
@@ -136,6 +136,12 @@ select throws_ok($$select public.cueva_routine_text_write(
  'ba000000-0000-4000-8000-000000000001',null,'text','Press banca',
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000002","start":0,"end":11,"text":"Press banca"}]'::jsonb
 )$$,'40001',null,'a reused save ID cannot replace mention UUIDs');
+
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',1,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000006',null,'text','Catálogo sin asignar',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":0,"end":20,"text":"Catálogo sin asignar"}]'::jsonb
+)$$,'22023',null,'a new mention of an inactive exercise is rejected');
 
 select throws_ok($$select public.cueva_routine_text_write(
  'draft','b3000000-0000-4000-8000-000000000001',1,'Notas de bloque',null,
