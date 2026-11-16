@@ -331,7 +331,8 @@ as $$
   cross join lateral jsonb_array_elements(document.mentions) mention
   join public.cueva_exercises e
     on e.id = (mention->>'exercise_id')::uuid
-  where cueva_private.routine_owner(document.student_id)
+  where document.format = 'text'
+    and cueva_private.routine_owner(document.student_id)
     and publication.draft_revision = cueva_private.routine_latest(document.student_id)
 $$;
 
