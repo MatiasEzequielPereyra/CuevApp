@@ -206,7 +206,7 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
           onClick={event => openEditor(null, event.currentTarget)}>Nuevo ejercicio</button>}
       </div>
     </div>
-    {searchError && <p className="exercise-feedback" role="alert">{searchError}</p>}
+    {searchError && <div className="exercise-feedback" role="alert"><p>{searchError}</p><button type="button" disabled={pending} onClick={() => void search(query)}>Reintentar búsqueda</button></div>}
     {!loaded && !searchError && <p className="exercise-feedback" role="status">Cargando {videosOnly ? "videos" : "ejercicios"}…</p>}
     {loaded && !rows.length && !searchError && <p className="exercise-feedback">{videosOnly
       ? (searched ? "No encontramos videos para esa búsqueda." : "Todavía no hay ejercicios con video. Podés agregar uno desde el catálogo.")
