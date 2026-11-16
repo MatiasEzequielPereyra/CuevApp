@@ -22,7 +22,7 @@ test("rejects a cursor offset that splits a surrogate pair", () => {
 });
 
 test("slices by code points, preserving emoji and accented names", () => {
-  assert.equal(codePointSlice("🏋️‍♀️ Sentadilla búlgara", 7, 25), "Sentadilla búlgara");
+  assert.equal(codePointSlice("🏋️‍♀️ Sentadilla búlgara", 6, 24), "Sentadilla búlgara");
 });
 
 test("validates repeated exercise references and exact text ranges", () => {
@@ -30,8 +30,8 @@ test("validates repeated exercise references and exact text ranges", () => {
   const first = content.indexOf("Press");
   const second = content.lastIndexOf("Press");
   const mentions = validateRoutineMentions(content, [
-    { exercise_id: exercise, start: utf16OffsetToCodePoint(content, first), end: utf16OffsetToCodePoint(content, first + 15), text: "Press de banca" },
-    { exercise_id: exercise, start: utf16OffsetToCodePoint(content, second), end: utf16OffsetToCodePoint(content, second + 15), text: "Press de banca" },
+    { exercise_id: exercise, start: utf16OffsetToCodePoint(content, first), end: utf16OffsetToCodePoint(content, first + 14), text: "Press de banca" },
+    { exercise_id: exercise, start: utf16OffsetToCodePoint(content, second), end: utf16OffsetToCodePoint(content, second + 14), text: "Press de banca" },
   ]);
   assert.equal(mentions.length, 2);
   assert.equal(mentions[0].exercise_id, mentions[1].exercise_id);
