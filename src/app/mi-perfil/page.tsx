@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { StudentShell } from "@/components/routines/student-shell";
+import { PasswordChangeForm } from "@/components/auth/password-change-form";
 import { productConfig, userClient } from "@/lib/product-auth/server";
 
 export const dynamic = "force-dynamic";
 
-export default async function StudentProfilePage() {
+export default async function StudentProfilePage({ searchParams }: { searchParams?: Promise<{ contrasena?: string }> }) {
+  const query = await searchParams;
   if (!productConfig()) return <main className="shell"><h1>Acceso no disponible</h1></main>;
   const client = await userClient(true);
   const { data: { user }, error } = await client.auth.getUser();
@@ -26,6 +28,11 @@ export default async function StudentProfilePage() {
         </dl>
         <p>Para modificar tus datos personales o solicitar ayuda con tu cuenta, comunicate con el gimnasio.</p>
       </div>
+    </section>
+    <section className="dash-account">
+      <div><h2>Seguridad de la cuenta</h2><p>Para cambiar tu contraseña, confirmá primero la actual.</p></div>
+      <PasswordChangeForm />
+      {query?.contrasena === "actualizada" && <p role="status">Tu contraseña se actualizó correctamente.</p>}
     </section>
   </StudentShell>;
 }
