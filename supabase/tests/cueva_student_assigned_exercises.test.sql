@@ -1,5 +1,5 @@
 begin;
-select plan(14);
+select plan(21);
 
 -- Stable test identities and sessions. All fixtures are rolled back at the end.
 insert into auth.users(id,aud,role,email,created_at,updated_at) values
@@ -50,6 +50,19 @@ insert into public.cueva_routine_publications(id,student_id,draft_revision,conte
  ('b6000000-0000-4000-8000-000000000003','b3000000-0000-4000-8000-000000000002',1,'Rutina de B','b1000000-0000-4000-8000-000000000001',
   '{"version":2,"days":[{"id":"b7000000-0000-4000-8000-000000000003","name":"Día B","blocks":[{"id":"b8000000-0000-4000-8000-000000000004","name":"Bloque B","rounds":3,"exercises":[{"id":"b9000000-0000-4000-8000-000000000005","exercise_id":"b5000000-0000-4000-8000-000000000004","name":"Ejercicio de B","note":""}]}]}]}'::jsonb);
 
+insert into public.cueva_routine_text_publications(
+ publication_id,student_id,format,text_content,block_content,mentions,published_by
+) values
+ ('b6000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000001','text','Ejercicio anterior','',
+  '[{"exercise_id":"b5000000-0000-4000-8000-000000000003","start":0,"end":18,"text":"Ejercicio anterior"}]'::jsonb,
+  'b1000000-0000-4000-8000-000000000001'),
+ ('b6000000-0000-4000-8000-000000000002','b3000000-0000-4000-8000-000000000001','text','Ejercicio extra: Catálogo sin asignar','',
+  '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":17,"end":37,"text":"Catálogo sin asignar"}]'::jsonb,
+  'b1000000-0000-4000-8000-000000000001'),
+ ('b6000000-0000-4000-8000-000000000003','b3000000-0000-4000-8000-000000000002','text','Ejercicio de B','',
+  '[{"exercise_id":"b5000000-0000-4000-8000-000000000004","start":0,"end":14,"text":"Ejercicio de B"}]'::jsonb,
+  'b1000000-0000-4000-8000-000000000001');
+
 select ok(has_function_privilege('authenticated','public.cueva_student_assigned_exercises()','EXECUTE'),
  'authenticated can call the public assigned-exercises RPC');
 select ok(not has_function_privilege('anon','public.cueva_student_assigned_exercises()','EXECUTE'),
@@ -66,6 +79,16 @@ select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000002'
 select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000002','role','authenticated','session_id','b2000000-0000-4000-8000-000000000002')::text,true);
 set local role authenticated;
 
+select is((select count(*)::integer from public.cueva_student_mentioned_exercises()),1,
+ 'student A receives only the exercise mentioned in their latest text publication');
+select ok(exists(select 1 from public.cueva_student_mentioned_exercises()
+ where id='b5000000-0000-4000-8000-000000000005' and name='Catálogo sin asignar'),
+ 'a text mention resolves its exercise without creating a block assignment');
+select ok(not exists(select 1 from public.cueva_student_mentioned_exercises()
+ where id in ('b5000000-0000-4000-8000-000000000003','b5000000-0000-4000-8000-000000000004')),
+ 'older and other-student mentions are excluded');
+select is((select count(*)::integer from public.cueva_routine_text_publications),1,
+ 'student A can read only their latest text publication');
 select is((select count(*)::integer from public.cueva_student_assigned_exercises()),2,
  'student A receives only the two distinct exercises in the latest publication');
 select ok(exists(select 1 from public.cueva_student_assigned_exercises() where id='b5000000-0000-4000-8000-000000000001' and name='Press banca' and description='Ejercicio vigente' and has_video),
@@ -81,6 +104,8 @@ select is((select count(*)::integer from public.cueva_exercises),0,
 -- A second authenticated student can see only their own assigned routine.
 select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000003',true);
 select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000003','role','authenticated','session_id','b2000000-0000-4000-8000-000000000003')::text,true);
+select is((select count(*)::integer from public.cueva_student_mentioned_exercises()),1,
+ 'student B receives only their own mentioned exercise');
 select is((select count(*)::integer from public.cueva_student_assigned_exercises()),1,
  'student B receives only their own assigned exercise');
 select ok(exists(select 1 from public.cueva_student_assigned_exercises() where id='b5000000-0000-4000-8000-000000000004'),
@@ -92,6 +117,8 @@ select ok(not exists(select 1 from public.cueva_student_assigned_exercises() whe
 -- An authenticated administrator has no student-owner binding and gets no rows.
 select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000001',true);
 select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000001','role','authenticated','session_id','b2000000-0000-4000-8000-000000000001')::text,true);
+select is((select count(*)::integer from public.cueva_student_mentioned_exercises()),0,
+ 'administrator cannot use the mention RPC to read a student document');
 select is((select count(*)::integer from public.cueva_student_assigned_exercises()),0,
  'administrator cannot use the student RPC to read exercise assignments');
 
@@ -105,6 +132,8 @@ reset role;
 set local role anon;
 select throws_ok($$select * from public.cueva_student_assigned_exercises()$$,'42501',null,
  'anonymous execution is rejected by database privileges');
+select throws_ok($select * from public.cueva_student_mentioned_exercises()$,'42501',null,
+ 'anonymous mention lookup is rejected by database privileges');
 reset role;
 
 select * from finish();
