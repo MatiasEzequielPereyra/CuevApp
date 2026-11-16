@@ -12,12 +12,12 @@ export const dynamic = "force-dynamic";
 type MentionedExercise = { id: string; name: string; description: string | null };
 type RoutineMention = { exercise_id: string; start: number; end: number; text: string };
 
-function renderRoutineText(text: string, mentions: RoutineMention[]) {
+function renderRoutineText(text: string, mentions: RoutineMention[], allowedExerciseIds: Set<string>) {
   const points = Array.from(text);
   const parts: ReactNode[] = [];
   let cursor = 0;
   [...mentions].sort((a, b) => a.start - b.start).forEach((mention, index) => {
-    if (mention.start < cursor || mention.end > points.length || points.slice(mention.start, mention.end).join("") !== mention.text) return;
+    if (!allowedExerciseIds.has(mention.exercise_id) || mention.start < cursor || mention.end > points.length || points.slice(mention.start, mention.end).join("") !== mention.text) return;
     if (mention.start > cursor) parts.push(points.slice(cursor, mention.start).join(""));
     parts.push(<span className="my-routine-mention" key={index}>{mention.text}</span>);
     cursor = mention.end;
@@ -148,7 +148,7 @@ export default async function MyRoutine() {
             {textMode && textDocument?.data?.text_content && (
               <section className="my-routine-panel my-routine-notes">
                 <h2>Rutina</h2>
-                <p>{renderRoutineText(textDocument.data.text_content, (textDocument.data.mentions ?? []) as RoutineMention[])}</p>
+                <p>{renderRoutineText(textDocument.data.text_content, (textDocument.data.mentions ?? []) as RoutineMention[], new Set(mentionedExercises.map(exercise => exercise.id)))}</p>
               </section>
             )}
             {!textMode && publication.content && (
