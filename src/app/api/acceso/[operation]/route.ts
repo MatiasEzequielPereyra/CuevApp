@@ -110,7 +110,7 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
       return redirect(`/alumnos?id=${student.data.id}`);
     }
     const email = String(form.get("email") ?? "").trim().toLowerCase();
-    if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return fail(400);
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail(400);
     const student = await service.from("cueva_students").select("id").eq("email", email).maybeSingle();
     if (student.error) return fail(503);
     if (!student.data?.id) return fail(404);
