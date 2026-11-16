@@ -118,7 +118,7 @@ export function NoteEditor({ id, initial, template = false, templates = [], publ
       const response = await fetch("/api/rutinas", { method: "POST", signal: AbortSignal.timeout(15000), headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "publish", id, revision: saved.revision, content: saved.content, plan: saved.plan ?? null, format: saved.format ?? "blocks", text_content: saved.text_content ?? "", mentions: saved.mentions ?? [], operation: publishAttempt.current.operation }) });
       const result = await response.json();
       if (!response.ok) { if (result.conflict) setStatus("conflict"); setMessage(result.message); return; }
-      setPublished(result.note);
+      setPublished({ ...result.note, content: result.note.block_content ?? saved.content });
       setMessage("Rutina publicada. El alumno ya puede consultarla.");
     } catch { setMessage("No recibimos confirmación de publicación. Reintentá: no se duplicará la versión."); }
     finally { busy.current = false; setPublishing(false); }
@@ -181,7 +181,9 @@ export function NoteEditor({ id, initial, template = false, templates = [], publ
       <button type="button" disabled={!unsaved || status === "saving" || status === "conflict" || publishing} onClick={() => void save()}>{status === "error" ? "Reintentar guardado" : "Guardar ahora"}</button>
       {(status === "error" || status === "conflict") && <button type="button" onClick={() => void compare()}>Comparar versión guardada</button>}
     </div>}
-    {remote && <section className="routine-conflict"><h3>Versión guardada en el servidor</h3>{template && <p>{remote.title}</p>}<PlanView plan={remote.plan}/><pre>{remote.content || "Sin observaciones"}</pre><p>Tu borrador sigue arriba. Compará y combiná manualmente antes de elegir.</p><div className="routine-actions"><button type="button" onClick={() => { setSaved(remote); setRemote(null); setStatus(same(local, remote) ? "saved" : "dirty"); setMessage("Se guardará tu borrador sobre la revisión que acabás de comparar."); }}>Guardar mi borrador sobre esta revisión</button><button type="button" onClick={() => { if (!window.confirm("¿Descartar tu borrador local y usar la versión guardada?")) return; current.current = remote; setLocal(remote); setSaved(remote); setRemote(null); setStatus("clean"); setMessage(""); }}>Usar versión del servidor</button></div></section>}
+    {remote && <section className="routine-conflict"><h3>Versión guardada en el servidor</h3>{template && <p>{remote.title}</p>}{(remote.format ?? "blocks") === "text"
+        ? <pre>{remote.text_content}</pre>
+        : <><PlanView plan={remote.plan}/><pre>{remote.content || "Sin observaciones"}</pre></>}<p>Tu borrador sigue arriba. Compará y combiná manualmente antes de elegir.</p><div className="routine-actions"><button type="button" onClick={() => { setSaved(remote); setRemote(null); setStatus(same(local, remote) ? "saved" : "dirty"); setMessage("Se guardará tu borrador sobre la revisión que acabás de comparar."); }}>Guardar mi borrador sobre esta revisión</button><button type="button" onClick={() => { if (!window.confirm("¿Descartar tu borrador local y usar la versión guardada?")) return; current.current = remote; setLocal(remote); setSaved(remote); setRemote(null); setStatus("clean"); setMessage(""); }}>Usar versión del servidor</button></div></section>}
     {template && <label>Título de la plantilla<input maxLength={100} value={local.title ?? ""} disabled={publishing} onChange={event => edit({ ...local, title: event.target.value })} /></label>}
     <div className="routine-format-tabs" role="group" aria-label="Formato de rutina">
       <button type="button" aria-pressed={(local.format ?? "blocks") === "blocks"} disabled={publishing}
