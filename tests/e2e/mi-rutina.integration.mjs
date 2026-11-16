@@ -251,7 +251,7 @@ try {
     await previewToggle.click();
     const preview = editor.locator("details[open]").filter({ has: previewToggle });
     await expect(preview.getByRole("combobox", { name: "Día de entrenamiento" })).toBeVisible();
-    await expect(preview.getByRole("link", { name: "Consultar video" }).first()).toBeVisible();
+    await expect(preview.getByText("Press militar", { exact: true })).toBeVisible();
     await previewToggle.click();
     await editor.getByText("Observaciones de la rutina", { exact: true }).click();
     const observations = editor.getByRole("textbox", { name: "Observaciones de la rutina" });
