@@ -13,6 +13,7 @@ const state = {
   verifyError: null,
   verifiedUserId: "user-1",
   updateArgs: null,
+  setSessionArgs: null,
   authCalls: 0,
   verifierCalls: 0,
 };
@@ -20,6 +21,7 @@ const auth = {
   auth: {
     getUser: async () => { state.authCalls += 1; return { data: { user: state.user }, error: state.authError }; },
     signOut: async () => ({ error: null }),
+    setSession: async (...args) => { state.setSessionArgs = args; return { data: { user: state.user }, error: null }; },
     updateUser: async (...args) => { state.updateArgs = args; return { data: { user: state.user }, error: state.authError }; },
   },
   from: table => ({
@@ -50,7 +52,7 @@ const runtimeRequire = name => {
         signInWithPassword: async ({ email, password }) => {
           state.verifierCalls += 1;
           state.verifiedCredentials = { email, password };
-          return { data: { user: state.verifyError ? null : { id: state.verifiedUserId } }, error: state.verifyError };
+          return { data: { user: state.verifyError ? null : { id: state.verifiedUserId }, session: state.verifyError ? null : { access_token: "fresh-access-token", refresh_token: "fresh-refresh-token" } }, error: state.verifyError };
         },
         signOut: async () => ({ error: null }),
       },
@@ -91,6 +93,7 @@ function reset() {
   state.verifyError = null;
   state.verifiedUserId = "user-1";
   state.updateArgs = null;
+  state.setSessionArgs = null;
   state.authCalls = 0;
   state.verifierCalls = 0;
 }
@@ -137,6 +140,7 @@ test("allows an alumno to update their password only after reauthentication", as
   assert.equal(response.status, 303);
   assert.equal(response.headers.get("location"), "https://cueva.example/mi-perfil?contrasena=actualizada");
   assert.deepEqual(state.verifiedCredentials, { email: "alumno@example.test", password: valid.current_password });
+  assert.deepEqual(state.setSessionArgs, [{ access_token: "fresh-access-token", refresh_token: "fresh-refresh-token" }]);
   assert.deepEqual(state.updateArgs, [{ password: valid.new_password }]);
 });
 
@@ -146,6 +150,7 @@ test("allows an administrator to update their own password with the same checks"
   const response = await run(valid);
   assert.equal(response.status, 303);
   assert.equal(response.headers.get("location"), "https://cueva.example/cuenta?contrasena=actualizada");
+  assert.deepEqual(state.setSessionArgs, [{ access_token: "fresh-access-token", refresh_token: "fresh-refresh-token" }]);
   assert.deepEqual(state.updateArgs, [{ password: valid.new_password }]);
 });
 
