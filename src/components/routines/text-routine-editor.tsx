@@ -42,9 +42,9 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   const [active, setActive] = useState(0);
 
   useEffect(() => {
-    if (!range) { setResults([]); setPending(false); setError(""); return; }
+    if (!range) return;
     const sequence = ++request.current;
-    setPending(true); setError("");
+    const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       try {
         const params = new URLSearchParams({ q: range.query, active: "1" });
@@ -59,12 +59,17 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
         if (sequence === request.current) setPending(false);
       }
     }, 180);
-    return () => { window.clearTimeout(timer); request.current++; };
+    return () => { window.clearTimeout(timer); controller.abort(); };
   }, [range]);
+
+  function updateRange(next: SearchRange) {
+    if (!next) { setResults([]); setPending(false); setError(""); }
+    setRange(next);
+  }
 
   function handleChange(next: string, cursor: number) {
     onChange(next, rebaseMentions(value, next, mentions));
-    setRange(searchRange(next, cursor));
+    updateRange(searchRange(next, cursor));
   }
 
   function insert(exercise: Exercise) {
@@ -77,7 +82,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     const nextMentions = rebaseMentions(value, next, mentions).filter(m => !(m.start < end && m.end > start));
     nextMentions.push({ exercise_id: exercise.id, start, end, text: exercise.name });
     nextMentions.sort((a, b) => a.start - b.start);
-    onChange(next, nextMentions); setRange(null);
+    onChange(next, nextMentions); updateRange(null);
     requestAnimationFrame(() => { input.focus(); input.setSelectionRange(endUtf16, endUtf16); });
   }
 
@@ -86,19 +91,18 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     if (event.key === "ArrowDown") { event.preventDefault(); setActive(index => Math.min(index + 1, results.length - 1)); }
     else if (event.key === "ArrowUp") { event.preventDefault(); setActive(index => Math.max(index - 1, 0)); }
     else if (event.key === "Enter" && results[active]) { event.preventDefault(); insert(results[active]); }
-    else if (event.key === "Escape") setRange(null);
+    else if (event.key === "Escape") updateRange(null);
   }
 
   return <div className="routine-text-editor">
     <label htmlFor="routine-free-text">Rutina en texto libre</label>
     <textarea ref={textarea} id="routine-free-text" rows={16} maxLength={40000} value={value} disabled={disabled}
       aria-autocomplete="list" aria-controls="routine-mention-options"
-      aria-expanded={!!range && (pending || !!results.length || !!error)}
       onChange={event => handleChange(event.target.value, event.target.selectionStart)}
-      onClick={event => setRange(searchRange(value, event.currentTarget.selectionStart))}
+      onClick={event => updateRange(searchRange(value, event.currentTarget.selectionStart))}
       onKeyUp={event => {
         if (["ArrowDown", "ArrowUp", "Enter", "Escape"].includes(event.key)) return;
-        setRange(searchRange(value, event.currentTarget.selectionStart));
+        updateRange(searchRange(value, event.currentTarget.selectionStart));
       }}
       onKeyDown={onKeyDown}
       placeholder={"Escribí la rutina completa…\n\nPodés mencionar ejercicios con @ o escribir su nombre."} />
