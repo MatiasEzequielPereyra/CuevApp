@@ -19,10 +19,21 @@ export async function GET(req: Request) {
   const id = params.get("id") ?? "";
   if (!uuid.test(id)) return reply({ message: "Identificador inválido." }, 400);
   const template = params.get("kind") === "template";
-  const { data, error } = await client.from(template ? "cueva_routine_templates" : "cueva_routine_drafts")
-    .select(template ? "content,revision,title,plan" : "content,revision,plan").eq(template ? "id" : "student_id", id).maybeSingle();
-  if (error) return reply({ message: "No pudimos cargar la revisión. Tu texto sigue en el editor." }, 503);
-  return reply({ note: data ?? { content: "", revision: 0, ...(template ? { title: "" } : {}) } });
+  const [{ data, error }, { data: textDocument, error: textError }] = await Promise.all([
+    client.from(template ? "cueva_routine_templates" : "cueva_routine_drafts")
+      .select(template ? "content,revision,title,plan" : "content,revision,plan")
+      .eq(template ? "id" : "student_id", id).maybeSingle(),
+    client.from("cueva_routine_text_drafts")
+      .select("format,text_content,block_content,mentions,revision")
+      .eq("kind", template ? "template" : "draft").eq("owner_id", id).maybeSingle(),
+  ]);
+  if (error || textError) return reply({ message: "No pudimos cargar la revisión. Tu texto sigue en el editor." }, 503);
+  return reply({ note: {
+    ...(data ?? { content: "", revision: 0, ...(template ? { title: "" } : {}) }),
+    format: textDocument?.format ?? "blocks",
+    text_content: textDocument?.text_content ?? "",
+    mentions: textDocument?.mentions ?? [],
+  } });
 }
 
 export async function POST(req: Request) {
@@ -38,9 +49,10 @@ export async function POST(req: Request) {
     || (p.kind === "template" && (typeof p.title !== "string" || !p.title.trim() || p.title.length > 100 || p.title.includes("\0")))) {
     return reply({ message: "Revisá el contenido y el título (hasta 40.000 caracteres)." }, 400);
   }
-  const { data, error } = await client.rpc("cueva_routine_write", {
+  const { data, error } = await client.rpc("cueva_routine_text_write", {
     p_kind: p.kind, p_id: p.id, p_revision: p.revision, p_content: p.content,
     p_title: p.kind === "template" ? p.title : null, p_operation: p.operation, p_plan: p.plan ?? null,
+    p_format: p.format ?? "blocks", p_text_content: p.text_content ?? "", p_mentions: p.mentions ?? [],
   });
   if (error) {
     if (error.code === "40001") return reply({ message: "Hay cambios en otra ventana. Tu texto se conserva. Compará las versiones antes de guardar.", conflict: true }, 409);
