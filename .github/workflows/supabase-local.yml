@@ -20,6 +20,7 @@ on:
       - "supabase/**"
       - ".github/workflows/supabase-local.yml"
       - "tests/billing-concurrency.test.mjs"
+      - "tests/notifications-claim-concurrency.test.mjs"
       - "tests/notifications-*.test.mjs"
       - "src/app/api/notifications/**"
       - "src/lib/notifications/**"
