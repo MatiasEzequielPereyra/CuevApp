@@ -140,12 +140,14 @@ async function layoutAndPlayback(browserType, learner) {
           await expect(row).toBeFocused();
           await expect.poll(() => page.evaluate(() => scrollY)).toBe(y);
           await expect(day.getByRole("button", { name: "Empuje" })).toHaveAttribute("aria-pressed", "true");
-          if (width === 390) {
+          if (width === 390 && browserType.name() === "chromium") {
             await day.getByRole("button", { name: "Empuje" }).focus();
             await page.keyboard.press("Tab");
             await expect(day.getByRole("button", { name: "Tirón" })).toBeFocused();
             await page.keyboard.press("Enter");
           } else {
+            // WebKit on the Linux runner does not expose the same Tab traversal
+            // behavior for touch-enabled contexts; verify the control interaction there.
             await day.getByRole("button", { name: "Tirón" }).click();
           }
           await expect(day.getByRole("button", { name: "Tirón" })).toHaveAttribute("aria-pressed", "true");
