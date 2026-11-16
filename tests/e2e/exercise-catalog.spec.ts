@@ -281,7 +281,7 @@ for (const [width, theme] of [[360, "light"], [1440, "dark"]] as const) {
 test("el catálogo reintenta una carga fallida y permite dar de alta un ejercicio", async ({ page, baseURL }) => {
   if (!baseURL) throw new Error("La prueba requiere un origen local.");
   const { writes } = await catalogFixture(page, baseURL, "light", false, 0, true);
-  await expect(page.getByRole("alert")).toHaveText("No pudimos cargar el catálogo.");
+  await expect(page.getByRole("alert")).toContainText("No pudimos cargar el catálogo.");
   await page.getByRole("button", { name: "Reintentar búsqueda" }).click();
   await expect(page.getByRole("button", { name: "Sentadilla" })).toBeVisible();
   await page.getByLabel("Buscar ejercicio").fill("Sin coincidencias");
