@@ -1,4 +1,4 @@
-import { uuid } from "@/lib/routines/types";
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Mention offsets are zero-based Unicode code-point offsets, end-exclusive.
