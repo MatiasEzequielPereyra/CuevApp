@@ -48,7 +48,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     const timer = window.setTimeout(async () => {
       try {
         const params = new URLSearchParams({ q: range.query, active: "1" });
-        const response = await fetch("/api/ejercicios?" + params, { cache: "no-store", signal: AbortSignal.timeout(12000) });
+        const response = await fetch("/api/ejercicios?" + params, { cache: "no-store", signal: AbortSignal.any([controller.signal, AbortSignal.timeout(12000)]) });
         const data = await response.json();
         if (sequence !== request.current) return;
         if (!response.ok) { setError(data.message || "No pudimos buscar ejercicios."); setResults([]); return; }
@@ -64,6 +64,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
 
   function updateRange(next: SearchRange) {
     if (!next) { setResults([]); setPending(false); setError(""); }
+    else { setPending(true); setError(""); }
     setRange(next);
   }
 
