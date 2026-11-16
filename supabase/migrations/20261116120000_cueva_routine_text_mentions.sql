@@ -8,6 +8,7 @@ create table public.cueva_routine_text_drafts (
   revision integer not null check (revision > 0),
   format text not null check (format in ('blocks','text')),
   text_content text not null default '' check (length(text_content) <= 40000),
+  block_content text not null default '' check (length(block_content) <= 40000),
   mentions jsonb not null default '[]'::jsonb check (jsonb_typeof(mentions) = 'array'),
   updated_by uuid not null references auth.users(id),
   updated_at timestamptz not null default clock_timestamp(),
@@ -76,6 +77,7 @@ declare
   v_previous_end integer := 0;
   v_length integer;
   v_revision integer;
+  v_base_content text;
   v_publication public.cueva_routine_publications;
   v_existing public.cueva_routine_text_publications;
 begin
@@ -140,6 +142,12 @@ begin
     end if;
   end loop;
 
+  v_base_content := case when p_format = 'text' then p_text_content else p_content end;
+  v_result := cueva_private.routine_write(
+    p_kind, p_id, p_revision, v_base_content, p_title, p_operation, p_plan
+  );
+  v_revision := (v_result->>'revision')::integer;
+
   if p_kind = 'publish' then
     select * into v_publication
     from public.cueva_routine_publications
@@ -150,32 +158,36 @@ begin
 
     if v_publication.student_id <> p_id
       or v_publication.draft_revision <> p_revision
-      or v_publication.content <> p_content
+      or v_publication.content <> v_base_content
       or v_publication.published_by <> auth.uid()
     then
       raise exception 'La publicación no coincide con el borrador confirmado' using errcode = '40001';
     end if;
 
+    if not exists (select 1 from public.cueva_routine_text_drafts d where d.kind='draft' and d.owner_id=p_id)
+      and (p_format <> 'blocks' or p_text_content <> '' or p_mentions <> '[]'::jsonb) then
+      raise exception 'Guardá el documento de texto antes de publicar' using errcode = '40001';
+    end if;
     if exists (
       select 1 from public.cueva_routine_text_drafts d
       where d.kind = 'draft' and d.owner_id = p_id
         and (d.revision <> p_revision or d.format <> p_format
-          or d.text_content <> p_text_content or d.mentions <> p_mentions)
+          or d.text_content <> p_text_content or d.block_content <> p_content or d.mentions <> p_mentions)
     ) then
       raise exception 'Guardá el documento de texto antes de publicar' using errcode = '40001';
     end if;
 
     insert into public.cueva_routine_text_publications (
-      publication_id, student_id, format, text_content, mentions, published_by
+      publication_id, student_id, format, text_content, block_content, mentions, published_by
     ) values (
-      p_operation, p_id, p_format, p_text_content, p_mentions, auth.uid()
+      p_operation, p_id, p_format, p_text_content, p_content, p_mentions, auth.uid()
     ) on conflict (publication_id) do nothing;
 
     select * into v_existing
     from public.cueva_routine_text_publications
     where publication_id = p_operation;
     if v_existing.student_id <> p_id or v_existing.format <> p_format
-      or v_existing.text_content <> p_text_content or v_existing.mentions <> p_mentions
+      or v_existing.text_content <> p_text_content or v_existing.block_content <> p_content or v_existing.mentions <> p_mentions
       or v_existing.published_by <> auth.uid()
     then
       raise exception 'La publicación ya contiene otro documento de texto' using errcode = '22023';
@@ -183,24 +195,21 @@ begin
     return to_jsonb(v_publication) || jsonb_build_object(
       'format', v_existing.format,
       'text_content', v_existing.text_content,
+      'block_content', v_existing.block_content,
       'mentions', v_existing.mentions
     );
   end if;
 
-  v_result := cueva_private.routine_write(
-    p_kind, p_id, p_revision, p_content, p_title, p_operation, p_plan
-  );
-  v_revision := (v_result->>'revision')::integer;
-
   insert into public.cueva_routine_text_drafts (
-    kind, owner_id, revision, format, text_content, mentions, updated_by, updated_at
+    kind, owner_id, revision, format, text_content, block_content, mentions, updated_by, updated_at
   ) values (
-    p_kind, p_id, v_revision, p_format, p_text_content, p_mentions, auth.uid(), clock_timestamp()
+    p_kind, p_id, v_revision, p_format, p_text_content, p_content, p_mentions, auth.uid(), clock_timestamp()
   )
   on conflict (kind, owner_id) do update set
     revision = excluded.revision,
     format = excluded.format,
     text_content = excluded.text_content,
+    block_content = excluded.block_content,
     mentions = excluded.mentions,
     updated_by = excluded.updated_by,
     updated_at = excluded.updated_at
@@ -209,6 +218,7 @@ begin
   return v_result || jsonb_build_object(
     'format', p_format,
     'text_content', p_text_content,
+    'block_content', p_content,
     'mentions', p_mentions
   );
 end;
