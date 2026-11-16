@@ -44,8 +44,8 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   useEffect(() => {
     if (!range) { setResults([]); setPending(false); setError(""); return; }
     const sequence = ++request.current;
+    setPending(true); setError("");
     const timer = window.setTimeout(async () => {
-      setPending(true); setError("");
       try {
         const params = new URLSearchParams({ q: range.query, active: "1" });
         const response = await fetch("/api/ejercicios?" + params, { cache: "no-store", signal: AbortSignal.timeout(12000) });
@@ -102,7 +102,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       }}
       onKeyDown={onKeyDown}
       placeholder={"Escribí la rutina completa…\n\nPodés mencionar ejercicios con @ o escribir su nombre."} />
-    {range && (pending || error || results.length > 0) && <div className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos">
+    {range && <div className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos">
       {pending && <p role="status">Buscando ejercicios…</p>}
       {error && <p role="alert">{error}</p>}
       {!pending && !error && results.length === 0 && <p>No encontramos ejercicios activos con ese nombre.</p>}
