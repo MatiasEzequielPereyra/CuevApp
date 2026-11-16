@@ -52,6 +52,7 @@ function loadStudentPage(path: string) {
   return loadExport(path, {
     "next/link": { default: link },
     "@/components/routines/student-shell": shell,
+    "./mi-rutina.css": {},
     "@/components/brand/brand-mark": { BrandMark: () => null },
     "@/components/theme/theme-picker": { ThemePicker: () => null },
     "@/components/dashboard/admin-dashboard": {
