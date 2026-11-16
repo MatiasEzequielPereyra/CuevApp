@@ -164,7 +164,7 @@ select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4
 select throws_ok($select public.cueva_routine_text_write(
  'draft','b3000000-0000-4000-8000-000000000001',0,'',null,
  'ba000000-0000-4000-8000-000000000004',null,'blocks','', '[]'::jsonb
-)$,'42501',null,'an authenticated student cannot write routine text');
+ )$,'42501',null,'an authenticated student cannot write routine text');
 
 -- A valid session without a cueva_profiles role is also denied by the owner check.
 select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000004',true);
@@ -176,12 +176,12 @@ reset role;
 set local role anon;
 select throws_ok($$select * from public.cueva_student_assigned_exercises()$$,'42501',null,
  'anonymous execution is rejected by database privileges');
-select throws_ok($select * from public.cueva_student_mentioned_exercises()$,'42501',null,
+select throws_ok($select * from public.cueva_student_mentioned_exercises( )$,'42501',null,
  'anonymous mention lookup is rejected by database privileges');
 select throws_ok($select public.cueva_routine_text_write(
  'draft','b3000000-0000-4000-8000-000000000001',0,'',null,
  'ba000000-0000-4000-8000-000000000005',null,'blocks','', '[]'::jsonb
-)$,'42501',null,'anonymous routine text writes are rejected by database privileges');
+ )$,'42501',null,'anonymous routine text writes are rejected by database privileges');
 reset role;
 
 select * from finish();
