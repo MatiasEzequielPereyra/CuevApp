@@ -128,13 +128,16 @@ begin
     or p_revision is null or p_revision < 0
     or p_format is null or p_format not in ('blocks','text')
     or p_text_content is null or length(p_text_content) > 40000
-    or (p_format = 'text' and length(btrim(p_text_content)) = 0)
     or jsonb_typeof(p_mentions) is distinct from 'array'
   then
     raise exception 'Documento de texto libre inválido' using errcode = '22023';
   end if;
   if jsonb_array_length(p_mentions) > 300 then
     raise exception 'Demasiadas menciones' using errcode = '22023';
+  end if;
+
+  if p_kind = 'publish' and p_format = 'text' and length(btrim(p_text_content)) = 0 then
+    raise exception 'Escribí una rutina en texto libre antes de publicar' using errcode = '22023';
   end if;
 
   perform pg_advisory_xact_lock(903004001);
