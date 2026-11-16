@@ -1,5 +1,37 @@
 # Checkpoint CUEVA
 
+## CUEVA-005 · Corrección de bandeja y registro Push en REVIEW · 2026-11-16
+
+Base `a432ea2644ea2af4e5ebf81fb0e9958955d06206`. El PATCH de bandeja
+rechazaba `Content-Length` decimal por un escape doble en su expresión regular.
+Next.js y Supabase local con dos alumnos sintéticos confirmaron PATCH 200 con
+`Content-Length`, `read_at` persistente tras recargar y PATCH ajeno 404 sin
+cambiar el aviso.
+
+El navegador integrado de ChatGPT generó una suscripción nativa HTTPS a
+`jmt17.google.com/fcm/send/…`. Con el validador original el POST local dio 400;
+con la corrección dio 200 y `registered: true`. Ese ensayo usó el handler HTTP
+real con dependencias de sesión y persistencia sintéticas. La excepción de
+destino se limita al host exacto y a la ruta de suscripción identificada en el
+[código de Chromium](https://chromium.googlesource.com/chromium/src/+/refs/tags/141.0.7390.94/components/push_messaging/push_messaging_constants.cc).
+
+La integración con Microsoft Edge 157, Next.js y Supabase local verificó
+registro nativo, 400 para un host ajeno, un 200 simulado sin confirmación
+positiva, registro real 200, confirmación después de recargar y pérdida del
+estado habilitado tras revocar. La comprobación de otro alumno devolvió
+`registered: false`. El flujo HTTP también pasó origen, sesión, RLS, propiedad,
+actualización y límite de diez dispositivos. Para repetirlo, usar el stack
+local del workflow `supabase-local.yml` y ejecutar
+[`notifications-push.integration.mjs`](../../tests/e2e/notifications-push.integration.mjs)
+con `CUEVA_TEST_NATIVE_PUSH_BROWSER=msedge` y un par VAPID efímero coherente
+en el servidor local. La integración general ejecuta bandeja y HTTP aun cuando
+se omite la opción nativa. Cron, correo y entrega Push quedan NOT_RUN.
+
+SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`,
+`cueva-supabase-security`, `supabase:supabase`, `diagnosing-bugs`,
+`computer-use:computer-use`, `vercel:verification`.
+SKILL_SOURCES: `.agents/skills/<nombre>/SKILL.md` y guías del host.
+
 ## CUEVA-UX-NUEVO-BLOQUE · Publicado · 2026-11-16
 
 [PR #58](https://github.com/MatiasEzequielPereyra/CuevApp/pull/58), base `84fac4ee239292bb51290074f816ba77216bcf15`,
