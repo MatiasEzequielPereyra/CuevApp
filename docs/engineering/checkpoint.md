@@ -1,5 +1,18 @@
 # Checkpoint CUEVA
 
+## Estado vigente verificado — 2026-11-16 (posterior a PR #53)
+
+HEAD de `main`: `640324bc0fbf97b0777ddd7080c33ff13c378e45` (`feat(student): completar experiencia del portal de alumnos`). PR #53 está integrado en `main`; cualquier mención posterior en este documento que lo describa como abierto corresponde a una observación histórica anterior al merge y no representa el estado actual del repositorio.
+
+El código del portal de alumnos (Inicio, Mi Membresía, Entrenamiento, Notificaciones y Mi perfil), junto con la RPC `cueva_student_assigned_exercises()` y sus pruebas SQL de autorización/aislamiento, forma parte de `main`. El merge no demuestra por sí solo que todos sus componentes alojados estén operativos.
+
+La última comprobación alojada documentada en la revisión de PR #59 observó que aún faltaban `cueva_notification_inbox` y `cueva_student_assigned_exercises()` en Supabase Hosted. Por lo tanto, el estado debe expresarse en dos planos: código integrado en GitHub y rollout de esquema/funciones alojadas pendiente de reconciliación y verificación. No declarar operativa la bandeja ni el acceso a ejercicios asignados en producción hasta completar esa comprobación.
+
+CUEVA-005 continúa integrado en código, pero su rollout alojado y la verificación de envíos reales siguen pendientes según la evidencia disponible. CUEVA-003B Vencimientos permanece como baseline cerrado y no forma parte de esta actualización. El registro de resultados/historial de entrenamientos y la consulta offline de rutinas siguen siendo pendientes de producto; no confundirlos con el portal o la visualización de la rutina publicada.
+
+La publicación de PR #58 (merge `3822520c41b6fe9fb4eb870f22fb69fb420bca66`) está documentada más abajo. No inferir que producción contiene el merge posterior de PR #53 sin verificar el deployment exacto.
+
+
 ## CUEVA-UX-NUEVO-BLOQUE · Publicado · 2026-11-16
 
 [PR #58](https://github.com/MatiasEzequielPereyra/CuevApp/pull/58), base `84fac4ee239292bb51290074f816ba77216bcf15`,
