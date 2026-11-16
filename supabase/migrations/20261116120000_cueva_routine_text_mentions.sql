@@ -30,6 +30,43 @@ create table public.cueva_routine_text_publications (
 create index cueva_routine_text_publications_student_idx
   on public.cueva_routine_text_publications(student_id, publication_id);
 
+-- Preserve legacy text as the initial free-text document when no structured
+-- plan existed. Keep the original content in block_content for lossless
+-- switching, and never update an existing publication row.
+insert into public.cueva_routine_text_drafts (
+  kind, owner_id, revision, format, text_content, block_content,
+  mentions, save_id, updated_by, updated_at
+)
+select
+  'draft', student_id, revision,
+  case when plan is null and length(btrim(content)) > 0 then 'text' else 'blocks' end,
+  case when plan is null and length(btrim(content)) > 0 then content else '' end,
+  content, '[]'::jsonb, save_id, updated_by, updated_at
+from public.cueva_routine_drafts;
+
+insert into public.cueva_routine_text_drafts (
+  kind, owner_id, revision, format, text_content, block_content,
+  mentions, save_id, updated_by, updated_at
+)
+select
+  'template', id, revision,
+  case when plan is null and length(btrim(content)) > 0 then 'text' else 'blocks' end,
+  case when plan is null and length(btrim(content)) > 0 then content else '' end,
+  content, '[]'::jsonb, save_id, updated_by, updated_at
+from public.cueva_routine_templates;
+
+insert into public.cueva_routine_text_publications (
+  publication_id, student_id, format, text_content, block_content,
+  mentions, published_by, created_at
+)
+select
+  id, student_id,
+  case when plan is null and length(btrim(content)) > 0 then 'text' else 'blocks' end,
+  case when plan is null and length(btrim(content)) > 0 then content else '' end,
+  content, '[]'::jsonb, published_by, published_at
+from public.cueva_routine_publications;
+
+
 alter table public.cueva_routine_text_drafts enable row level security;
 alter table public.cueva_routine_text_publications enable row level security;
 revoke all on public.cueva_routine_text_drafts, public.cueva_routine_text_publications
