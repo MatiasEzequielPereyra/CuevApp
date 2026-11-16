@@ -89,7 +89,7 @@ export function routineEditorFixture() {
             format: payload.p_format, text_content: payload.p_text_content,
             block_content: payload.p_content, mentions: payload.p_mentions,
             revision: draft.revision, save_id: payload.p_operation,
-            publication_id: publication.id, student_id: shortId,
+            publication_id: publication.id, student_id: "44444444-4444-4444-8444-444444444444",
           };
           operations.push("publish");
           return { body: { ...publication, ...publicationText } };
