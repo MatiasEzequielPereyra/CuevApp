@@ -12,7 +12,7 @@ function searchRange(value: string, cursor: number): SearchRange {
   const at = before.match(/(?:^|\s)@([^@\n]*)$/);
   const atQuery = at?.[1];
   if (atQuery !== undefined) return { start: cursor - atQuery.length - 1, end: cursor, query: atQuery.trim() };
-  const prefix = before.match(/(?:^|\\s)([^\\s@]+)$/);
+  const prefix = before.match(/(?:^|\s)([^\s@]+)$/);
   const prefixQuery = prefix?.[1];
   if (prefixQuery !== undefined && prefixQuery.length >= 2) return { start: cursor - prefixQuery.length, end: cursor, query: prefixQuery };
   return null;
