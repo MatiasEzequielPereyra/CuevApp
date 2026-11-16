@@ -1,7 +1,8 @@
 import { inviteStudent } from "@/lib/student-invitation/server";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { pendingUserClient, productConfig, serviceClient, userClient } from "@/lib/product-auth/server";
+import { createClient } from "@supabase/supabase-js";
+import { localFetch, pendingUserClient, productConfig, serviceClient, userClient } from "@/lib/product-auth/server";
 
 export const dynamic = "force-dynamic";
 const fail = (status: number) => new Response("No se pudo completar la solicitud", { status, headers: { "Cache-Control": "no-store" } });
@@ -62,6 +63,36 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
     return error ? fail(401) : redirect("/cuenta");
   }
   if (operation === "salir") { const { error } = await auth.auth.signOut(); return error ? fail(503) : redirect("/ingresar"); }
+  if (operation === "cambiar-contrasena") {
+    const currentPassword = String(form.get("current_password") ?? "");
+    const newPassword = String(form.get("new_password") ?? "");
+    const confirmation = String(form.get("confirm_password") ?? "");
+    if (!currentPassword || currentPassword.length > 1024 || newPassword.length < 8 || newPassword.length > 1024
+      || confirmation !== newPassword || currentPassword === newPassword) return fail(400);
+
+    const current = await auth.auth.getUser();
+    if (current.error || !current.data.user?.email) return fail(401);
+    const own = await auth.from("cueva_profiles").select("role").maybeSingle();
+    if (own.error || (own.data?.role !== "admin" && own.data?.role !== "alumno")) return fail(403);
+
+    let verifiedUserId: string | undefined;
+    try {
+      const verifier = createClient(cfg.url, cfg.key, {
+        ...(cfg.local ? { global: { fetch: localFetch(cfg) } } : {}),
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      });
+      const verified = await verifier.auth.signInWithPassword({ email: current.data.user.email, password: currentPassword });
+      verifiedUserId = verified.data.user?.id;
+      await verifier.auth.signOut();
+    } catch {
+      return fail(503);
+    }
+    if (verifiedUserId !== current.data.user.id) return fail(401);
+
+    const changed = await auth.auth.updateUser({ password: newPassword });
+    if (changed.error || changed.data.user?.id !== current.data.user.id) return fail(503);
+    return redirect(own.data.role === "admin" ? "/cuenta?contrasena=actualizada" : "/mi-perfil?contrasena=actualizada");
+  }
   const service = serviceClient();
   if (operation === "admin-invitar" || operation === "admin-recuperar") {
     if (cfg.ownerOnly) return fail(503);
