@@ -67,7 +67,7 @@ export default async function MyRoutine() {
   // la última publicación. No se utiliza service role.
   const result = await client
     .from("cueva_routine_publications")
-    .select("content,plan,published_at")
+    .select("id,content,plan,published_at")
     .order("draft_revision", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -82,7 +82,7 @@ export default async function MyRoutine() {
         client.rpc("cueva_my_routine_video_ids"),
         client.rpc("cueva_student_assigned_exercises"),
         client.from("cueva_routine_text_publications")
-          .select("format,text_content,mentions").eq("publication_id", publication.id).maybeSingle(),
+          .select("format,text_content,mentions,block_content").eq("publication_id", publication.id).maybeSingle(),
         client.rpc("cueva_student_mentioned_exercises"),
       ])
     : [null, null, null, null];
