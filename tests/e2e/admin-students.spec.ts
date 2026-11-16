@@ -79,7 +79,7 @@ test("la entrada instalada abre el ingreso o la cuenta según la sesión", async
   await signIn(context, origin, routines.studentUser);
   await page.goto(start);
   await expect(page).toHaveURL(start);
-  await expect(page.getByRole("heading", { name: "Tu cuenta" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Inicio", exact: true })).toBeVisible();
 });
 
 for (const width of [360, 390, 1440]) {
