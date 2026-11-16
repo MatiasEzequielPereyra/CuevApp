@@ -25,6 +25,8 @@ insert into public.cueva_student_invitations(student_id,email,user_id,state,leas
 
 select ok(not has_function_privilege('authenticated','cueva_private.sync_student_email_after_auth_change()','EXECUTE'),
  'authenticated users cannot execute the internal Auth synchronization function');
+select ok(not has_function_privilege('anon','cueva_private.sync_student_email_after_auth_change()','EXECUTE'),
+ 'anonymous users cannot execute the internal Auth synchronization function');
 select ok(exists(select 1 from pg_trigger where tgname='cueva_sync_student_email_after_auth_change' and not tgisinternal),
  'the synchronization is attached to Auth email changes');
 
