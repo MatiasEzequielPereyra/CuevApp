@@ -156,14 +156,19 @@ test("un tiempo de espera agotado permite reintentar", async ({ page }) => {
   release();
 });
 
-test("redirección controlada continúa a cuenta real sin sesión ni bucle", async ({ page }) => {
+test("una redirección de ingreso sin sesión vuelve al formulario y permite reintentar", async ({ page }) => {
   await page.route("**/api/acceso/ingresar", route => route.fulfill({ status: 303, headers: { location: "/cuenta" } }));
   await page.goto("/ingresar");
   await fill(page);
-  await page.getByRole("button", { name: "Ingresar", exact: true }).click();
-  await expect(page).toHaveURL(/\/cuenta$/);
-  await expect(page.getByRole("heading", { name: "Ingresá para continuar" })).toBeVisible();
-  const response = await page.request.get("/cuenta");
+  const submit = page.getByRole("button", { name: "Ingresar", exact: true });
+  await submit.click();
+  await expect(page.locator("form").getByRole("alert")).toContainText("El acceso no está disponible en este momento.");
+  await expect(page).toHaveURL(/\/ingresar$/);
+  await expect(submit).toBeEnabled();
+  await expect(page.getByLabel("Contraseña", { exact: true })).toHaveValue("");
+  const response = await page.request.get("/cuenta", { maxRedirects: 0 });
+  expect(response.status()).toBe(307);
+  expect(response.headers().location).toBe("/ingresar");
   expect(response.headers()["cache-control"]).toContain("no-store");
   expect(await page.context().cookies()).toEqual([]);
 });
