@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { ExerciseCatalog } from "@/components/routines/exercise-catalog";
+import { ExerciseCatalog, type BlockSettings } from "@/components/routines/exercise-catalog";
 import { PlanView, VideoLink } from "@/components/routines/plan-view";
 import { adaptLegacy, type Block, type Day, type Exercise, type Plan, type Target } from "@/lib/routines/types";
 
@@ -117,19 +117,19 @@ export function PlanBuilder({ plan, onChange, disabled }: { plan?: Plan | null; 
     pickerTrigger.current?.focus({ preventScroll: true });
   }
 
-  function addExercises(exercises: Exercise[]) {
+  function addExercises(exercises: Exercise[], { rounds, weightsKg }: BlockSettings) {
     if (!selection || disabled || !exercises.length || exercises.length > capacity) return;
     const owner = days.find(item => item.id === selection.dayId);
     if (!owner || (selection.blockId && !selectedBlock) || (!selection.blockId && blocks.length >= 300)) return;
     const targets: Target[] = exercises.map(exercise => ({
       id: crypto.randomUUID(), exercise_id: exercise.id, name: exercise.name,
-      mode: "weight", reps: "10", weight_kg: null, note: "",
+      mode: "weight", reps: "10", weight_kg: weightsKg.get(exercise.id) ?? null, note: "",
     }));
     if (selectedBlock) updateBlock(owner, { ...selectedBlock, exercises: [...selectedBlock.exercises, ...targets] });
     else {
       let number = owner.blocks.length + 1;
       while (owner.blocks.some(item => item.name === `Bloque ${number}`)) number++;
-      updateDay({ ...owner, blocks: [...owner.blocks, { id: crypto.randomUUID(), name: `Bloque ${number}`, rounds: 3, exercises: targets }] });
+      updateDay({ ...owner, blocks: [...owner.blocks, { id: crypto.randomUUID(), name: `Bloque ${number}`, rounds, exercises: targets }] });
     }
     closePicker();
   }
@@ -239,7 +239,7 @@ export function PlanBuilder({ plan, onChange, disabled }: { plan?: Plan | null; 
           <h3 id={`${prefix}-picker-title`} ref={pickerTitle} tabIndex={-1}>{selection.blockId ? "Agregar ejercicios" : "Nuevo bloque"}</h3>
           <button type="button" onClick={closePicker}>Cerrar</button>
         </header>
-        <ExerciseCatalog capacity={capacity} onSelectMany={addExercises} compactPicker />
+        <ExerciseCatalog capacity={capacity} onSelectMany={addExercises} compactPicker configureRounds={!selection.blockId} />
       </div>
     </dialog>}
   </fieldset>;
