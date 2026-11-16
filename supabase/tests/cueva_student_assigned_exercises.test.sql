@@ -1,5 +1,5 @@
 begin;
-select plan(21);
+select plan(25);
 
 -- Stable test identities and sessions. All fixtures are rolled back at the end.
 insert into auth.users(id,aud,role,email,created_at,updated_at) values
@@ -119,6 +119,31 @@ select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000001'
 select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000001','role','authenticated','session_id','b2000000-0000-4000-8000-000000000001')::text,true);
 select is((select count(*)::integer from public.cueva_student_mentioned_exercises()),0,
  'administrator cannot use the mention RPC to read a student document');
+select is((public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',0,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000001',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)->>'revision')::integer,1,'text routine and UUID mention save as one version');
+
+select is((public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',0,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000001',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)->>'revision')::integer,1,'exact retries return the same text revision');
+
+select throws_ok($select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',0,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000001',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000002","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)$,'40001',null,'a reused save ID cannot replace mention UUIDs');
+
+select throws_ok($select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',1,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000002',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":99,"text":"Press banca"}]'::jsonb
+)$,'22023',null,'invalid mention offsets are rejected in the database');
+
+
 select is((select count(*)::integer from public.cueva_student_assigned_exercises()),0,
  'administrator cannot use the student RPC to read exercise assignments');
 
