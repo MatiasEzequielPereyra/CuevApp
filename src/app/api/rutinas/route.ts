@@ -30,6 +30,7 @@ export async function GET(req: Request) {
   if (error || textError) return reply({ message: "No pudimos cargar la revisión. Tu texto sigue en el editor." }, 503);
   return reply({ note: {
     ...(data ?? { content: "", revision: 0, ...(template ? { title: "" } : {}) }),
+    content: textDocument?.block_content ?? data?.content ?? "",
     format: textDocument?.format ?? "blocks",
     text_content: textDocument?.text_content ?? "",
     mentions: textDocument?.mentions ?? [],
