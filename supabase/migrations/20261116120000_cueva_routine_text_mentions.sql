@@ -261,6 +261,42 @@ grant execute on function public.cueva_routine_text_write(
   text,uuid,integer,text,text,uuid,jsonb,text,text,jsonb
 ) to authenticated;
 
+
+create function cueva_private.student_mentioned_exercises()
+returns table(id uuid, name text, description text)
+language sql
+stable
+security definer
+set search_path = ''
+as $
+  select distinct e.id, e.name, e.description
+  from public.cueva_routine_text_publications document
+  join public.cueva_routine_publications publication
+    on publication.id = document.publication_id
+  cross join lateral jsonb_array_elements(document.mentions) mention
+  join public.cueva_exercises e
+    on e.id = (mention->>'exercise_id')::uuid
+  where cueva_private.routine_owner(document.student_id)
+    and publication.draft_revision = cueva_private.routine_latest(document.student_id)
+$;
+
+revoke all on function cueva_private.student_mentioned_exercises()
+  from public, anon, authenticated, service_role;
+grant execute on function cueva_private.student_mentioned_exercises() to authenticated;
+
+create function public.cueva_student_mentioned_exercises()
+returns table(id uuid, name text, description text)
+language sql
+security invoker
+set search_path = ''
+as $
+  select * from cueva_private.student_mentioned_exercises()
+$;
+
+revoke all on function public.cueva_student_mentioned_exercises()
+  from public, anon, authenticated, service_role;
+grant execute on function public.cueva_student_mentioned_exercises() to authenticated;
+
 commit;
 
       or coalesce(v_mention->>'end','') !~ '^(0|[1-9][0-9]*)      or coalesce(v_mention->>'text','') = ''
