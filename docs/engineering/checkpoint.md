@@ -2,6 +2,14 @@
 
 ## CUEVA-005 · Preflight en REVIEW · 2026-11-16
 
+Corrección sobre `0da414beb60610ced8ab4f3768021061aceb8aea`.
+[Control de cola](../operations/CUEVA-005-queue-preflight.sql) previo a Vault y
+[control de Cron](../operations/CUEVA-005-cron-control.sql) para activar, detener
+y reanudar el mismo `jobid` con validación de configuración y permisos.
+[Ensayo nativo aislado](../../tests/cueva-005-cron-native.ps1) PASS con los dos
+POST HTTP 204 y el historial del mismo job antes y después de reanudar.
+Continúa pendiente la autorización para operar en Hosted.
+
 Base `b1521454854564ac7c64bc47c62a703605ff1e92`. Notificaciones integradas
 por PR45 y PR47. La lectura alojada actual identificó 18 migraciones y
 confirmó que las doce de Notificaciones siguen pendientes. El contrato

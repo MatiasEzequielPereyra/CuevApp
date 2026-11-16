@@ -104,6 +104,7 @@ No habilitar `CUEVA_PRODUCT_AUTH_LOCAL` en producción. No reutilizar secretos d
 - [ ] `CUEVA_NOTIFICATIONS_CRON_SECRET`: secreto aleatorio de alta entropía
   (mínimo 32 caracteres, sin espacios ni caracteres de control para este runbook).
 - [ ] Cargar el mismo valor en Vault con nombre `cueva_notifications_worker_secret`.
+  Completar primero el control de permisos de la sección 4 en ese entorno.
   Cargar la URL canónica exacta en `cueva_notifications_worker_url`.
   Usar panel seguro o proceso privado sin argumentos, historial, SQL literal,
   registros de request ni valores en el reporte. Verificar metadatos y realizar
@@ -125,22 +126,59 @@ No asumir que las extensiones están instaladas ni que la historia remota de mig
 
 Tras la prueba controlada y con autorización operativa, habilitar `pg_cron` y
 `pg_net` mediante el panel de extensiones. Vault 0.3.1 ya estaba instalado al
-consultar. Verificar versión y firma real de `cron.schedule`, `cron.alter_job` y
-`net.http_post`, y comprobar que el rol programador pueda ejecutar y detener el
-job. Antes de cargar el secreto en Vault, verificar los permisos efectivos de
-`anon` y `authenticated`: sin lectura de `vault.decrypted_secrets` y sin acceso
-a `net.http_request_queue`. El SQL de la extensión pg_net 0.20.4 concede acceso
-a las tablas de `net` a `PUBLIC` de origen, así que el resultado depende de los
-permisos efectivos de Hosted. Si están abiertos, detener y revisar dependencias
-y un ajuste de permisos separado antes de cargar el secreto. El script de Cron
-no cambia grants. [SQL de pg_net 0.20.4](https://github.com/supabase/pg_net/blob/v0.20.4/sql/pg_net.sql#L1480-L1484).
+consultar. Verificar las firmas reales de `cron.schedule`, `cron.alter_job` y
+`net.http_post` y los permisos del rol programador. Usar `psql -X` desde la
+raíz del repo con conexión TLS y credenciales privadas configuradas fuera de
+los comandos del runbook.
+
+### Cola de pg_net antes de Vault
+
+1. Confirmar el rol real que programará el job. Inspeccionar los grants de
+   tabla y columna con `\dp net.http_request_queue` en `psql` y revisar los
+   consumidores existentes.
+   El SQL de pg_net 0.20.4 concede acceso a las tablas de `net` a `PUBLIC` de
+   origen. [SQL de pg_net 0.20.4](https://github.com/supabase/pg_net/blob/v0.20.4/sql/pg_net.sql#L1480-L1484).
+2. Ejecutar [queue-preflight](CUEVA-005-queue-preflight.sql) con
+   `cueva_queue_mode=check`. Si indica acceso de los roles API, y con el cambio
+   de permisos autorizado tras revisar consumidores, ejecutar en modo
+   `restrict` y repetir `check`. El ejemplo usa `postgres`; indicar el rol
+   programador aprobado para el proyecto.
+
+   ```powershell
+   psql -X -v cueva_queue_mode=check -v cueva_cron_role=postgres -f docs/operations/CUEVA-005-queue-preflight.sql
+   psql -X -v cueva_queue_mode=restrict -v cueva_cron_role=postgres -f docs/operations/CUEVA-005-queue-preflight.sql
+   ```
+
+3. Exigir `PASS`. El script verifica los permisos efectivos de `anon` y
+   `authenticated`. El modo `restrict` revoca grants directos de tabla y
+   columnas a `PUBLIC` y a esos dos roles, solo en la cola. Preserva el mínimo
+   `INSERT` y el `SELECT(id)` que antes tenía el escritor efectivo de
+   `net.http_post`. Si persiste acceso por membresía, hay grants dependientes o
+   la prueba de encolado falla, aborta y revierte el cambio. No quita membresías
+   ni cambia permisos de secuencias, funciones, esquemas o la tabla de respuestas.
+   La prueba hace `SET LOCAL ROLE` al rol programador y revierte el encolado de
+   un POST sintético a loopback antes del commit. Puede avanzar la secuencia de
+   IDs de la cola y no deja una solicitud visible al worker.
+4. Verificar que `anon` y `authenticated` carezcan de `SELECT` efectivo sobre
+   `vault.decrypted_secrets`, por tabla y por columna. El rol programador debe
+   poder leer los dos valores aprobados mediante Vault. Resolver cualquier
+   diferencia antes de guardar el secreto. Revalidar grants tras una actualización
+   de extensiones y antes de reanudar el job.
+
+### Activación y observabilidad
 
 Revisar todos los jobs, incluidos los inactivos y los de otros roles, con una
 identidad autorizada que tenga visibilidad completa. `cron.job` aplica RLS por
-propietario. Detectar consumo indirecto del endpoint. Usar
-[cron-enable](CUEVA-005-cron-enable.sql) una vez para un único job
-`cueva-notifications-worker`. El SQL valida destino HTTPS fijo, formato del
-secreto, ausencia de duplicados detectables y permisos antes de programar.
+propietario. Detectar consumo indirecto del endpoint. Ejecutar [cron-control](CUEVA-005-cron-control.sql)
+como el rol que será dueño del job. Registrar el `jobid` devuelto, rol y base
+para parada y reanudación. El script valida URL HTTPS, formato del secreto,
+ausencia de duplicados visibles y permisos. Programa un único job
+`cueva-notifications-worker` a `*/5 * * * *`.
+
+```powershell
+psql -X -v cueva_operation=activate -v cueva_job_id=0 -f docs/operations/CUEVA-005-cron-control.sql
+```
+
 En cada ejecución lee Vault y envía `POST`, `Authorization: Bearer …` y cuerpo
 `{}` a `https://cueva-gym.vercel.app/api/notifications/worker`.
 El timeout de pg_net es 65 s, por encima de los 60 s del handler.
@@ -243,14 +281,33 @@ Orchestrator mediante el handoff.
 
 ## 7. Rollback seguro
 
-1. Ejecutar [cron-stop](CUEVA-005-cron-stop.sql) con el rol que programó el job
-   y comprobar que solo ese job queda inactivo. Una llamada ya encolada o
+1. Ejecutar `stop` con el ID registrado y el rol que programó el job.
+   Comprobar que solo ese job queda inactivo. Una llamada ya encolada o
    en vuelo puede terminar. Revisar respuestas y leases sin repetir envíos.
 2. Mantener tablas, ledger, alertas y evidencia; no borrar ni reiniciar estados.
 3. Si el problema está en el deployment, volver al deployment Vercel previamente validado.
 4. No reenviar entregas con resultado `unknown`; seguir el procedimiento de conciliación manual.
 5. No revertir migraciones con pérdida de datos. Toda reversión de esquema requiere análisis específico y autorización.
 6. Confirmar que la limpieza de comprobantes y otros cron existentes sigan intactos.
+
+### Reanudación del mismo job
+
+Con la causa del incidente resuelta, revisar leases y resultados inciertos y
+repetir el control `check` de la cola. Reconfirmar alcance de la siguiente
+corrida, la afinidad del deployment y el secreto por el canal privado, y la
+ausencia de otros jobs que disparen el endpoint. Usar el ID registrado
+(`$cuevaJobId` en el ejemplo) y el rol original.
+
+```powershell
+psql -X -v cueva_operation=stop -v "cueva_job_id=$cuevaJobId" -f docs/operations/CUEVA-005-cron-control.sql
+psql -X -v cueva_operation=resume -v "cueva_job_id=$cuevaJobId" -f docs/operations/CUEVA-005-cron-control.sql
+```
+
+`resume` exige job inactivo, coincidencia de ID, nombre, propietario, base,
+nodo, puerto, comando y frecuencia. Revalida destino, valores de Vault y
+permisos y vuelve a comprobar el encolado con rollback. Si hay diferencias,
+aborta sin reactivar. Conserva el `jobid` y `cron.job_run_details`. Revisar la
+primera ejecución y sus entregas con el procedimiento de la sección 4.
 
 ## 8. Cierre de puesta en marcha
 
@@ -285,12 +342,9 @@ Orchestrator mediante el handoff.
   claim del canal interno y lo vuelve elegible en el escenario Push, mediante
   el cambio integrado en `a1d2da6`. El commit de Facu no está en la ascendencia
   pero la protección equivalente ya está en `supabase/tests/cueva_notifications.test.sql`.
-- Prueba nueva, PGlite 0.3.15 con Auth y Storage sintéticos: replay de baseline,
+- Prueba anterior, PGlite 0.3.15 con Auth y Storage sintéticos: replay de baseline,
   contrato, exactamente doce archivos con hashes verificados, postflight
-  PASS y huella financiera idéntica. Cron/Vault/pg_net simulados: rechazo de
-  URL ajena, grants de lectura/escritura de cola y duplicado, comando encola un POST exacto,
-  y parada deja intacto un segundo job. Docker Linux no respondió en este
-  checkout. Extensiones nativas y tráfico Cron/HTTP alojado siguen NOT_RUN.
+  PASS y huella financiera idéntica. La auditoría ya reprodujo este replay.
   [Prueba reproducible](../../tests/cueva-005-rollout-preflight.mjs), desde la raíz:
 
   ```powershell
@@ -299,6 +353,30 @@ Orchestrator mediante el handoff.
   npm install --prefix $cuevaFixture --no-save --ignore-scripts @electric-sql/pglite@0.3.15
   node --experimental-strip-types tests/cueva-005-rollout-preflight.mjs $cuevaFixture
   ```
+
+- Prueba nativa del ciclo Cron PASS con PostgreSQL 17.6, `pg_cron` 1.6.4,
+  `pg_net` 0.20.4 y Vault 0.3.1. La restricción directa dejó bloqueados a
+  los roles API y conservó el encolado del rol Cron. El caso de acceso heredado
+  abortó y revirtió la operación de permisos. El `jobid` de laboratorio `2`
+  produjo dos POST con HTTP 204 a cinco minutos de intervalo, con la parada y
+  reanudación entre ambos. El primer registro de `cron.job_run_details` y el
+  job ajeno se conservaron. El script rechazó duplicado, reanudación activa,
+  ID ajeno y cambios de horario, comando, destino en Vault o permisos.
+
+  El runner usa un rol de cron sin superusuario y
+  reemplaza solo la URL de producción por un receptor HTTP local en dos
+  contenedores sin red externa ni puertos publicados. La frecuencia queda en
+  cinco minutos. Ejecutar desde la raíz con PowerShell 7 y Docker.
+
+  ```powershell
+  docker pull public.ecr.aws/supabase/postgres@sha256:658d1c9b09ae4f61b8e95087b6859181b4b7d6940d769cf7b605609c8aad43e9
+  docker pull docker.io/library/python@sha256:9ef1a599f863231c3d91e941389bfdc4a2d6070557243d54df1a4e57015b960e
+  ./tests/cueva-005-cron-native.ps1
+  ```
+
+  [Runner nativo](../../tests/cueva-005-cron-native.ps1). Espera dos disparos
+  reales del cron y retira solo sus contenedores. La prueba alojada sigue
+  NOT_RUN.
 
 - Prueba nueva de Node: 57/57 en autorización de worker, dispatcher,
   worker, Brevo, Push, bandeja y HTTP Push con respuestas sintéticas.

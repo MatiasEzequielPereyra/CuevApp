@@ -60,60 +60,6 @@ try {
   await db.exec(`begin read only; ${ops('schema-postflight')} rollback;`);
   assert.deepEqual((await db.query(ops('finance-fingerprint'))).rows, baseline);
   console.log('PASS: baseline contract, exact twelve files, schema postflight and unchanged finance fingerprint');
-  await db.exec(`
-  create schema cron; create schema vault; create schema net;
-  create table cron.job(jobid bigint generated always as identity primary key, jobname text, schedule text, command text, active boolean default true, database text default current_database());
-  create table vault.decrypted_secrets(name text, decrypted_secret text);
-  create table net.http_request_queue(id bigint generated always as identity, url text, body jsonb, headers jsonb, timeout integer);
-  create function cron.schedule(text,text,text) returns bigint language sql as $$ insert into cron.job(jobname,schedule,command) values($1,$2,$3) returning jobid $$;
-  create function cron.alter_job(job_id bigint, active boolean) returns void language sql as $$ update cron.job set active=$2 where jobid=$1 $$;
-  create function net.http_post(url text,body jsonb,headers jsonb,timeout_milliseconds integer) returns bigint language sql as $$ insert into net.http_request_queue(url,body,headers,timeout) values($1,$2,$3,$4) returning id $$;
-  insert into cron.job(jobname,schedule,command) values('other','0 0 * * *','select 1');
-  insert into vault.decrypted_secrets values ('cueva_notifications_worker_url','https://invalid.example.test'), ('cueva_notifications_worker_secret',repeat('x',48));
-  `);
-  const enable = ops('cron-enable');
-  await rejectInstall('wrong origin vetoes installation', /Vault configuration invalid/);
-  await db.exec(`
-    update vault.decrypted_secrets
-    set decrypted_secret='https://cueva-gym.vercel.app/api/notifications/worker'
-    where name='cueva_notifications_worker_url';
-    grant select(headers) on net.http_request_queue to authenticated;
-  `);
-  await rejectInstall('column read grant vetoes installation', /accessible to API roles/);
-  await db.exec(`
-    revoke select(headers) on net.http_request_queue from authenticated;
-    grant update(url) on net.http_request_queue to anon;
-  `);
-  await rejectInstall('column write grant vetoes installation', /accessible to API roles/);
-  await db.exec('revoke update(url) on net.http_request_queue from anon;');
-  await db.exec(enable);
-  await rejectInstall('duplicate install vetoed', /already exists/);
-  const { rows: [{ command }] } = await db.query(`
-    select command from cron.job where jobname='cueva-notifications-worker'
-  `);
-  assert.ok(!command.includes('x'.repeat(48)));
-  await db.exec(command);
-  const queued = await db.query(`
-    select count(*)::int as total,
-      bool_and(url='https://cueva-gym.vercel.app/api/notifications/worker'
-        and body='{}'::jsonb and headers->>'Content-Type'='application/json'
-        and headers->>'Authorization'='Bearer '||repeat('x',48) and timeout=65000) as match
-    from net.http_request_queue
-  `);
-  assert.deepEqual(queued.rows, [{ total: 1, match: true }]);
-  await db.exec(ops('cron-stop'));
-  const jobs = await db.query('select jobname, active from cron.job order by jobname');
-  assert.deepEqual(jobs.rows, [
-    { jobname: 'cueva-notifications-worker', active: false },
-    { jobname: 'other', active: true },
-  ]);
-  console.log('PASS: one enqueue with exact POST arguments and dedicated stop preserves other jobs (extensions simulated)');
-
-  async function rejectInstall(label, error) {
-    await assert.rejects(db.exec(enable), error);
-    await db.exec('rollback');
-    console.log(`PASS: ${label}`);
-  }
 } finally {
   await db.close();
 }
