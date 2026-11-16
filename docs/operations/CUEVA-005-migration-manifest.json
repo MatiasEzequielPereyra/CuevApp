@@ -1,0 +1,115 @@
+{
+  "task": "CUEVA-005",
+  "base": "b1521454854564ac7c64bc47c62a703605ff1e92",
+  "project": "vbkzoojkdkcugxhneyzi",
+  "migrations": [
+    {
+      "order": 1,
+      "file": "supabase/migrations/20261109232059_cueva_notifications.sql",
+      "gitVersion": "20261109232059",
+      "name": "cueva_notifications",
+      "sha256": "ab6a15d788b1ac0c082de06386f269527e4ae130600e540e4ac33e8475f94565",
+      "requires": "Baseline alojada / Vencimientos",
+      "change": "Tablas base, backfill de preferencias, snapshot, push/inbox y RLS"
+    },
+    {
+      "order": 2,
+      "file": "supabase/migrations/20261110035025_notifications_worker_claim.sql",
+      "gitVersion": "20261110035025",
+      "name": "notifications_worker_claim",
+      "sha256": "155bc24562e4ca8dd55a25cea0bfa7f7373bb4b870734d1912547c5e9bf31f35",
+      "requires": "01",
+      "change": "Reserva de entregas y leases"
+    },
+    {
+      "order": 3,
+      "file": "supabase/migrations/20261110135356_notifications_worker_finalize.sql",
+      "gitVersion": "20261110135356",
+      "name": "notifications_worker_finalize",
+      "sha256": "b59b9b3819dc989ba9fbf28bbc7ce854e50872fc3d57d96eb14660d67e7b1081",
+      "requires": "01–02",
+      "change": "Finalización, ledger de intentos y recuperación"
+    },
+    {
+      "order": 4,
+      "file": "supabase/migrations/20261110173835_notifications_reconcile_recovered_parent.sql",
+      "gitVersion": "20261110173835",
+      "name": "notifications_reconcile_recovered_parent",
+      "sha256": "d6c26e3673ae71313632461d5e7a02a1594eb76d7e57dfaaa3b41f31f3c1b881",
+      "requires": "02–03",
+      "change": "Reconciliación del estado padre al recuperar leases"
+    },
+    {
+      "order": 5,
+      "file": "supabase/migrations/20261111100000_notifications_admin_alerts.sql",
+      "gitVersion": "20261111100000",
+      "name": "notifications_admin_alerts",
+      "sha256": "60aee1690759ebf42e37725a651908ae1d078dfac9ca06ad32ee9676e38b75e3",
+      "requires": "01–03",
+      "change": "Alertas administrativas y trigger de fallo terminal"
+    },
+    {
+      "order": 6,
+      "file": "supabase/migrations/20261111130000_notifications_unknown_provider_outcomes.sql",
+      "gitVersion": "20261111130000",
+      "name": "notifications_unknown_provider_outcomes",
+      "sha256": "460425c3b9cf18fa322e0ced79c8fb1832f3ad06ffa4f66d3f6728bc1b1cb9c0",
+      "requires": "02–05",
+      "change": "Marca de inicio del proveedor y resultado incierto terminal"
+    },
+    {
+      "order": 7,
+      "file": "supabase/migrations/20261112090000_notifications_push_per_device.sql",
+      "gitVersion": "20261112090000",
+      "name": "notifications_push_per_device",
+      "sha256": "3f7f6a79ec6a37546362b7ee5700b48b35d791b467ecfddef49ea653b4bbadfa",
+      "requires": "03–06",
+      "change": "Entregas e intentos por dispositivo con reconciliación padre/hijo"
+    },
+    {
+      "order": 8,
+      "file": "supabase/migrations/20261112130000_atomic_push_subscription_limit.sql",
+      "gitVersion": "20261112130000",
+      "name": "atomic_push_subscription_limit",
+      "sha256": "e38c3eca0449006570ee7b2b48406e059e29f1024e50f9dc2e2d50400be0b956",
+      "requires": "01, 07",
+      "change": "Registro atómico y límite de suscripciones"
+    },
+    {
+      "order": 9,
+      "file": "supabase/migrations/20261112150000_atomic_push_subscription_revoke.sql",
+      "gitVersion": "20261112150000",
+      "name": "atomic_push_subscription_revoke",
+      "sha256": "98c6907749135d5bb1e048f7b10c500ddca348e3948137d9fbae12b3f00dc1f7",
+      "requires": "01, 07–08",
+      "change": "Revocación atómica por titular"
+    },
+    {
+      "order": 10,
+      "file": "supabase/migrations/20261112170000_notifications_payment_guard.sql",
+      "gitVersion": "20261112170000",
+      "name": "notifications_payment_guard",
+      "sha256": "d522f5ff822694739d2b2e9618556fe8032bc838b85cf334641eb4975130ff80",
+      "requires": "06–07, billing_write",
+      "change": "Serialización financiera del inicio y bandeja protegida"
+    },
+    {
+      "order": 11,
+      "file": "supabase/migrations/20261112190000_notifications_current_balance_provider_start.sql",
+      "gitVersion": "20261112190000",
+      "name": "notifications_current_balance_provider_start",
+      "sha256": "5ae669824e39824c92c29522a37076472db7c40c68ecf74082ee7d7058808da4",
+      "requires": "10",
+      "change": "Lectura del saldo en la transacción de inicio Email/Push"
+    },
+    {
+      "order": 12,
+      "file": "supabase/migrations/20261113020000_notifications_expired_push_capacity.sql",
+      "gitVersion": "20261113020000",
+      "name": "notifications_expired_push_capacity",
+      "sha256": "a1c9e36f526d22c0735689960b5d67c30abf91778f432135406e6bd8ea1e59c3",
+      "requires": "08–09",
+      "change": "Registro libera capacidad de suscripciones expiradas"
+    }
+  ]
+}
