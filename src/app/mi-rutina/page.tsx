@@ -1,4 +1,5 @@
 import { StudentPlan } from "@/components/routines/student-plan";
+import type { ReactNode } from "react";
 import type { Plan } from "@/lib/routines/types";
 import Link from "next/link";
 import { productConfig, userClient } from "@/lib/product-auth/server";
@@ -13,7 +14,7 @@ type RoutineMention = { exercise_id: string; start: number; end: number; text: s
 
 function renderRoutineText(text: string, mentions: RoutineMention[]) {
   const points = Array.from(text);
-  const parts: React.ReactNode[] = [];
+  const parts: ReactNode[] = [];
   let cursor = 0;
   [...mentions].sort((a, b) => a.start - b.start).forEach((mention, index) => {
     if (mention.start < cursor || mention.end > points.length || points.slice(mention.start, mention.end).join("") !== mention.text) return;
