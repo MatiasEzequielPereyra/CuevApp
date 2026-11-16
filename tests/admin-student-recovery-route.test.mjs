@@ -27,6 +27,14 @@ const auth = {
       maybeSingle: async () => table === "cueva_profiles"
         ? ({ data: { role: state.role }, error: null })
         : ({ data: null, error: null }),
+      eq: (column, value) => ({
+        maybeSingle: async () => {
+          state.calls.push({ table, column, value });
+          if (table === "cueva_students") return { data: state.student, error: null };
+          if (table === "cueva_student_invitations") return { data: state.invitation, error: null };
+          return { data: null, error: null };
+        },
+      }),
     }),
   }),
 };
@@ -36,8 +44,6 @@ const service = {
       eq: (column, value) => ({
         maybeSingle: async () => {
           state.calls.push({ table, column, value });
-          if (table === "cueva_students") return { data: state.student, error: null };
-          if (table === "cueva_student_invitations") return { data: state.invitation, error: null };
           if (table === "cueva_profiles") return { data: state.targetProfile, error: null };
           return { data: null, error: null };
         },
