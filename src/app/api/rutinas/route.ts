@@ -14,7 +14,24 @@ export async function GET(req: Request) {
     const offset = Number(params.get("offset") ?? 0);
     if (!Number.isSafeInteger(offset) || offset < 0 || offset > 1000000) return reply({ message: "Página inválida." }, 400);
     const { data, error } = await client.from("cueva_routine_templates").select("id,title,content,revision,plan").order("title").order("id").range(offset, offset + 100);
-    return error ? reply({ message: "No pudimos cargar las plantillas." }, 503) : reply({ templates: data?.slice(0, 100), more: (data?.length ?? 0) > 100 });
+    if (error) return reply({ message: "No pudimos cargar las plantillas." }, 503);
+    const rows = data?.slice(0, 100) ?? [];
+    const textResult = rows.length ? await client.from("cueva_routine_text_drafts")
+      .select("owner_id,format,text_content,block_content,mentions")
+      .eq("kind", "template").in("owner_id", rows.map(item => item.id)) : { data: [], error: null };
+    if (textResult.error) return reply({ message: "No pudimos cargar las plantillas." }, 503);
+    const textById = new Map((textResult.data ?? []).map(item => [item.owner_id, item]));
+    const templates = rows.map(item => {
+      const text = textById.get(item.id);
+      return {
+        ...item,
+        content: text?.block_content ?? item.content,
+        format: text?.format ?? "blocks",
+        text_content: text?.text_content ?? "",
+        mentions: text?.mentions ?? [],
+      };
+    });
+    return reply({ templates, more: (data?.length ?? 0) > 100 });
   }
   const id = params.get("id") ?? "";
   if (!uuid.test(id)) return reply({ message: "Identificador inválido." }, 400);
