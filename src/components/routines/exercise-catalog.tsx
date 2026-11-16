@@ -31,7 +31,7 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
   const [active, setActive] = useState(true), [editing, setEditing] = useState<Exercise | null>(null), [message, setMessage] = useState("");
   const [videoPath, setVideoPath] = useState<string | null>(null);
   const busy = useRef(false), newId = useRef<string | null>(null);
-  const latestQuery = useRef("");
+  const searchSequence = useRef(0);
   const selectCurrent = useRef(onSelectMany), mounted = useRef(true);
   const editorDialog = useRef<HTMLDialogElement>(null);
   const nameInput = useRef<HTMLInputElement>(null);
@@ -48,21 +48,19 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
   const invalidWeights = [...selectedWeights.values()].some(Number.isNaN);
   const selectedOutsideResults = compactPicker ? selected.filter(exercise => !rows.some(row => row.id === exercise.id)) : [];
   const search = useCallback(async (q: string, offset = 0) => {
-    if (busy.current) return;
-    busy.current = true; setPending(true); setSearchError("");
+    const request = ++searchSequence.current;
+    setPending(true); setSearchError("");
     try {
       const r = await fetch(`/api/ejercicios?${new URLSearchParams({ q, offset: String(offset), ...(selecting ? { active: "1" } : {}), ...(videosOnly ? { videos: "1" } : {}) })}`, { cache: "no-store", signal: AbortSignal.timeout(15000) });
       const data = await r.json();
-      if (!mounted.current) return;
+      if (!mounted.current || request !== searchSequence.current) return;
       if (!r.ok) { setSearchError(data.message || "No pudimos consultar el catálogo. Podés reintentar."); return; }
-      setRows(previous => offset ? [...new Map([...previous, ...data.exercises].map((e: Exercise) => [e.id, e])).values()] : data.exercises); setNext(data.next); setSearched(q); setLoaded(true);
-    } catch { if (mounted.current) setSearchError("No pudimos consultar el catálogo. Podés reintentar."); }
-    finally {
-      busy.current = false;
-      if (mounted.current) {
-        setPending(false);
-        if (latestQuery.current !== q) void search(latestQuery.current);
-      }
+      setRows(previous => offset ? [...new Map([...previous, ...data.exercises].map((e: Exercise) => [e.id, e])).values()] : data.exercises);
+      setNext(data.next); setSearched(q); setLoaded(true);
+    } catch {
+      if (mounted.current && request === searchSequence.current) setSearchError("No pudimos consultar el catálogo. Podés reintentar.");
+    } finally {
+      if (mounted.current && request === searchSequence.current) setPending(false);
     }
   }, [selecting, videosOnly]);
   useEffect(() => {
@@ -202,7 +200,7 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
       {invalidRounds && <p id={`${instanceId}-rounds-error`} className="routine-picker-error">Ingresá un número entero de 1 a 30.</p>}
     </div>}
     <div className="routine-catalog-search">
-      <label>Buscar ejercicio<input type="search" value={query} maxLength={120} onChange={event => { latestQuery.current = event.target.value; setQuery(event.target.value); }} placeholder="Escribí las primeras letras…" /></label>
+      <label>Buscar ejercicio<input type="search" value={query} maxLength={120} onChange={event => setQuery(event.target.value)} placeholder="Escribí las primeras letras…" /></label>
       <div className="exercise-search-actions">
         {managing && <button type="button" className="exercise-primary" ref={createButton} disabled={pending}
           onClick={event => openEditor(null, event.currentTarget)}>Nuevo ejercicio</button>}
