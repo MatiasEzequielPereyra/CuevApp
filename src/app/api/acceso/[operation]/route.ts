@@ -83,7 +83,6 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
       });
       const verified = await verifier.auth.signInWithPassword({ email: current.data.user.email, password: currentPassword });
       verifiedUserId = verified.data.user?.id;
-      await verifier.auth.signOut();
     } catch {
       return fail(503);
     }
