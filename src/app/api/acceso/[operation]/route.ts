@@ -116,10 +116,10 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
     }
     const email = String(form.get("email") ?? "").trim().toLowerCase();
     if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail(400);
-    const student = await service.from("cueva_students").select("id").eq("email", email).maybeSingle();
+    const student = await auth.from("cueva_students").select("id").eq("email", email).maybeSingle();
     if (student.error) return fail(503);
     if (!student.data?.id) return fail(404);
-    const invitation = await service.from("cueva_student_invitations").select("user_id").eq("student_id", student.data.id).maybeSingle();
+    const invitation = await auth.from("cueva_student_invitations").select("user_id").eq("student_id", student.data.id).maybeSingle();
     if (invitation.error) return fail(503);
     const target = invitation.data?.user_id;
     if (!target || !uuid(target)) return fail(404);
