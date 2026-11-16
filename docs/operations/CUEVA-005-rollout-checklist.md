@@ -1,6 +1,6 @@
 # CUEVA-005 — Checklist de preflight y puesta en marcha
 
-**Estado:** REVIEW del preflight local, 2026-11-16.
+**Estado:** preflight auditado, 2026-11-16. La activación alojada sigue pendiente.
 **Rama:** `codex/cueva-005-rollout-preflight`, base `b1521454854564ac7c64bc47c62a703605ff1e92`.
 **Restricción:** no aplicar migraciones, crear secretos, activar extensiones/jobs, cambiar variables, enviar mensajes reales ni desplegar sin autorización operativa explícita.
 
@@ -268,16 +268,14 @@ un mecanismo de alcance que restrinja snapshot, claims y reintentos.
 - [ ] No registrar headers Authorization, claves, endpoints Push, payloads ni PII en logs.
 - [ ] Revisar las primeras ejecuciones y confirmar que no haya duplicados ni entregas fuera de ventana.
 
-El [PR #53](https://github.com/MatiasEzequielPereyra/CuevApp/pull/53) sigue OPEN
-en `a44d5a7c2c1c4e3e5b87dae9665ead9c081bd9b8`. La pestaña y el enlace de
-Notificaciones son visibles aunque falle la lectura de inbox. Antes de publicar
-el portal, comprobar que la bandeja responde con sesión propia tras el postflight,
-o actualizar el PR para omitir pestaña/enlace mientras la dependencia no esté
-disponible y manejar acceso directo con estado de indisponibilidad, sin mostrar
-cero falso. Distinguir bandeja disponible de canales externos activos.
-`cueva_student_assigned_exercises()` también falta en Hosted y tiene su
-propia migración/prueba fuera de este lote. Pasar estas condiciones al
-Orchestrator mediante el handoff.
+El [PR #53](https://github.com/MatiasEzequielPereyra/CuevApp/pull/53) se integró
+en `640324bc0fbf97b0777ddd7080c33ff13c378e45`, verificado en el alias de
+producción el 2026-11-16. La pestaña de Notificaciones ya está publicada.
+La lectura de Hosted confirmó que la tabla `cueva_notification_inbox` aún falta.
+Tras aplicar el lote, verificar la bandeja con sesión de alumno y distinguir
+esa disponibilidad de la activación de correo y Push. La función
+`cueva_student_assigned_exercises()` también falta y tiene su propia migración
+y prueba fuera de este lote.
 
 ## 7. Rollback seguro
 
@@ -383,7 +381,7 @@ primera ejecución y sus entregas con el procedimiento de la sección 4.
 - Pendientes operativos: aprobación, respaldo, habilitar extensiones,
   acceso privado a las credenciales y comprobación del remitente Brevo
   con la clave API real, entorno aislado y verificación de los tres canales,
-  revisión del alcance del primer arranque y condición de visibilidad PR #53.
+  revisión del alcance del primer arranque y verificación de la bandeja del portal.
 
 SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`,
 `cueva-supabase-security`, `supabase:supabase`.
