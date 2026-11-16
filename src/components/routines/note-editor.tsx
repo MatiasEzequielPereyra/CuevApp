@@ -141,7 +141,7 @@ export function NoteEditor({ id, initial, template = false, templates = [], publ
         <h2>{template ? "Plantilla de rutina" : "Rutina del alumno"}</h2>
         <span role="status">{labels[status]}</span>
       </div>
-      {!template && <button className="routine-primary" type="button" disabled={unsaved || !["clean", "saved"].includes(status) || publishing || !saved.revision || (!saved.content.trim() && !hasExercises(saved.plan)) || (saved.content === published?.content && planKey(saved.plan) === planKey(published?.plan))} onClick={() => void publish()}>{publishing ? "Publicando…" : "Publicar rutina"}</button>}
+      {!template && <button className="routine-primary" type="button" disabled={unsaved || !["clean", "saved"].includes(status) || publishing || !saved.revision || ((saved.format ?? "blocks") === "text" ? !(saved.text_content ?? "").trim() : !saved.content.trim() && !hasExercises(saved.plan)) || !hasUnpublishedChanges} onClick={() => void publish()}>{publishing ? "Publicando…" : "Publicar rutina"}</button>}
     </header>
     {!template && <>
       <p className="routine-publication-state" role="status">{published
