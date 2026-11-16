@@ -1,5 +1,32 @@
 # Checkpoint CUEVA
 
+## CUEVA-UX-NUEVO-BLOQUE · Publicado · 2026-11-16
+
+[PR #58](https://github.com/MatiasEzequielPereyra/CuevApp/pull/58), base `84fac4ee239292bb51290074f816ba77216bcf15`,
+HEAD auditado `c0322e3c7c1c2dc82880a314b350c10b878cbd8c`, squash `3822520c41b6fe9fb4eb870f22fb69fb420bca66`.
+Vercel Production `dpl_GGiVwUzPsepPxtdhH2NFAJuHdDhk` READY con el SHA del merge en
+`cueva-gym.vercel.app`. Ingreso respondió HTTP 200 y `/cuenta` redirigió al ingreso
+sin sesión. El editor autenticado se verificó en CI.
+
+Nuevo bloque permite elegir vueltas y peso por ejercicio en el selector. El peso
+vacío, cero y decimal se conservan como valores distintos. La selección permanece
+editable al buscar otros ejercicios. Se conservó el contrato del plan V2.
+[CI general](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43778309997)
+aprobó 126 pruebas, incluidas las 12 variantes del flujo de cuatro bloques en
+Chromium y WebKit. [CI de migraciones](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43778309975)
+aprobó fresh, upgrade y hosted-compatible. El árbol del merge coincide con el candidato.
+
+[PR #53](https://github.com/MatiasEzequielPereyra/CuevApp/pull/53) sigue abierto. La
+lectura alojada confirmó que faltan `cueva_notification_inbox` y
+`cueva_student_assigned_exercises()`. Publicar el candidato actual expondría una
+pestaña de avisos indisponible. Para publicar el portal antes de CUEVA-005, su
+navegación y pantalla deben manejar explícitamente esa disponibilidad. La RPC
+de ejercicios requiere su propia aplicación y comprobación alojada.
+
+SKILLS_SELECTED / SKILLS_APPLIED: `cueva-acceptance-audit`, `cueva-release`,
+`cueva-supabase-security`, `cueva-finance` y `supabase:supabase`.
+SKILL_SOURCES: `.agents/skills/<nombre>/SKILL.md` y guía Supabase de host.
+
 ## CUEVA-PWA-LOGIN · Publicado · 2026-11-15
 
 [PR #57](https://github.com/MatiasEzequielPereyra/CuevApp/pull/57), base `cbdb9052be2221cd4e1db9e5760bdd007a6e855d`,
