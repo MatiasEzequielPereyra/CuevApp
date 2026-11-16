@@ -97,7 +97,7 @@ test("asks Supabase Auth to send verification and preserves the current email un
   reset();
   const response = await run("  Nuevo@Example.Test  ");
   assert.equal(response.status, 303);
-  assert.match(response.headers.get("location"), /mi-perfil\\?correo=pendiente$/);
+  assert.match(response.headers.get("location"), /mi-perfil\?correo=pendiente$/);
   assert.deepEqual(state.updateArgs, [{
     email: "nuevo@example.test",
   }, {
@@ -109,7 +109,7 @@ test("does not start a verification when the requested email is already current"
   reset();
   const response = await run("ACTUAL@example.test");
   assert.equal(response.status, 303);
-  assert.match(response.headers.get("location"), /mi-perfil\\?correo=igual$/);
+  assert.match(response.headers.get("location"), /mi-perfil\?correo=igual$/);
   assert.equal(state.updateArgs, null);
 });
 
