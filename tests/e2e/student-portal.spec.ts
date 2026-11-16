@@ -50,6 +50,7 @@ const deniedClient = () => ({
 
 function loadStudentPage(path: string) {
   return loadExport(path, {
+    "./mi-rutina.css": {},
     "next/link": { default: link },
     "@/components/routines/student-shell": shell,
     "@/components/brand/brand-mark": { BrandMark: () => null },
