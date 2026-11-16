@@ -98,9 +98,9 @@ export default async function MyRoutine() {
       ? assigned.data
       : [];
 
-  const mentionedExercises: MentionedExercise[] = !mentioned?.error && Array.isArray(mentioned?.data) ? mentioned.data : [];
+  const mentionedExercises: MentionedExercise[] = textDocument?.data?.format === "text" && !mentioned?.error && Array.isArray(mentioned?.data) ? mentioned.data : [];
   const textMode = textDocument?.data?.format === "text";
-  const describedExercises = assignedExercises.filter(
+  const describedExercises = textMode ? [] : assignedExercises.filter(
     exercise => exercise.description?.trim()
   );
 
