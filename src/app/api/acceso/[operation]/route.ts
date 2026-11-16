@@ -64,7 +64,7 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
   if (operation === "salir") { const { error } = await auth.auth.signOut(); return error ? fail(503) : redirect("/ingresar"); }
   if (operation === "cambiar-correo") {
     const email = String(form.get("email") ?? "").trim().toLowerCase();
-    if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return fail(400);
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail(400);
     const current = await auth.auth.getUser();
     if (current.error || !current.data.user) return fail(401);
     const own = await auth.from("cueva_profiles").select("role").maybeSingle();
