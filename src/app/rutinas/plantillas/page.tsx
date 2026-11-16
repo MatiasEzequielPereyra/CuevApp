@@ -16,10 +16,11 @@ export default async function Templates({ searchParams }: { searchParams: Promis
   const page = Number.isSafeInteger(rawPage) && rawPage >= 0 && rawPage <= 10000 ? rawPage : 0;
   const result = id ? await client.from("cueva_routine_templates").select("id,title,content,revision,plan").eq("id", id) : await client.from("cueva_routine_templates").select("id,title,revision").order("title").order("id").range(page * 100, page * 100 + 100);
   const textResult = id ? await client.from("cueva_routine_text_drafts")
-    .select("format,text_content,mentions").eq("kind","template").eq("owner_id",id).maybeSingle() : null;
+    .select("format,text_content,block_content,mentions").eq("kind","template").eq("owner_id",id).maybeSingle() : null;
   const selected = result.data?.[0] as Template | undefined;
   const selectedInitial = selected ? {
     ...selected,
+    content: textResult?.data?.block_content ?? selected.content,
     format: textResult?.data?.format ?? "blocks",
     text_content: textResult?.data?.text_content ?? "",
     mentions: textResult?.data?.mentions ?? [],
