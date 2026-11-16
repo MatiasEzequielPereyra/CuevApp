@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import type { RoutineMention } from "@/lib/routines/mentions";
 import { utf16OffsetToCodePoint } from "@/lib/routines/mentions";
 import type { Exercise } from "@/lib/routines/types";
@@ -87,7 +87,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     requestAnimationFrame(() => { input.focus(); input.setSelectionRange(endUtf16, endUtf16); });
   }
 
-  function onKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+  function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (!range || (!results.length && !pending)) return;
     if (event.key === "ArrowDown") { event.preventDefault(); setActive(index => Math.min(index + 1, results.length - 1)); }
     else if (event.key === "ArrowUp") { event.preventDefault(); setActive(index => Math.max(index - 1, 0)); }
