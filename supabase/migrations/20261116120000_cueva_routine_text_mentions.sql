@@ -98,6 +98,33 @@ begin
 
   perform pg_advisory_xact_lock(903004001);
 
+  -- A retry of an already committed publication is checked against its
+  -- immutable sidecar, not against a draft that may since have advanced.
+  if p_kind = 'publish' then
+    v_base_content := case when p_format = 'text' then p_text_content else p_content end;
+    select * into v_publication from public.cueva_routine_publications where id = p_operation;
+    select * into v_existing from public.cueva_routine_text_publications where publication_id = p_operation;
+    if found then
+      if v_publication.id is null or v_publication.student_id <> p_id
+        or v_publication.draft_revision <> p_revision
+        or v_publication.content <> v_base_content
+        or v_publication.plan is distinct from p_plan
+        or v_publication.published_by <> auth.uid()
+        or v_existing.student_id <> p_id or v_existing.format <> p_format
+        or v_existing.text_content <> p_text_content or v_existing.block_content <> p_content
+        or v_existing.mentions <> p_mentions or v_existing.published_by <> auth.uid()
+      then
+        raise exception 'La publicación ya contiene otra versión' using errcode = '22023';
+      end if;
+      return to_jsonb(v_publication) || jsonb_build_object(
+        'format', v_existing.format,
+        'text_content', v_existing.text_content,
+        'block_content', v_existing.block_content,
+        'mentions', v_existing.mentions
+      );
+    end if;
+  end if;
+
   if p_kind in ('draft','template') then
     select mentions into v_previous
     from public.cueva_routine_text_drafts
