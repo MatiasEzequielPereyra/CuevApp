@@ -1,5 +1,17 @@
 # Checkpoint CUEVA
 
+## CUEVA-005 · Preflight en REVIEW · 2026-11-16
+
+Base `b1521454854564ac7c64bc47c62a703605ff1e92`. Notificaciones integradas
+por PR45 y PR47. La lectura alojada actual identificó 18 migraciones y
+confirmó que las doce de Notificaciones siguen pendientes. El contrato
+hosted-compatible pasó en Hosted con solo lectura. La prueba nueva aislada
+aplicó el lote exacto y conservó la huella de Vencimientos. El ajuste de
+concurrencia de Facu ya tiene equivalente en main.
+[Orden, hashes, prueba aislada, configuración y rollback](../operations/CUEVA-005-rollout-checklist.md).
+Activación alojada y envíos NOT_RUN. La visibilidad del PR53 depende de verificar
+la bandeja o manejar su indisponibilidad antes de publicar el portal.
+
 ## CUEVA-UX-NUEVO-BLOQUE · Publicado · 2026-11-16
 
 [PR #58](https://github.com/MatiasEzequielPereyra/CuevApp/pull/58), base `84fac4ee239292bb51290074f816ba77216bcf15`,
