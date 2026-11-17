@@ -114,6 +114,7 @@ declare
   v_start integer;
   v_end integer;
   v_previous_end integer := 0;
+  v_previous_index integer;
   v_length integer;
   v_revision integer;
   v_base_content text;
@@ -214,12 +215,23 @@ begin
     if not exists (
       select 1 from public.cueva_exercises e
       where e.id = (v_mention->>'exercise_id')::uuid and e.active
-    ) and not exists (
-      select 1 from jsonb_array_elements(v_previous) old_mention
-      where old_mention->>'exercise_id' = v_mention->>'exercise_id'
-) then
-      raise exception 'El ejercicio no existe o está inactivo para una nueva mención'
-        using errcode = '22023';
+    ) then
+      -- An inactive reference may survive an edit only once for each
+      -- matching historical occurrence. Consume that occurrence so copying
+      -- the same exercise ID cannot authorize additional new mentions.
+      v_previous_index := null;
+      select (old_mention.ordinality - 1)::integer into v_previous_index
+      from jsonb_array_elements(v_previous) with ordinality old_mention(value, ordinality)
+      where old_mention.value->>'exercise_id' = v_mention->>'exercise_id'
+        and old_mention.value->>'text' = v_mention->>'text'
+      order by old_mention.ordinality
+      limit 1;
+
+      if v_previous_index is null then
+        raise exception 'El ejercicio no existe o está inactivo para una nueva mención'
+          using errcode = '22023';
+      end if;
+      v_previous := v_previous - v_previous_index;
     end if;
   end loop;
 
