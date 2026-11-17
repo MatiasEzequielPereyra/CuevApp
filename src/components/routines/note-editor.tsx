@@ -127,7 +127,7 @@ export function NoteEditor({ id, initial, template = false, templates = [], publ
   function applyTemplate() {
     const chosen = availableTemplates.find(item => item.id === selected);
     if (!chosen || publishing || status === "conflict") return;
-    if ((local.content || local.plan) && !window.confirm("¿Reemplazar el contenido del borrador con esta plantilla? La publicación actual se conserva.")) return;
+    if ((local.content || local.plan || (local.text_content ?? "").trim() || (local.mentions?.length ?? 0) > 0) && !window.confirm("¿Reemplazar el contenido del borrador con esta plantilla? La publicación actual se conserva.")) return;
     edit({ ...local, content: chosen.content, plan: chosen.plan ? copyPlan(chosen.plan) : null, format: chosen.format ?? "blocks", text_content: chosen.text_content ?? "", mentions: chosen.mentions ?? [] });
     if (templatePicker.current) {
       templatePicker.current.open = false;
