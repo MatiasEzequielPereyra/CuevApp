@@ -132,6 +132,53 @@ test("el menú completo entra a 320 px y deja visible el cierre de sesión", asy
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
+for (const width of [1024, 1440]) {
+  for (const theme of ["light", "dark"]) {
+    test(`Shift+Tab recupera un control visible y activable bajo la barra a ${width}px / ${theme}`, async ({ page }, testInfo) => {
+      await page.setViewportSize({ width, height: 720 });
+      const css = readFileSync("src/app/globals.css", "utf8");
+      const markup = renderToStaticMarkup(React.createElement(
+        shell.StudentShell, { active: "membresia" },
+        React.createElement("div", { style: { minHeight: "1000px" } }, React.createElement("h1", null, "Mis cuotas")),
+        React.createElement("section", { className: "membership-history" },
+          React.createElement("details", { className: "membership-card" },
+            React.createElement("summary", null, "Detalle del período"),
+            React.createElement("p", null, "Período de prueba"),
+          ),
+        ),
+        React.createElement("div", { style: { minHeight: "1000px" }, "aria-hidden": true }),
+        React.createElement("button", { type: "button" }, "Continuar"),
+      ));
+      await page.setContent(`<!doctype html><html lang="es-AR" data-theme="${theme}"><head><style>${css}</style></head><body>${markup}</body></html>`);
+      const control = page.locator(".membership-history summary");
+      await page.getByRole("button", { name: "Continuar" }).focus();
+      // Scroll while a later control retains focus, leaving the earlier one just above the viewport.
+      await control.evaluate(element => window.scrollTo(0, window.scrollY + element.getBoundingClientRect().top + 1));
+      const hidden = await control.boundingBox();
+      expect(hidden).not.toBeNull();
+      expect(hidden!.y).toBeLessThan(0);
+
+      await page.keyboard.press("Shift+Tab");
+      await expect(control).toBeFocused();
+      const header = await page.locator(".student-topbar").boundingBox();
+      const focused = await control.boundingBox();
+      expect(header).not.toBeNull();
+      expect(focused).not.toBeNull();
+      // Include the five pixels occupied by the visible focus outline.
+      expect(focused!.y - 5).toBeGreaterThanOrEqual(header!.y + header!.height);
+      expect(focused!.y + focused!.height + 5).toBeLessThanOrEqual(720);
+      expect(await control.evaluate(element => {
+        const bounds = element.getBoundingClientRect();
+        return element.contains(document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + 1));
+      })).toBe(true);
+      await page.screenshot({ path: testInfo.outputPath("student-focus.png") });
+      await page.keyboard.press("Enter");
+      await expect(page.locator(".membership-history details")).toHaveAttribute("open", "");
+      await expect(page.getByText("Período de prueba")).toBeVisible();
+    });
+  }
+}
+
 for (const [path, heading] of [
   ["src/app/mi-rutina/page.tsx", "Acceso restringido"],
   ["src/app/notificaciones/page.tsx", "Acceso restringido"],
