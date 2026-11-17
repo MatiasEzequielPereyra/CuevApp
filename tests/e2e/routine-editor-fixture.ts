@@ -56,7 +56,10 @@ export function routineEditorFixture() {
         }
         case "/cueva_routine_text_publications": return { body: asRow(publicationText) };
         case "/rpc/cueva_my_routine_video_ids": return { body: [] };
-        case "/rpc/cueva_student_mentioned_exercises": return { body: [] };
+        case "/rpc/cueva_student_mentioned_exercises": return { body: publicationText?.format === "text" ? (publicationText.mentions ?? []).flatMap(mention => {
+          const exercise = exercises.find(item => item.id === mention.exercise_id);
+          return exercise ? [{ id: exercise.id, name: exercise.name, description: exercise.description }] : [];
+        }) : [] };
         case "/cueva_exercises": {
           const filter = url.searchParams.get("name") ?? "";
           const query = filter.startsWith("ilike.") ? filter.slice(6).replaceAll("%", "").toLowerCase() : "";
