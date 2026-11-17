@@ -366,7 +366,7 @@ for (const width of [360, 390, 1440]) {
 }
 
 
-test("texto libre vincula menciones por UUID y publica la instantánea", async ({ page }) => {
+test("texto libre vincula menciones por UUID y publica la instantánea visible para el alumno", async ({ page, browser }) => {
   await page.setViewportSize({ width: 390, height: 820 });
   await page.goto(`${origin}/rutinas?alumno=${shortId}`);
   const editor = page.getByRole("region", { name: "Editor de rutina" });
@@ -392,4 +392,20 @@ test("texto libre vincula menciones por UUID y publica la instantánea", async (
   await expect.poll(() => routines.operations).toEqual(["draft", "publish"]);
   await editor.getByText("Última rutina publicada").click();
   await expect(editor.locator("pre").last()).toHaveText("Sentadilla\nRemo");
+
+  const learner = await browser.newContext();
+  try {
+    await signIn(learner, origin, routines.studentUser);
+    const studentPage = await learner.newPage();
+    await studentPage.goto(`${origin}/mi-rutina`);
+    await expect(studentPage.getByRole("heading", { name: "Mi rutina", exact: true })).toBeVisible();
+    const publishedText = studentPage.locator("section.my-routine-notes");
+    await expect(publishedText).toContainText("Sentadilla");
+    await expect(publishedText).toContainText("Remo");
+    await expect(studentPage.getByRole("heading", { name: "Ejercicios mencionados" })).toBeVisible();
+    await expect(studentPage.getByRole("list").getByText("Sentadilla", { exact: true })).toBeVisible();
+    await expect(studentPage.getByRole("list").getByText("Remo", { exact: true })).toBeVisible();
+  } finally {
+    await learner.close();
+  }
 });
