@@ -56,6 +56,12 @@ export async function GET(req: Request) {
   if (routineResult.error || textResult.error) return reply({ message: "No pudimos cargar la revisión. Tu texto sigue en el editor." }, 503);
   const data = routineResult.data;
   const textDocument = textResult.data;
+  // These reads run concurrently and are not a shared database snapshot.
+  // A save committed between them can otherwise mix two revisions in the
+  // comparison UI. Refuse that transient result and let the admin retry.
+  if (textDocument && textDocument.revision !== (data?.revision ?? 0)) {
+    return reply({ message: "La rutina cambió mientras consultábamos la revisión. Volvé a comparar; tu borrador sigue en el editor." }, 503);
+  }
   return reply({ note: {
     ...(data ?? { content: "", revision: 0, ...(template ? { title: "" } : {}) }),
     content: textDocument?.block_content ?? data?.content ?? "",
