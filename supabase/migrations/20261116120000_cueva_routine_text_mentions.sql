@@ -217,13 +217,7 @@ begin
     ) and not exists (
       select 1 from jsonb_array_elements(v_previous) old_mention
       where old_mention->>'exercise_id' = v_mention->>'exercise_id'
-    ) and not exists (
-      select 1
-      from public.cueva_routine_text_drafts template_document
-      cross join lateral jsonb_array_elements(template_document.mentions) template_mention
-      where template_document.kind = 'template'
-        and template_mention->>'exercise_id' = v_mention->>'exercise_id'
-    ) then
+) then
       raise exception 'El ejercicio no existe o está inactivo para una nueva mención'
         using errcode = '22023';
     end if;
