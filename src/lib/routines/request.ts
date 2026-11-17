@@ -20,5 +20,5 @@ export function routineReadIsConsistent(
   routineRevision: number | null | undefined,
   textRevision: number | null | undefined,
 ): boolean {
-  return textRevision == null || textRevision === (routineRevision ?? 0);
+  return (textRevision ?? 0) === (routineRevision ?? 0);
 }
