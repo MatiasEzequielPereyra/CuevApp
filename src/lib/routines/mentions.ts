@@ -76,3 +76,23 @@ export function validateRoutineMentions(
     };
   });
 }
+
+/** Keeps references outside the edited span and shifts references after it. */
+export function rebaseRoutineMentions(
+  previous: string,
+  next: string,
+  mentions: RoutineMention[],
+): RoutineMention[] {
+  const oldPoints = Array.from(previous), newPoints = Array.from(next);
+  let prefix = 0;
+  while (prefix < oldPoints.length && prefix < newPoints.length && oldPoints[prefix] === newPoints[prefix]) prefix++;
+  let suffix = 0;
+  while (suffix < oldPoints.length - prefix && suffix < newPoints.length - prefix &&
+    oldPoints[oldPoints.length - 1 - suffix] === newPoints[newPoints.length - 1 - suffix]) suffix++;
+  const oldEnd = oldPoints.length - suffix, delta = newPoints.length - oldEnd;
+  return mentions.flatMap(mention => {
+    if (mention.end <= prefix) return [mention];
+    if (mention.start >= oldEnd) return [{ ...mention, start: mention.start + delta, end: mention.end + delta }];
+    return [];
+  });
+}
