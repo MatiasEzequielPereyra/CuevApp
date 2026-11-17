@@ -1,5 +1,5 @@
 begin;
-select plan(29);
+select plan(35);
 
 -- Stable test identities and sessions. All fixtures are rolled back at the end.
 insert into auth.users(id,aud,role,email,created_at,updated_at) values
@@ -27,7 +27,8 @@ insert into public.cueva_profiles(user_id,role) values
 
 insert into public.cueva_students(id,first_name,last_name,email,joined_on) values
  ('b3000000-0000-4000-8000-000000000001','Student','A','routine-student-a@example.test',date '2026-01-01'),
- ('b3000000-0000-4000-8000-000000000002','Student','B','routine-student-b@example.test',date '2026-01-01');
+ ('b3000000-0000-4000-8000-000000000002','Student','B','routine-student-b@example.test',date '2026-01-01'),
+ ('b3000000-0000-4000-8000-000000000003','Student','C','routine-student-c@example.test',date '2026-01-01');
 
 insert into public.cueva_student_invitations(student_id,email,user_id,state,lease,requested_by) values
  ('b3000000-0000-4000-8000-000000000001','routine-student-a@example.test','b1000000-0000-4000-8000-000000000002','sent','b4000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001'),
@@ -130,6 +131,48 @@ select is((public.cueva_routine_text_write(
  'ba000000-0000-4000-8000-000000000001',null,'text','Press banca',
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
 )->>'revision')::integer,1,'exact retries return the same text revision');
+
+-- Publication snapshots are committed atomically with their text document.
+-- Student C has no pre-existing publication, so the test exercises the first
+-- publish and its idempotent retry without relying on seeded historical rows.
+select is((public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',0,'Bloque inicial',null,
+ 'ba000000-0000-4000-8000-000000000010',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)->>'revision')::integer,1,'publication fixture saves its initial text draft');
+
+select throws_ok($select public.cueva_routine_text_write(
+ 'publish','b3000000-0000-4000-8000-000000000003',1,'Bloque alterado',null,
+ 'ba000000-0000-4000-8000-000000000011',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)$,'40001',null,'a text-document mismatch aborts publication');
+
+select is((select count(*)::integer from public.cueva_routine_publications
+ where student_id='b3000000-0000-4000-8000-000000000003'),0,
+ 'a failed text snapshot leaves no base publication behind');
+
+select is((public.cueva_routine_text_write(
+ 'publish','b3000000-0000-4000-8000-000000000003',1,'Bloque inicial',null,
+ 'ba000000-0000-4000-8000-000000000012',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)->>'draft_revision')::integer,1,'publication commits the expected draft revision');
+
+select is((public.cueva_routine_text_write(
+ 'publish','b3000000-0000-4000-8000-000000000003',1,'Bloque inicial',null,
+ 'ba000000-0000-4000-8000-000000000012',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)->>'draft_revision')::integer,1,'retry after a lost publish response returns the committed snapshot');
+
+select throws_ok($select public.cueva_routine_text_write(
+ 'publish','b3000000-0000-4000-8000-000000000003',1,'Otro bloque',null,
+ 'ba000000-0000-4000-8000-000000000012',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)$,'22023',null,'a publication operation ID cannot be replayed with altered snapshot data');
+
+select is((select count(*)::integer from public.cueva_routine_publications p
+ join public.cueva_routine_text_publications t on t.publication_id=p.id
+ where p.student_id='b3000000-0000-4000-8000-000000000003'),1,
+ 'one atomic base publication and text snapshot remain after retries');
 
 select throws_ok($$select public.cueva_routine_text_write(
  'draft','b3000000-0000-4000-8000-000000000001',0,'Notas de bloque',null,
