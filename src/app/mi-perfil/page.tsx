@@ -5,7 +5,7 @@ import { productConfig, userClient } from "@/lib/product-auth/server";
 
 export const dynamic = "force-dynamic";
 
-export default async function StudentProfilePage({ searchParams }: { searchParams?: Promise<{ contrasena?: string }> }) {
+export default async function StudentProfilePage({ searchParams }: { searchParams?: Promise<{ contrasena?: string | string[] }> } = {}) {
   const query = await searchParams;
   if (!productConfig()) return <main className="shell"><h1>Acceso no disponible</h1></main>;
   const client = await userClient(true);

@@ -16,7 +16,7 @@ type StudentMembershipSummary = {
 
 const dateFormat = new Intl.DateTimeFormat("es-AR", { dateStyle: "long", timeZone: "UTC" });
 
-export default async function AccountPage({ searchParams }: { searchParams?: Promise<{ contrasena?: string }> }) {
+export default async function AccountPage({ searchParams }: { searchParams?: Promise<{ contrasena?: string | string[] }> } = {}) {
   const query = await searchParams;
   const cfg = productConfig();
   if (!cfg) notFound();

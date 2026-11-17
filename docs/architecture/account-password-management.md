@@ -29,3 +29,30 @@ El envío de invitaciones y recuperaciones continúa sujeto a la configuración 
 ## Pruebas
 
 `tests/account-password-change-route.test.mjs` cubre origen, validación de contraseñas, sesión, rol, reautenticación de identidad, cambios para ambos roles y ausencia de uso del service role.
+
+El ensayo `tests/e2e/account-password-management.integration.mjs` usa Next.js,
+GoTrue y PostgreSQL locales. Confirmó el cambio propio de ambos roles, el rechazo
+de una contraseña actual incorrecta, el rechazo de la contraseña anterior y el
+inicio de sesión con la nueva. La recuperación tomó el token y los parámetros del
+correo real de GoTrue recibido en Mailpit, los presentó al POST de CUEVA y
+completó la elección de contraseña. El alumno quedó habilitado y la credencial
+anterior dejó de autenticar. Las cinco pruebas existentes de navegación y roles
+del portal pasaron con y sin `searchParams` según sus respectivas rutas.
+
+En una segunda corrida, Mailpit devolvió SMTP 550 al destinatario después de
+adquirir el reset. GoTrue respondió 500 y CUEVA devolvió 503. El correo no llegó,
+la ficha continuó vinculada, el gate quedó cerrado con la operación `reset`
+reservada y el reintento recibió 409. La sesión anterior perdió acceso al portal.
+El procedimiento existente deja esta generación cerrada para conciliación
+operativa. Requiere determinar el resultado del envío y confirmar que no queden
+llamadas de Auth en curso antes de decidir cómo recuperar el acceso.
+
+Para reproducir, configurar el stack de integración del repositorio con Mailpit
+aislado y exportar `API_URL`, `DB_URL`, `CUEVA_SERVICE_KEY`,
+`CUEVA_PRODUCT_ORIGIN` y `MAILPIT_URL` por el entorno privado. Ejecutar
+`node tests/e2e/account-password-management.integration.mjs`. Para el caso de
+rechazo, configurar el SMTP de ese GoTrue para usar un receptor Mailpit aislado
+con `MP_CHAOS_TRIGGERS=Recipient:550:100` y repetir con
+`CUEVA_TEST_RECOVERY_REJECTED=1`. Mantener el API HTTP de Mailpit accesible para
+comprobar que la bandeja no recibió el mensaje. El ensayo usa usuarios efímeros
+y no envía mensajes a proveedores reales.
