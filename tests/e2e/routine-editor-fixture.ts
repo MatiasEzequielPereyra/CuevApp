@@ -33,14 +33,19 @@ export function routineEditorFixture() {
   let publication: Publication | null = null;
   let publicationText: TextDocument | null = null;
   const operations: string[] = [];
+  const saveOperationIds: string[] = [];
+  let loseNextSaveResponse = false;
   return {
-    studentUser, operations,
+    studentUser, operations, saveOperationIds,
+    loseNextSaveResponse() { loseNextSaveResponse = true; },
     reset() {
       draft = { content: "", revision: 0 };
       draftText = null;
       publication = null;
       publicationText = null;
       operations.length = 0;
+      saveOperationIds.length = 0;
+      loseNextSaveResponse = false;
     },
     async handle(request: IncomingMessage, url: URL): Promise<{ body: unknown; status?: number } | undefined> {
       const asRow = (row: unknown) => request.headers.accept?.includes("vnd.pgrst.object") ? row : row ? [row] : [];
@@ -73,9 +78,17 @@ export function routineEditorFixture() {
             p_format: "blocks" | "text"; p_text_content: string;
             p_mentions: TextDocument["mentions"]; p_operation: string;
           };
-          if (payload.p_revision !== draft.revision) return { body: { code: "40001", message: "Synthetic revision mismatch" }, status: 409 };
           const baseContent = payload.p_format === "text" ? payload.p_text_content : payload.p_content;
           if (payload.p_kind === "draft") {
+            saveOperationIds.push(payload.p_operation);
+            if (draftText?.save_id === payload.p_operation) {
+              if (draftText.text_content !== payload.p_text_content || draftText.block_content !== payload.p_content
+                || JSON.stringify(draftText.mentions) !== JSON.stringify(payload.p_mentions)) {
+                return { body: { code: "22023", message: "Synthetic operation payload mismatch" }, status: 400 };
+              }
+              return { body: { ...draft, ...draftText } };
+            }
+            if (payload.p_revision !== draft.revision) return { body: { code: "40001", message: "Synthetic revision mismatch" }, status: 409 };
             draft = { content: baseContent, plan: payload.p_plan, revision: draft.revision + 1 };
             draftText = {
               format: payload.p_format, text_content: payload.p_text_content,
@@ -83,8 +96,13 @@ export function routineEditorFixture() {
               revision: draft.revision, save_id: payload.p_operation,
             };
             operations.push("draft");
+            if (loseNextSaveResponse) {
+              loseNextSaveResponse = false;
+              return { body: { code: "XX000", message: "Synthetic response lost after commit" }, status: 503 };
+            }
             return { body: { ...draft, ...draftText } };
           }
+          if (payload.p_revision !== draft.revision) return { body: { code: "40001", message: "Synthetic revision mismatch" }, status: 409 };
           publication = {
             id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd", content: baseContent, plan: draft.plan ?? null,
             draft_revision: draft.revision, published_at: "2026-11-15T12:00:00Z",
