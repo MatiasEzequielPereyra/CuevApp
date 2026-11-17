@@ -21,6 +21,25 @@ test("accepts known browser push services and validates cryptographic key length
   assert.equal(parsePushSubscription(valid, 1000)?.authSecret, auth);
 });
 
+test("accepts only the Chromium staging FCM subscription path on its exact host", () => {
+  const endpoint = "https://jmt17.google.com/fcm/send/browser-device:token_1-2";
+  assert.equal(parsePushSubscription({ ...valid, endpoint }, 1000)?.endpoint, endpoint);
+  for (const rejected of [
+    "https://jmt17.google.com/other/token",
+    "https://jmt17.google.com/fcm/send/",
+    "https://jmt17.google.com/fcm/send/a/b",
+    "https://jmt17.google.com/fcm/send/a%2Fb",
+    "https://jmt17.google.com/fcm/send/token?redirect=elsewhere",
+    "https://jmt17.google.com/fcm/send/token#fragment",
+    "https://jmt17.google.com:444/fcm/send/token",
+    "http://jmt17.google.com/fcm/send/token",
+    "https://user@jmt17.google.com/fcm/send/token",
+    "https://jmt17.google.com.attacker.example/fcm/send/token",
+    "https://alt.jmt17.google.com/fcm/send/token",
+    "https://www.google.com/fcm/send/token",
+  ]) assert.equal(parsePushEndpoint(rejected), null, rejected);
+});
+
 test("rejects arbitrary hosts, insecure endpoints, credentials, and nonstandard ports", () => {
   for (const endpoint of [
     "http://fcm.googleapis.com/fcm/send/token",
