@@ -105,19 +105,18 @@ try {
   // Keep publisher 1's transaction open after it acquires the advisory lock.
   await clients[0].query("begin");
   firstTransactionOpen = true;
-  const firstAttempt = publish(clients[0], publicationIds[0]);
+  const firstAttempt = await publish(clients[0], publicationIds[0]);
 
   // Publisher 2 uses a distinct authenticated administrator and operation ID.
-  // Confirm it is actually waiting on PostgreSQL's lock before releasing A.
-  await sleep(50);
+  // Publisher 1's successful return proves it acquired the lock; its transaction
+  // remains open so publisher 2 must wait until the first snapshot commits.
   const secondAttempt = publish(clients[1], publicationIds[1]);
   await waitForLockWait("cueva-routine-publisher-2");
 
   await clients[0].query("commit");
   firstTransactionOpen = false;
 
-  const firstResult = await firstAttempt;
-  assert.ok(firstResult.rows[0].publication,
+  assert.ok(firstAttempt.rows[0].publication,
     "the first administrator receives the committed publication");
 
   const secondResult = await Promise.allSettled([secondAttempt]);
