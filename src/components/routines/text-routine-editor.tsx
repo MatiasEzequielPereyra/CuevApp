@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import type { RoutineMention } from "@/lib/routines/mentions";
-import { utf16OffsetToCodePoint } from "@/lib/routines/mentions";
+import { rebaseRoutineMentions, utf16OffsetToCodePoint } from "@/lib/routines/mentions";
 import type { Exercise } from "@/lib/routines/types";
 
 type SearchRange = { start: number; end: number; query: string } | null;
@@ -16,21 +16,6 @@ function searchRange(value: string, cursor: number): SearchRange {
   const prefixQuery = prefix?.[1];
   if (prefixQuery !== undefined && prefixQuery.length >= 2) return { start: cursor - prefixQuery.length, end: cursor, query: prefixQuery };
   return null;
-}
-
-function rebaseMentions(previous: string, next: string, mentions: RoutineMention[]) {
-  const oldPoints = Array.from(previous), newPoints = Array.from(next);
-  let prefix = 0;
-  while (prefix < oldPoints.length && prefix < newPoints.length && oldPoints[prefix] === newPoints[prefix]) prefix++;
-  let suffix = 0;
-  while (suffix < oldPoints.length - prefix && suffix < newPoints.length - prefix &&
-    oldPoints[oldPoints.length - 1 - suffix] === newPoints[newPoints.length - 1 - suffix]) suffix++;
-  const oldEnd = oldPoints.length - suffix, newEnd = newPoints.length - suffix, delta = newEnd - oldEnd;
-  return mentions.flatMap(mention => {
-    if (mention.end <= prefix) return [mention];
-    if (mention.start >= oldEnd) return [{ ...mention, start: mention.start + delta, end: mention.end + delta }];
-    return [];
-  });
 }
 
 export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
@@ -71,7 +56,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   }
 
   function handleChange(next: string, cursor: number) {
-    onChange(next, rebaseMentions(value, next, mentions));
+    onChange(next, rebaseRoutineMentions(value, next, mentions));
     updateRange(searchRange(next, cursor));
   }
 
@@ -82,7 +67,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     const start = utf16OffsetToCodePoint(next, range.start);
     const endUtf16 = range.start + exercise.name.length;
     const end = utf16OffsetToCodePoint(next, endUtf16);
-    const nextMentions = rebaseMentions(value, next, mentions).filter(m => !(m.start < end && m.end > start));
+    const nextMentions = rebaseRoutineMentions(value, next, mentions).filter(m => !(m.start < end && m.end > start));
     nextMentions.push({ exercise_id: exercise.id, start, end, text: exercise.name });
     nextMentions.sort((a, b) => a.start - b.start);
     onChange(next, nextMentions); updateRange(null);
