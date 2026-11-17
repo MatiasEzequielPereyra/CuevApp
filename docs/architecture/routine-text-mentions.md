@@ -1,6 +1,6 @@
 # Rutinas en texto libre y menciones — CUEVA-006D
 
-Fecha: 2026-11-16. Estado: implementación en rama aislada; validación local y CI pendientes.
+Fecha: 2026-11-17. Estado: implementación en rama aislada; validación CI aprobada en HEAD 1e84e79cd50bc6083ef42c942509e1635fb14d75. Integración pendiente.
 
 ## Modelo de edición
 
@@ -94,3 +94,21 @@ usando las consultas y autorizaciones actuales.
 - Si una referencia ya no se puede resolver, el texto capturado sigue visible.
 - No se modifican CUEVA-003B ni CUEVA-005; no hay escritura en Supabase alojado,
   deploy, Auth ni cambios de roles en esta fase.
+
+
+## Evidencia de validación
+
+Los workflows de GitHub Actions finalizaron correctamente sobre el HEAD
+validado indicado arriba:
+
+- Verify foundation: lint, typecheck, build, pruebas, integridad de fuentes,
+  verificación de seguridad y auditoría npm; cero vulnerabilidades reportadas.
+- Supabase local migrations: matrices fresh, upgrade y hosted-compatible
+  aprobadas, con pruebas de base de datos e integración.
+
+Runs:
+- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44104460321
+- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44104460333
+
+Esta evidencia no representa una migración aplicada en Supabase alojado ni una
+autorización de merge o despliegue.
