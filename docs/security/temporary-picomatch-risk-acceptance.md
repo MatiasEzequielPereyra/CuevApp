@@ -3,7 +3,7 @@
 Fecha de evaluación: 2026-11-17  
 Rama evaluada: `feature/routine-text-mentions`  
 HEAD evaluado: `0e03d042aebce367b90f222875a33da8b33175b2`  
-Estado: excepción propuesta para revisión; no equivale a declarar el hallazgo corregido.
+Estado: excepción técnica acotada implementada en CI; no equivale a declarar el hallazgo corregido.
 
 ## Hallazgo
 
@@ -65,6 +65,9 @@ esta excepción y confirmar que ambas instalaciones vulnerables desaparecieron.
 ## Estado de aprobación
 
 La autorización para preparar esta documentación se recibió en la conversación
-de trabajo. La excepción técnica no se considera activa para CI hasta que se
-implemente un verificador estricto y acotado, se valide con casos positivos y
-negativos, y el PR muestre todos los checks requeridos en verde.
+de trabajo. La excepción técnica se implementa mediante `scripts/check-dependency-audit.mjs`.
+El verificador permite únicamente el grafo de 14 entradas reportado por npm,
+las versiones y rutas dev fijadas en el lockfile, y el advisory exacto. Sus
+pruebas positivas y negativas se ejecutan en CI. La excepción permanece
+condicionada a que el audit de producción siga limpio y a que todos los checks
+del PR estén verdes; no autoriza merge por sí sola.
