@@ -1,5 +1,5 @@
 begin;
-select plan(35);
+select plan(36);
 
 -- Stable test identities and sessions. All fixtures are rolled back at the end.
 insert into auth.users(id,aud,role,email,created_at,updated_at) values
@@ -141,11 +141,11 @@ select is((public.cueva_routine_text_write(
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
 )->>'revision')::integer,1,'publication fixture saves its initial text draft');
 
-select throws_ok($select public.cueva_routine_text_write(
+select throws_ok($routine_test$select public.cueva_routine_text_write(
  'publish','b3000000-0000-4000-8000-000000000003',1,'Bloque alterado',null,
  'ba000000-0000-4000-8000-000000000011',null,'text','Press banca',
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
-)$,'40001',null,'a text-document mismatch aborts publication');
+)$routine_test$,'40001',null,'a text-document mismatch aborts publication');
 
 select is((select count(*)::integer from public.cueva_routine_publications
  where student_id='b3000000-0000-4000-8000-000000000003'),0,
@@ -163,11 +163,11 @@ select is((public.cueva_routine_text_write(
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
 )->>'draft_revision')::integer,1,'retry after a lost publish response returns the committed snapshot');
 
-select throws_ok($select public.cueva_routine_text_write(
+select throws_ok($routine_test$select public.cueva_routine_text_write(
  'publish','b3000000-0000-4000-8000-000000000003',1,'Otro bloque',null,
  'ba000000-0000-4000-8000-000000000012',null,'text','Press banca',
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
-)$,'22023',null,'a publication operation ID cannot be replayed with altered snapshot data');
+)$routine_test$,'22023',null,'a publication operation ID cannot be replayed with altered snapshot data');
 
 select is((select count(*)::integer from public.cueva_routine_publications p
  join public.cueva_routine_text_publications t on t.publication_id=p.id
