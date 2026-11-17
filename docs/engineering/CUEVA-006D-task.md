@@ -1,6 +1,6 @@
 # CUEVA-006D — Rutinas en texto libre con menciones de ejercicios
 
-Estado: implementación en rama aislada; revisión, CI e integración pendientes.
+Estado: implementación en rama aislada y validación CI aprobada; auditoría final e integración pendientes.
 Fecha de decisión: 2026-11-16.
 
 ## Decisión de producto CONFIRMED
@@ -88,8 +88,8 @@ otro formato.
   UUID inexistente/inactivo, offsets inválidos y payloads malformados.
 - Lint, typecheck, build, pruebas, verificación de fuentes/seguridad y las tres
   variantes de migración local (fresh, upgrade, hosted-compatible) se reportan
-  con resultados reales. CI y auditoría independiente pendientes antes de
-  integrar.
+  con resultados reales. CI completada y aprobada en el HEAD documentado abajo;
+  auditoría final e integración siguen pendientes antes de integrar.
 
 ## Entrega
 
@@ -97,3 +97,22 @@ Rama: feature/routine-text-mentions.
 Base verificada al iniciar: d85d7bca01d60b6f8bdca4477885ecb4f85c21ff.
 Sin merge ni deploy. Registrar HEAD, archivos, pruebas, riesgos y estado de
 migración en el handoff; el Orchestrator realiza auditoría e integración.
+
+
+## Handoff de validación — 2026-11-17
+
+- Rama: `feature/routine-text-mentions`.
+- HEAD validado: `1e84e79cd50bc6083ef42c942509e1635fb14d75`.
+- Commit de actualización de seguridad incorporado: Next.js y
+  `eslint-config-next` `16.4.6`, con lockfile sincronizado.
+- Verify foundation: aprobado; `npm audit` reportó cero vulnerabilidades.
+- Supabase local migrations: aprobadas las matrices `fresh`, `upgrade` y
+  `hosted-compatible`, incluyendo pruebas SQL, concurrencia de publicación y
+  escenarios de integración de navegador.
+- Evidencia:
+  - https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44104460321
+  - https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44104460333
+- No se creó PR, no se integró a `main`, no se desplegó y no se escribió en
+  Supabase alojado. CUEVA-003B y CUEVA-005 permanecen fuera de alcance.
+- La rama sigue deliberadamente aislada; no incorporar el resto de los cambios
+  de `main` como parte de este handoff.
