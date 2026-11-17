@@ -32,6 +32,7 @@ export function NoteEditor({ id, initial, template = false, templates = [], publ
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const current = useRef(local);
   const busy = useRef(false);
+  const saveAttempt = useRef<{ revision: number; snapshot: Note; operation: string } | null>(null);
   const publishAttempt = useRef<{ revision: number; operation: string } | null>(null);
   const labels: Record<Status, string> = { clean: "Sin cambios", dirty: "Cambios pendientes de guardar", saving: "Guardando…", saved: "Borrador guardado", error: "Error de guardado", conflict: "Conflicto entre versiones" };
   const unsaved = !same(local, saved);
@@ -53,14 +54,26 @@ export function NoteEditor({ id, initial, template = false, templates = [], publ
     if (busy.current || status === "conflict" || same(current.current, saved)) return;
     if (template && !current.current.title?.trim()) { setStatus("error"); setMessage("Escribí un título para guardar la plantilla."); return; }
     busy.current = true;
-    const snapshot = { ...current.current };
+    // Keep the exact snapshot, base revision and operation ID across ambiguous
+    // network failures. A retry must replay the same idempotent operation.
+    const attempt = saveAttempt.current ?? {
+      revision: saved.revision,
+      snapshot: { ...current.current },
+      operation: crypto.randomUUID(),
+    };
+    saveAttempt.current = attempt;
+    const { snapshot } = attempt;
     setStatus("saving"); setMessage("");
     try {
       const response = await fetch("/api/rutinas", { method: "POST", signal: AbortSignal.timeout(15000), headers: { "Content-Type": "application/json" }, body: JSON.stringify({
-        kind: template ? "template" : "draft", id, revision: saved.revision, content: snapshot.content, plan: snapshot.plan ?? null, title: snapshot.title, format: snapshot.format ?? "blocks", text_content: snapshot.text_content ?? "", mentions: snapshot.mentions ?? [], operation: crypto.randomUUID(),
+        kind: template ? "template" : "draft", id, revision: attempt.revision, content: snapshot.content, plan: snapshot.plan ?? null, title: snapshot.title, format: snapshot.format ?? "blocks", text_content: snapshot.text_content ?? "", mentions: snapshot.mentions ?? [], operation: attempt.operation,
       }) });
       const result = await response.json();
-      if (!response.ok) { setStatus(result.conflict ? "conflict" : "error"); setMessage(result.message); return; }
+      if (!response.ok) {
+        if (result.conflict || response.status < 500) saveAttempt.current = null;
+        setStatus(result.conflict ? "conflict" : "error"); setMessage(result.message); return;
+      }
+      saveAttempt.current = null;
       const confirmed: Note = {
         content: result.note.block_content ?? snapshot.content,
         plan: result.note.plan, revision: result.note.revision,
