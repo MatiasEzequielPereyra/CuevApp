@@ -6,6 +6,7 @@ type Dependencies = {
   requireStudent(): Promise<Student | null>;
   readPreference(student: Student): Promise<{ pushEnabled: boolean } | null>;
   updatePreference(student: Student, enabled: boolean): Promise<boolean>;
+  isSubscriptionRegistered(student: Student, subscription: NonNullable<ReturnType<typeof parsePushSubscription>>): Promise<boolean | null>;
   registerSubscription(student: Student, subscription: NonNullable<ReturnType<typeof parsePushSubscription>>): Promise<"registered" | "updated" | "limit_reached" | "endpoint_in_use" | "student_not_found" | "error">;
   removeSubscription(student: Student, endpoint: string): Promise<"removed" | "error">;
   isAvailable(): boolean;
@@ -97,6 +98,12 @@ export function createPushRouteHandlers(deps: Dependencies) {
       try {
         const student = await deps.requireStudent();
         if (!student) return reply({ message: "Acceso restringido." }, 403);
+        if (new URL(request.url).searchParams.get("check") === "1") {
+          const registered = await deps.isSubscriptionRegistered(student, parsed);
+          return registered === null
+            ? reply({ message: "No pudimos verificar este dispositivo." }, 503)
+            : reply({ registered });
+        }
         const outcome = await deps.registerSubscription(student, parsed);
         if (outcome === "limit_reached") return reply({ message: "Alcanzaste el máximo de dispositivos registrados." }, 409);
         if (outcome === "endpoint_in_use") return reply({ message: "Este dispositivo ya está vinculado a otra cuenta." }, 409);

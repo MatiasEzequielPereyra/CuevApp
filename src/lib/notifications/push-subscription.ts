@@ -26,7 +26,10 @@ export function parsePushEndpoint(value: unknown): string | null {
     const hostname = endpoint.hostname.toLowerCase();
     const allowed = ALLOWED_HOSTS.has(hostname)
       || hostname.endsWith(".push.services.mozilla.com")
-      || hostname.endsWith(".notify.windows.com");
+      || hostname.endsWith(".notify.windows.com")
+      // Chromium's staging FCM host also serves other routes. Allow only the push endpoint.
+      || (hostname === "jmt17.google.com" && /^\/fcm\/send\/[A-Za-z0-9:_-]+$/.test(endpoint.pathname)
+        && !endpoint.search);
     if (endpoint.protocol !== "https:" || !allowed || endpoint.username || endpoint.password
       || (endpoint.port !== "" && endpoint.port !== "443")
       || endpoint.hash || endpoint.href.length > 2048) return null;

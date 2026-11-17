@@ -1,28 +1,18 @@
 # Backlog de CUEVA
 
-## Estado vigente reconciliado — 2026-11-16
+## Estado vigente reconciliado — 2026-11-17
 
-HEAD de `main`: `640324bc0fbf97b0777ddd7080c33ff13c378e45`. PR #53 está integrado; el portal del alumno y la RPC de ejercicios asignados ya forman parte del código de `main`. Esto no equivale a afirmar que los componentes de Supabase Hosted estén aplicados: la última evidencia alojada registrada en PR #59 observó ausentes `cueva_notification_inbox` y `cueva_student_assigned_exercises()`. Mantener el rollout alojado y sus pruebas postflight como pendiente hasta verificarlo.
+- El portal del alumno, Mi Membresía, comprobantes, Vencimientos y Pagos están
+  publicados. La RPC alojada de ejercicios asignados está pendiente.
+- CUEVA-005 tiene el código publicado y las doce migraciones aplicadas. Quedan
+  pendientes la entrega Push y la activación de envíos automáticos.
+- CUEVA-006 incluye editor, biblioteca de ejercicios y lectura de la rutina
+  publicada. El registro e historial de entrenamiento siguen pendientes.
+- La PWA se puede instalar y abrir desde el ícono. Falta la consulta de rutinas
+  sin conexión.
 
-Estado de tracks a distinguir:
-
-- CUEVA-003B Vencimientos: integrado y cerrado como baseline; no reabrir ni modificar.
-- CUEVA-004 / Mi Membresía y comprobantes: funcionalidades integradas en código; consultar el checkpoint y el estado alojado antes de afirmar operación completa.
-- CUEVA-005 Notificaciones: código integrado en `main`; rollout alojado y verificación de envíos reales pendientes. No confundir con “NOT_STARTED” de la tabla histórica inferior.
-- CUEVA-006 Rutinas: editor, publicación, biblioteca y lectura de la última rutina están integrados; el registro persistente de resultados/historial del alumno y la experiencia retomable siguen siendo trabajo pendiente.
-- CUEVA-008 / PWA: instalación y entrada desde el ícono están implementadas; la lectura offline segura de rutinas y la aceptación integral siguen pendientes de validar.
-
-Las tablas y estados de las secciones inferiores describen planificación histórica de octubre/noviembre y no prevalecen sobre este resumen ni sobre los cierres posteriores del checkpoint. No usarlos como estado actual sin una nueva auditoría.
-
-
-## Estado vigente — 2026-11-13
-
-Rutinas por días y bloques, biblioteca de ejercicios y videos, Mi Membresía,
-comprobantes, vencimientos y mejoras de Pagos ya están en el código publicado.
-CUEVA-005 está integrado en `main`. Queda pendiente el rollout de notificaciones
-en Supabase y la verificación de envíos reales. Los estados locales de abajo son
-históricos. Ver [checkpoint](checkpoint.md) para el estado observado de GitHub,
-Vercel y Supabase.
+Ver [checkpoint](checkpoint.md) para la verificación de GitHub, Vercel y Supabase.
+Las secciones inferiores conservan el historial de planificación y entrega.
 
 ## Incremento vigente — CUEVA-006C, 2026-11-06
 

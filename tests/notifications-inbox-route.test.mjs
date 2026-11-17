@@ -26,11 +26,16 @@ function makeHarness(options = {}) {
   return { handlers, state };
 }
 
-function request(body, requestOrigin = origin) {
+function request(body, requestOrigin = origin, declaredLength) {
+  const payload = JSON.stringify(body);
   return new Request(origin + "/api/notifications/inbox", {
     method: "PATCH",
-    headers: { origin: requestOrigin, "content-type": "application/json" },
-    body: JSON.stringify(body),
+    headers: {
+      origin: requestOrigin,
+      "content-type": "application/json",
+      "content-length": declaredLength ?? String(Buffer.byteLength(payload)),
+    },
+    body: payload,
   });
 }
 
@@ -50,6 +55,15 @@ test("rechaza identificadores inválidos", async () => {
 test("rechaza cuerpos mayores al límite permitido", async () => {
   const { handlers, state } = makeHarness();
   assert.equal((await handlers.PATCH(request({ id: notificationId, extra: "x".repeat(300) }))).status, 400);
+  assert.equal(state.authCalls, 0);
+});
+
+test("rechaza longitudes declaradas malformadas y limita el cuerpo real", async () => {
+  const { handlers, state } = makeHarness();
+  for (const length of ["4.4", "-1", "44, 44", "\\ddd"]) {
+    assert.equal((await handlers.PATCH(request({ id: notificationId }, origin, length))).status, 400);
+  }
+  assert.equal((await handlers.PATCH(request({ id: notificationId, extra: "x".repeat(300) }, origin, "44"))).status, 400);
   assert.equal(state.authCalls, 0);
 });
 

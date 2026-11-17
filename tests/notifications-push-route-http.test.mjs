@@ -25,6 +25,7 @@ function makeHarness(options = {}) {
     removeOutcome: options.removeOutcome ?? "removed",
     updateFails: false,
     registerCalls: 0,
+    checkedFor: null,
   };
   const handlers = createPushRouteHandlers({
     sameOrigin: request => request.headers.get("origin") === origin,
@@ -34,6 +35,10 @@ function makeHarness(options = {}) {
       if (state.updateFails) return false;
       state.preference = enabled;
       return true;
+    },
+    isSubscriptionRegistered: async (student, parsed) => {
+      state.checkedFor = { studentId: student.studentId, endpoint: parsed.endpoint };
+      return options.checkedStatus === undefined ? false : options.checkedStatus;
     },
     registerSubscription: async (student, parsed) => {
       state.registerCalls += 1;
@@ -50,14 +55,15 @@ function makeHarness(options = {}) {
   return { handlers, state };
 }
 
-function request(method, body, requestOrigin = origin) {
-  return new Request(`${origin}/api/notifications/push`, {
+function request(method, body, requestOrigin = origin, checkOnly = false) {
+  const payload = body === undefined ? undefined : JSON.stringify(body);
+  return new Request(`${origin}/api/notifications/push${checkOnly ? "?check=1" : ""}`, {
     method,
     headers: {
       origin: requestOrigin,
-      ...(body === undefined ? {} : { "content-type": "application/json" }),
+      ...(payload === undefined ? {} : { "content-type": "application/json", "content-length": String(Buffer.byteLength(payload)) }),
     },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    body: payload,
   });
 }
 
@@ -128,6 +134,23 @@ test("POST binds registration to the authenticated alumno, ignores a spoofed stu
   assert.equal(response.status, 200);
   assert.equal(state.registeredFor.studentId, "student-own");
   assert.equal(state.preference, true);
+});
+
+test("checking a device requires the same origin, session and validated payload and never registers it", async () => {
+  const { handlers, state } = makeHarness({ checkedStatus: true });
+  const check = (body = subscription, requestOrigin = origin) => request("POST", body, requestOrigin, true);
+  assert.equal((await handlers.POST(check(subscription, "https://attacker.example"))).status, 403);
+  assert.equal((await handlers.POST(check({ ...subscription, endpoint: "https://attacker.example" }))).status, 400);
+  assert.equal(state.checkedFor, null);
+  assert.equal((await makeHarness({ authenticated: false }).handlers.POST(check())).status, 403);
+  assert.deepEqual(await json(await handlers.POST(check({ ...subscription, studentId: "student-victim" }))), {
+    status: 200, body: { registered: true },
+  });
+  assert.deepEqual(state.checkedFor, { studentId: "student-own", endpoint: subscription.endpoint });
+  assert.equal(state.registerCalls, 0);
+  assert.equal(state.preference, false);
+  assert.deepEqual(await json(await makeHarness().handlers.POST(check())), { status: 200, body: { registered: false } });
+  assert.equal((await makeHarness({ checkedStatus: null }).handlers.POST(check())).status, 503);
 });
 
 test("POST reports the atomic device cap and cross-account endpoint conflicts without enabling push", async () => {

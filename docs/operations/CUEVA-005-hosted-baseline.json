@@ -1,0 +1,105 @@
+{
+  "date": "2026-11-16",
+  "source": "Supabase Hosted, consulta de catálogo de solo lectura",
+  "project": "vbkzoojkdkcugxhneyzi",
+  "postgres": "17.11",
+  "region": "ca-central-1",
+  "history": [
+    {
+      "version": "20261103133258",
+      "name": "cueva_product_access"
+    },
+    {
+      "version": "20261104134034",
+      "name": "cueva_students"
+    },
+    {
+      "version": "20261104151203",
+      "name": "cueva_billing"
+    },
+    {
+      "version": "20261104180504",
+      "name": "cueva_student_invitations"
+    },
+    {
+      "version": "20261104184815",
+      "name": "cueva_invitation_reconciliation"
+    },
+    {
+      "version": "20261105112339",
+      "name": "cueva_delete_empty_student"
+    },
+    {
+      "version": "20261105175913",
+      "name": "cueva_invitation_reauthorization"
+    },
+    {
+      "version": "20261106154120",
+      "name": "cueva_routines"
+    },
+    {
+      "version": "20261106154126",
+      "name": "cueva_structured_routines"
+    },
+    {
+      "version": "20261107013614",
+      "name": "cueva_006c_private_recovery_snapshot"
+    },
+    {
+      "version": "20261107013659",
+      "name": "cueva_routine_days"
+    },
+    {
+      "version": "20261107013708",
+      "name": "cueva_exercise_videos"
+    },
+    {
+      "version": "20261107023149",
+      "name": "cueva_006c_legacy_writer_release_bridge"
+    },
+    {
+      "version": "20261107032750",
+      "name": "cueva_006c_legacy_writer_release_bridge_close"
+    },
+    {
+      "version": "20261107051318",
+      "name": "cueva_membership_read"
+    },
+    {
+      "version": "20261107153349",
+      "name": "cueva_payment_receipts"
+    },
+    {
+      "version": "20261111190623",
+      "name": "cueva_003b_due_dates"
+    },
+    {
+      "version": "20261115154313",
+      "name": "cueva_my_routine_video_ids"
+    }
+  ],
+  "hostedSchemaCompatibility": "PASS",
+  "notificationTables": 0,
+  "notificationFunctions": 0,
+  "studentAssignedExercises": false,
+  "extensions": {
+    "pg_cron": {
+      "installed": null,
+      "available": "1.6.4"
+    },
+    "pg_net": {
+      "installed": null,
+      "available": "0.20.4"
+    },
+    "supabase_vault": {
+      "installed": "0.3.1",
+      "available": "0.3.1"
+    }
+  },
+  "financeFingerprint": {
+    "billing_writer": "7a63762f0fb2e59c683103a44d8d051bf92b72d89a43d31e813ac034acb6084e",
+    "billing_wrapper": "de1f25d7c47f2bf70d6f2861838165116e16fce9f5ee66493004ef5e0475995b",
+    "protected_policies": "e0411fc9fc5e7c6bf63b28fe5c6d0f64d889da4fbdee7f0bee14e3c7189951bf",
+    "shared_payment_lock": true
+  }
+}
