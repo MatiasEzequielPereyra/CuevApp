@@ -1,5 +1,5 @@
 begin;
-select plan(37);
+select plan(39);
 
 -- Stable test identities and sessions. All fixtures are rolled back at the end.
 insert into auth.users(id,aud,role,email,created_at,updated_at) values
@@ -198,11 +198,32 @@ select throws_ok($$select public.cueva_routine_text_write(
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":0,"end":20,"text":"Catálogo sin asignar"}]'::jsonb
 )$$,'22023',null,'a new mention of an inactive exercise is rejected');
 
-select throws_ok($$select public.cueva_routine_text_write(
+select throws_ok($select public.cueva_routine_text_write(
  'draft','b3000000-0000-4000-8000-000000000001',1,'Notas de bloque',null,
  'ba000000-0000-4000-8000-000000000007',null,'text','Catálogo sin asignar',
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":0,"end":20,"text":"Catálogo sin asignar"}]'::jsonb
-)$$,'22023',null,'an inactive reference in any template cannot authorize a new mention in another draft');
+)$,'22023',null,'an inactive reference in any template cannot authorize a new mention in another draft');
+
+-- An inactive reference already in this exact draft may be preserved, but
+-- it cannot be duplicated to create an additional new mention.
+reset role;
+update public.cueva_routine_text_drafts
+set format='text', text_content='Catálogo sin asignar', block_content='',
+    mentions='[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":0,"end":20,"text":"Catálogo sin asignar"}]'::jsonb
+where kind='draft' and owner_id='b3000000-0000-4000-8000-000000000003';
+set local role authenticated;
+
+select is((public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',1,'Catálogo sin asignar',null,
+ 'ba000000-0000-4000-8000-000000000020',null,'text','Catálogo sin asignar',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":0,"end":20,"text":"Catálogo sin asignar"}]'::jsonb
+)->>'revision')::integer,2,'an existing inactive mention in the same draft can be preserved');
+
+select throws_ok($select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',2,'Catálogo sin asignar y Catálogo sin asignar',null,
+ 'ba000000-0000-4000-8000-000000000021',null,'text','Catálogo sin asignar y Catálogo sin asignar',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":0,"end":20,"text":"Catálogo sin asignar"},{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":23,"end":43,"text":"Catálogo sin asignar"}]'::jsonb
+)$,'22023',null,'an inactive historical mention cannot be duplicated into a new occurrence');
 
 select throws_ok($$select public.cueva_routine_text_write(
  'draft','b3000000-0000-4000-8000-000000000001',1,'Notas de bloque',null,
