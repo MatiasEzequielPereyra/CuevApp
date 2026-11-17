@@ -141,7 +141,7 @@ select is((public.cueva_routine_text_write(
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
 )->>'revision')::integer,1,'publication fixture saves its initial text draft');
 
-select throws_ok($routine_test$$select public.cueva_routine_text_write(
+select throws_ok($routine_test$select public.cueva_routine_text_write(
  'publish','b3000000-0000-4000-8000-000000000003',1,'Bloque alterado',null,
  'ba000000-0000-4000-8000-000000000011',null,'text','Press banca',
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
@@ -163,7 +163,7 @@ select is((public.cueva_routine_text_write(
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
 )->>'draft_revision')::integer,1,'retry after a lost publish response returns the committed snapshot');
 
-select throws_ok($routine_test$$select public.cueva_routine_text_write(
+select throws_ok($routine_test$select public.cueva_routine_text_write(
  'publish','b3000000-0000-4000-8000-000000000003',1,'Otro bloque',null,
  'ba000000-0000-4000-8000-000000000012',null,'text','Press banca',
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
@@ -174,7 +174,7 @@ select is((select count(*)::integer from public.cueva_routine_publications p
  where p.student_id='b3000000-0000-4000-8000-000000000003'),1,
  'one atomic base publication and text snapshot remain after retries');
 
-select throws_ok($$$select public.cueva_routine_text_write(
+select throws_ok($select public.cueva_routine_text_write(
  'draft','b3000000-0000-4000-8000-000000000001',0,'Notas de bloque',null,
  'ba000000-0000-4000-8000-000000000001',null,'text','Press banca',
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000002","start":0,"end":11,"text":"Press banca"}]'::jsonb
@@ -182,6 +182,7 @@ select throws_ok($$$select public.cueva_routine_text_write(
 
 -- A template may preserve an inactive historical reference, but it must
 -- not authorize introducing that exercise into an unrelated student draft.
+reset role;
 insert into public.cueva_routine_text_drafts(
  kind,owner_id,revision,format,text_content,block_content,mentions,save_id,updated_by
 ) values (
@@ -189,8 +190,9 @@ insert into public.cueva_routine_text_drafts(
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":0,"end":20,"text":"Catálogo sin asignar"}]'::jsonb,
  'ba200000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001'
 );
+set local role authenticated;
 
-select throws_ok($$select public.cueva_routine_text_write(
+select throws_ok($select public.cueva_routine_text_write(
  'draft','b3000000-0000-4000-8000-000000000001',1,'Notas de bloque',null,
  'ba000000-0000-4000-8000-000000000006',null,'text','Catálogo sin asignar',
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":0,"end":20,"text":"Catálogo sin asignar"}]'::jsonb
@@ -202,7 +204,7 @@ select throws_ok($$select public.cueva_routine_text_write(
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":0,"end":20,"text":"Catálogo sin asignar"}]'::jsonb
 )$$,'22023',null,'an inactive reference in any template cannot authorize a new mention in another draft');
 
-select throws_ok($$$select public.cueva_routine_text_write(
+select throws_ok($select public.cueva_routine_text_write(
  'draft','b3000000-0000-4000-8000-000000000001',1,'Notas de bloque',null,
  'ba000000-0000-4000-8000-000000000003',null,'text','Press banca',
  '[{"exercise_id":"not-a-uuid","start":0,"end":11,"text":"Press banca"}]'::jsonb
