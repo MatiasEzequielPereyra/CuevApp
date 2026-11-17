@@ -382,6 +382,22 @@ test("aplicar una plantilla confirma antes de reemplazar un borrador solo de tex
   await expect(textarea).toHaveValue("Rutina personalizada que no debe perderse");
 });
 
+test("reintentar un guardado cuya respuesta se perdió reutiliza la misma operación", async ({ page }) => {
+  await page.goto(`${origin}/rutinas?alumno=${shortId}`);
+  const editor = page.getByRole("region", { name: "Editor de rutina" });
+  await editor.getByRole("button", { name: "Texto libre" }).click();
+  routines.loseNextSaveResponse();
+  const textarea = editor.getByRole("textbox", { name: "Rutina en texto libre" });
+  await textarea.fill("Rutina confirmada en servidor aunque se perdió la respuesta");
+  await expect(editor.getByRole("alert")).toContainText("No se pudo guardar");
+  await editor.getByRole("button", { name: "Reintentar guardado" }).click();
+  await expect(editor.getByText("Borrador guardado", { exact: true })).toBeVisible();
+  expect(routines.operations.filter(step => step === "draft")).toHaveLength(1);
+  expect(routines.saveOperationIds).toHaveLength(2);
+  expect(routines.saveOperationIds[1]).toBe(routines.saveOperationIds[0]);
+  await expect(textarea).toHaveValue("Rutina confirmada en servidor aunque se perdió la respuesta");
+});
+
 test("texto libre vincula menciones por UUID y publica la instantánea visible para el alumno", async ({ page, browser }) => {
   await page.setViewportSize({ width: 390, height: 820 });
   await page.goto(`${origin}/rutinas?alumno=${shortId}`);
