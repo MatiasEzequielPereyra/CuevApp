@@ -89,7 +89,7 @@ export function rebaseRoutineMentions(
   let suffix = 0;
   while (suffix < oldPoints.length - prefix && suffix < newPoints.length - prefix &&
     oldPoints[oldPoints.length - 1 - suffix] === newPoints[newPoints.length - 1 - suffix]) suffix++;
-  const oldEnd = oldPoints.length - suffix, delta = newPoints.length - oldEnd;
+  const oldEnd = oldPoints.length - suffix, delta = newPoints.length - oldPoints.length;
   return mentions.flatMap(mention => {
     if (mention.end <= prefix) return [mention];
     if (mention.start >= oldEnd) return [{ ...mention, start: mention.start + delta, end: mention.end + delta }];
