@@ -366,6 +366,22 @@ for (const width of [360, 390, 1440]) {
 }
 
 
+test("aplicar una plantilla confirma antes de reemplazar un borrador solo de texto", async ({ page }) => {
+  await page.goto(`${origin}/rutinas?alumno=${shortId}`);
+  const editor = page.getByRole("region", { name: "Editor de rutina" });
+  await editor.getByRole("button", { name: "Texto libre" }).click();
+  const textarea = editor.getByRole("textbox", { name: "Rutina en texto libre" });
+  await textarea.fill("Rutina personalizada que no debe perderse");
+  await editor.getByText("Usar plantilla", { exact: true }).click();
+  await editor.getByRole("combobox", { name: "Plantilla" }).selectOption("cccccccc-cccc-4ccc-8ccc-cccccccccccc");
+  page.once("dialog", async dialog => {
+    expect(dialog.message()).toContain("¿Reemplazar el contenido del borrador");
+    await dialog.dismiss();
+  });
+  await editor.getByRole("button", { name: "Copiar al borrador" }).click();
+  await expect(textarea).toHaveValue("Rutina personalizada que no debe perderse");
+});
+
 test("texto libre vincula menciones por UUID y publica la instantánea visible para el alumno", async ({ page, browser }) => {
   await page.setViewportSize({ width: 390, height: 820 });
   await page.goto(`${origin}/rutinas?alumno=${shortId}`);
