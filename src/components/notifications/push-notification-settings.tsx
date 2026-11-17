@@ -22,23 +22,42 @@ async function readSettings(): Promise<PushSettings> {
   return response.json() as Promise<PushSettings>;
 }
 
+async function confirmSubscription(subscription: PushSubscription, checkOnly = false): Promise<boolean> {
+  const response = await fetch(`/api/notifications/push${checkOnly ? "?check=1" : ""}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(subscription.toJSON()),
+  });
+  const result = await response.json().catch(() => null) as { registered?: boolean; message?: string } | null;
+  if (!response.ok || typeof result?.registered !== "boolean") {
+    throw new Error(result?.message ?? "No pudimos confirmar el registro de este dispositivo.");
+  }
+  return result.registered;
+}
+
 export function PushNotificationSettings() {
   const [settings, setSettings] = useState<PushSettings | null>(null);
-  const [hasSubscription, setHasSubscription] = useState(false);
+  const [registered, setRegistered] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     let active = true;
     void readSettings().then(async value => {
-      let subscribed = false;
-      if ("serviceWorker" in navigator && "PushManager" in window) {
-        const registration = await navigator.serviceWorker.getRegistration("/");
-        subscribed = !!(await registration?.pushManager.getSubscription());
+      let confirmed = false;
+      try {
+        if (value.available && value.pushEnabled && "serviceWorker" in navigator
+          && "PushManager" in window && "Notification" in window && Notification.permission === "granted") {
+          const registration = await navigator.serviceWorker.getRegistration("/");
+          const subscription = await registration?.pushManager.getSubscription();
+          if (subscription) confirmed = await confirmSubscription(subscription, true);
+        }
+      } catch {
+        if (active) setMessage("No pudimos verificar el registro de este dispositivo.");
       }
       if (active) {
         setSettings(value);
-        setHasSubscription(subscribed);
+        setRegistered(confirmed);
       }
     }).catch(() => {
       if (active) setMessage("No pudimos cargar la configuración de avisos.");
@@ -71,18 +90,11 @@ export function PushNotificationSettings() {
           userVisibleOnly: true,
           applicationServerKey: applicationServerKey(settings.publicKey),
         });
-      const response = await fetch("/api/notifications/push", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(subscription.toJSON()),
-      });
-      if (!response.ok) {
-        const result = await response.json().catch(() => null) as { message?: string } | null;
-        throw new Error(result?.message ?? "No pudimos registrar este dispositivo.");
+      if (!await confirmSubscription(subscription)) {
+        throw new Error("No pudimos confirmar el registro de este dispositivo.");
       }
-      const updated = await readSettings();
-      setSettings(updated);
-      setHasSubscription(true);
+      setSettings(current => current ? { ...current, pushEnabled: true } : current);
+      setRegistered(true);
       setMessage("Este dispositivo quedó habilitado para recibir avisos.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No pudimos activar los avisos.");
@@ -102,6 +114,7 @@ export function PushNotificationSettings() {
       });
       if (!response.ok) throw new Error("No pudimos actualizar la preferencia.");
       setSettings(current => current ? { ...current, pushEnabled: false } : current);
+      setRegistered(false);
       setMessage("Los avisos push quedaron desactivados para tu cuenta. Email y avisos internos siguen activos.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No pudimos actualizar la preferencia.");
@@ -126,7 +139,7 @@ export function PushNotificationSettings() {
       </p>
     </div>
     {!settings?.available ? <p className="push-settings-note">La recepción push todavía no está configurada en el servidor. Podés seguir usando los avisos por correo y dentro de CUEVA.</p>
-      : settings.pushEnabled && hasSubscription ? <div className="push-settings-actions">
+      : settings.pushEnabled && registered ? <div className="push-settings-actions">
         <span className="push-settings-status">Push habilitado</span>
         <button type="button" onClick={disablePush} disabled={busy}>Desactivar push</button>
       </div>

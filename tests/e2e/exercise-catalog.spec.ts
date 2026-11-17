@@ -93,7 +93,7 @@ async function catalogFixture(page: Page, origin: string, theme: string, videosO
       }
       const q = (url.searchParams.get("q") ?? "").toLowerCase();
       const exercises = [...rows.values()].filter(e =>
-        e.name.toLowerCase().includes(q) &&
+        e.name.toLowerCase().startsWith(q) &&
         (url.searchParams.get("videos") !== "1" || e.video_url || e.video_path)
       );
       await route.fulfill({ json: { exercises, next: null } });
@@ -198,6 +198,24 @@ for (const width of [390, 1440]) for (const theme of ["light", "dark"]) {
   });
 }
 
+test("el catálogo filtra por prefijo automáticamente y recupera todos al borrar", async ({ page, baseURL }) => {
+  if (!baseURL) throw new Error("La prueba requiere un origen local.");
+  await catalogFixture(page, baseURL, "light");
+  const catalog = page.getByRole("region", { name: "Catálogo de ejercicios" });
+  const input = catalog.getByRole("searchbox", { name: "Buscar ejercicio" });
+  await input.fill("p");
+  await expect(catalog.getByRole("button", { name: "Plancha", exact: true })).toBeVisible();
+  await expect(catalog.getByRole("button", { name: "Sentadilla", exact: true })).toHaveCount(0);
+  await input.fill("pl");
+  await expect(catalog.getByRole("button", { name: "Plancha", exact: true })).toBeVisible();
+  await input.fill("s");
+  await expect(catalog.getByRole("button", { name: "Sentadilla", exact: true })).toBeVisible();
+  await expect(catalog.getByRole("button", { name: "Plancha", exact: true })).toHaveCount(0);
+  await input.fill("");
+  await expect(catalog.getByRole("button", { name: "Plancha", exact: true })).toBeVisible();
+  await expect(catalog.getByRole("button", { name: "Sentadilla", exact: true })).toBeVisible();
+});
+
 test("la biblioteca muestra videos de YouTube y galería y permite buscarlos", async ({ page, baseURL }) => {
   if (!baseURL) throw new Error("La prueba requiere un origen local.");
   await page.setViewportSize({ width: 360, height: 800 });
@@ -212,7 +230,6 @@ test("la biblioteca muestra videos de YouTube y galería y permite buscarlos", a
   await expect(youtubeRow.getByRole("link", { name: "Abrir video explicativo" })).toBeVisible();
 
   await library.getByLabel("Buscar ejercicio").fill("remo");
-  await library.getByRole("button", { name: "Buscar", exact: true }).click();
   await expect(library.getByRole("listitem")).toHaveCount(1);
   await expect(library.getByText("Remo", { exact: true })).toBeVisible();
   await library.getByRole("link", { name: "Consultar video" }).click();
@@ -222,7 +239,6 @@ test("la biblioteca muestra videos de YouTube y galería y permite buscarlos", a
   expect(Buffer.from(received)).toEqual(videoBytes);
 
   await library.getByLabel("Buscar ejercicio").fill("plancha");
-  await library.getByRole("button", { name: "Buscar", exact: true }).click();
   await expect(library.getByText("No encontramos videos para esa búsqueda.")).toBeVisible();
 });
 
@@ -264,11 +280,10 @@ for (const [width, theme] of [[360, "light"], [1440, "dark"]] as const) {
 test("el catálogo reintenta una carga fallida y permite dar de alta un ejercicio", async ({ page, baseURL }) => {
   if (!baseURL) throw new Error("La prueba requiere un origen local.");
   const { writes } = await catalogFixture(page, baseURL, "light", false, 0, true);
-  await expect(page.getByRole("alert")).toHaveText("No pudimos cargar el catálogo.");
-  await page.getByRole("button", { name: "Buscar", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("No pudimos cargar el catálogo.");
+  await page.getByRole("button", { name: "Reintentar búsqueda" }).click();
   await expect(page.getByRole("button", { name: "Sentadilla" })).toBeVisible();
   await page.getByLabel("Buscar ejercicio").fill("Sin coincidencias");
-  await page.getByRole("button", { name: "Buscar", exact: true }).click();
   await expect(page.getByText("No encontramos ejercicios para esa búsqueda.")).toBeVisible();
   const create = page.getByRole("button", { name: "Nuevo ejercicio" });
   await create.click();

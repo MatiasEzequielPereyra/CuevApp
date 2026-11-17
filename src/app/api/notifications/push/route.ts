@@ -56,6 +56,18 @@ const handlers = createPushRouteHandlers({
       .maybeSingle();
     return !error && !!data && data.push_enabled === enabled;
   },
+  async isSubscriptionRegistered(student, subscription) {
+    const context = student as StudentContext;
+    // Keep the endpoint and keys out of query parameters and responses.
+    const { data, error } = await context.db.from("cueva_push_subscriptions")
+      .select("endpoint,p256dh,auth_secret")
+      .eq("student_id", context.studentId)
+      .is("revoked_at", null)
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
+    if (error || !data) return null;
+    return data.some(row => row.endpoint === subscription.endpoint
+      && row.p256dh === subscription.p256dh && row.auth_secret === subscription.authSecret);
+  },
   async registerSubscription(student, subscription) {
     const context = student as StudentContext;
     const { data, error } = await context.db.rpc("cueva_register_push_subscription", {
