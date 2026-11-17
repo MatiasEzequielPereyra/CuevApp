@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { StudentShell } from "@/components/routines/student-shell";
+import { StudentPageHeading, StudentShell } from "@/components/routines/student-shell";
 import { productConfig, userClient } from "@/lib/product-auth/server";
 
 export const dynamic = "force-dynamic";
@@ -15,17 +15,19 @@ export default async function StudentProfilePage() {
   }
   const fullName = user.user_metadata?.full_name;
   const displayName = typeof fullName === "string" && fullName.trim() ? fullName.trim() : null;
+  const initials = displayName?.split(/\s+/).slice(0, 2).map(word => Array.from(word)[0]).join("").toLocaleUpperCase("es-AR");
 
   return <StudentShell active="perfil">
-    <div className="dash-heading"><div><p className="dash-overline">TU CUENTA</p><h1>Mi perfil</h1><p>Información asociada a tu acceso a CUEVA.</p></div></div>
-    <section className="dash-account">
-      <div><h2>Datos de acceso</h2>
-        <dl>
-          {displayName && <div><dt>Nombre</dt><dd>{displayName}</dd></div>}
-          <div><dt>Correo electrónico</dt><dd>{user.email ?? "No disponible"}</dd></div>
-        </dl>
-        <p>Para modificar tus datos personales o solicitar ayuda con tu cuenta, comunicate con el gimnasio.</p>
+    <StudentPageHeading title="Mi perfil" />
+    <section className="student-card student-profile" aria-labelledby="student-profile-title">
+      <div className="student-profile-header">
+        <span className="student-profile-avatar" aria-hidden="true">{initials || "C"}</span>
+        <div><h2 id="student-profile-title">{displayName ?? "Tu cuenta"}</h2><p>Alumno de CUEVA</p></div>
       </div>
+      <dl className="student-profile-data">
+        <div><dt>Correo electrónico de acceso</dt><dd>{user.email ?? "No disponible"}</dd></div>
+      </dl>
+      <p>Si necesitás actualizar tus datos, comunicate con el gimnasio.</p>
     </section>
   </StudentShell>;
 }
