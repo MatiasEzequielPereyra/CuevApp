@@ -37,20 +37,19 @@ const auth = {
 
 const routeModule = { exports: {} };
 const runtimeRequire = (name) => {
-  if (name === "next/server") return {
-    NextResponse: {
-      redirect: (url, options = {}) => new Response(null, {
-        status: options.status ?? 307,
-        headers: { location: String(url), ...(options.headers ?? {}) },
-      }),
-    },
-  };
   if (name === "@/lib/student-invitation/server") return { inviteStudent: async () => {} };
   if (name === "@/lib/product-auth/server") return {
     productConfig: () => ({ origin: state.origin }),
     userClient: async () => { state.userClientCalls += 1; return auth; },
     serviceClient: () => { throw new Error("service role must not be used for a student email change"); },
     pendingUserClient: async () => ({ auth, commit: () => {} }),
+    emailChangeCookie: "cueva-email-change",
+    emailChangeMaxAge: 86400,
+    signEmailChange: (_key, userId, email) => {
+      assert.equal(userId, state.user.id);
+      assert.equal(email, "nuevo@example.test");
+      return "fixture-proof";
+    },
   };
   return require(name);
 };
@@ -103,6 +102,11 @@ test("asks Supabase Auth to send verification and preserves the current email un
   }, {
     emailRedirectTo: "https://cueva.example/mi-perfil?correo=confirmado",
   }]);
+  const cookie = response.headers.get("set-cookie");
+  assert.match(cookie, /cueva-email-change=fixture-proof/);
+  for (const restriction of [/Path=\/mi-perfil/i, /HttpOnly/i, /Secure/i, /SameSite=lax/i]) {
+    assert.match(cookie, restriction);
+  }
 });
 
 test("does not start a verification when the requested email is already current", async () => {
@@ -116,5 +120,7 @@ test("does not start a verification when the requested email is already current"
 test("returns a generic failure when Auth cannot start the verification", async () => {
   reset();
   state.authError = { message: "sensitive provider detail" };
-  assert.equal((await run("nuevo@example.test")).status, 503);
+  const response = await run("nuevo@example.test");
+  assert.equal(response.status, 503);
+  assert.equal(response.headers.has("set-cookie"), false);
 });

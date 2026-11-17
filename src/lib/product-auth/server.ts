@@ -1,7 +1,29 @@
 import "server-only";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+
+export const emailChangeCookie = "cueva-email-change";
+export const emailChangeMaxAge = 24 * 60 * 60;
+
+function emailChangeSignature(key: string, userId: string, email: string, expires: string) {
+  return createHmac("sha256", key)
+    .update(JSON.stringify(["cueva/email-change", userId, email.trim().toLowerCase(), expires]))
+    .digest("base64url");
+}
+
+export function signEmailChange(key: string, userId: string, email: string) {
+  const expires = String(Math.floor(Date.now() / 1000) + emailChangeMaxAge);
+  return `${expires}.${emailChangeSignature(key, userId, email, expires)}`;
+}
+
+export function matchesEmailChange(proof: string | undefined, key: string, userId: string, email: string) {
+  if (!proof || !/^\d{1,12}\.[\w-]{43}$/.test(proof)) return false;
+  const [expires = "", signature = ""] = proof.split(".");
+  if (Number(expires) <= Date.now() / 1000) return false;
+  return timingSafeEqual(Buffer.from(signature), Buffer.from(emailChangeSignature(key, userId, email, expires)));
+}
 
 // Explicit opt-ins are required; no environment is enabled by default.
 export function productConfig() {

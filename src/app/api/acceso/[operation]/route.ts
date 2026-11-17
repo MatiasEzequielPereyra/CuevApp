@@ -1,7 +1,7 @@
 import { inviteStudent } from "@/lib/student-invitation/server";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { pendingUserClient, productConfig, serviceClient, userClient } from "@/lib/product-auth/server";
+import { emailChangeCookie, emailChangeMaxAge, pendingUserClient, productConfig, serviceClient, signEmailChange, userClient } from "@/lib/product-auth/server";
 
 export const dynamic = "force-dynamic";
 const fail = (status: number) => new Response("No se pudo completar la solicitud", { status, headers: { "Cache-Control": "no-store" } });
@@ -73,7 +73,12 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
     const changed = await auth.auth.updateUser({ email }, {
       emailRedirectTo: new URL("/mi-perfil?correo=confirmado", cfg.origin).href,
     });
-    return changed.error ? fail(503) : redirect("/mi-perfil?correo=pendiente");
+    if (changed.error || changed.data.user?.id !== current.data.user.id) return fail(503);
+    const response = redirect("/mi-perfil?correo=pendiente");
+    response.cookies.set(emailChangeCookie, signEmailChange(cfg.serviceKey, current.data.user.id, email), {
+      httpOnly: true, secure: !cfg.local, sameSite: "lax", path: "/mi-perfil", maxAge: emailChangeMaxAge,
+    });
+    return response;
   }
   const service = serviceClient();
   if (operation === "admin-invitar" || operation === "admin-recuperar") {
