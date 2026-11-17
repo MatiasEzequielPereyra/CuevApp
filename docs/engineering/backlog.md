@@ -1,13 +1,18 @@
 # Backlog de CUEVA
 
-## Estado vigente — 2026-11-13
+## Estado vigente reconciliado — 2026-11-17
 
-Rutinas por días y bloques, biblioteca de ejercicios y videos, Mi Membresía,
-comprobantes, vencimientos y mejoras de Pagos ya están en el código publicado.
-CUEVA-005 está integrado en `main`. Queda pendiente el rollout de notificaciones
-en Supabase y la verificación de envíos reales. Los estados locales de abajo son
-históricos. Ver [checkpoint](checkpoint.md) para el estado observado de GitHub,
-Vercel y Supabase.
+- El portal del alumno, Mi Membresía, comprobantes, Vencimientos y Pagos están
+  publicados. La RPC alojada de ejercicios asignados está pendiente.
+- CUEVA-005 tiene el código publicado y las doce migraciones aplicadas. Quedan
+  pendientes la entrega Push y la activación de envíos automáticos.
+- CUEVA-006 incluye editor, biblioteca de ejercicios y lectura de la rutina
+  publicada. El registro e historial de entrenamiento siguen pendientes.
+- La PWA se puede instalar y abrir desde el ícono. Falta la consulta de rutinas
+  sin conexión.
+
+Ver [checkpoint](checkpoint.md) para la verificación de GitHub, Vercel y Supabase.
+Las secciones inferiores conservan el historial de planificación y entrega.
 
 ## Incremento vigente — CUEVA-006C, 2026-11-06
 
