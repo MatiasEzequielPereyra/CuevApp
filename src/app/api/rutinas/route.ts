@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { studentAdmin } from "@/lib/students/server";
 import { productConfig } from "@/lib/product-auth/server";
-import { readRoutineJson } from "@/lib/routines/request";
+import { readRoutineJson, routineReadIsConsistent } from "@/lib/routines/request";
 import { uuid } from "@/lib/routines/types";
 
 const reply = (data: object, status = 200) => NextResponse.json(data, { status, headers: { "Cache-Control": "no-store" } });
@@ -59,7 +59,7 @@ export async function GET(req: Request) {
   // These reads run concurrently and are not a shared database snapshot.
   // A save committed between them can otherwise mix two revisions in the
   // comparison UI. Refuse that transient result and let the admin retry.
-  if (textDocument && textDocument.revision !== (data?.revision ?? 0)) {
+  if (!routineReadIsConsistent(data?.revision, textDocument?.revision)) {
     return reply({ message: "La rutina cambió mientras consultábamos la revisión. Volvé a comparar; tu borrador sigue en el editor." }, 503);
   }
   return reply({ note: {
