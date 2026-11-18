@@ -1,5 +1,32 @@
 # Cambio de correo del alumno
 
+## Revalidación después de integrar #64 — 2026-11-18
+
+Base real: `a019bded9c4d3340feab2d32c2116e0d4e9796d8`, main con #64
+integrado. Mi perfil conserva encabezado, avatar y tarjetas publicados; correo
+y contraseña coexisten con formularios y resultados independientes. La resolución
+de la API conserva completas las ramas `cambiar-correo` y `cambiar-contrasena`.
+
+Resultados nuevos: tipos y build aprobados; 7 pruebas UI de roles/perfil, 17 de
+API y 8 SQL aprobadas. Con Auth y Mailpit reales aislados, la primera confirmación
+conservó las tres direcciones anteriores; la segunda sincronizó Auth, ficha e
+invitación por el mismo UUID. Parámetro manual y comprobante adulterado no
+mostraron éxito. Después del cambio confirmado, esa misma identidad cambió su
+contraseña y volvió a ingresar con correo y contraseña nuevos; el correo anterior
+y la contraseña anterior dejaron de autenticar. Ambos formularios permanecieron
+en el perfil y las direcciones siguieron sincronizadas.
+
+La migración mantiene su hash documentado. No se aplicó alojada. El orden sigue
+siendo: preflight de esquema/historial y autorización operativa, aplicar sólo el
+SQL aprobado, postflight y recién después merge/publicación automática del código.
+No publicar el formulario antes de verificar el trigger. El HEAD y CI definitivos
+se registran en el PR; los resultados locales no acreditan el flujo alojado.
+
+SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`,
+`cueva-supabase-security`, `supabase:supabase`, `resolving-merge-conflicts`,
+`vercel:react-best-practices`, `cueva-acceptance-audit`, `code-review` y `pr`.
+SKILL_SOURCES: `.agents/skills/<nombre>/SKILL.md` y guías del host.
+
 Estado REVIEW. El flujo y la migración se probaron en el entorno local aislado.
 La integración y aplicación alojada quedan a cargo del Orchestrator.
 
@@ -20,8 +47,9 @@ La integración y aplicación alojada quedan a cargo del Orchestrator.
   24 horas. El parámetro `correo=confirmado` por sí solo jamás acredita el
   cambio. Si se abre el correo en otro navegador, el visitante debe ingresar
   con su dirección vigente para ver el correo actual en el perfil.
-- Nombre, apellido y DNI siguen siendo de administración. No se agrega teléfono,
-  contraseña editable ni permiso de actualización general sobre \`cueva_students\`.
+- Nombre, apellido y DNI siguen siendo de administración. La contraseña conserva
+  el formulario y flujo propio integrado en #64. No se agrega teléfono ni permiso
+  de actualización general sobre \`cueva_students\`.
 
 ## Sincronización de identidad
 

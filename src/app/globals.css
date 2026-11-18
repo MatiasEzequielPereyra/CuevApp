@@ -258,14 +258,6 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
 .routine-template-picker a { display:inline-block; margin:16px; color:var(--dash-accent); }
 .routine-template-picker label { margin-block:16px; }
 .routine-list-heading { margin-block:32px 20px; }
-.student-dashboard { display:block; min-height:100dvh; }
-.student-dashboard .dash-header,.student-dashboard .dash-main { max-width:1000px; margin-inline:auto; }
-.student-dashboard .dash-header { justify-content:space-between; }
-.student-routine-nav { position:fixed; bottom:0; left:0; right:0; z-index:5; display:flex; justify-content:center; gap:40px; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); background:var(--dash-panel); border-top:1px solid var(--dash-border); }
-.student-routine-nav a { display:grid; place-content:center; min-height:44px; color:var(--dash-muted); text-decoration:none; }
-.student-routine-nav a[aria-current] { color:var(--dash-accent); font-weight:700; }
-.routine-account-link { display:inline-block; margin-top:20px; padding-block:12px; color:var(--dash-accent); }
-.student-dashboard .dash-main { padding-bottom:120px; }
 .routine-builder { border:0; padding:0; margin:28px 0; min-width:0; }
 .routine-builder > legend { font-size:20px; font-weight:700; }
 .routine-block,.routine-target,.exercise-catalog { min-width:0; border:1px solid var(--dash-border); border-radius:12px; padding:18px; margin-top:20px; background:var(--dash-panel-alt); }
@@ -297,16 +289,6 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
 .exercise-catalog textarea { width: 100%; min-height: 100px; padding: 12px; border: 1px solid var(--dash-border); border-radius: 8px; font: inherit; color: var(--dash-text); background: var(--dash-bg); resize: vertical; }
 .routine-plan-view select { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--dash-border); border-radius: 8px; color: var(--dash-text); background: var(--dash-bg); font: inherit; }
 
-.membership-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 12px; margin-block: 20px; }
-.membership-card { min-width: 0; padding: 18px; border: 1px solid var(--dash-border); border-radius: 12px; background: var(--dash-panel); }
-.membership-card dl { display: grid; gap: 12px; margin-block: 16px 0; }
-.membership-card dl > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
-.membership-card dt { color: var(--dash-muted); }
-.membership-card dd { margin: 0; font-weight: 700; }
-.membership-history { display: grid; gap: 10px; margin-top: 28px; }
-.membership-history summary { cursor: pointer; min-height: 44px; }
-.membership-payment-list { padding-inline-start: 22px; }
-.student-routine-nav { gap: clamp(12px, 5vw, 40px); }
 .receipt-form { min-width: 0; margin-top: 12px; }
 .receipt-form fieldset { display: grid; gap: 12px; min-width: 0; margin: 0; border: 0; padding: 0; }
 .receipt-form input, .receipt-form select, .receipt-form textarea { max-width: 100%; min-width: 0; }
@@ -352,7 +334,6 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
 }
 .push-settings-panel > div:first-child { min-width: 0; }
 .push-settings-panel h2 { margin: 0; font-size: 24px; }
-.push-settings-kicker { margin: 0 0 9px; color: var(--dash-muted); font-size: 10px; font-weight: 700; letter-spacing: .14em; }
 .push-settings-description, .push-settings-note, .push-settings-message { max-width: 620px; margin: 10px 0 0; color: var(--dash-muted); font-size: 13px; line-height: 1.6; }
 .push-settings-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .push-settings-actions button {
@@ -687,12 +668,270 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
   .exercise-management .routine-catalog-search label { flex-basis: 100%; }
 }
 
-/* Student navigation: five clear destinations, with a compact mobile overflow. */
-.student-routine-nav { gap: clamp(12px, 3vw, 36px); }
-.student-routine-nav a { padding-inline: 5px; font-size: 12px; font-weight: 600; white-space: nowrap; }
-@media (max-width: 600px) {
-  .student-routine-nav { justify-content: flex-start; gap: 8px; overflow-x: auto; padding-inline: 12px; }
-  .student-routine-nav a { flex: 1 0 auto; padding-inline: 9px; font-size: 11px; }
+/* Student portal */
+.student-dashboard {
+  --student-positive-text: #17643e;
+  --student-positive-bg: #e3f5e9;
+  --student-waiting-text: #805009;
+  --student-waiting-bg: #fff0d7;
+  --student-negative-text: #a22e42;
+  --student-negative-bg: #fce7eb;
+  display: block;
+  min-height: 100dvh;
+}
+:root[data-theme="dark"] .student-dashboard {
+  --student-positive-text: #9de2b9;
+  --student-positive-bg: #19372a;
+  --student-waiting-text: #ffd18a;
+  --student-waiting-bg: #3e2e20;
+  --student-negative-text: #ffc0c9;
+  --student-negative-bg: #442631;
+}
+.student-topbar {
+  position: sticky;
+  z-index: 4;
+  top: 0;
+  background: var(--dash-panel);
+  border-bottom: 1px solid var(--dash-border);
+}
+.student-topbar-inner {
+  width: min(1120px, 100%);
+  min-height: var(--student-topbar-height, 70px);
+  margin-inline: auto;
+  padding: 6px clamp(16px, 4vw, 38px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.student-brand { display: inline-flex; flex: none; align-items: center; border-radius: 50%; }
+.student-brand .brand-mark { border-radius: 50%; }
+.student-dashboard .student-topbar .theme-picker button { min-height: 42px; }
+.student-icon { width: 20px; height: 20px; flex: none; display: block; }
+.student-routine-nav { display: flex; align-items: center; gap: 4px; }
+.student-routine-nav a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  color: var(--dash-muted);
+  text-decoration: none;
+  font-size: .875rem;
+  font-weight: 650;
+}
+.student-routine-nav a:hover,
+.student-routine-nav a[aria-current="page"] {
+  color: var(--dash-accent);
+  background: var(--dash-accent-soft);
+}
+.student-nav-icon { display: grid; place-items: center; }
+.student-dashboard :is(a, button, summary):focus-visible {
+  outline: 2px solid var(--dash-accent);
+  outline-offset: 3px;
+}
+.student-dashboard .student-main {
+  display: grid;
+  gap: clamp(16px, 2.5vw, 26px);
+  width: min(1120px, 100%);
+  padding: clamp(22px, 4vw, 48px) clamp(16px, 4vw, 38px) 48px;
+  overflow-wrap: anywhere;
+}
+.student-page-heading { display: grid; gap: 8px; }
+.student-dashboard .student-page-heading h1 {
+  font-size: clamp(2rem, 4vw, 3.125rem);
+  line-height: 1.08;
+  letter-spacing: -.055em;
+}
+.student-page-heading p, .student-card p, .membership-card p, .student-note {
+  font-size: .9rem;
+  line-height: 1.5;
+  color: var(--dash-muted);
+}
+.student-home-grid, .student-shortcuts, .membership-summary, .student-notifications {
+  display: grid;
+  gap: 12px;
+  align-items: start;
+}
+.student-home-grid { grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); align-items: stretch; }
+.student-shortcuts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.student-card, .membership-card {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+  padding: clamp(16px, 2.7vw, 26px);
+  border: 1px solid var(--dash-border);
+  border-radius: 16px;
+  background: var(--dash-panel);
+}
+.student-dashboard :is(.student-card, .membership-card, .membership-history) h2 {
+  font-size: clamp(1.1rem, 2vw, 1.35rem);
+  line-height: 1.2;
+  letter-spacing: -.025em;
+}
+.student-card-heading, .student-profile-header, .student-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.student-card-heading { flex-wrap: wrap; }
+.student-card-heading .student-status { margin-inline-start: auto; }
+.student-icon-tile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  background: var(--dash-accent-soft);
+  color: var(--dash-accent);
+}
+.student-status {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  gap: 6px;
+  min-height: 27px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--student-waiting-text);
+  background: var(--student-waiting-bg);
+}
+.student-status::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.student-status:is([data-status="paid"], [data-status="approved"]) {
+  color: var(--student-positive-text);
+  background: var(--student-positive-bg);
+}
+.student-status:is([data-status="overdue"], [data-status="rejected"]) {
+  color: var(--student-negative-text);
+  background: var(--student-negative-bg);
+}
+.student-quota-details, .membership-details, .membership-account dl, .student-profile-data {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+.student-quota-details, .membership-details { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.student-quota-details > div, .membership-details > div, .membership-account dl > div {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--dash-border);
+  border-radius: 11px;
+  background: var(--dash-panel-alt);
+}
+.student-main dt { font-size: .8rem; color: var(--dash-muted); }
+.student-main dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.student-quota-details dd { font-size: clamp(1rem, 2vw, 1.25rem); }
+.student-text-link {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--dash-accent);
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+.student-text-link svg, .student-shortcut > svg { width: 16px; height: 16px; }
+.student-training {
+  align-content: start;
+  text-decoration: none;
+  background: var(--dash-accent-soft);
+}
+.student-training .student-icon-tile { color: var(--dash-accent); background: var(--dash-panel); }
+.student-training-action { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--dash-accent); font-weight: 700; }
+.student-shortcut { min-width: 0; min-height: 72px; padding: 12px; border-radius: 14px; border: 1px solid var(--dash-border); background: var(--dash-panel); text-decoration: none; }
+.student-shortcut-copy { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.student-shortcut-copy > span { color: var(--dash-muted); font-size: .825rem; line-height: 1.35; }
+.student-shortcut > svg { color: var(--dash-muted); }
+.student-shortcut:hover, .student-training:hover { border-color: var(--dash-accent); }
+.student-note { padding: 12px 14px; border-radius: 10px; background: var(--dash-panel-alt); border-inline-start: 3px solid var(--dash-accent); }
+.student-note a { color: var(--dash-accent); }
+.student-profile { max-width: 680px; }
+.student-profile-avatar { flex: none; display: grid; place-items: center; width: 62px; height: 62px; border-radius: 16px; background: var(--dash-accent-soft); color: var(--dash-accent); font-size: 1.35rem; font-weight: 800; }
+.student-profile-data > div { display: grid; gap: 6px; padding: 14px 0; border-block: 1px solid var(--dash-border); }
+.student-signout { width: fit-content; }
+.membership-summary { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.membership-balance dd { font-size: clamp(1.05rem, 2.3vw, 1.45rem); }
+.membership-history, .membership-records, .membership-payment-list { display: grid; gap: 10px; }
+.membership-records { border-top: 1px solid var(--dash-border); padding-top: 14px; }
+.student-dashboard .membership-records h3 { font-size: .95rem; }
+.membership-payment-list { list-style: none; padding: 0; margin: 0; }
+.membership-payment-list li { padding: 12px; border: 1px solid var(--dash-border); background: var(--dash-panel-alt); border-radius: 10px; }
+.membership-payment-list li > p { margin-top: 6px; }
+.membership-payment-list li > a { display: inline-flex; align-items: center; min-height: 44px; text-underline-offset: 3px; }
+.membership-payment-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: .9rem; }
+.membership-history .membership-card { padding-block: 6px; }
+.membership-history .membership-card[open] { padding-bottom: 18px; }
+.membership-history summary { display: flex; align-items: center; gap: 8px; cursor: pointer; min-height: 46px; font-weight: 650; list-style: none; }
+.membership-history summary::-webkit-details-marker { display: none; }
+.membership-history summary .student-status { margin-inline-start: auto; }
+.membership-history summary::after { content: ""; width: 8px; height: 8px; margin-inline: 5px; border: solid var(--dash-muted); border-width: 0 2px 2px 0; rotate: 45deg; }
+.membership-history details[open] summary::after { rotate: 225deg; }
+.membership-history details[open] summary { margin-bottom: 12px; }
+.membership-history .membership-records { margin-top: 14px; }
+.student-notifications { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.student-notifications .push-settings-panel { display: grid; margin: 0; }
+.student-notifications .push-settings-panel h2 { font-size: 1.125rem; line-height: 1.3; }
+
+@media (min-width: 841px) {
+  html:has(.student-dashboard) {
+    --student-topbar-height: 70px;
+    scroll-padding-top: calc(var(--student-topbar-height) + 16px);
+  }
+}
+
+@media (max-width: 840px) {
+  .student-topbar { position: relative; }
+  .student-topbar-inner { min-height: 60px; }
+  .student-dashboard .student-main { padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
+  .student-routine-nav {
+    position: fixed;
+    z-index: 5;
+    inset: auto 0 0;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2px;
+    padding: 5px max(6px, env(safe-area-inset-right)) calc(5px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+    background: var(--dash-panel);
+    border-top: 1px solid var(--dash-border);
+    box-shadow: 0 -4px 24px rgb(15 15 22 / .1);
+  }
+  .student-routine-nav a {
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    min-height: 58px;
+    padding: 3px 1px;
+    font-size: .75rem;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+  .student-routine-nav a[aria-current="page"] { background: transparent; }
+  .student-routine-nav a[aria-current="page"] .student-nav-icon { background: var(--dash-accent-soft); }
+  .student-nav-icon { width: min(49px, 100%); height: 27px; border-radius: 20px; }
+}
+@media (max-width: 650px) {
+  .student-home-grid, .membership-summary, .student-notifications { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 510px) {
+  .student-shortcuts { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .student-shortcut { min-height: 62px; padding: 9px 12px; }
 }
 
 

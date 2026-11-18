@@ -83,7 +83,11 @@ try {
 
   const confirmed = await verifyEmail(newEmail);
   assert.equal(confirmed.status, 200);
-  assert.match(await confirmed.text(), success);
+  const confirmedProfile = await confirmed.text();
+  assert.match(confirmedProfile, success);
+  assert.match(confirmedProfile, /action="\/api\/acceso\/cambiar-correo"/);
+  assert.match(confirmedProfile, /action="\/api\/acceso\/cambiar-contrasena"/);
+  assert.match(confirmedProfile, /class="student-profile-header"/);
   await expectIdentity(newEmail);
   const copied = new Map(jar);
   const proof = jar.get("cueva-email-change");
@@ -92,6 +96,17 @@ try {
   assert.equal((await app("/api/acceso/ingresar", { email: originalEmail, password }, new Map())).status, 401);
   assert.equal((await app("/api/acceso/ingresar", { email: newEmail, password }, new Map())).status, 303);
   console.log("PASS: real Auth double confirmation; partial and forged status rejected; Auth, linked invitation and student updated together; login switched.");
+  const nextPassword = `Synthetic!9-${randomUUID()}`;
+  const changedPassword = await app("/api/acceso/cambiar-contrasena", {
+    current_password: password, new_password: nextPassword, confirm_password: nextPassword,
+  });
+  assert.equal(changedPassword.status, 303);
+  const passwordResult = await app("/mi-perfil?contrasena=actualizada");
+  assert.match(await passwordResult.text(), /Tu contraseña se actualizó correctamente/);
+  await expectIdentity(newEmail);
+  assert.equal((await app("/api/acceso/ingresar", { email: newEmail, password }, new Map())).status, 401);
+  assert.equal((await app("/api/acceso/ingresar", { email: newEmail, password: nextPassword }, new Map())).status, 303);
+  console.log("PASS: the same confirmed identity can change its password; both profile forms coexist and the linked emails remain synchronized.");
 } finally {
   try {
     await db.query("delete from public.cueva_student_invitations where student_id=$1", [studentId]);

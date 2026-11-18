@@ -1,11 +1,12 @@
 .panel {
   display: grid;
   gap: 1rem;
-  margin: 1.5rem 0;
-  padding: 1.25rem;
-  border: 1px solid var(--line, #deded8);
+  min-width: 0;
+  margin: 0;
+  padding: clamp(1rem, 2.8vw, 1.5rem);
+  border: 1px solid var(--dash-border);
   border-radius: 1rem;
-  background: var(--surface, #fff);
+  background: var(--dash-panel);
 }
 
 .heading,
@@ -18,19 +19,9 @@
 }
 
 .heading h2 {
-  margin: .15rem 0;
-}
-
-.heading p,
-.body {
-  margin: .25rem 0 0;
-}
-
-.kicker {
-  color: var(--muted, #666);
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .08em;
+  margin: 0;
+  font-size: 1.2rem;
+  letter-spacing: -.025em;
 }
 
 .count,
@@ -45,7 +36,8 @@
 .newLabel {
   border-radius: 999px;
   padding: .35rem .65rem;
-  background: var(--soft-surface, #f1f1ed);
+  color: var(--dash-accent);
+  background: var(--dash-accent-soft);
 }
 
 .list {
@@ -60,17 +52,12 @@
   display: grid;
   gap: .6rem;
   padding: 1rem;
-  border: 1px solid var(--line, #deded8);
+  border: 1px solid var(--dash-border);
   border-radius: .8rem;
+  background: var(--dash-panel-alt);
 }
 
-.unread {
-  border-inline-start: 3px solid var(--accent, #555) !important;
-}
-
-.read {
-  opacity: .82;
-}
+.list .unread { border-inline-start: 3px solid var(--dash-accent); }
 
 .itemHeading h3 {
   margin: 0;
@@ -78,21 +65,23 @@
 }
 
 .body {
+  font-size: .9rem;
   line-height: 1.5;
 }
 
 .footer {
   flex-wrap: wrap;
-  color: var(--muted, #666);
+  color: var(--dash-muted);
   font-size: .82rem;
 }
 
 .footer button {
-  border: 0;
+  min-height: 44px;
+  border: 1px solid var(--dash-border);
   border-radius: .5rem;
   padding: .45rem .7rem;
-  color: var(--button-text, #fff);
-  background: var(--button-bg, #292929);
+  color: var(--dash-accent);
+  background: var(--dash-panel);
   font: inherit;
   font-weight: 650;
   cursor: pointer;
@@ -106,7 +95,7 @@
 .empty,
 .message {
   margin: 0;
-  color: var(--muted, #666);
+  color: var(--dash-muted);
 }
 
 @media (max-width: 520px) {

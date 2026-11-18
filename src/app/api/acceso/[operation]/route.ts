@@ -1,7 +1,8 @@
 import { inviteStudent } from "@/lib/student-invitation/server";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { emailChangeCookie, emailChangeMaxAge, pendingUserClient, productConfig, serviceClient, signEmailChange, userClient } from "@/lib/product-auth/server";
+import { createClient } from "@supabase/supabase-js";
+import { emailChangeCookie, emailChangeMaxAge, localFetch, pendingUserClient, productConfig, serviceClient, signEmailChange, userClient } from "@/lib/product-auth/server";
 
 export const dynamic = "force-dynamic";
 const fail = (status: number) => new Response("No se pudo completar la solicitud", { status, headers: { "Cache-Control": "no-store" } });
@@ -80,6 +81,40 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
     });
     return response;
   }
+  if (operation === "cambiar-contrasena") {
+    const currentPassword = String(form.get("current_password") ?? "");
+    const newPassword = String(form.get("new_password") ?? "");
+    const confirmation = String(form.get("confirm_password") ?? "");
+    if (!currentPassword || currentPassword.length > 1024 || newPassword.length < 8 || newPassword.length > 1024
+      || confirmation !== newPassword || currentPassword === newPassword) return fail(400);
+
+    const current = await auth.auth.getUser();
+    if (current.error || !current.data.user?.email) return fail(401);
+    const own = await auth.from("cueva_profiles").select("role").maybeSingle();
+    if (own.error || (own.data?.role !== "admin" && own.data?.role !== "alumno")) return fail(403);
+
+    let verifiedUserId: string | undefined;
+    try {
+      const verifier = createClient(cfg.url, cfg.key, {
+        ...(cfg.local ? { global: { fetch: localFetch(cfg) } } : {}),
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      });
+      const verified = await verifier.auth.signInWithPassword({ email: current.data.user.email, password: currentPassword });
+      verifiedUserId = verified.data.user?.id;
+      if (verified.error || verifiedUserId !== current.data.user.id || !verified.data.session) return fail(401);
+      const established = await auth.auth.setSession({
+        access_token: verified.data.session.access_token,
+        refresh_token: verified.data.session.refresh_token,
+      });
+      if (established.error || established.data.user?.id !== current.data.user.id) return fail(401);
+    } catch {
+      return fail(503);
+    }
+
+    const changed = await auth.auth.updateUser({ password: newPassword });
+    if (changed.error || changed.data.user?.id !== current.data.user.id) return fail(503);
+    return redirect(own.data.role === "admin" ? "/cuenta?contrasena=actualizada" : "/mi-perfil?contrasena=actualizada");
+  }
   const service = serviceClient();
   if (operation === "admin-invitar" || operation === "admin-recuperar") {
     if (cfg.ownerOnly) return fail(503);
@@ -97,8 +132,15 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
       await inviteStudent(auth,student.data.id);
       return redirect(`/alumnos?id=${student.data.id}`);
     }
-    const target = String(form.get("user_id") ?? "");
-    if (!uuid(target)) return fail(400);
+    const email = String(form.get("email") ?? "").trim().toLowerCase();
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail(400);
+    const student = await auth.from("cueva_students").select("id").eq("email", email).maybeSingle();
+    if (student.error) return fail(503);
+    if (!student.data?.id) return fail(404);
+    const invitation = await auth.from("cueva_student_invitations").select("user_id").eq("student_id", student.data.id).maybeSingle();
+    if (invitation.error) return fail(503);
+    const target = invitation.data?.user_id;
+    if (!target || !uuid(target)) return fail(404);
     const targetProfile = await service.from("cueva_profiles").select("role").eq("user_id", target).maybeSingle();
     if (targetProfile.error || targetProfile.data?.role !== "alumno") return fail(403);
     const op = randomUUID();

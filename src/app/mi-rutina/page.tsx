@@ -2,7 +2,7 @@ import { StudentPlan } from "@/components/routines/student-plan";
 import type { Plan } from "@/lib/routines/types";
 import Link from "next/link";
 import { productConfig, userClient } from "@/lib/product-auth/server";
-import { StudentShell } from "@/components/routines/student-shell";
+import { StudentPageHeading, StudentShell } from "@/components/routines/student-shell";
 
 import "./mi-rutina.css";
 
@@ -84,8 +84,7 @@ export default async function MyRoutine() {
   return (
     <StudentShell active="rutina">
       <div className="my-routine">
-        <header className="my-routine-heading">
-          <h1>Mi rutina</h1>
+        <StudentPageHeading title="Mi rutina">
           {publication && (
             <p>
               Publicada el{" "}
@@ -97,7 +96,7 @@ export default async function MyRoutine() {
               </time>
             </p>
           )}
-        </header>
+        </StudentPageHeading>
 
         {result.error ? (
           <section className="my-routine-panel">
@@ -108,7 +107,7 @@ export default async function MyRoutine() {
         ) : publication ? (
           <>
             {videos?.error && (
-              <p role="status">
+              <p className="student-note" role="status">
                 No pudimos consultar los videos. Podés seguir tu rutina o{" "}
                 <Link href="/mi-rutina">reintentar</Link>.
               </p>
@@ -130,7 +129,7 @@ export default async function MyRoutine() {
             )}
 
             {assigned?.error && (
-              <p role="status">
+              <p className="student-note" role="status">
                 No pudimos cargar las descripciones complementarias.
                 Tu rutina sigue disponible.
               </p>

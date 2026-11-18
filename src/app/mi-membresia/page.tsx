@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { StudentShell } from "@/components/routines/student-shell";
+import { StudentPageHeading, StudentShell } from "@/components/routines/student-shell";
 import { pesos } from "@/lib/payments/money";
 import { productConfig, userClient } from "@/lib/product-auth/server";
 import { ReceiptUpload } from "@/components/receipts/receipt-upload";
@@ -36,22 +36,28 @@ type ReceiptPeriod = { id: string; receipts: Receipt[] };
 
 function PeriodDetails({ period, files }: { period: MembershipPeriod; files?: ReceiptPeriod | undefined }) {
   return <>
-    <dl>
-      <div><dt>Estado de la cuota</dt><dd>{statuses[period.status]}</dd></div>
+    <dl className="membership-details">
+      <div className="membership-balance"><dt>Saldo pendiente</dt><dd>{pesos(period.balance)}</dd></div>
       <div><dt>Vencimiento</dt><dd><PaymentDate value={period.due_on}/></dd></div>
       <div><dt>Importe de la cuota</dt><dd>{pesos(period.cents)}</dd></div>
       <div><dt>Total pagado</dt><dd>{pesos(period.paid)}</dd></div>
-      <div><dt>Saldo pendiente</dt><dd>{pesos(period.balance)}</dd></div>
     </dl>
-    {period.payments.length > 0 && <ul className="membership-payment-list" aria-label="Pagos confirmados">
-      {period.payments.map((payment, index) => <li key={index}><PaymentDate value={payment.paid_on}/> · {pesos(payment.cents)}</li>)}
-    </ul>}
-    {files && <section aria-label="Comprobantes del período">
+    {period.payments.length > 0 && <section className="membership-records">
+      <h3>Pagos confirmados</h3>
+      <ul className="membership-payment-list">
+        {period.payments.map((payment, index) => (
+          <li key={index} className="membership-payment-row">
+            <PaymentDate value={payment.paid_on}/><strong>{pesos(payment.cents)}</strong>
+          </li>
+        ))}
+      </ul>
+    </section>}
+    {files && <section className="membership-records" aria-label="Comprobantes del período">
       <h3>Comprobantes</h3>
       {!files.receipts.length && <p>Todavía no presentaste comprobantes para esta cuota.</p>}
       {!!files.receipts.length && <ul className="membership-payment-list">
         {files.receipts.map(receipt => <li key={receipt.id}>
-          <strong>{receiptState[receipt.state]}</strong>
+          <strong className="student-status" data-status={receipt.state}>{receiptState[receipt.state]}</strong>
           <p>Presentado el <PaymentDate value={receipt.submitted_at}/></p>
           {receipt.resolved_at && <p>Resuelto el <PaymentDate value={receipt.resolved_at}/></p>}
           {receipt.rejection_reason && <p>Motivo del rechazo: {receipt.rejection_reason}</p>}
@@ -81,27 +87,35 @@ export default async function MembershipPage() {
   const data = snapshot as Membership | null;
   const files = receiptPeriods.error ? null : receiptPeriods.data as Record<string, ReceiptPeriod> | null;
   return <StudentShell active="membresia">
-    <div className="dash-heading"><div><h1>Mi Membresía</h1><p>Consultá tu cuota y los pagos registrados por el gimnasio.</p></div></div>
-    {readError || !data ? <section className="dash-account">
+    <StudentPageHeading title="Mi Membresía" />
+    {readError || !data ? <section className="student-card">
       <div><h2>No pudimos cargar tu membresía</h2><p>Si el problema continúa, consultá con el gimnasio.</p></div>
-      <Link href="/mi-membresia">Reintentar</Link>
+      <Link className="student-text-link" href="/mi-membresia">Reintentar</Link>
     </section> : <>
-      {!files && <p>Los comprobantes no están disponibles por el momento.</p>}
+      {!files && <p className="student-note" role="status">Los comprobantes no están disponibles por el momento.</p>}
       <div className="membership-summary">
-        <section className="membership-card"><h2>Estado de membresía</h2>
+        <section className="membership-card membership-current" aria-labelledby="membership-current-title">
+          <div className="student-card-heading">
+            <h2 id="membership-current-title">Cuota de este mes</h2>
+            {data.current && <span className="student-status" data-status={data.current.status}>{statuses[data.current.status]}</span>}
+          </div>
+          {data.current ? <PeriodDetails period={data.current} files={files?.[data.current.month]}/> : <p>El gimnasio todavía no registró la cuota de este mes.</p>}
+        </section>
+        <section className="membership-card membership-account">
+          <h2>Estado de membresía</h2>
           <dl>
             <div><dt>Membresía</dt><dd>{data.active ? "Activa" : "Inactiva"}</dd></div>
             <div><dt>Último pago confirmado</dt><dd>{data.last_paid_on ? <PaymentDate value={data.last_paid_on}/> : "Todavía no hay pagos"}</dd></div>
           </dl>
         </section>
-        <section className="membership-card"><h2>Cuota de este mes</h2>
-          {data.current ? <PeriodDetails period={data.current} files={files?.[data.current.month]}/> : <p>El gimnasio todavía no registró la cuota de este mes.</p>}
-        </section>
       </div>
       <section className="membership-history"><h2>Historial de cuotas</h2>
         {data.history.length === 0 && <p>Todavía no hay cuotas de meses anteriores.</p>}
         {data.history.map(period => <details className="membership-card" key={period.month}>
-          <summary>{monthFormat.format(new Date(period.month))}</summary>
+          <summary>
+            <span>{monthFormat.format(new Date(period.month))}</span>
+            <span className="student-status" data-status={period.status}>{statuses[period.status]}</span>
+          </summary>
           <PeriodDetails period={period} files={files?.[period.month]}/>
         </details>)}
       </section>
