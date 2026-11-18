@@ -102,3 +102,20 @@ test("rechaza severidad/cantidad distinta", () => {
   audit.metadata.vulnerabilities.critical = 1;
   assert.throws(() => validateAudit(audit, lock), /cantidad/);
 });
+
+
+test("acepta un informe limpio válido sin exigir el advisory retirado", () => {
+  assert.equal(validateAudit({auditReportVersion:2,vulnerabilities:{},metadata:{vulnerabilities:{info:0,low:0,moderate:0,high:0,critical:0,total:0}}}, {}),true);
+});
+test("rechaza informes vacíos o limpios contradictorios", () => {
+  for (const report of [undefined, {}, {auditReportVersion:2,vulnerabilities:{},metadata:{vulnerabilities:{info:0,low:0,moderate:0,high:0,critical:0,total:1}}}]) {
+    assert.throws(() => validateAudit(report, {}));
+  }
+});
+test("rechaza forma inválida de un informe aparentemente limpio", () => {
+  const base = {auditReportVersion:2,vulnerabilities:{},metadata:{vulnerabilities:{info:0,low:0,moderate:0,high:0,critical:0,total:0}}};
+  assert.throws(() => validateAudit({...base,error:{code:"ENOAUDIT"}}, {}));
+  assert.throws(() => validateAudit({...base,vulnerabilities:[]}, {}));
+  assert.throws(() => validateAudit({...base,auditReportVersion:1}, {}));
+  assert.throws(() => validateAudit({...base,metadata:{vulnerabilities:{...base.metadata.vulnerabilities,high:"0"}}}, {}));
+});

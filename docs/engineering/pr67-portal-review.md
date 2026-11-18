@@ -108,3 +108,17 @@ SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`,
 `resolving-merge-conflicts`, `diagnosing-bugs`, `vercel:react-best-practices`,
 `code-review`, `pr`. SKILL_SOURCES: `.agents/skills/<nombre>/SKILL.md`,
 las guías correspondientes del host y Next instalado `page.md`.
+
+## Actualización del verificador adicional — 2026-11-18
+
+La suite CI del candidato anterior aprobó sus 149 pruebas y las tres variantes
+SQL. El control adicional del grafo falló porque exigía 14 avisos, mientras npm
+ya devolvía un reporte válido completamente limpio. La [fuente oficial de GitHub](https://github.com/advisories/GHSA-fc5q-39xc-vjpf)
+retiró el advisory a las 15:38:56 UTC del 18 de noviembre. Esto describe el estado
+del feed, no acredita un parche de las versiones instaladas.
+
+El verificador adicional ahora acepta también reportes v2 con objeto vacío de
+vulnerabilidades y todos los conteos numéricos exactamente cero. Conserva los
+rechazos a reportes inválidos, avisos adicionales y cambios del grafo cuando
+existen hallazgos. Se agregan tres regresiones; el verificador común de main,
+su vencimiento, audit de producción y gate de critical permanecen intactos.

@@ -17,6 +17,13 @@ const expected = {
 };
 const advisory = {name:"picomatch",title:"picomatch vulnerable to ReDoS through single-branch repeated extglobs",range:"<=4.0.7",url:"https://github.com/advisories/GHSA-fc5q-39xc-vjpf"};
 export function validateAudit(audit, lock) {
+ const counts = audit?.metadata?.vulnerabilities;
+ // A withdrawn/resolved advisory must not make a genuinely clean audit fail.
+ // Malformed reports and contradictory counts still fall through to rejection.
+ if (audit?.auditReportVersion === 2 && audit.error === undefined && audit.vulnerabilities
+   && typeof audit.vulnerabilities === "object" && !Array.isArray(audit.vulnerabilities)
+   && Object.keys(audit.vulnerabilities).length === 0 && counts
+   && ["info","low","moderate","high","critical","total"].every(key => counts[key] === 0)) return true;
  const names = Object.keys(expected).sort();
  if (JSON.stringify(Object.keys(audit?.vulnerabilities ?? {}).sort()) !== JSON.stringify(names)) throw Error("El conjunto de paquetes vulnerables cambió.");
  const c = audit?.metadata?.vulnerabilities;
@@ -36,6 +43,6 @@ export function validateAudit(audit, lock) {
  return true;
 }
 if(process.argv[1] && import.meta.url.endsWith(process.argv[1].replaceAll("\\","/"))) {
- try { const a=JSON.parse(readFileSync(process.argv[2] ?? "/tmp/npm-audit.json","utf8")); const l=JSON.parse(readFileSync("package-lock.json","utf8")); validateAudit(a,l); console.log("PASS: único riesgo aceptado = GHSA-fc5q-39xc-vjpf en Picomatch dev, árbol y versiones exactos."); }
+ try { const a=JSON.parse(readFileSync(process.argv[2] ?? "/tmp/npm-audit.json","utf8")); const l=JSON.parse(readFileSync("package-lock.json","utf8")); validateAudit(a,l); console.log(Object.keys(a.vulnerabilities).length === 0 ? "PASS: auditoría completa sin vulnerabilidades reportadas." : "PASS: único riesgo aceptado = GHSA-fc5q-39xc-vjpf en Picomatch dev, árbol y versiones exactos."); }
  catch(e) { console.error("FAIL: "+e.message); process.exitCode=1; }
 }
