@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { StudentShell } from "@/components/routines/student-shell";
+import { StudentPageHeading, StudentShell } from "@/components/routines/student-shell";
 import { NotificationInbox, type NotificationInboxItem } from "@/components/notifications/notification-inbox";
 import { PushNotificationSettings } from "@/components/notifications/push-notification-settings";
 import { productConfig, userClient } from "@/lib/product-auth/server";
@@ -22,8 +22,10 @@ export default async function NotificationsPage() {
   const inboxItems = inboxResult.error ? null : (inboxResult.data ?? []) as NotificationInboxItem[];
 
   return <StudentShell active="notificaciones">
-    <div className="dash-heading"><div><p className="dash-overline">TU ACTIVIDAD</p><h1>Notificaciones</h1><p>Recordatorios y novedades de tu cuenta.</p></div></div>
-    <PushNotificationSettings />
-    <NotificationInbox items={inboxItems} />
+    <StudentPageHeading title="Notificaciones"><p>Recordatorios y novedades de tu cuenta.</p></StudentPageHeading>
+    <div className="student-notifications">
+      <NotificationInbox items={inboxItems} />
+      <PushNotificationSettings />
+    </div>
   </StudentShell>;
 }
