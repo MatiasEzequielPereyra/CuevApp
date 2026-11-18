@@ -1,6 +1,6 @@
 # Rutinas en texto libre y menciones — CUEVA-006D
 
-Fecha: 2026-11-17. Estado: implementación en rama aislada; CI aprobado en HEAD 86b16d7f914237822e85fafe9710c5bdc99f1d83. Revisión de integración pendiente.
+Fecha: 2026-11-18. Estado: implementación en rama aislada; CI aprobado en HEAD `8e4f79a6d4ba42bc1464eeb6f838e2258c324b74`. Revisión final de integración pendiente.
 
 ## Modelo de edición
 
@@ -96,7 +96,7 @@ usando las consultas y autorizaciones actuales.
   deploy, Auth ni cambios de roles en esta fase.
 
 
-## Evidencia de validación — HEAD 86b16d7f914237822e85fafe9710c5bdc99f1d83
+## Evidencia de validación — HEAD `8e4f79a6d4ba42bc1464eeb6f838e2258c324b74`
 
 Los workflows de GitHub Actions finalizaron correctamente sobre el mismo SHA del PR:
 
@@ -108,8 +108,23 @@ Los workflows de GitHub Actions finalizaron correctamente sobre el mismo SHA del
 - Vercel Preview: deployment completado.
 
 Runs:
-- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44212681594
-- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44212681513
-- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44212681517
+- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44226190431
+- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44226190386
+- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44226190375
 
 Esta evidencia no representa una migración aplicada en Supabase alojado ni una autorización de merge o despliegue.
+
+
+## Corrección del cleanup del autocompletado — HEAD `8e4f79a6d4ba42bc1464eeb6f838e2258c324b74`
+
+El cleanup del efecto del autocompletado usa una bandera local de ciclo de vida
+para impedir que callbacks asíncronos actualicen estado después del desmontaje.
+Se conserva `AbortController`, el timeout cancelable de 12 segundos, el debounce
+de 180 ms y la protección por secuencia frente a respuestas obsoletas. No se
+lee ni modifica `request.current` desde el cleanup.
+
+En este HEAD, Verify foundation completó `npm run verify`, seguridad y las
+auditorías configuradas; Membership SQL completó membership y Receipt Storage;
+Supabase local migrations completó fresh, upgrade y hosted-compatible, las
+pruebas SQL, concurrencia e integración autenticada; Vercel Preview informó
+success. Esta evidencia corresponde al SHA indicado, no a ejecuciones previas.
