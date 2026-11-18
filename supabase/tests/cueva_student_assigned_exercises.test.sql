@@ -225,18 +225,20 @@ select is((public.cueva_routine_text_write(
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":6,"end":26,"text":"Catálogo sin asignar"}]'::jsonb
 )->>'revision')::integer,3,'an inactive historical mention survives insertion before its original occurrence');
 
-select throws_ok($select public.cueva_routine_text_write(
+select throws_ok($$select public.cueva_routine_text_write(
  'draft','b3000000-0000-4000-8000-000000000003',3,'Catálogo sin asignar',null,
  'ba000000-0000-4000-8000-000000000023',null,'text','Nota: Catálogo sin asignar y Catálogo sin asignar',
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":29,"end":49,"text":"Catálogo sin asignar"}]'::jsonb
-)$,'22023',null,'an inactive historical UUID cannot be moved to a newly appended duplicate occurrence');
+)$$,'22023',null,'an inactive historical UUID cannot be moved to a newly appended duplicate occurrence');
 
+reset role;
 select is(cueva_private.routine_utf16_length('🙂 Nota: Catálogo sin asignar'),29,
  'UTF-16 offset length counts astral characters as two code units');
 select is(cueva_private.routine_utf16_slice('🙂 Nota: Catálogo sin asignar',9,29),
  'Catálogo sin asignar','UTF-16 slicing resolves a mention after an astral character');
 select is(cueva_private.routine_utf16_slice('🙂 Nota: Catálogo sin asignar',1,3),null::text,
  'UTF-16 slicing rejects ranges that split a surrogate pair');
+set local role authenticated;
 
 select throws_ok($$select public.cueva_routine_text_write(
  'draft','b3000000-0000-4000-8000-000000000003',2,'Catálogo sin asignar y Catálogo sin asignar',null,
