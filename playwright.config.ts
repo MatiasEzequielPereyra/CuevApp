@@ -11,7 +11,9 @@ export default defineConfig({
   projects: [
     { name: "chromium", testIgnore: "**/admin-students.spec.ts", use: { ...devices["Desktop Chrome"] } },
     { name: "webkit", testMatch: "**/admin-dashboard.spec.ts", use: { ...devices["Desktop Safari"] } },
-    { name: "students-chromium", testMatch: "**/admin-students.spec.ts", use: { ...devices["Desktop Chrome"] } },
+    // These suites each start a Next dev server in the same checkout. Keep them
+    // in separate project phases so they cannot contend for the shared .next lock.
+    { name: "students-chromium", dependencies: ["chromium"], testMatch: "**/admin-students.spec.ts", use: { ...devices["Desktop Chrome"] } },
     { name: "students-webkit", dependencies: ["students-chromium"], testMatch: "**/admin-students.spec.ts", use: { ...devices["Desktop Safari"] } },
   ],
   webServer: {
