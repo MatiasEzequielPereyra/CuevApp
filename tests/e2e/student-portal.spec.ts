@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import ts from "typescript";
 import { StudentIcon } from "../../src/components/routines/student-icon";
+import { PasswordChangeForm } from "../../src/components/auth/password-change-form";
 
 const localRequire = createRequire(__filename);
 const link = ({ children, ...props }: React.ComponentProps<"a">) =>
@@ -36,7 +37,7 @@ const shell = loadExport("src/components/routines/student-shell.tsx", {
   "@/components/theme/theme-picker": { ThemePicker: () => null },
 }) as { StudentShell: (props: { children?: React.ReactNode; active?: string }) => React.ReactElement };
 
-const deniedClient = () => ({
+const deniedClient = (role: "admin" | "alumno" = "admin") => ({
   auth: {
     getUser: async () => ({
       data: { user: { id: "admin-fixture", email: "admin@example.test", user_metadata: { full_name: "Admin Fixture" } } },
@@ -45,12 +46,12 @@ const deniedClient = () => ({
   },
   from: () => ({
     select: () => ({
-      maybeSingle: async () => ({ data: { role: "admin" }, error: null }),
+      maybeSingle: async () => ({ data: { role }, error: null }),
     }),
   }),
 });
 
-function loadStudentPage(path: string) {
+function loadStudentPage(path: string, role: "admin" | "alumno" = "admin") {
   return loadExport(path, {
     "./mi-rutina.css": {},
     "next/link": { default: link },
@@ -65,10 +66,11 @@ function loadStudentPage(path: string) {
     "@/components/routines/plan-view": { PlanView: () => null, VideoLink: () => null },
     "@/components/notifications/notification-inbox": { NotificationInbox: () => null },
     "@/components/notifications/push-notification-settings": { PushNotificationSettings: () => null },
+    "@/components/auth/password-change-form": { PasswordChangeForm },
     "@/lib/payments/money": { pesos: (value: string) => value },
     "@/lib/product-auth/server": {
       productConfig: () => ({ ownerOnly: true }),
-      userClient: async () => deniedClient(),
+      userClient: async () => deniedClient(role),
     },
   });
 }
@@ -193,6 +195,7 @@ for (const [path, heading] of [
     await expect(page.getByRole("navigation", { name: "Navegación del alumno" })).toHaveCount(0);
     await expect(page.getByText("Tus ejercicios")).toHaveCount(0);
     await expect(page.getByText("Datos de acceso")).toHaveCount(0);
+    await expect(page.locator('form[action="/api/acceso/cambiar-contrasena"]')).toHaveCount(0);
   });
 }
 
@@ -204,3 +207,18 @@ test("el inicio conserva la rama administrativa para el rol admin", async ({ pag
   await expect(page.getByTestId("admin-dashboard")).toContainText("Panel administrativo");
   await expect(page.getByRole("navigation", { name: "Navegación del alumno" })).toHaveCount(0);
 });
+
+for (const changed of [false, true]) {
+  test(`el perfil de alumno conserva el diseño y la seguridad con resultado ${changed}`, async ({ page }) => {
+    const exported = loadStudentPage("src/app/mi-perfil/page.tsx", "alumno");
+    const component = exported.default as (props: { searchParams?: Promise<{ contrasena?: string }> }) => Promise<React.ReactElement>;
+    const markup = renderToStaticMarkup(await component(changed ? { searchParams: Promise.resolve({ contrasena: "actualizada" }) } : {}));
+    await page.setContent(markup);
+    await expect(page.getByRole("heading", { name: "Mi perfil", exact: true })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Navegación del alumno" })).toBeVisible();
+    await expect(page.locator(".student-profile-header")).toBeVisible();
+    await expect(page.getByRole("region", { name: "Seguridad de la cuenta" }).getByLabel("Contraseña actual", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Actualizar contraseña" })).toBeVisible();
+    await expect(page.getByRole("status")).toHaveCount(changed ? 1 : 0);
+  });
+}

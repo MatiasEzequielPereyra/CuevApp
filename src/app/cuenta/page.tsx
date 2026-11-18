@@ -13,7 +13,8 @@ type StudentMembershipSummary = {
   current: { due_on: string; balance: string; status: "paid" | "overdue" | "pending" } | null;
 };
 
-export default async function AccountPage() {
+export default async function AccountPage({ searchParams }: { searchParams?: Promise<{ contrasena?: string | string[] }> } = {}) {
+  const query = await searchParams;
   const cfg = productConfig();
   if (!cfg) notFound();
   const auth = await userClient(true);
@@ -37,6 +38,6 @@ export default async function AccountPage() {
   const fullName = user.user_metadata?.full_name;
   const email = user.email ?? "Cuenta de CUEVA";
   const displayName = typeof fullName === "string" && fullName.trim() ? fullName.trim() : email;
-  const accountActions = <AdminAccountActions ownerOnly={cfg.ownerOnly} />;
+  const accountActions = <AdminAccountActions ownerOnly={cfg.ownerOnly} passwordChanged={query?.contrasena === "actualizada"} />;
   return <AdminDashboard displayName={displayName} email={email} role="Administrador" logo={<BrandMark size={42} />} themePicker={<ThemePicker />} accountActions={accountActions} />;
 }

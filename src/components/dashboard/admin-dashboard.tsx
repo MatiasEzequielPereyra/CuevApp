@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { AdminProfileMenu } from "./admin-profile-menu";
+import { PasswordChangeForm } from "@/components/auth/password-change-form";
 import "./admin-home.css";
 
 type IconName = "home" | "users" | "calendar" | "wallet" | "file" | "user" | "arrow" | "dumbbell" | "bell";
@@ -30,8 +31,16 @@ const navigationAreas: { id: AdminSection; href: string; name: string; descripti
 ];
 
 type AdminProps = { displayName: string; email: string; role: string; logo: ReactNode; themePicker: ReactNode; accountActions?: ReactNode };
-export function AdminAccountActions({ ownerOnly }: { ownerOnly: boolean }) {
-  return ownerOnly ? <p>Las invitaciones y la recuperación de alumnos estarán disponibles cuando terminemos de configurar el correo del gimnasio.</p> : <><form method="post" action="/api/acceso/admin-invitar"><label>Correo del alumno <input name="email" type="email" required/></label><button>Invitar</button></form><form method="post" action="/api/acceso/admin-recuperar"><label>Identificador del alumno <input name="user_id" required/></label><button>Enviar recuperación</button></form></>;
+export function AdminAccountActions({ ownerOnly, passwordChanged = false }: { ownerOnly: boolean; passwordChanged?: boolean }) {
+  return <>
+    <section aria-labelledby="admin-password-heading">
+      <h3 id="admin-password-heading">Seguridad de la cuenta</h3>
+      <p>Cambiá tu contraseña confirmando primero la actual.</p>
+      <PasswordChangeForm />
+      {passwordChanged && <p role="status">Tu contraseña se actualizó correctamente.</p>}
+    </section>
+    {ownerOnly ? <p>Las invitaciones y la recuperación de alumnos estarán disponibles cuando terminemos de configurar el correo del gimnasio.</p> : <><form method="post" action="/api/acceso/admin-invitar"><label>Correo del alumno <input name="email" type="email" required/></label><button>Invitar</button></form><form method="post" action="/api/acceso/admin-recuperar"><label>Correo del alumno <input name="email" type="email" maxLength={254} autoComplete="email" required/></label><button>Enviar enlace de recuperación</button></form></>}
+  </>;
 }
 
 
