@@ -1,0 +1,174 @@
+{
+  "result": "PASS_AFTER_FIX",
+  "scenario": "Same queued-close interleaving; Tab reaches Tiron and Enter activates it.",
+  "events": [
+    {
+      "event": "focusin",
+      "active": "Empuje",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 599
+    },
+    {
+      "event": "focusin",
+      "active": "1Press militar10 repeticiones20 kg Video",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 618.3000000715256
+    },
+    {
+      "event": "focusin",
+      "active": "Cerrar",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 636.2000000476837
+    },
+    {
+      "event": "focusin",
+      "active": "1Press militar10 repeticiones20 kg Video",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 678.5
+    },
+    {
+      "event": "focusin",
+      "active": "Empuje",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 678.8999999761581
+    },
+    {
+      "event": "close",
+      "active": "Empuje",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 686.3000000715256
+    },
+    {
+      "event": "focusin",
+      "active": "Tirón",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 697.8000000715256
+    },
+    {
+      "event": "focusin",
+      "active": "Empuje",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 758.3999999761581
+    },
+    {
+      "event": "focusin",
+      "active": "1Press militar10 repeticiones20 kg Video",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 773.5
+    },
+    {
+      "event": "focusin",
+      "active": "Cerrar",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 787.8999999761581
+    },
+    {
+      "event": "focusin",
+      "active": "1Press militar10 repeticiones20 kg Video",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 811.1000000238419
+    },
+    {
+      "event": "focusin",
+      "active": "Empuje",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 811.3000000715256
+    },
+    {
+      "event": "close",
+      "active": "Empuje",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 820
+    },
+    {
+      "event": "focusin",
+      "active": "Tirón",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 830.5
+    },
+    {
+      "event": "focusin",
+      "active": "Empuje",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 910.7000000476837
+    },
+    {
+      "event": "focusin",
+      "active": "1Press militar10 repeticiones20 kg Video",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 956.6000000238419
+    },
+    {
+      "event": "focusin",
+      "active": "Cerrar",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 973.8999999761581
+    },
+    {
+      "event": "focusin",
+      "active": "1Press militar10 repeticiones20 kg Video",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 1007.3999999761581
+    },
+    {
+      "event": "focusin",
+      "active": "Empuje",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 1007.6000000238419
+    },
+    {
+      "event": "close",
+      "active": "Empuje",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 1020.1000000238419
+    },
+    {
+      "event": "focusin",
+      "active": "Tirón",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 1024.7000000476837
+    }
+  ]
+}
