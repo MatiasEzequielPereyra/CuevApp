@@ -231,7 +231,7 @@ select throws_ok($select public.cueva_routine_text_write(
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":29,"end":49,"text":"Catálogo sin asignar"}]'::jsonb
 )$,'22023',null,'an inactive historical UUID cannot be moved to a newly appended duplicate occurrence');
 
-select is(cueva_private.routine_utf16_length('🙂 Nota: Catálogo sin asignar'),28,
+select is(cueva_private.routine_utf16_length('🙂 Nota: Catálogo sin asignar'),29,
  'UTF-16 offset length counts astral characters as two code units');
 select is(cueva_private.routine_utf16_slice('🙂 Nota: Catálogo sin asignar',9,29),
  'Catálogo sin asignar','UTF-16 slicing resolves a mention after an astral character');
