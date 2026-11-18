@@ -87,7 +87,7 @@ async function layoutAndPlayback(browserType, learner) {
   try {
     for (const width of [360, 390, 1440]) {
       for (const theme of ["light", "dark"]) {
-        const context = await studentContext(browser, learner, { viewport: { width, height: 740 }, hasTouch: true, colorScheme: theme });
+        const context = await studentContext(browser, learner, { viewport: { width, height: 740 }, hasTouch: width === 360, colorScheme: theme });
         try {
           const page = await context.newPage();
           await page.goto(`${origin}/mi-rutina`);
@@ -146,8 +146,8 @@ async function layoutAndPlayback(browserType, learner) {
             await expect(day.getByRole("button", { name: "Tirón" })).toBeFocused();
             await page.keyboard.press("Enter");
           } else {
-            // WebKit on the Linux runner does not expose the same Tab traversal
-            // behavior for touch-enabled contexts; verify the control interaction there.
+            // Keep keyboard traversal in a non-touch context (390px); the 360px
+            // viewport above independently covers touch interaction.
             await day.getByRole("button", { name: "Tirón" }).click();
           }
           await expect(day.getByRole("button", { name: "Tirón" })).toHaveAttribute("aria-pressed", "true");
