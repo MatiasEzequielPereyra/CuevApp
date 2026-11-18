@@ -32,10 +32,12 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     if (!range) return;
     const sequence = ++request.current;
     const controller = new AbortController();
+    let timeout: number | undefined;
     const timer = window.setTimeout(async () => {
+      timeout = window.setTimeout(() => controller.abort(), 12000);
       try {
         const params = new URLSearchParams({ q: range.query, active: "1" });
-        const response = await fetch("/api/ejercicios?" + params, { cache: "no-store", signal: AbortSignal.any([controller.signal, AbortSignal.timeout(12000)]) });
+        const response = await fetch("/api/ejercicios?" + params, { cache: "no-store", signal: controller.signal });
         const data = await response.json();
         if (sequence !== request.current) return;
         if (!response.ok) { setError(data.message || "No pudimos buscar ejercicios."); setResults([]); return; }
@@ -43,10 +45,16 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       } catch {
         if (sequence === request.current) setError("No pudimos buscar ejercicios. Podés reintentar.");
       } finally {
+        if (timeout !== undefined) window.clearTimeout(timeout);
         if (sequence === request.current) setPending(false);
       }
     }, 180);
-    return () => { window.clearTimeout(timer); controller.abort(); };
+    return () => {
+      window.clearTimeout(timer);
+      if (timeout !== undefined) window.clearTimeout(timeout);
+      controller.abort();
+      if (request.current === sequence) request.current++;
+    };
   }, [range]);
 
   function updateRange(next: SearchRange) {
