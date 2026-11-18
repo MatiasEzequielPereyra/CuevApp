@@ -98,7 +98,7 @@ returns integer
 language plpgsql
 immutable
 set search_path = ''
-as $
+as $$
 declare
   v_bytes bytea := convert_to(coalesce(p_value, ''), 'UTF8');
   v_index integer := 0;
@@ -123,14 +123,14 @@ begin
   end loop;
   return v_length;
 end;
-$;
+$$;
 
 create function cueva_private.routine_utf16_slice(p_value text, p_start integer, p_end integer)
 returns text
 language plpgsql
 immutable
 set search_path = ''
-as $
+as $$
 declare
   v_result text := '';
   v_char text;
@@ -156,7 +156,7 @@ begin
   end loop;
   return v_result;
 end;
-$;
+$$;
 
 revoke all on function cueva_private.routine_utf16_length(text),
   cueva_private.routine_utf16_slice(text,integer,integer)
