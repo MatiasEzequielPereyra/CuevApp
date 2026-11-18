@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { StudentShell } from "@/components/routines/student-shell";
+import { StudentPageHeading, StudentShell } from "@/components/routines/student-shell";
 import { PasswordChangeForm } from "@/components/auth/password-change-form";
 import { productConfig, userClient } from "@/lib/product-auth/server";
 
@@ -17,20 +17,22 @@ export default async function StudentProfilePage({ searchParams }: { searchParam
   }
   const fullName = user.user_metadata?.full_name;
   const displayName = typeof fullName === "string" && fullName.trim() ? fullName.trim() : null;
+  const initials = displayName?.split(/\s+/).slice(0, 2).map(word => Array.from(word)[0]).join("").toLocaleUpperCase("es-AR");
 
   return <StudentShell active="perfil">
-    <div className="dash-heading"><div><p className="dash-overline">TU CUENTA</p><h1>Mi perfil</h1><p>Información asociada a tu acceso a CUEVA.</p></div></div>
-    <section className="dash-account">
-      <div><h2>Datos de acceso</h2>
-        <dl>
-          {displayName && <div><dt>Nombre</dt><dd>{displayName}</dd></div>}
-          <div><dt>Correo electrónico</dt><dd>{user.email ?? "No disponible"}</dd></div>
-        </dl>
-        <p>Para modificar tus datos personales o solicitar ayuda con tu cuenta, comunicate con el gimnasio.</p>
+    <StudentPageHeading title="Mi perfil" />
+    <section className="student-card student-profile" aria-labelledby="student-profile-title">
+      <div className="student-profile-header">
+        <span className="student-profile-avatar" aria-hidden="true">{initials || "C"}</span>
+        <div><h2 id="student-profile-title">{displayName ?? "Tu cuenta"}</h2><p>Alumno de CUEVA</p></div>
       </div>
+      <dl className="student-profile-data">
+        <div><dt>Correo electrónico de acceso</dt><dd>{user.email ?? "No disponible"}</dd></div>
+      </dl>
+      <p>Si necesitás actualizar tus datos, comunicate con el gimnasio.</p>
     </section>
-    <section className="dash-account">
-      <div><h2>Seguridad de la cuenta</h2><p>Para cambiar tu contraseña, confirmá primero la actual.</p></div>
+    <section className="student-card student-profile" aria-labelledby="student-security-title">
+      <div><h2 id="student-security-title">Seguridad de la cuenta</h2><p>Para cambiar tu contraseña, confirmá primero la actual.</p></div>
       <PasswordChangeForm />
       {query?.contrasena === "actualizada" && <p role="status">Tu contraseña se actualizó correctamente.</p>}
     </section>

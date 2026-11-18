@@ -1,5 +1,32 @@
 # Gestión segura de contraseñas de cuenta
 
+## Revalidación sobre el portal publicado — 2026-11-18
+
+Base combinada `38420710c4cdfb1e5a82ecce5fa13cdbf473c508`, PR #64.
+Cuenta conserva el inicio del alumno y el panel administrativo publicados.
+Mi perfil conserva su encabezado, avatar y tarjeta de datos, y agrega la tarjeta
+de seguridad usando los mismos tokens. Ambos resultados de contraseña conservan
+sus mensajes; `searchParams` se espera como promesa antes de consultarlo.
+
+Verificación nueva del resultado combinado: 11 pruebas de API, seis de roles y
+perfil, tipos, build y lint afectados aprobados. GoTrue, PostgreSQL y Mailpit
+reales aislados repitieron el cambio propio de admin y alumno, el rechazo de
+contraseña actual incorrecta/anterior y la recuperación desde el enlace real.
+La contraseña elegida habilitó la sesión. Ante SMTP 550: HTTP 503, ningún correo,
+gate cerrado, reset reservado y segundo pedido HTTP 409. El ensayo verifica el
+formulario protegido real en vez de buscar el texto anterior de la pantalla.
+
+Entorno local con CLI `2.122.1`, nombres y red exclusivos de CUEVA y puertos
+publicados explícitamente en `127.0.0.1`. Credenciales efímeras y correos
+`example.test`; no se conservan en evidencia ni Git. No se interviene en los
+contenedores de Vendify. La integración alojada de los flujos continúa
+`NOT_VERIFIED`; el HEAD definitivo, CI y auditoría se registran en el PR.
+
+SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`,
+`cueva-supabase-security`, `supabase:supabase`, `resolving-merge-conflicts`,
+`vercel:react-best-practices`, `cueva-acceptance-audit`, `code-review` y `pr`.
+SKILL_SOURCES: `.agents/skills/<nombre>/SKILL.md` y guías del host.
+
 ## Cambio de contraseña propio
 
 Los usuarios con rol `alumno` y `admin` pueden cambiar la contraseña de su propia cuenta desde su área autenticada.

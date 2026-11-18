@@ -18,7 +18,7 @@ async function createAccount(role) {
   const email = `${role}-${randomUUID()}@example.test`;
   const initial = password();
   const { data, error } = await admin.auth.admin.createUser({ email, password: initial, email_confirm: true });
-  assert.ok(!error && data.user, "Auth provisioned a synthetic user");
+  assert.ok(!error && data.user, `Auth provisioned a synthetic user (${error?.status ?? "ok"}/${error?.code ?? "ok"})`);
   const userId = data.user.id;
   createdUsers.push(userId);
   await db.query("insert into public.cueva_profiles(user_id,role) values ($1,$2)", [userId, role]);
@@ -109,7 +109,7 @@ try {
   assert.equal(state.ready, false);
   assert.equal(state.unbound, true);
   assert.equal(state.has_nonce, true);
-  assert.doesNotMatch(await (await studentSession("/mi-perfil")).text(), /Datos de acceso/);
+  assert.doesNotMatch(await (await studentSession("/mi-perfil")).text(), /action="\/api\/acceso\/cambiar-contrasena"/);
   if (rejected) {
     assert.equal(recovery.status, 503);
     assert.equal(state.operation_kind, "reset");
@@ -125,7 +125,9 @@ try {
     const newPassword = password();
     assert.equal((await recover("/api/acceso/contrasena", { password: newPassword })).status, 303);
     assert.equal((await accessState(student.userId)).ready, true);
-    assert.match(await (await recover("/mi-perfil")).text(), /Datos de acceso/);
+    const restoredProfile = await recover("/mi-perfil");
+    assert.equal(restoredProfile.status, 200);
+    assert.match(await restoredProfile.text(), /action="\/api\/acceso\/cambiar-contrasena"/);
     assert.equal((await login(student, old)).status, 401);
     assert.equal((await login(student, newPassword)).status, 303);
     console.log("PASS: recovery mail -> Auth verification -> chosen password -> ready; old password rejected.");
