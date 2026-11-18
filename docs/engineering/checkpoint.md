@@ -1,35 +1,21 @@
 # Checkpoint CUEVA
 
-## PR #67 — REVIEW sobre portal publicado — 2026-11-18
+## PR #67 — CUEVA-006D — CI validado, draft — 2026-11-18
 
-Base `a019bded9c4d3340feab2d32c2116e0d4e9796d8`, que incluye #64.
-[Revisión funcional y operación de Menciones](pr67-portal-review.md) registra
-correcciones nuevas y dependencias de SQL; el PR conserva HEAD y CI exactos.
-Sin integración de #67 ni aplicación alojada. Las revisiones anteriores no se
-presentan como pruebas de este candidato.
+Base `0832c9ef17a04289528148f76ac2057703db3746`; HEAD validado
+`0c4e9c3d9da26dd1b0c886cec54283db186bfc0b`. PR abierto, mergeable, draft,
+141 commits por delante y cero detrás de main. Verify foundation, Supabase
+fresh/upgrade/hosted-compatible, Membership SQL, Receipt Storage y Vercel Preview
+pasaron sobre este HEAD. No hay reviews ni hilos registrados. La primera corrida
+de Verify tuvo una falla intermitente WebKit móvil; el reintento pasó sin cambios,
+por lo que la flakiness sigue siendo riesgo conocido.
 
-SKILLS_SELECTED / SKILLS_APPLIED / SKILL_SOURCES: detallados en ese informe.
+No se integró #67 ni se aplicó SQL en Supabase hosted. La revisión de alcance,
+la actualización de la descripción del PR y la autorización operativa de
+migraciones/publicación son pasos separados. Ver [informe](pr67-portal-review.md)
+para runs, jobs, limitaciones y secuencia operativa.
 
-## CUEVA-CI-PICOMATCH-001 — REVIEW — 2026-11-18
-
-El Product Owner autorizó en el chat una excepción temporal del aviso
-`GHSA-fc5q-39xc-vjpf` en herramientas de desarrollo. La
-[política acotada y su retiro](dependency-audit-policy.md) conservan el audit
-de producción bloqueante y rechazan otros avisos. Vence el 2026-11-25.
-Esta excepción acepta un riesgo; no corrige picomatch. La base verificada es
-`d90be98ffd2f891df3bb8083b10726f985b261c1`. El PR registra el HEAD, las pruebas
-y la decisión independiente antes de integrar; no se ejecutan cambios de datos.
-
-Verificación local nueva: 23 pruebas del evaluador aprobadas; audit de producción
-sin vulnerabilidades. El audit completo conserva 14 hallazgos causados por el
-mismo aviso y el gate los identifica como `ACCEPTED_RISK` temporal. Documentos,
-fuentes, manifiesto, escaneo de secretos y diff aprobados. CI e integración se
-registran en el PR, sin atribuir estos resultados a la versión alojada.
-
-SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`,
-`cueva-acceptance-audit`, `cueva-release`, `code-review`, `pr`,
-`vercel:deployments-cicd`. SKILL_SOURCES: `.agents/skills/<nombre>/SKILL.md`
-y guías del host.
+SKILLS_SELECTED / SKILLS_APPLIED / SKILL_SOURCES: detallados en el informe.
 
 ## Estado vigente verificado — 2026-11-17
 
