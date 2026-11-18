@@ -8,6 +8,7 @@ export type NotificationInboxItem = {
   title: string;
   body: string;
   created_at: string;
+  created_at_label: string;
   read_at: string | null;
 };
 
@@ -67,13 +68,7 @@ export function NotificationInbox({ items: initialItems }: { items: Notification
               </div>
               <p className={styles.body}>{item.body}</p>
               <div className={styles.footer}>
-                <time dateTime={item.created_at}>
-                  {new Intl.DateTimeFormat("es-AR", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                    timeZone: "America/Argentina/Buenos_Aires",
-                  }).format(new Date(item.created_at))}
-                </time>
+                <time dateTime={item.created_at}>{item.created_at_label}</time>
                 {!item.read_at && (
                   <button type="button" onClick={() => void markRead(item.id)} disabled={busyId !== null}>
                     {busyId === item.id ? "Actualizando…" : "Marcar como leído"}
