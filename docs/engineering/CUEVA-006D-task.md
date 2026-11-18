@@ -1,6 +1,6 @@
 # CUEVA-006D — Rutinas en texto libre con menciones de ejercicios
 
-Estado: implementación en rama aislada; CI aprobado en HEAD 86b16d7f914237822e85fafe9710c5bdc99f1d83; revisión final de integración pendiente.
+Estado: implementación en rama aislada; CI aprobado en HEAD `8e4f79a6d4ba42bc1464eeb6f838e2258c324b74`; revisión final de integración pendiente.
 Fecha de decisión: 2026-11-16.
 
 ## Decisión de producto CONFIRMED
@@ -88,8 +88,7 @@ otro formato.
   UUID inexistente/inactivo, offsets inválidos y payloads malformados.
 - Lint, typecheck, build, pruebas, verificación de fuentes/seguridad y las tres
   variantes de migración local (fresh, upgrade, hosted-compatible) se reportan
-  con resultados reales. CI completada y aprobada en el HEAD documentado abajo;
-  auditoría final e integración siguen pendientes antes de integrar.
+  con resultados reales. CI completada y aprobada en el HEAD documentado en el handoff; revisión final de integración humana pendiente.
 
 ## Entrega
 
@@ -99,21 +98,22 @@ Sin merge ni deploy. Registrar HEAD, archivos, pruebas, riesgos y estado de
 migración en el handoff; el Orchestrator realiza auditoría e integración.
 
 
-## Handoff de validación — 2026-11-17 (actualizado)
+## Handoff de validación — 2026-11-18 (actualizado)
 
 - PR: https://github.com/MatiasEzequielPereyra/CuevApp/pull/67
 - Rama: `feature/routine-text-mentions`.
-- HEAD con CI aprobado: `86b16d7f914237822e85fafe9710c5bdc99f1d83`.
-- Verify foundation: aprobado, incluidos lint, typecheck, build, pruebas, verificación de seguridad, tests del verificador estricto de auditoría y `npm audit --audit-level=critical`.
+- HEAD con CI aprobado: `8e4f79a6d4ba42bc1464eeb6f838e2258c324b74`.
+- Verify foundation: exitoso; `npm run verify`, verificación de seguridad, auditoría runtime/prod, tests del verificador estricto de auditoría y `npm audit --audit-level=critical` aprobados.
 - Auditoría runtime/prod: `npm audit --omit=dev --audit-level=moderate` sin vulnerabilidades.
-- Auditoría completa: permanece una excepción temporal estricta para GHSA-fc5q-39xc-vjpf en Picomatch dev-only; no se declara corregida.
-- Supabase local migrations: fresh, upgrade y hosted-compatible aprobadas, incluyendo pruebas SQL, concurrencia de publicación e integración autenticada UI–Supabase.
-- Membership SQL y Receipt Storage: aprobados.
-- Vercel Preview: deployment completado.
-- Evidencia:
-  - https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44212681594
-  - https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44212681513
-  - https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44212681517
-- La corrección independiente de hidratación de la bandeja de notificaciones se aisló en el PR #68; ya no forma parte del diff de CUEVA-006D.
+- Auditoría completa: permanece una excepción temporal estricta para `GHSA-fc5q-39xc-vjpf` en Picomatch dev-only; no se declara corregida.
+- Membership SQL: jobs `membership-sql` y `receipt-storage` aprobados.
+- Supabase local migrations: fresh, upgrade y hosted-compatible aprobadas; también pruebas SQL, concurrencia de facturación/proveedores/notificaciones/publicación e integración autenticada UI–Supabase.
+- Vercel Preview: estado success en el mismo HEAD.
+- Runs de esta validación:
+  - Verify foundation: https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44226190386
+  - Membership SQL: https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44226190431
+  - Supabase local migrations: https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44226190375
+- El warning de ESLint del cleanup se corrigió en el código mediante una bandera local de ciclo de vida; el nuevo Verify foundation ejecutó `npm run verify` y finalizó exitosamente.
+- La corrección independiente de hidratación de la bandeja de notificaciones permanece aislada en el PR #68.
 - No se integró a `main`, no se aplicaron migraciones en Supabase alojado y no se desplegó producción. CUEVA-003B y CUEVA-005 permanecen fuera del alcance.
-- El PR #67 sigue en borrador hasta completar la revisión final y recibir autorización explícita de integración.
+- El PR #67 continúa en borrador hasta completar la revisión final humana y recibir autorización explícita de integración.
