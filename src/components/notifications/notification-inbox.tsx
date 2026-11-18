@@ -46,12 +46,8 @@ export function NotificationInbox({ items: initialItems }: { items: Notification
   return (
     <section className={styles.panel} aria-labelledby="notification-inbox-title">
       <div className={styles.heading}>
-        <div>
-          <p className={styles.kicker}>MENSAJES DE CUEVA</p>
-          <h2 id="notification-inbox-title">Avisos internos</h2>
-          <p>Recordatorios y novedades de tu membresía.</p>
-        </div>
-        <span className={styles.count}>{unreadCount} sin leer</span>
+        <h2 id="notification-inbox-title">Avisos internos</h2>
+        {initialItems !== null && items.length > 0 && <span className={styles.count}>{unreadCount} sin leer</span>}
       </div>
 
       {initialItems === null ? (
@@ -61,7 +57,7 @@ export function NotificationInbox({ items: initialItems }: { items: Notification
       ) : (
         <ul className={styles.list}>
           {items.map(item => (
-            <li className={item.read_at ? styles.read : styles.unread} key={item.id}>
+            <li className={item.read_at ? undefined : styles.unread} key={item.id}>
               <div className={styles.itemHeading}>
                 <h3>{item.title}</h3>
                 {!item.read_at && <span className={styles.newLabel}>Nuevo</span>}

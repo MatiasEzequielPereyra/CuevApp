@@ -9,10 +9,11 @@ import { createClient } from "@supabase/supabase-js";
 import pg from "pg";
 
 const { API_URL, ANON_KEY, CUEVA_SERVICE_KEY, DB_URL, MIGRATION_EVIDENCE, CUEVA_TEST_VIDEO } = process.env;
-const origin = "http://127.0.0.1:3000";
+const origin = process.env.CUEVA_PRODUCT_ORIGIN ?? "http://127.0.0.1:3000";
 assert.ok(API_URL && ANON_KEY && CUEVA_SERVICE_KEY && DB_URL && MIGRATION_EVIDENCE && CUEVA_TEST_VIDEO);
 assert.equal(new URL(API_URL).hostname, "127.0.0.1");
 assert.equal(new URL(DB_URL).hostname, "127.0.0.1");
+assert.equal(new URL(origin).hostname, "127.0.0.1");
 const service = createClient(API_URL, CUEVA_SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 const db = new pg.Client({ connectionString: DB_URL });
 const students = [randomUUID(), randomUUID()];

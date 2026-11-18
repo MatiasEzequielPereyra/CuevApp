@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import ts from "typescript";
+import { StudentIcon } from "../../src/components/routines/student-icon";
 
 const localRequire = createRequire(__filename);
 const link = ({ children, ...props }: React.ComponentProps<"a">) =>
@@ -27,6 +28,7 @@ function loadExport(path: string, mocks: Record<string, unknown>) {
 }
 
 const shell = loadExport("src/components/routines/student-shell.tsx", {
+  "./student-icon": { StudentIcon },
   "next/link": { default: link },
   "@/components/brand/brand-mark": {
     BrandMark: () => React.createElement("span", null, "CUEVA"),
@@ -53,6 +55,7 @@ function loadStudentPage(path: string) {
     "./mi-rutina.css": {},
     "next/link": { default: link },
     "@/components/routines/student-shell": shell,
+    "@/components/routines/student-home": { StudentHome: () => null },
     "@/components/brand/brand-mark": { BrandMark: () => null },
     "@/components/theme/theme-picker": { ThemePicker: () => null },
     "@/components/dashboard/admin-dashboard": {
@@ -95,8 +98,86 @@ test("la navegación del alumno contiene las cinco secciones y marca la activa",
   await expect(nav.getByRole("link", { name: "Notificaciones" })).toHaveAttribute("aria-current", "page");
   await expect(nav.getByRole("link", { name: "Inicio" })).not.toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("link", { name: "Saltar al contenido" })).toHaveAttribute("href", "#contenido");
-  await expect(page.locator('form[action="/api/acceso/salir"]')).toHaveAttribute("method", "post");
+  await expect(page.getByRole("button", { name: "Cerrar sesión" })).toHaveCount(0);
 });
+
+test("el menú completo entra a 320 px y deja visible el cierre de sesión", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 630 });
+  const css = readFileSync("src/app/globals.css", "utf8");
+  const markup = renderToStaticMarkup(React.createElement(
+    shell.StudentShell, { active: "perfil" },
+    React.createElement("div", { style: { minHeight: "760px" } }, React.createElement("h1", null, "Mi perfil")),
+  ));
+  await page.setContent(`<!doctype html><html lang="es-AR" data-theme="dark"><head><style>${css}</style></head><body>${markup}</body></html>`);
+  const nav = page.getByRole("navigation", { name: "Navegación del alumno" });
+  const links = nav.getByRole("link");
+  await expect(links).toHaveCount(5);
+  const dock = await nav.boundingBox();
+  expect(dock).toBeTruthy();
+  expect((dock?.y ?? 0) + (dock?.height ?? 0)).toBe(630);
+  for (const link of await links.all()) {
+    const box = await link.boundingBox();
+    expect(box?.width).toBeGreaterThanOrEqual(44);
+    expect(box?.height).toBeGreaterThanOrEqual(44);
+    expect((box?.x ?? -1) + (box?.width ?? 321)).toBeLessThanOrEqual(320);
+  }
+  await links.first().focus();
+  await page.keyboard.press("Tab");
+  await expect(links.nth(1)).toBeFocused();
+  const signout = page.getByRole("button", { name: "Cerrar sesión" });
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expect(signout).toBeInViewport();
+  expect((await signout.boundingBox())?.y).toBeLessThan(dock?.y ?? 0);
+  await expect(page.locator('form[action="/api/acceso/salir"]')).toHaveAttribute("method", "post");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+for (const width of [1024, 1440]) {
+  for (const theme of ["light", "dark"]) {
+    test(`Shift+Tab recupera un control visible y activable bajo la barra a ${width}px / ${theme}`, async ({ page }, testInfo) => {
+      await page.setViewportSize({ width, height: 720 });
+      const css = readFileSync("src/app/globals.css", "utf8");
+      const markup = renderToStaticMarkup(React.createElement(
+        shell.StudentShell, { active: "membresia" },
+        React.createElement("div", { style: { minHeight: "1000px" } }, React.createElement("h1", null, "Mis cuotas")),
+        React.createElement("section", { className: "membership-history" },
+          React.createElement("details", { className: "membership-card" },
+            React.createElement("summary", null, "Detalle del período"),
+            React.createElement("p", null, "Período de prueba"),
+          ),
+        ),
+        React.createElement("div", { style: { minHeight: "1000px" }, "aria-hidden": true }),
+        React.createElement("button", { type: "button" }, "Continuar"),
+      ));
+      await page.setContent(`<!doctype html><html lang="es-AR" data-theme="${theme}"><head><style>${css}</style></head><body>${markup}</body></html>`);
+      const control = page.locator(".membership-history summary");
+      await page.getByRole("button", { name: "Continuar" }).focus();
+      // Scroll while a later control retains focus, leaving the earlier one just above the viewport.
+      await control.evaluate(element => window.scrollTo(0, window.scrollY + element.getBoundingClientRect().top + 1));
+      const hidden = await control.boundingBox();
+      expect(hidden).not.toBeNull();
+      expect(hidden!.y).toBeLessThan(0);
+
+      await page.keyboard.press("Shift+Tab");
+      await expect(control).toBeFocused();
+      const header = await page.locator(".student-topbar").boundingBox();
+      const focused = await control.boundingBox();
+      expect(header).not.toBeNull();
+      expect(focused).not.toBeNull();
+      // Include the five pixels occupied by the visible focus outline.
+      expect(focused!.y - 5).toBeGreaterThanOrEqual(header!.y + header!.height);
+      expect(focused!.y + focused!.height + 5).toBeLessThanOrEqual(720);
+      expect(await control.evaluate(element => {
+        const bounds = element.getBoundingClientRect();
+        return element.contains(document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + 1));
+      })).toBe(true);
+      await page.screenshot({ path: testInfo.outputPath("student-focus.png") });
+      await page.keyboard.press("Enter");
+      await expect(page.locator(".membership-history details")).toHaveAttribute("open", "");
+      await expect(page.getByText("Período de prueba")).toBeVisible();
+    });
+  }
+}
 
 for (const [path, heading] of [
   ["src/app/mi-rutina/page.tsx", "Acceso restringido"],

@@ -6,6 +6,7 @@ import { createRequire } from "node:module";
 import ts from "typescript";
 import { pesos } from "@/lib/payments/money";
 import * as receiptContracts from "@/lib/receipts/contracts";
+import { StudentIcon } from "../../src/components/routines/student-icon";
 
 const fixtures = {
   active: true,
@@ -36,6 +37,7 @@ function loadExport(path: string, mocks: Record<string, unknown>) {
 }
 
 const shell = loadExport("src/components/routines/student-shell.tsx", {
+  "./student-icon": { StudentIcon },
   "next/link": { default: link },
   "@/components/brand/brand-mark": { BrandMark: () => "CUEVA" },
   "@/components/theme/theme-picker": { ThemePicker: () => null },

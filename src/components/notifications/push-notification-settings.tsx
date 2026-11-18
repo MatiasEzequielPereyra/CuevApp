@@ -132,13 +132,12 @@ export function PushNotificationSettings() {
 
   return <section className="push-settings-panel" aria-labelledby="push-settings-title">
     <div>
-      <p className="push-settings-kicker">NOTIFICACIONES</p>
       <h2 id="push-settings-title">Avisos en este dispositivo</h2>
       <p className="push-settings-description">
-        Recibí avisos push sobre vencimientos. Los correos y avisos internos de CUEVA siguen activos.
+        Podés recibir un aviso en este dispositivo cuando se acerque el vencimiento de tu cuota.
       </p>
     </div>
-    {!settings?.available ? <p className="push-settings-note">La recepción push todavía no está configurada en el servidor. Podés seguir usando los avisos por correo y dentro de CUEVA.</p>
+    {!settings?.available ? <p className="push-settings-note">Los avisos del dispositivo todavía no están disponibles.</p>
       : settings.pushEnabled && registered ? <div className="push-settings-actions">
         <span className="push-settings-status">Push habilitado</span>
         <button type="button" onClick={disablePush} disabled={busy}>Desactivar push</button>
