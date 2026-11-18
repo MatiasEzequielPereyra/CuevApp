@@ -2,7 +2,7 @@
 
 Fecha de evaluación: 2026-11-17  
 Rama evaluada: `feature/routine-text-mentions`  
-HEAD validado en CI: `8e4f79a6d4ba42bc1464eeb6f838e2258c324b74`  
+HEAD validado en CI: `11e9169d4bf9d796a7cced3c4ff6572393061b41`  
 Estado: excepción técnica acotada implementada en CI; no equivale a declarar el hallazgo corregido.
 
 ## Hallazgo
@@ -18,7 +18,7 @@ Ambas instalaciones están marcadas como dependencias de desarrollo en el
 lockfile. El árbol de dependencias las alcanza desde tooling de ESLint/Next y
 TypeScript-ESLint. No son dependencias runtime directas de la aplicación.
 
-La ejecución CI comprobada el 2026-11-18 sobre el HEAD `8e4f79a6d4ba42bc1464eeb6f838e2258c324b74` confirma que:
+La ejecución CI comprobada el 2026-11-18 sobre el HEAD `11e9169d4bf9d796a7cced3c4ff6572393061b41` confirma que:
 - `npm audit --omit=dev --audit-level=moderate`: 0 vulnerabilidades.
 - `npm audit --audit-level=moderate`: falla por el aviso de Picomatch y su
   propagación por dependencias transitivas.
@@ -65,9 +65,14 @@ esta excepción y confirmar que ambas instalaciones vulnerables desaparecieron.
 ## Estado de aprobación
 
 La autorización para mantener esta excepción técnica acotada se recibió en la conversación
-de trabajo. La validación de CI sobre el HEAD `8e4f79a6d4ba42bc1464eeb6f838e2258c324b74` volvió a aprobar el verificador estricto y la auditoría crítica. La excepción técnica se implementa mediante `scripts/check-dependency-audit.mjs`.
+de trabajo. La validación de CI sobre el HEAD `11e9169d4bf9d796a7cced3c4ff6572393061b41` volvió a aprobar el verificador estricto y la auditoría crítica. La excepción técnica se implementa mediante `scripts/check-dependency-audit.mjs`.
 El verificador permite únicamente el grafo de 14 entradas reportado por npm,
 las versiones y rutas dev fijadas en el lockfile, y el advisory exacto. Sus
 pruebas positivas y negativas se ejecutan en CI. La excepción permanece
 condicionada a que el audit de producción siga limpio y a que todos los checks
 del PR estén verdes; no autoriza merge por sí sola.
+
+
+## Revalidación del HEAD — 2026-11-18
+
+El HEAD `11e9169d4bf9d796a7cced3c4ff6572393061b41` volvió a pasar Verify foundation, incluyendo el verificador estricto del grafo y `npm audit --audit-level=critical`. Esto confirma el comportamiento del gate en esta ejecución; no convierte la excepción en una corrección del advisory ni reemplaza la revisión periódica y su vencimiento.
