@@ -2,7 +2,9 @@
 
 Estado: **CI VALIDADO; revisión final de alcance y operación pendiente; PR en draft**.
 Base actual verificada: `0832c9ef17a04289528148f76ac2057703db3746`.
-HEAD validado: `0c4e9c3d9da26dd1b0c886cec54283db186bfc0b`.
+HEAD validado: `11e9169d4bf9d796a7cced3c4ff6572393061b41`.
+
+Los commits `ae8c572` y `11e9169` solo actualizan documentación; el código funcional y las pruebas son idénticos al candidato `0c4e9c3`. La CI y Preview se volvieron a ejecutar sobre el HEAD documental actual.
 El PR permanece abierto, mergeable y sin commits detrás de `main`. La evidencia de
 código y CI se refiere al HEAD indicado; los resultados anteriores conservan valor
 histórico y no sustituyen esta ejecución.
@@ -123,3 +125,18 @@ vulnerabilidades y todos los conteos numéricos exactamente cero. Conserva los
 rechazos a reportes inválidos, avisos adicionales y cambios del grafo cuando
 existen hallazgos. Se agregan tres regresiones; el verificador común de main,
 su vencimiento, audit de producción y gate de critical permanecen intactos.
+
+
+## Validación del HEAD documental actual — 2026-11-18
+
+HEAD `11e9169d4bf9d796a7cced3c4ff6572393061b41`:
+- Verify foundation: SUCCESS — https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44405490478.
+- Membership SQL y Receipt Storage: SUCCESS — https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44405490404.
+- Supabase local migrations fresh, upgrade y hosted-compatible: SUCCESS — https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44405490419.
+- Vercel Preview: SUCCESS (commit status del HEAD).
+- Comparación contra base `0832c9e`: 143 commits ahead, cero behind; `mergeable=true`.
+- Reviews y review threads registrados: ninguno.
+
+Los jobs completaron; algunos pasos condicionales aparecen `skipped` por diseño de cada variante. Los workflows usan stacks aislados y no verifican ni modifican el esquema Supabase alojado. La intermitencia WebKit observada en la primera corrida del código `0c4e9c3` permanece como riesgo conocido, aunque el reintento y HEAD actual pasaron.
+
+El PR continúa en draft. La CI no sustituye revisión final humana ni autoriza merge, despliegue o migración alojada.
