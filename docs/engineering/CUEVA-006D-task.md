@@ -1,6 +1,6 @@
 # CUEVA-006D — Rutinas en texto libre con menciones de ejercicios
 
-Estado: implementación en rama aislada y validación CI aprobada; auditoría final e integración pendientes.
+Estado: implementación en rama aislada; CI aprobado en HEAD 86b16d7f914237822e85fafe9710c5bdc99f1d83; revisión final de integración pendiente.
 Fecha de decisión: 2026-11-16.
 
 ## Decisión de producto CONFIRMED
@@ -99,20 +99,21 @@ Sin merge ni deploy. Registrar HEAD, archivos, pruebas, riesgos y estado de
 migración en el handoff; el Orchestrator realiza auditoría e integración.
 
 
-## Handoff de validación — 2026-11-17
+## Handoff de validación — 2026-11-17 (actualizado)
 
+- PR: https://github.com/MatiasEzequielPereyra/CuevApp/pull/67
 - Rama: `feature/routine-text-mentions`.
-- HEAD validado: `1e84e79cd50bc6083ef42c942509e1635fb14d75`.
-- Commit de actualización de seguridad incorporado: Next.js y
-  `eslint-config-next` `16.4.6`, con lockfile sincronizado.
-- Verify foundation: aprobado; `npm audit` reportó cero vulnerabilidades.
-- Supabase local migrations: aprobadas las matrices `fresh`, `upgrade` y
-  `hosted-compatible`, incluyendo pruebas SQL, concurrencia de publicación y
-  escenarios de integración de navegador.
+- HEAD con CI aprobado: `86b16d7f914237822e85fafe9710c5bdc99f1d83`.
+- Verify foundation: aprobado, incluidos lint, typecheck, build, pruebas, verificación de seguridad, tests del verificador estricto de auditoría y `npm audit --audit-level=critical`.
+- Auditoría runtime/prod: `npm audit --omit=dev --audit-level=moderate` sin vulnerabilidades.
+- Auditoría completa: permanece una excepción temporal estricta para GHSA-fc5q-39xc-vjpf en Picomatch dev-only; no se declara corregida.
+- Supabase local migrations: fresh, upgrade y hosted-compatible aprobadas, incluyendo pruebas SQL, concurrencia de publicación e integración autenticada UI–Supabase.
+- Membership SQL y Receipt Storage: aprobados.
+- Vercel Preview: deployment completado.
 - Evidencia:
-  - https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44104460321
-  - https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44104460333
-- No se creó PR, no se integró a `main`, no se desplegó y no se escribió en
-  Supabase alojado. CUEVA-003B y CUEVA-005 permanecen fuera de alcance.
-- La rama sigue deliberadamente aislada; no incorporar el resto de los cambios
-  de `main` como parte de este handoff.
+  - https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44212681594
+  - https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44212681513
+  - https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44212681517
+- La corrección independiente de hidratación de la bandeja de notificaciones se aisló en el PR #68; ya no forma parte del diff de CUEVA-006D.
+- No se integró a `main`, no se aplicaron migraciones en Supabase alojado y no se desplegó producción. CUEVA-003B y CUEVA-005 permanecen fuera del alcance.
+- El PR #67 sigue en borrador hasta completar la revisión final y recibir autorización explícita de integración.
