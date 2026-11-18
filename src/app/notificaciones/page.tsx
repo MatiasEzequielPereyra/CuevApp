@@ -19,7 +19,15 @@ export default async function NotificationsPage() {
     .select("id,title,body,created_at,read_at")
     .order("created_at", { ascending: false })
     .limit(50);
-  const inboxItems = inboxResult.error ? null : (inboxResult.data ?? []) as NotificationInboxItem[];
+  const dateFormatter = new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "America/Argentina/Buenos_Aires",
+  });
+  const inboxItems: NotificationInboxItem[] | null = inboxResult.error ? null : (inboxResult.data ?? []).map(item => ({
+    ...item,
+    created_at_label: dateFormatter.format(new Date(item.created_at)),
+  }));
 
   return <StudentShell active="notificaciones">
     <StudentPageHeading title="Notificaciones"><p>Recordatorios y novedades de tu cuenta.</p></StudentPageHeading>
