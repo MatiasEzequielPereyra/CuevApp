@@ -1,6 +1,6 @@
 # CUEVA-006D — Rutinas en texto libre con menciones de ejercicios
 
-Estado: implementación en rama aislada; CI aprobado en HEAD `8e4f79a6d4ba42bc1464eeb6f838e2258c324b74`; revisión final de integración pendiente.
+Estado: implementación en rama aislada; CI aprobado en HEAD `11e9169d4bf9d796a7cced3c4ff6572393061b41`; revisión final de integración pendiente.
 Fecha de decisión: 2026-11-16.
 
 ## Decisión de producto CONFIRMED
@@ -102,7 +102,7 @@ migración en el handoff; el Orchestrator realiza auditoría e integración.
 
 - PR: https://github.com/MatiasEzequielPereyra/CuevApp/pull/67
 - Rama: `feature/routine-text-mentions`.
-- HEAD con CI aprobado: `8e4f79a6d4ba42bc1464eeb6f838e2258c324b74`.
+- HEAD con CI aprobado: `11e9169d4bf9d796a7cced3c4ff6572393061b41`.
 - Verify foundation: exitoso; `npm run verify`, verificación de seguridad, auditoría runtime/prod, tests del verificador estricto de auditoría y `npm audit --audit-level=critical` aprobados.
 - Auditoría runtime/prod: `npm audit --omit=dev --audit-level=moderate` sin vulnerabilidades.
 - Auditoría completa: permanece una excepción temporal estricta para `GHSA-fc5q-39xc-vjpf` en Picomatch dev-only; no se declara corregida.
@@ -110,10 +110,13 @@ migración en el handoff; el Orchestrator realiza auditoría e integración.
 - Supabase local migrations: fresh, upgrade y hosted-compatible aprobadas; también pruebas SQL, concurrencia de facturación/proveedores/notificaciones/publicación e integración autenticada UI–Supabase.
 - Vercel Preview: estado success en el mismo HEAD.
 - Runs de esta validación:
-  - Verify foundation: https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44226190386
-  - Membership SQL: https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44226190431
-  - Supabase local migrations: https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44226190375
+  - Verify foundation: https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44405490478
+  - Membership SQL: https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44405490404
+  - Supabase local migrations: https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44405490419
 - El warning de ESLint del cleanup se corrigió en el código mediante una bandera local de ciclo de vida; el nuevo Verify foundation ejecutó `npm run verify` y finalizó exitosamente.
 - La corrección independiente de hidratación de la bandeja de notificaciones permanece aislada en el PR #68.
 - No se integró a `main`, no se aplicaron migraciones en Supabase alojado y no se desplegó producción. CUEVA-003B y CUEVA-005 permanecen fuera del alcance.
 - El PR #67 continúa en borrador hasta completar la revisión final humana y recibir autorización explícita de integración.
+
+
+Los commits `ae8c572` y `11e9169` actualizan documentación únicamente. La CI se repitió sobre `11e9169d4bf9d796a7cced3c4ff6572393061b41` y Verify, Membership SQL, Receipt Storage, las tres variantes de migraciones y Vercel Preview finalizaron SUCCESS. La revisión independiente final y la autorización de merge siguen pendientes.
