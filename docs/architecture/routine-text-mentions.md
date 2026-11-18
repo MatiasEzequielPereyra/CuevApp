@@ -4,7 +4,7 @@ La [revisión sobre main publicado](../engineering/pr67-portal-review.md) reempl
 los resultados históricos siguientes para la entrega actual. Incluye correcciones
 Unicode, snapshot, escritor compatible y orden operativo.
 
-Fecha: 2026-11-18. Estado: implementación en rama aislada; CI aprobado en HEAD `8e4f79a6d4ba42bc1464eeb6f838e2258c324b74`. Revisión final de integración pendiente.
+Fecha: 2026-11-18. Estado: implementación en rama aislada; CI aprobado en HEAD `11e9169d4bf9d796a7cced3c4ff6572393061b41`. Revisión final de integración pendiente.
 
 ## Modelo de edición
 
@@ -100,7 +100,7 @@ usando las consultas y autorizaciones actuales.
   deploy, Auth ni cambios de roles en esta fase.
 
 
-## Evidencia de validación — HEAD `8e4f79a6d4ba42bc1464eeb6f838e2258c324b74`
+## Evidencia de validación — HEAD `11e9169d4bf9d796a7cced3c4ff6572393061b41`
 
 Los workflows de GitHub Actions finalizaron correctamente sobre el mismo SHA del PR:
 
@@ -112,14 +112,14 @@ Los workflows de GitHub Actions finalizaron correctamente sobre el mismo SHA del
 - Vercel Preview: deployment completado.
 
 Runs:
-- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44226190431
-- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44226190386
-- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44226190375
+- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44405490404
+- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44405490478
+- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44405490419
 
 Esta evidencia no representa una migración aplicada en Supabase alojado ni una autorización de merge o despliegue.
 
 
-## Corrección del cleanup del autocompletado — HEAD `8e4f79a6d4ba42bc1464eeb6f838e2258c324b74`
+## Corrección del cleanup del autocompletado — HEAD `11e9169d4bf9d796a7cced3c4ff6572393061b41`
 
 El cleanup del efecto del autocompletado usa una bandera local de ciclo de vida
 para impedir que callbacks asíncronos actualicen estado después del desmontaje.
@@ -132,3 +132,6 @@ auditorías configuradas; Membership SQL completó membership y Receipt Storage;
 Supabase local migrations completó fresh, upgrade y hosted-compatible, las
 pruebas SQL, concurrencia e integración autenticada; Vercel Preview informó
 success. Esta evidencia corresponde al SHA indicado, no a ejecuciones previas.
+
+
+Los commits `ae8c572` y `11e9169` actualizan documentación únicamente. La CI fue repetida sobre `11e9169d4bf9d796a7cced3c4ff6572393061b41`: Verify foundation, Membership SQL, Receipt Storage, Supabase fresh/upgrade/hosted-compatible y Vercel Preview SUCCESS. Ver evidencias vigentes en `docs/engineering/pr67-portal-review.md`.
