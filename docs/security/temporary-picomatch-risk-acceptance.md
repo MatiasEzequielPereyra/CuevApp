@@ -2,7 +2,7 @@
 
 Fecha de evaluación: 2026-11-17  
 Rama evaluada: `feature/routine-text-mentions`  
-HEAD evaluado: `0e03d042aebce367b90f222875a33da8b33175b2`  
+HEAD validado en CI: `86b16d7f914237822e85fafe9710c5bdc99f1d83`  
 Estado: excepción técnica acotada implementada en CI; no equivale a declarar el hallazgo corregido.
 
 ## Hallazgo
