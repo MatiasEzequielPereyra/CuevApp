@@ -1,10 +1,11 @@
 # PR #67 — Revisión sobre el portal publicado
 
-Estado: REVIEW; integración y aplicación alojada pendientes. Base verificada
-`a019bded9c4d3340feab2d32c2116e0d4e9796d8` (portal, Next 16.4.6 y #64).
-Se conservaron los commits de la rama remota hasta
-`5aef12045c60ca8ceb9a24fe69834bd783ba237e`; el PR registra el HEAD definitivo
-junto a las corridas nuevas. La evidencia anterior de `8e4f79a` es histórica.
+Estado: **CI VALIDADO; revisión final de alcance y operación pendiente; PR en draft**.
+Base actual verificada: `0832c9ef17a04289528148f76ac2057703db3746`.
+HEAD validado: `0c4e9c3d9da26dd1b0c886cec54283db186bfc0b`.
+El PR permanece abierto, mergeable y sin commits detrás de `main`. La evidencia de
+código y CI se refiere al HEAD indicado; los resultados anteriores conservan valor
+histórico y no sustituyen esta ejecución.
 
 ## Resultado combinado y correcciones
 
