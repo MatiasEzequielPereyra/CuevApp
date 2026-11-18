@@ -73,8 +73,13 @@ export function StudentPlan({ plan, videoIds }: { plan: Plan; videoIds: string[]
     request.current?.abort();
     setPlaying(null);
     setPlayback({ state: "loading" });
-    trigger.current?.focus({ preventScroll: true });
-    window.scrollTo({ left: position.current.x, top: position.current.y, behavior: "instant" });
+    // Native close queues this event after restoring focus. A subsequent
+    // navigation must keep its own focus and scroll position.
+    const active = document.activeElement;
+    if (!active || active === document.body || active === trigger.current || dialog.current?.contains(active)) {
+      trigger.current?.focus({ preventScroll: true });
+      window.scrollTo({ left: position.current.x, top: position.current.y, behavior: "instant" });
+    }
   }
 
   const youtube = playback.state === "ready" && playback.source.kind === "youtube" ? playback.source : null;

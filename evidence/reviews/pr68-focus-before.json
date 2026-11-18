@@ -1,0 +1,71 @@
+{
+  "scenario": "Native close returns focus to the exercise, then the caller focuses Empuje before the queued close event; original Tab assertion fails.",
+  "base": "38420710c4cdfb1e5a82ecce5fa13cdbf473c508",
+  "result": "FAIL_EXPECTED_BEFORE_FIX",
+  "events": [
+    {
+      "event": "focusin",
+      "active": "Empuje",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 655.7000000476837
+    },
+    {
+      "event": "focusin",
+      "active": "1Press militar10 repeticiones20 kg Video",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 674
+    },
+    {
+      "event": "focusin",
+      "active": "Cerrar",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 692.8999999761581
+    },
+    {
+      "event": "focusin",
+      "active": "1Press militar10 repeticiones20 kg Video",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 755.5
+    },
+    {
+      "event": "focusin",
+      "active": "Empuje",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 755.8999999761581
+    },
+    {
+      "event": "close",
+      "active": "Empuje",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 762
+    },
+    {
+      "event": "focusin",
+      "active": "1Press militar10 repeticiones20 kg Video",
+      "tag": "BUTTON",
+      "label": "",
+      "focused": true,
+      "time": 762.5
+    },
+    {
+      "event": "focusin",
+      "active": "",
+      "tag": "NEXTJS-PORTAL",
+      "label": "",
+      "focused": true,
+      "time": 781.6000000238419
+    }
+  ]
+}
