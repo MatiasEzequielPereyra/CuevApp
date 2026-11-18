@@ -32,7 +32,9 @@
     "test:notifications:webpush": "node --experimental-strip-types --test tests/notifications-web-push-provider.test.mjs",
     "test:notifications:push-subscription": "node --experimental-strip-types --test tests/notifications-push-subscription.test.mjs",
     "test:notifications:worker-endpoint": "node --experimental-strip-types --test tests/notifications-worker-endpoint-auth.test.mjs",
-    "test:notifications:push-route": "node --experimental-strip-types --test tests/notifications-push-route-http.test.mjs"
+    "test:notifications:push-route": "node --experimental-strip-types --test tests/notifications-push-route-http.test.mjs",
+    "test:dependencies": "node --test tests/dependency-audit.test.mjs",
+    "verify:dependencies": "node scripts/verify-dependencies.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",

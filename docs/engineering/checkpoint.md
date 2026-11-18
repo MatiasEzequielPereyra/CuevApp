@@ -1,6 +1,53 @@
 # Checkpoint CUEVA
 
-## CUEVA-005 · Corrección de bandeja y registro Push en REVIEW · 2026-11-16
+## CUEVA-CI-PICOMATCH-001 — REVIEW — 2026-11-18
+
+El Product Owner autorizó en el chat una excepción temporal del aviso
+`GHSA-fc5q-39xc-vjpf` en herramientas de desarrollo. La
+[política acotada y su retiro](dependency-audit-policy.md) conservan el audit
+de producción bloqueante y rechazan otros avisos. Vence el 2026-11-25.
+Esta excepción acepta un riesgo; no corrige picomatch. La base verificada es
+`d90be98ffd2f891df3bb8083b10726f985b261c1`. El PR registra el HEAD, las pruebas
+y la decisión independiente antes de integrar; no se ejecutan cambios de datos.
+
+Verificación local nueva: 23 pruebas del evaluador aprobadas; audit de producción
+sin vulnerabilidades. El audit completo conserva 14 hallazgos causados por el
+mismo aviso y el gate los identifica como `ACCEPTED_RISK` temporal. Documentos,
+fuentes, manifiesto, escaneo de secretos y diff aprobados. CI e integración se
+registran en el PR, sin atribuir estos resultados a la versión alojada.
+
+SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`,
+`cueva-acceptance-audit`, `cueva-release`, `code-review`, `pr`,
+`vercel:deployments-cicd`. SKILL_SOURCES: `.agents/skills/<nombre>/SKILL.md`
+y guías del host.
+
+## Estado vigente verificado — 2026-11-17
+
+El [PR #53](https://github.com/MatiasEzequielPereyra/CuevApp/pull/53) integró el
+portal del alumno con Inicio, Mi Membresía, Entrenamiento, Notificaciones y
+Mi perfil. [Vercel Production](https://vercel.com/matiasezequielpereyras-projects/cueva-app/7e1ZMTQXNZ59dq7bosgxYNd3Ys2M)
+sirve el commit de la corrección posterior `d85d7bca01d60b6f8bdca4477885ecb4f85c21ff`.
+
+Supabase Hosted registra 30 migraciones, incluidas las 12 del
+[manifiesto de Notificaciones](../operations/CUEVA-005-migration-manifest.json).
+La bandeja existe y la RPC `cueva_student_assigned_exercises()` sigue pendiente
+de aplicación alojada. Cron sigue sin instalar y la tabla de ejecuciones está
+vacía. El correo autorizado llegó al buzón en una prueba aislada. La entrega
+efectiva de Push y la aceptación con una sesión alojada quedan pendientes.
+
+Vencimientos conserva su esquema de referencia. El registro e historial de
+resultados de entrenamiento y la consulta de rutinas sin conexión siguen
+pendientes.
+
+SKILLS_SELECTED / SKILLS_APPLIED: `cueva-acceptance-audit`, `cueva-release`,
+`cueva-supabase-security`, `supabase:supabase` y `resolving-merge-conflicts`.
+SKILL_SOURCES: `.agents/skills/<nombre>/SKILL.md` y guías de host.
+
+## CUEVA-005 · Corrección de bandeja y registro Push publicada · 2026-11-16
+
+El [PR #65](https://github.com/MatiasEzequielPereyra/CuevApp/pull/65) integró la
+corrección en `d85d7bc`. GitHub verificó la lectura desde Chromium en la
+[integración con Supabase](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43934997360/job/133537155824).
 
 Base `a432ea2644ea2af4e5ebf81fb0e9958955d06206`. El PATCH de bandeja
 rechazaba `Content-Length` decimal por un escape doble en su expresión regular.
@@ -25,7 +72,8 @@ local del workflow `supabase-local.yml` y ejecutar
 [`notifications-push.integration.mjs`](../../tests/e2e/notifications-push.integration.mjs)
 con `CUEVA_TEST_NATIVE_PUSH_BROWSER=msedge` y un par VAPID efímero coherente
 en el servidor local. La integración general ejecuta bandeja y HTTP aun cuando
-se omite la opción nativa. Cron, correo y entrega Push quedan NOT_RUN.
+se omite la opción nativa. Este ensayo cubrió el registro de Push. La entrega
+al dispositivo requiere una prueba adicional.
 
 SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`,
 `cueva-supabase-security`, `supabase:supabase`, `diagnosing-bugs`,
@@ -48,12 +96,9 @@ aprobó 126 pruebas, incluidas las 12 variantes del flujo de cuatro bloques en
 Chromium y WebKit. [CI de migraciones](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/43778309975)
 aprobó fresh, upgrade y hosted-compatible. El árbol del merge coincide con el candidato.
 
-[PR #53](https://github.com/MatiasEzequielPereyra/CuevApp/pull/53) sigue abierto. La
-lectura alojada confirmó que faltan `cueva_notification_inbox` y
-`cueva_student_assigned_exercises()`. Publicar el candidato actual expondría una
-pestaña de avisos indisponible. Para publicar el portal antes de CUEVA-005, su
-navegación y pantalla deben manejar explícitamente esa disponibilidad. La RPC
-de ejercicios requiere su propia aplicación y comprobación alojada.
+En la revisión previa a integrar el portal, la lectura alojada observó que
+faltaban la bandeja y la RPC de ejercicios asignados. El estado vigente figura
+al comienzo de este documento.
 
 SKILLS_SELECTED / SKILLS_APPLIED: `cueva-acceptance-audit`, `cueva-release`,
 `cueva-supabase-security`, `cueva-finance` y `supabase:supabase`.
@@ -74,10 +119,9 @@ El ejecutor registró el recorrido a cinco minutos.
 [Control de Cron](../operations/CUEVA-005-cron-control.sql) ·
 [Ensayo nativo](../../tests/cueva-005-cron-native.ps1).
 
-Hosted conserva las 18 migraciones anteriores. Faltan las doce de Notificaciones
-y la RPC de ejercicios asignados del portal. Cron y los envíos alojados siguen
-pendientes. La verificación y el respaldo previos a la primera aplicación se
-detallan en la [guía operativa](../operations/CUEVA-005-rollout-checklist.md).
+El preflight registró 18 migraciones alojadas antes de aplicar las doce de
+Notificaciones. La secuencia de verificación, respaldo y aplicación figura en
+la [guía operativa](../operations/CUEVA-005-rollout-checklist.md).
 
 SKILLS_SELECTED / SKILLS_APPLIED: `cueva-acceptance-audit`,
 `cueva-supabase-security`, `cueva-finance`, `cueva-release`,
