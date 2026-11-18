@@ -2,18 +2,20 @@
 
 ## PR #67 — CUEVA-006D — CI validado, draft — 2026-11-18
 
-Base `0832c9ef17a04289528148f76ac2057703db3746`; HEAD validado
-`0c4e9c3d9da26dd1b0c886cec54283db186bfc0b`. PR abierto, mergeable, draft,
-141 commits por delante y cero detrás de main. Verify foundation, Supabase
-fresh/upgrade/hosted-compatible, Membership SQL, Receipt Storage y Vercel Preview
-pasaron sobre este HEAD. No hay reviews ni hilos registrados. La primera corrida
-de Verify tuvo una falla intermitente WebKit móvil; el reintento pasó sin cambios,
-por lo que la flakiness sigue siendo riesgo conocido.
+Base `0832c9ef17a04289528148f76ac2057703db3746`; HEAD documental actualizado
+`b9b7d4096f81fc212d1f635576d972dfdc7cc0f0`. La implementación funcional fue
+validada en `0c4e9c3`; los commits posteriores son solo documentación. La CI se
+repitió sobre `11e9169`: Verify foundation, Membership SQL, Receipt Storage,
+Supabase fresh/upgrade/hosted-compatible y Vercel Preview SUCCESS. La rama está
+143 commits ahead y cero behind de main. PR abierto, mergeable y draft; sin
+reviews ni hilos registrados.
 
-No se integró #67 ni se aplicó SQL en Supabase hosted. La revisión de alcance,
-la actualización de la descripción del PR y la autorización operativa de
-migraciones/publicación son pasos separados. Ver [informe](pr67-portal-review.md)
-para runs, jobs, limitaciones y secuencia operativa.
+La primera corrida del código `0c4e9c3` tuvo una intermitencia WebKit móvil;
+el reintento pasó sin cambios de código, aserciones ni timeouts. La flakiness
+sigue siendo riesgo conocido. No se integró #67 ni se aplicó SQL en Supabase
+hosted. La revisión humana final y la autorización de merge siguen pendientes.
+Ver [informe](pr67-portal-review.md) para runs, jobs, limitaciones y secuencia
+operativa.
 
 SKILLS_SELECTED / SKILLS_APPLIED / SKILL_SOURCES: detallados en el informe.
 
