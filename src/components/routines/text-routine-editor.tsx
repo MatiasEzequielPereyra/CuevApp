@@ -9,10 +9,10 @@ type SearchRange = { start: number; end: number; query: string } | null;
 
 function searchRange(value: string, cursor: number): SearchRange {
   const before = value.slice(0, cursor);
-  const at = before.match(/(?:^|\\s)@([^@\\n]*)$/);
+  const at = before.match(/(?:^|\s)@([^@\n]*)$/);
   const atQuery = at?.[1];
   if (atQuery !== undefined) return { start: cursor - atQuery.length - 1, end: cursor, query: atQuery.trim() };
-  const prefix = before.match(/(?:^|\\s)([^\\s@]+)$/);
+  const prefix = before.match(/(?:^|\s)([^\s@]+)$/);
   const prefixQuery = prefix?.[1];
   if (prefixQuery !== undefined && prefixQuery.length >= 2) return { start: cursor - prefixQuery.length, end: cursor, query: prefixQuery };
   return null;
@@ -110,7 +110,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
         updateRange(searchRange(value, event.currentTarget.selectionStart));
       }}
       onKeyDown={onKeyDown}
-      placeholder={"Escribí la rutina completa…\\n\\nPodés mencionar ejercicios con @ o escribir su nombre."} />
+      placeholder={"Escribí la rutina completa…\n\nPodés mencionar ejercicios con @ o escribir su nombre."} />
     {range && <div className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos">
       {pending && <p role="status">Buscando ejercicios…</p>}
       {error && <><p role="alert">{error}</p><button type="button" disabled={disabled || pending} onClick={retrySearch}>Reintentar búsqueda</button></>}
