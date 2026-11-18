@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { routineReadIsConsistent } from "@/lib/routines/request";
 import { studentAdmin } from "@/lib/students/server";
 import { uuid, type Note, type Publication, type Template } from "@/lib/routines/types";
 import { NoteEditor } from "@/components/routines/note-editor";
@@ -13,7 +14,7 @@ export async function StudentRoutine({ id }: { id: string }) {
     client.from("cueva_routine_templates").select("id,title,content,revision,plan").order("title").order("id").limit(200),
     client.from("cueva_routine_text_drafts").select("format,text_content,block_content,mentions,revision").eq("kind","draft").eq("owner_id",id).maybeSingle(),
     client.from("cueva_routine_text_publications").select("publication_id,format,text_content,block_content,mentions").eq("student_id",id),
-    client.from("cueva_routine_text_drafts").select("owner_id,format,text_content,block_content,mentions").eq("kind","template"),
+    client.from("cueva_routine_text_drafts").select("owner_id,format,text_content,block_content,mentions,revision").eq("kind","template"),
   ]);
   const draftInitial = draft.data ? {
     ...draft.data,
@@ -34,7 +35,10 @@ export async function StudentRoutine({ id }: { id: string }) {
     const text = templateMap.get(item.id);
     return { ...item, content: text?.block_content ?? item.content, format: text?.format ?? "blocks", text_content: text?.text_content ?? "", mentions: text?.mentions ?? [] };
   });
+  const inconsistent = !routineReadIsConsistent(draft.data?.revision, draftText.data?.revision)
+    || (templates.data ?? []).some(item => !routineReadIsConsistent(item.revision, templateMap.get(item.id)?.revision))
+    || (publication.data && !publicationText.data?.some(item => item.publication_id === publication.data?.id));
   return <RoutineShell email={user?.email ?? "Cuenta de CUEVA"}><Link href={`/alumnos?id=${id}`}>← Ficha del alumno</Link><div className="dash-heading"><div><p className="dash-overline">PLANIFICACIÓN DEL ALUMNO</p><h1>Rutina de {student.data?.first_name} {student.data?.last_name}</h1></div></div>
-    {student.error || draft.error || publication.error || templates.error || draftText.error || publicationText.error || templateTexts.error ? <p role="alert">No pudimos cargar la rutina. Reintentá.</p> : !student.data ? <p>No se encontró la ficha.</p> : <><NoteEditor key={id} id={id} initial={draftInitial as Note} publication={publicationInitial as Publication | null} templates={templateInitial as Template[]}/></>}
+    {inconsistent || student.error || draft.error || publication.error || templates.error || draftText.error || publicationText.error || templateTexts.error ? <p role="alert">No pudimos cargar la rutina. Reintentá.</p> : !student.data ? <p>No se encontró la ficha.</p> : <><NoteEditor key={id} id={id} initial={draftInitial as Note} publication={publicationInitial as Publication | null} templates={templateInitial as Template[]}/></>}
   </RoutineShell>;
 }

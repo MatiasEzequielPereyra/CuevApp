@@ -1,0 +1,69 @@
+import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
+import { chromium, expect } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import pg from "pg";
+
+const { API_URL, DB_URL, ANON_KEY, CUEVA_SERVICE_KEY } = process.env;
+const origin = process.env.CUEVA_PRODUCT_ORIGIN ?? "http://127.0.0.1:3000";
+for (const url of [API_URL, DB_URL, origin]) assert.equal(new URL(url).hostname, "127.0.0.1");
+const service = createClient(API_URL, CUEVA_SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+const db = new pg.Client({ connectionString: DB_URL });
+const studentId = randomUUID(), exerciseId = randomUUID();
+const exerciseName = `Sentadilla emoji ${randomUUID().slice(0,8)}`;
+const password = `CuevA-${randomUUID()}-9!`;
+async function checked(operation) {
+  const { data, error } = await operation;
+  assert.ok(!error, `local operation failed: ${error?.code ?? error?.status ?? "unknown"}`);
+  return data;
+}
+async function account(role) {
+  const email = `mention-${randomUUID()}@example.test`;
+  const { user } = await checked(service.auth.admin.createUser({ email, password, email_confirm: true }));
+  await db.query("insert into public.cueva_profiles(user_id,role) values($1,$2)", [user.id, role]);
+  await db.query("insert into cueva_private.access_state(user_id,ready,session_not_before) values($1,true,now()-interval '1 minute')", [user.id]);
+  const cookies = new Map();
+  const client = createServerClient(API_URL, ANON_KEY, { cookies: {
+    getAll: () => [...cookies].map(([name,value]) => ({name,value})),
+    setAll: items => { for (const {name,value} of items) cookies.set(name,value); },
+  } });
+  await checked(client.auth.signInWithPassword({email,password}));
+  return {id:user.id,email,cookies:[...cookies].map(([name,value]) => ({name,value,url:origin}))};
+}
+await db.connect();
+let browser;
+try {
+  const admin = await account("admin"), learner = await account("alumno");
+  await db.query("insert into public.cueva_students(id,first_name,last_name,email,joined_on) values($1,'Mention','Local',$2,current_date)", [studentId,learner.email]);
+  await db.query("insert into public.cueva_student_invitations(student_id,email,user_id,state,lease,requested_by) values($1,$2,$3,'sent',$4,$5)", [studentId,learner.email,learner.id,randomUUID(),admin.id]);
+  await db.query("insert into public.cueva_exercises(id,name,revision,active,updated_by) values($1,$2,1,true,$3)", [exerciseId,exerciseName,admin.id]);
+  browser = await chromium.launch();
+  const context = await browser.newContext();
+  await context.addCookies(admin.cookies);
+  const page = await context.newPage();
+  await page.goto(`${origin}/rutinas?alumno=${studentId}`);
+  const editor = page.getByRole("region", {name:"Editor de rutina"});
+  await editor.getByRole("button", {name:"Texto libre"}).click();
+  await editor.getByRole("textbox", {name:"Rutina en texto libre"}).fill(`🙂 @${exerciseName}`);
+  await editor.getByRole("option", {name:exerciseName}).click();
+  await expect(editor.getByText("Borrador guardado", {exact:true})).toBeVisible();
+  const {rows:[draft]} = await db.query("select revision,text_content,mentions from public.cueva_routine_text_drafts where kind='draft' and owner_id=$1", [studentId]);
+  assert.equal(draft.text_content,`🙂 ${exerciseName}`);
+  assert.deepEqual(draft.mentions,[{exercise_id:exerciseId,start:2,end:2+Array.from(exerciseName).length,text:exerciseName}]);
+  await editor.getByRole("button", {name:"Publicar rutina"}).click();
+  await expect(editor.getByText("Rutina publicada.", {exact:true})).toBeVisible();
+  const pupilContext = await browser.newContext();
+  await pupilContext.addCookies(learner.cookies);
+  const pupil = await pupilContext.newPage();
+  await pupil.goto(`${origin}/mi-rutina`);
+  await expect(pupil.locator(".my-routine-mention")).toHaveText(exerciseName);
+  await expect(pupil.locator(".my-routine-notes")).toContainText(`🙂 ${exerciseName}`);
+  await expect(pupil.getByRole("heading", {name:"Ejercicios mencionados"})).toBeVisible();
+  await expect(pupil.getByRole("group", {name:"Día de entrenamiento"})).toHaveCount(0);
+  console.log("PASS: real isolated Auth → textarea emoji mention → API → PostgreSQL code-point snapshot → explicit publication → linked learner highlight.");
+} finally {
+  await browser?.close();
+  // Immutable synthetic publications are removed with this disposable stack.
+  await db.end();
+}

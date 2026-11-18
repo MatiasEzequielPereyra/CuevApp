@@ -1,5 +1,5 @@
 begin;
-select plan(44);
+select plan(54);
 
 -- Stable test identities and sessions. All fixtures are rolled back at the end.
 insert into auth.users(id,aud,role,email,created_at,updated_at) values
@@ -231,14 +231,70 @@ select throws_ok($$select public.cueva_routine_text_write(
  '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":29,"end":49,"text":"Catálogo sin asignar"}]'::jsonb
 )$$,'22023',null,'an inactive historical UUID cannot be moved to a newly appended duplicate occurrence');
 
+select is((public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',1,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000030',null,'text','🙂 Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":2,"end":13,"text":"Press banca"}]'::jsonb
+)->>'revision')::integer,2,'the actual editor code-point offsets save a mention after an emoji');
+select is((public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',3,'Catálogo sin asignar',null,
+ 'ba000000-0000-4000-8000-000000000031',null,'text','🙂 Nota: Catálogo sin asignar',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":8,"end":28,"text":"Catálogo sin asignar"}]'::jsonb
+)->>'revision')::integer,4,'an inactive historical mention survives an emoji inserted before it');
+select is((public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',3,'Catálogo sin asignar',null,
+ 'ba000000-0000-4000-8000-000000000031',null,'text','🙂 Nota: Catálogo sin asignar',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":8,"end":28,"text":"Catálogo sin asignar"}]'::jsonb
+)->>'revision')::integer,4,'an emoji mention retry returns the same revision');
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',4,'Catálogo sin asignar',null,
+ 'ba000000-0000-4000-8000-000000000032',null,'text','🙂 Nota: Catálogo sin asignar',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":9,"end":29,"text":"Catálogo sin asignar"}]'::jsonb
+)$$,'22023',null,'UTF-16 offsets are rejected because the contract is code points');
+
+-- The pre-rollout public API must also update the sidecar atomically.
+select is((public.cueva_routine_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',4,'Bloques heredados',null,
+ 'ba000000-0000-4000-8000-000000000040',null
+)->>'revision')::integer,5,'legacy block save advances the shared revision');
+select is((select text_content from public.cueva_routine_text_drafts
+ where kind='draft' and owner_id='b3000000-0000-4000-8000-000000000003'),
+ '🙂 Nota: Catálogo sin asignar','legacy saves retain hidden free text');
+select is((select revision from public.cueva_routine_text_drafts
+ where kind='draft' and owner_id='b3000000-0000-4000-8000-000000000003'),5,
+ 'legacy save leaves no base-sidecar revision gap');
+select is((public.cueva_routine_write(
+ 'publish','b3000000-0000-4000-8000-000000000003',5,'Bloques heredados',null,
+ 'ba000000-0000-4000-8000-000000000041',null
+)->>'draft_revision')::integer,5,'legacy publication writes an atomic sidecar snapshot');
+select is((public.cueva_routine_write(
+ 'publish','b3000000-0000-4000-8000-000000000003',5,'Bloques heredados',null,
+ 'ba000000-0000-4000-8000-000000000041',null
+)->>'draft_revision')::integer,5,'legacy publication replay returns its immutable snapshot');
+select is((public.cueva_routine_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',5,'Otra revisión',null,
+ 'ba000000-0000-4000-8000-000000000042',null
+)->>'revision')::integer,6,'legacy draft can advance after a publication');
+select is((public.cueva_routine_write(
+ 'publish','b3000000-0000-4000-8000-000000000003',5,'Bloques heredados',null,
+ 'ba000000-0000-4000-8000-000000000041',null
+)->>'draft_revision')::integer,5,'legacy publication retry uses its snapshot after draft advancement');
+-- Represents a publication created before migration and backfilled as text.
 reset role;
-select is(cueva_private.routine_utf16_length('🙂 Nota: Catálogo sin asignar'),29,
- 'UTF-16 offset length counts astral characters as two code units');
-select is(cueva_private.routine_utf16_slice('🙂 Nota: Catálogo sin asignar',9,29),
- 'Catálogo sin asignar','UTF-16 slicing resolves a mention after an astral character');
-select is(cueva_private.routine_utf16_slice('🙂 Nota: Catálogo sin asignar',1,3),null::text,
- 'UTF-16 slicing rejects ranges that split a surrogate pair');
+insert into public.cueva_routine_publications(id,student_id,draft_revision,content,published_by)
+ values('ba000000-0000-4000-8000-000000000050','b3000000-0000-4000-8000-000000000003',99,
+ 'Texto anterior','b1000000-0000-4000-8000-000000000001');
+insert into public.cueva_routine_text_publications(publication_id,student_id,format,text_content,block_content,mentions,published_by)
+ values('ba000000-0000-4000-8000-000000000050','b3000000-0000-4000-8000-000000000003','text',
+ 'Texto anterior','Texto anterior','[]','b1000000-0000-4000-8000-000000000001');
 set local role authenticated;
+select is((public.cueva_routine_write(
+ 'publish','b3000000-0000-4000-8000-000000000003',99,'Texto anterior',null,
+ 'ba000000-0000-4000-8000-000000000050',null
+)->>'draft_revision')::integer,99,'a pre-migration text publication keeps its idempotent legacy replay');
+select ok(not has_function_privilege('authenticated',
+ 'cueva_private.routine_write(text,uuid,integer,text,text,uuid,jsonb)','EXECUTE'),
+ 'clients cannot bypass the sidecar writer through the private base function');
 
 select throws_ok($$select public.cueva_routine_text_write(
  'draft','b3000000-0000-4000-8000-000000000003',2,'Catálogo sin asignar y Catálogo sin asignar',null,

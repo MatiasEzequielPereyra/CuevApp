@@ -1,5 +1,15 @@
 # Checkpoint CUEVA
 
+## PR #67 — REVIEW sobre portal publicado — 2026-11-18
+
+Base `a019bded9c4d3340feab2d32c2116e0d4e9796d8`, que incluye #64.
+[Revisión funcional y operación de Menciones](pr67-portal-review.md) registra
+correcciones nuevas y dependencias de SQL; el PR conserva HEAD y CI exactos.
+Sin integración de #67 ni aplicación alojada. Las revisiones anteriores no se
+presentan como pruebas de este candidato.
+
+SKILLS_SELECTED / SKILLS_APPLIED / SKILL_SOURCES: detallados en ese informe.
+
 ## CUEVA-CI-PICOMATCH-001 — REVIEW — 2026-11-18
 
 El Product Owner autorizó en el chat una excepción temporal del aviso

@@ -1,3 +1,4 @@
+import { routineMentionsKey } from "../src/lib/routines/mentions.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -86,4 +87,12 @@ test("keeps a mention when editing immediately before it and removes it when del
     { ...mention, start: 8, end: 18 },
   ]);
   assert.deepEqual(rebaseRoutineMentions(original, "A Sentadlla B", [mention]), []);
+});
+
+
+test("JSONB key order cannot make a confirmed mention remain unsaved", () => {
+  const local = {exercise_id:"11111111-1111-4111-8111-111111111111",start:2,end:12,text:"Sentadilla"};
+  const persisted = {end:12,text:"Sentadilla",start:2,exercise_id:local.exercise_id};
+  assert.equal(routineMentionsKey([local]),routineMentionsKey([persisted]));
+  assert.notEqual(routineMentionsKey([local]),routineMentionsKey([{...local,start:3}]));
 });

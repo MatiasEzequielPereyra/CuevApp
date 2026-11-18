@@ -35,8 +35,14 @@ export function routineEditorFixture() {
   const operations: string[] = [];
   const saveOperationIds: string[] = [];
   let loseNextSaveResponse = false;
+  let staleDraft = false;
+  let staleTemplate = false;
+  let publicationReadError = false;
   return {
     studentUser, operations, saveOperationIds,
+    setStaleDraft(value: boolean) { staleDraft = value; },
+    setStaleTemplate(value: boolean) { staleTemplate = value; },
+    setPublicationReadError(value: boolean) { publicationReadError = value; },
     loseNextSaveResponse() { loseNextSaveResponse = true; },
     reset() {
       draft = { content: "", revision: 0 };
@@ -46,6 +52,7 @@ export function routineEditorFixture() {
       operations.length = 0;
       saveOperationIds.length = 0;
       loseNextSaveResponse = false;
+      staleDraft = staleTemplate = publicationReadError = false;
     },
     async handle(request: IncomingMessage, url: URL): Promise<{ body: unknown; status?: number } | undefined> {
       const asRow = (row: unknown) => request.headers.accept?.includes("vnd.pgrst.object") ? row : row ? [row] : [];
@@ -57,9 +64,11 @@ export function routineEditorFixture() {
         case "/cueva_routine_publications": return { body: asRow(publication) };
         case "/cueva_routine_text_drafts": {
           const kind = url.searchParams.get("kind")?.replace("eq.", "") ?? "draft";
-          return { body: asRow(kind === "draft" ? draftText : null) };
+          const row = kind === "draft" ? draftText && { ...draftText, revision: draftText.revision + (staleDraft ? 1 : 0) }
+            : { owner_id: starter.id, format: "blocks", text_content: "", block_content: starter.content, mentions: [], revision: starter.revision + (staleTemplate ? 1 : 0) };
+          return { body: asRow(row) };
         }
-        case "/cueva_routine_text_publications": return { body: asRow(publicationText) };
+        case "/cueva_routine_text_publications": return publicationReadError ? { body: { message: "Synthetic text read failure" }, status: 503 } : { body: asRow(publicationText) };
         case "/rpc/cueva_my_routine_video_ids": return { body: [] };
         case "/rpc/cueva_student_mentioned_exercises": return { body: publicationText?.format === "text" ? (publicationText.mentions ?? []).flatMap(mention => {
           const exercise = exercises.find(item => item.id === mention.exercise_id);

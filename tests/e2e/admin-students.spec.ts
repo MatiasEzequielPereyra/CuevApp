@@ -79,7 +79,7 @@ test("la entrada instalada abre el ingreso o la cuenta según la sesión", async
   await signIn(context, origin, routines.studentUser);
   await page.goto(start);
   await expect(page).toHaveURL(start);
-  await expect(page.getByRole("heading", { name: "Inicio" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Hola, Bruno", exact: true, level: 1 })).toBeVisible();
 });
 
 for (const width of [360, 390, 1440]) {
@@ -440,4 +440,50 @@ test("texto libre vincula menciones por UUID y publica la instantánea visible p
   } finally {
     await learner.close();
   }
+});
+
+
+test("cargas mezcladas no habilitan guardar borradores ni plantillas", async ({ page }) => {
+  await page.goto(`${origin}/rutinas?alumno=${shortId}`);
+  const editor = page.getByRole("region", { name: "Editor de rutina" });
+  await editor.getByRole("button", { name: "Texto libre" }).click();
+  await editor.getByRole("textbox", { name: "Rutina en texto libre" }).fill("Revisión confirmada");
+  await expect.poll(() => routines.operations).toEqual(["draft"]);
+  routines.setStaleDraft(true);
+  await page.reload();
+  await expect(page.getByRole("alert")).toContainText("No pudimos cargar la rutina");
+  await expect(editor).toHaveCount(0);
+  const comparison = await page.request.get(`${origin}/api/rutinas?id=${shortId}`);
+  expect(comparison.status()).toBe(503);
+  routines.setStaleDraft(false);
+  routines.setStaleTemplate(true);
+  await page.goto(`${origin}/rutinas/plantillas?id=cccccccc-cccc-4ccc-8ccc-cccccccccccc`);
+  await expect(page.getByRole("alert")).toContainText("No pudimos cargar las plantillas");
+  await expect(editor).toHaveCount(0);
+  expect((await page.request.get(`${origin}/api/rutinas?templates=1`)).status()).toBe(503);
+});
+
+test("una falla del documento publicado no muestra el formato anterior", async ({ page, browser }) => {
+  await page.goto(`${origin}/rutinas?alumno=${shortId}`);
+  const editor = page.getByRole("region", { name: "Editor de rutina" });
+  await editor.getByRole("button", { name: "Texto libre" }).click();
+  const text = editor.getByRole("textbox", { name: "Rutina en texto libre" });
+  await text.fill("🙂 @Sentadilla");
+  await editor.getByRole("option", { name: "Sentadilla" }).click();
+  await expect(text).toHaveValue("🙂 Sentadilla");
+  await expect.poll(() => routines.operations).toEqual(["draft"]);
+  await editor.getByRole("button", { name: "Publicar rutina" }).click();
+  await expect(editor.getByText("Rutina publicada.")).toBeVisible();
+  const learner = await browser.newContext();
+  try {
+    await signIn(learner, origin, routines.studentUser);
+    const studentPage = await learner.newPage();
+    await studentPage.goto(`${origin}/mi-rutina`);
+    await expect(studentPage.locator(".my-routine-mention")).toHaveText("Sentadilla");
+    routines.setPublicationReadError(true);
+    await studentPage.reload();
+    await expect(studentPage.getByRole("heading", { name: "No pudimos cargar tu rutina" })).toBeVisible();
+    await expect(studentPage.locator(".my-routine-notes")).toHaveCount(0);
+    await expect(studentPage.getByRole("group", { name: "Día de entrenamiento" })).toHaveCount(0);
+  } finally { await learner.close(); }
 });

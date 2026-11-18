@@ -1,5 +1,8 @@
 begin;
 
+-- Serialize backfill and endpoint replacement with both routine writers.
+select pg_advisory_xact_lock(903004001);
+
 -- Store the free-text document beside the established block model. Existing
 -- routines and immutable publication rows remain untouched.
 create table public.cueva_routine_text_drafts (
@@ -91,77 +94,8 @@ create policy routine_text_publication_reader on public.cueva_routine_text_publi
     )
   );
 
--- JavaScript string offsets are UTF-16 code units. Keep SQL validation in
--- the same coordinate system, including astral characters such as emoji.
-create function cueva_private.routine_utf16_length(p_value text)
-returns integer
-language plpgsql
-immutable
-set search_path = ''
-as $$
-declare
-  v_bytes bytea := convert_to(coalesce(p_value, ''), 'UTF8');
-  v_index integer := 0;
-  v_length integer := 0;
-  v_byte integer;
-begin
-  while v_index < octet_length(v_bytes) loop
-    v_byte := get_byte(v_bytes, v_index);
-    if v_byte >= 240 then
-      v_length := v_length + 2;
-      v_index := v_index + 4;
-    elsif v_byte >= 224 then
-      v_length := v_length + 1;
-      v_index := v_index + 3;
-    elsif v_byte >= 192 then
-      v_length := v_length + 1;
-      v_index := v_index + 2;
-    else
-      v_length := v_length + 1;
-      v_index := v_index + 1;
-    end if;
-  end loop;
-  return v_length;
-end;
-$$;
-
-create function cueva_private.routine_utf16_slice(p_value text, p_start integer, p_end integer)
-returns text
-language plpgsql
-immutable
-set search_path = ''
-as $$
-declare
-  v_result text := '';
-  v_char text;
-  v_position integer := 0;
-  v_index integer;
-  v_count integer := char_length(coalesce(p_value, ''));
-  v_units integer;
-begin
-  if p_start < 0 or p_end < p_start
-    or p_end > cueva_private.routine_utf16_length(p_value) then
-    return null;
-  end if;
-  for v_index in 1..v_count loop
-    v_char := substr(p_value, v_index, 1);
-    v_units := cueva_private.routine_utf16_length(v_char);
-    if v_position >= p_start and v_position + v_units <= p_end then
-      v_result := v_result || v_char;
-    elsif v_position < p_end and v_position + v_units > p_start then
-      -- A range splitting a surrogate pair is never a valid mention range.
-      return null;
-    end if;
-    v_position := v_position + v_units;
-  end loop;
-  return v_result;
-end;
-$$;
-
-revoke all on function cueva_private.routine_utf16_length(text),
-  cueva_private.routine_utf16_slice(text,integer,integer)
-  from public, anon, authenticated, service_role;
-
+-- Offsets are Unicode code points, matching the editor and student renderer.
+-- DOM UTF-16 selections are converted at the textarea boundary.
 create function cueva_private.routine_text_write(
   p_kind text,
   p_id uuid,
@@ -270,8 +204,8 @@ begin
   v_previous := coalesce(v_previous, '[]'::jsonb);
   v_previous_text := coalesce(v_previous_text, '');
 
-  -- Find the unchanged prefix and suffix in code points, then convert their
-  -- boundaries to UTF-16 offsets. A historical inactive mention may only stay
+  -- Find the unchanged prefix and suffix in code points.
+  -- A historical inactive mention may only stay
   -- wholly inside one of those unchanged regions.
   v_old_chars := char_length(v_previous_text);
   v_new_chars := char_length(p_text_content);
@@ -285,12 +219,10 @@ begin
       <> substr(p_text_content, v_new_chars - v_suffix_chars, 1);
     v_suffix_chars := v_suffix_chars + 1;
   end loop;
-  v_old_suffix_start := cueva_private.routine_utf16_length(v_previous_text)
-    - cueva_private.routine_utf16_length(substr(v_previous_text, v_old_chars - v_suffix_chars + 1));
-  v_new_suffix_start := cueva_private.routine_utf16_length(p_text_content)
-    - cueva_private.routine_utf16_length(substr(p_text_content, v_new_chars - v_suffix_chars + 1));
+  v_old_suffix_start := v_old_chars - v_suffix_chars;
+  v_new_suffix_start := v_new_chars - v_suffix_chars;
 
-  v_length := cueva_private.routine_utf16_length(p_text_content);
+  v_length := char_length(p_text_content);
   for v_mention in select value from jsonb_array_elements(p_mentions) loop
     if jsonb_typeof(v_mention) is distinct from 'object'
       or (v_mention - 'exercise_id' - 'start' - 'end' - 'text') <> '{}'::jsonb
@@ -307,7 +239,7 @@ begin
     v_start := (v_mention->>'start')::integer;
     v_end := (v_mention->>'end')::integer;
     if v_start < v_previous_end or v_start < 0 or v_end <= v_start or v_end > v_length
-      or cueva_private.routine_utf16_slice(p_text_content, v_start, v_end) is distinct from v_mention->>'text'
+      or substr(p_text_content, v_start + 1, v_end - v_start) is distinct from v_mention->>'text'
     then
       raise exception 'Los rangos de menciones no coinciden con el texto' using errcode = '22023';
     end if;
@@ -329,9 +261,7 @@ begin
         order by old_mention.ordinality
       loop
         v_scan := (v_candidate->>'start')::integer;
-        if (v_candidate->>'end')::integer <= cueva_private.routine_utf16_length(
-             substr(v_previous_text, 1, v_prefix_chars)
-           )
+        if (v_candidate->>'end')::integer <= v_prefix_chars
            and v_start = v_scan
            and v_end = (v_candidate->>'end')::integer then
           v_previous_index := null;
@@ -492,6 +422,49 @@ revoke all on function public.cueva_routine_text_write(
 grant execute on function public.cueva_routine_text_write(
   text,uuid,integer,text,text,uuid,jsonb,text,text,jsonb
 ) to authenticated;
+
+-- Keep the existing public API safe during rollout/rollback. Both paths use
+-- one lock and writer; legacy block edits retain the hidden text document.
+create or replace function public.cueva_routine_write(
+  p_kind text, p_id uuid, p_revision integer, p_content text,
+  p_title text, p_operation uuid, p_plan jsonb
+) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_text text := ''; v_mentions jsonb := '[]'::jsonb;
+  v_format text := 'blocks'; v_blocks text := p_content;
+begin
+  if not cueva_private.routine_admin() then
+    raise exception 'Acceso restringido' using errcode = '42501';
+  end if;
+  perform pg_advisory_xact_lock(903004001);
+  if p_kind = 'publish' then
+    select text_content, mentions, format, block_content
+      into v_text, v_mentions, v_format, v_blocks
+    from public.cueva_routine_text_publications where publication_id = p_operation;
+    if found and p_content is distinct from (case when v_format = 'text' then v_text else v_blocks end) then
+      raise exception 'La publicación ya contiene otra versión' using errcode = '22023';
+    end if;
+  end if;
+  if v_text is null or p_kind <> 'publish' or not found then
+    v_format := 'blocks'; v_blocks := p_content;
+    select text_content, mentions into v_text, v_mentions
+    from public.cueva_routine_text_drafts
+    where kind = case when p_kind = 'template' then 'template' else 'draft' end
+      and owner_id = p_id;
+  end if;
+  return cueva_private.routine_text_write(
+    p_kind,p_id,p_revision,v_blocks,p_title,p_operation,p_plan,
+    v_format,coalesce(v_text,''),coalesce(v_mentions,'[]'::jsonb)
+  );
+end;
+$$;
+revoke all on function public.cueva_routine_write(text,uuid,integer,text,text,uuid,jsonb)
+  from public, anon, authenticated, service_role;
+grant execute on function public.cueva_routine_write(text,uuid,integer,text,text,uuid,jsonb) to authenticated;
+-- The underlying base-only writer is callable only by the definer, never a client.
+revoke all on function cueva_private.routine_write(text,uuid,integer,text,text,uuid,jsonb)
+  from public, anon, authenticated, service_role;
 
 create function cueva_private.student_mentioned_exercises()
 returns table(id uuid, name text, description text)

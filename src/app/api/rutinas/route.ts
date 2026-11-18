@@ -17,10 +17,13 @@ export async function GET(req: Request) {
     if (error) return reply({ message: "No pudimos cargar las plantillas." }, 503);
     const rows = data?.slice(0, 100) ?? [];
     const textResult = rows.length ? await client.from("cueva_routine_text_drafts")
-      .select("owner_id,format,text_content,block_content,mentions")
+      .select("owner_id,format,text_content,block_content,mentions,revision")
       .eq("kind", "template").in("owner_id", rows.map(item => item.id)) : { data: [], error: null };
     if (textResult.error) return reply({ message: "No pudimos cargar las plantillas." }, 503);
     const textById = new Map((textResult.data ?? []).map(item => [item.owner_id, item]));
+    if (rows.some(item => !routineReadIsConsistent(item.revision, textById.get(item.id)?.revision))) {
+      return reply({ message: "Las plantillas cambiaron mientras cargábamos. Reintentá." }, 503);
+    }
     const templates = rows.map(item => {
       const text = textById.get(item.id);
       return {

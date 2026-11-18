@@ -96,3 +96,8 @@ export function rebaseRoutineMentions(
     return [];
   });
 }
+
+/** PostgreSQL jsonb may reorder object keys; occurrence order remains meaningful. */
+export function routineMentionsKey(mentions: RoutineMention[] = []): string {
+  return JSON.stringify(mentions.map(({exercise_id,start,end,text}) => [exercise_id,start,end,text]));
+}

@@ -237,6 +237,7 @@ jobs:
           }
 
           if [[ "$MIGRATION_PATH" == fresh ]]; then
+            node tests/e2e/routine-mentions.integration.mjs | tee "$MIGRATION_EVIDENCE/routine-mentions.txt"
             node tests/e2e/mi-rutina.integration.mjs | tee "$MIGRATION_EVIDENCE/mi-rutina.txt" || {
               cat /tmp/cueva-next.log
               exit 1

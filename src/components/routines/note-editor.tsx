@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { PlanBuilder } from "@/components/routines/plan-builder";
+import { routineMentionsKey } from "@/lib/routines/mentions";
 import { TextRoutineEditor } from "@/components/routines/text-routine-editor";
 import { PlanView } from "@/components/routines/plan-view";
 import { planKey, hasExercises, copyPlan } from "@/lib/routines/types";
@@ -12,7 +13,7 @@ type Status = "clean" | "dirty" | "saving" | "saved" | "error" | "conflict";
 const same = (a: Note, b: Note) => a.content === b.content && a.title === b.title
   && (a.format ?? "blocks") === (b.format ?? "blocks")
   && (a.text_content ?? "") === (b.text_content ?? "")
-  && JSON.stringify(a.mentions ?? []) === JSON.stringify(b.mentions ?? [])
+  && routineMentionsKey(a.mentions) === routineMentionsKey(b.mentions)
   && planKey(a.plan) === planKey(b.plan);
 
 export function NoteEditor({ id, initial, template = false, templates = [], publication = null }: {
@@ -40,7 +41,7 @@ export function NoteEditor({ id, initial, template = false, templates = [], publ
     || planKey(local.plan) !== planKey(published?.plan)
     || (local.format ?? "blocks") !== (published?.format ?? "blocks")
     || (local.text_content ?? "") !== (published?.text_content ?? "")
-    || JSON.stringify(local.mentions ?? []) !== JSON.stringify(published?.mentions ?? []);
+    || routineMentionsKey(local.mentions) !== routineMentionsKey(published?.mentions);
   const templatePicker = useRef<HTMLDetailsElement>(null);
 
   function edit(next: Note) {

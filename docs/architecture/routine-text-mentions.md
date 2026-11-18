@@ -1,5 +1,9 @@
 # Rutinas en texto libre y menciones — CUEVA-006D
 
+La [revisión sobre main publicado](../engineering/pr67-portal-review.md) reemplaza
+los resultados históricos siguientes para la entrega actual. Incluye correcciones
+Unicode, snapshot, escritor compatible y orden operativo.
+
 Fecha: 2026-11-18. Estado: implementación en rama aislada; CI aprobado en HEAD `8e4f79a6d4ba42bc1464eeb6f838e2258c324b74`. Revisión final de integración pendiente.
 
 ## Modelo de edición
