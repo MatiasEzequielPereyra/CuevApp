@@ -1,6 +1,6 @@
 # Rutinas en texto libre y menciones — CUEVA-006D
 
-Fecha: 2026-11-17. Estado: implementación en rama aislada; validación CI aprobada en HEAD 1e84e79cd50bc6083ef42c942509e1635fb14d75. Integración pendiente.
+Fecha: 2026-11-17. Estado: implementación en rama aislada; CI aprobado en HEAD 86b16d7f914237822e85fafe9710c5bdc99f1d83. Revisión de integración pendiente.
 
 ## Modelo de edición
 
@@ -96,19 +96,20 @@ usando las consultas y autorizaciones actuales.
   deploy, Auth ni cambios de roles en esta fase.
 
 
-## Evidencia de validación
+## Evidencia de validación — HEAD 86b16d7f914237822e85fafe9710c5bdc99f1d83
 
-Los workflows de GitHub Actions finalizaron correctamente sobre el HEAD
-validado indicado arriba:
+Los workflows de GitHub Actions finalizaron correctamente sobre el mismo SHA del PR:
 
-- Verify foundation: lint, typecheck, build, pruebas, integridad de fuentes,
-  verificación de seguridad y auditoría npm; cero vulnerabilidades reportadas.
-- Supabase local migrations: matrices fresh, upgrade y hosted-compatible
-  aprobadas, con pruebas de base de datos e integración.
+- Verify foundation: lint, typecheck, build, pruebas, verificaciones de seguridad y tests del verificador de auditoría aprobados.
+- Auditoría de producción: `npm audit --omit=dev --audit-level=moderate` sin vulnerabilidades.
+- Auditoría completa: se mantiene la excepción temporal estricta para el único advisory de Picomatch en dependencias de desarrollo; el verificador de allowlist y `npm audit --audit-level=critical` aprobaron. Esto no significa que el advisory haya sido corregido.
+- Supabase local migrations: fresh, upgrade y hosted-compatible aprobadas, incluyendo pruebas SQL, concurrencia de publicación e integración autenticada UI–Supabase.
+- Membership SQL y Receipt Storage aprobados.
+- Vercel Preview: deployment completado.
 
 Runs:
-- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44104460321
-- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44104460333
+- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44212681594
+- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44212681513
+- https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44212681517
 
-Esta evidencia no representa una migración aplicada en Supabase alojado ni una
-autorización de merge o despliegue.
+Esta evidencia no representa una migración aplicada en Supabase alojado ni una autorización de merge o despliegue.
