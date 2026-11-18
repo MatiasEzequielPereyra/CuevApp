@@ -1,5 +1,15 @@
 # Procedimiento de verificación CUEVA-001A
 
+## Política vigente de auditoría — 2026-11-18
+
+CI conserva el audit bloqueante de producción y aplica una
+[excepción temporal documentada de picomatch](dependency-audit-policy.md)
+al audit completo mediante `npm run verify:dependencies`. Ejecutar además
+`npm run test:dependencies` para verificar sus rechazos. La excepción vence
+el 2026-11-25; no omite otros avisos ni corrige la vulnerabilidad.
+
+Las instrucciones siguientes conservan el procedimiento histórico de la fundación.
+
 Fecha de implementación: 2026-10-27, America/Buenos_Aires. Los resultados y el
 commit comprobado se registran al finalizar en el checkpoint y el informe.
 

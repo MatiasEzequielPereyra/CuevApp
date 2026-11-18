@@ -1,5 +1,26 @@
 # Checkpoint CUEVA
 
+## CUEVA-CI-PICOMATCH-001 — REVIEW — 2026-11-18
+
+El Product Owner autorizó en el chat una excepción temporal del aviso
+`GHSA-fc5q-39xc-vjpf` en herramientas de desarrollo. La
+[política acotada y su retiro](dependency-audit-policy.md) conservan el audit
+de producción bloqueante y rechazan otros avisos. Vence el 2026-11-25.
+Esta excepción acepta un riesgo; no corrige picomatch. La base verificada es
+`d90be98ffd2f891df3bb8083b10726f985b261c1`. El PR registra el HEAD, las pruebas
+y la decisión independiente antes de integrar; no se ejecutan cambios de datos.
+
+Verificación local nueva: 23 pruebas del evaluador aprobadas; audit de producción
+sin vulnerabilidades. El audit completo conserva 14 hallazgos causados por el
+mismo aviso y el gate los identifica como `ACCEPTED_RISK` temporal. Documentos,
+fuentes, manifiesto, escaneo de secretos y diff aprobados. CI e integración se
+registran en el PR, sin atribuir estos resultados a la versión alojada.
+
+SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`,
+`cueva-acceptance-audit`, `cueva-release`, `code-review`, `pr`,
+`vercel:deployments-cicd`. SKILL_SOURCES: `.agents/skills/<nombre>/SKILL.md`
+y guías del host.
+
 ## Estado vigente verificado — 2026-11-17
 
 El [PR #53](https://github.com/MatiasEzequielPereyra/CuevApp/pull/53) integró el
