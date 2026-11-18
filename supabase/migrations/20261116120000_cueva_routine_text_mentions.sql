@@ -91,6 +91,77 @@ create policy routine_text_publication_reader on public.cueva_routine_text_publi
     )
   );
 
+-- JavaScript string offsets are UTF-16 code units. Keep SQL validation in
+-- the same coordinate system, including astral characters such as emoji.
+create function cueva_private.routine_utf16_length(p_value text)
+returns integer
+language plpgsql
+immutable
+set search_path = ''
+as $
+declare
+  v_bytes bytea := convert_to(coalesce(p_value, ''), 'UTF8');
+  v_index integer := 0;
+  v_length integer := 0;
+  v_byte integer;
+begin
+  while v_index < octet_length(v_bytes) loop
+    v_byte := get_byte(v_bytes, v_index);
+    if v_byte >= 240 then
+      v_length := v_length + 2;
+      v_index := v_index + 4;
+    elsif v_byte >= 224 then
+      v_length := v_length + 1;
+      v_index := v_index + 3;
+    elsif v_byte >= 192 then
+      v_length := v_length + 1;
+      v_index := v_index + 2;
+    else
+      v_length := v_length + 1;
+      v_index := v_index + 1;
+    end if;
+  end loop;
+  return v_length;
+end;
+$;
+
+create function cueva_private.routine_utf16_slice(p_value text, p_start integer, p_end integer)
+returns text
+language plpgsql
+immutable
+set search_path = ''
+as $
+declare
+  v_result text := '';
+  v_char text;
+  v_position integer := 0;
+  v_index integer;
+  v_count integer := char_length(coalesce(p_value, ''));
+  v_units integer;
+begin
+  if p_start < 0 or p_end < p_start
+    or p_end > cueva_private.routine_utf16_length(p_value) then
+    return null;
+  end if;
+  for v_index in 1..v_count loop
+    v_char := substr(p_value, v_index, 1);
+    v_units := cueva_private.routine_utf16_length(v_char);
+    if v_position >= p_start and v_position + v_units <= p_end then
+      v_result := v_result || v_char;
+    elsif v_position < p_end and v_position + v_units > p_start then
+      -- A range splitting a surrogate pair is never a valid mention range.
+      return null;
+    end if;
+    v_position := v_position + v_units;
+  end loop;
+  return v_result;
+end;
+$;
+
+revoke all on function cueva_private.routine_utf16_length(text),
+  cueva_private.routine_utf16_slice(text,integer,integer)
+  from public, anon, authenticated, service_role;
+
 create function cueva_private.routine_text_write(
   p_kind text,
   p_id uuid,
@@ -116,6 +187,15 @@ declare
   v_previous_end integer := 0;
   v_previous_index integer;
   v_length integer;
+  v_previous_text text := '';
+  v_prefix_chars integer := 0;
+  v_suffix_chars integer := 0;
+  v_old_chars integer := 0;
+  v_new_chars integer := 0;
+  v_old_suffix_start integer := 0;
+  v_new_suffix_start integer := 0;
+  v_scan integer := 0;
+  v_candidate jsonb;
   v_revision integer;
   v_base_content text;
   v_publication public.cueva_routine_publications;
@@ -179,17 +259,38 @@ begin
   end if;
 
   if p_kind in ('draft','template') then
-    select mentions into v_previous
+    select mentions, text_content into v_previous, v_previous_text
     from public.cueva_routine_text_drafts
     where kind = p_kind and owner_id = p_id;
   else
-    select mentions into v_previous
+    select mentions, text_content into v_previous, v_previous_text
     from public.cueva_routine_text_drafts
     where kind = 'draft' and owner_id = p_id;
   end if;
   v_previous := coalesce(v_previous, '[]'::jsonb);
+  v_previous_text := coalesce(v_previous_text, '');
 
-  v_length := char_length(p_text_content);
+  -- Find the unchanged prefix and suffix in code points, then convert their
+  -- boundaries to UTF-16 offsets. A historical inactive mention may only stay
+  -- wholly inside one of those unchanged regions.
+  v_old_chars := char_length(v_previous_text);
+  v_new_chars := char_length(p_text_content);
+  while v_prefix_chars < least(v_old_chars, v_new_chars) loop
+    exit when substr(v_previous_text, v_prefix_chars + 1, 1)
+      <> substr(p_text_content, v_prefix_chars + 1, 1);
+    v_prefix_chars := v_prefix_chars + 1;
+  end loop;
+  while v_suffix_chars < least(v_old_chars - v_prefix_chars, v_new_chars - v_prefix_chars) loop
+    exit when substr(v_previous_text, v_old_chars - v_suffix_chars, 1)
+      <> substr(p_text_content, v_new_chars - v_suffix_chars, 1);
+    v_suffix_chars := v_suffix_chars + 1;
+  end loop;
+  v_old_suffix_start := cueva_private.routine_utf16_length(v_previous_text)
+    - cueva_private.routine_utf16_length(substr(v_previous_text, v_old_chars - v_suffix_chars + 1));
+  v_new_suffix_start := cueva_private.routine_utf16_length(p_text_content)
+    - cueva_private.routine_utf16_length(substr(p_text_content, v_new_chars - v_suffix_chars + 1));
+
+  v_length := cueva_private.routine_utf16_length(p_text_content);
   for v_mention in select value from jsonb_array_elements(p_mentions) loop
     if jsonb_typeof(v_mention) is distinct from 'object'
       or (v_mention - 'exercise_id' - 'start' - 'end' - 'text') <> '{}'::jsonb
@@ -206,7 +307,7 @@ begin
     v_start := (v_mention->>'start')::integer;
     v_end := (v_mention->>'end')::integer;
     if v_start < v_previous_end or v_start < 0 or v_end <= v_start or v_end > v_length
-      or substring(p_text_content from v_start + 1 for v_end - v_start) <> v_mention->>'text'
+      or cueva_private.routine_utf16_slice(p_text_content, v_start, v_end) is distinct from v_mention->>'text'
     then
       raise exception 'Los rangos de menciones no coinciden con el texto' using errcode = '22023';
     end if;
@@ -220,12 +321,35 @@ begin
       -- matching historical occurrence. Consume that occurrence so copying
       -- the same exercise ID cannot authorize additional new mentions.
       v_previous_index := null;
-      select (old_mention.ordinality - 1)::integer into v_previous_index
-      from jsonb_array_elements(v_previous) with ordinality old_mention(value, ordinality)
-      where old_mention.value->>'exercise_id' = v_mention->>'exercise_id'
-        and old_mention.value->>'text' = v_mention->>'text'
-      order by old_mention.ordinality
-      limit 1;
+      for v_candidate in
+        select old_mention.value
+        from jsonb_array_elements(v_previous) with ordinality old_mention(value, ordinality)
+        where old_mention.value->>'exercise_id' = v_mention->>'exercise_id'
+          and old_mention.value->>'text' = v_mention->>'text'
+        order by old_mention.ordinality
+      loop
+        v_scan := (v_candidate->>'start')::integer;
+        if (v_candidate->>'end')::integer <= cueva_private.routine_utf16_length(
+             substr(v_previous_text, 1, v_prefix_chars)
+           )
+           and v_start = v_scan
+           and v_end = (v_candidate->>'end')::integer then
+          v_previous_index := null;
+          select (old_mention.ordinality - 1)::integer into v_previous_index
+          from jsonb_array_elements(v_previous) with ordinality old_mention(value, ordinality)
+          where old_mention.value = v_candidate
+          limit 1;
+          exit;
+        elsif v_scan >= v_old_suffix_start
+          and v_start = v_new_suffix_start + (v_scan - v_old_suffix_start)
+          and v_end = v_new_suffix_start + ((v_candidate->>'end')::integer - v_old_suffix_start) then
+          select (old_mention.ordinality - 1)::integer into v_previous_index
+          from jsonb_array_elements(v_previous) with ordinality old_mention(value, ordinality)
+          where old_mention.value = v_candidate
+          limit 1;
+          exit;
+        end if;
+      end loop;
 
       if v_previous_index is null then
         raise exception 'El ejercicio no existe o está inactivo para una nueva mención'
