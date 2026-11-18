@@ -1,5 +1,5 @@
 begin;
-select plan(39);
+select plan(44);
 
 -- Stable test identities and sessions. All fixtures are rolled back at the end.
 insert into auth.users(id,aud,role,email,created_at,updated_at) values
