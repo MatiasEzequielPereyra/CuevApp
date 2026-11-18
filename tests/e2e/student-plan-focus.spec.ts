@@ -21,6 +21,9 @@ test.beforeAll(async () => {
       ] } };
       return { body: request.headers.accept?.includes("vnd.pgrst.object") ? row : [row] };
     }
+    if (url.pathname === "/cueva_routine_text_publications") return { body: {
+      format: "blocks", text_content: "", block_content: "", mentions: [],
+    } };
     if (url.pathname === "/rpc/cueva_my_routine_video_ids") return { body: [exerciseId] };
     if (url.pathname === "/rpc/cueva_student_assigned_exercises") return { body: [] };
     if (url.pathname === "/cueva_notification_inbox") return { body: [{
