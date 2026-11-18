@@ -451,14 +451,14 @@ test("cargas mezcladas no habilitan guardar borradores ni plantillas", async ({ 
   await expect.poll(() => routines.operations).toEqual(["draft"]);
   routines.setStaleDraft(true);
   await page.reload();
-  await expect(page.getByRole("alert")).toContainText("No pudimos cargar la rutina");
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("No pudimos cargar la rutina");
   await expect(editor).toHaveCount(0);
   const comparison = await page.request.get(`${origin}/api/rutinas?id=${shortId}`);
   expect(comparison.status()).toBe(503);
   routines.setStaleDraft(false);
   routines.setStaleTemplate(true);
   await page.goto(`${origin}/rutinas/plantillas?id=cccccccc-cccc-4ccc-8ccc-cccccccccccc`);
-  await expect(page.getByRole("alert")).toContainText("No pudimos cargar las plantillas");
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("No pudimos cargar las plantillas");
   await expect(editor).toHaveCount(0);
   expect((await page.request.get(`${origin}/api/rutinas?templates=1`)).status()).toBe(503);
 });
