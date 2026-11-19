@@ -1,5 +1,16 @@
 # Checkpoint CUEVA
 
+## Continuidad entre computadoras — 2026-11-19
+
+Leer primero [Continuar CUEVA](CONTINUAR-CUEVA.md): contiene los SHA actuales,
+evidencia, autorizaciones, respaldo y orden operativo. #68 está integrado y
+publicado en `0832c9ef17a04289528148f76ac2057703db3746`. #63 y #67 siguen abiertos.
+La migración de correo de #63 **ya está aplicada** en Supabase como
+`20261118185514`; las de Ejercicios asignados y Menciones siguen pendientes.
+Esta foto posterior prevalece sobre los estados históricos que siguen abajo.
+
+SKILLS_SELECTED / SKILLS_APPLIED / SKILL_SOURCES: detallados en el documento.
+
 ## CUEVA-CI-PICOMATCH-001 — REVIEW — 2026-11-18
 
 El Product Owner autorizó en el chat una excepción temporal del aviso

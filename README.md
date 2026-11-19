@@ -4,6 +4,9 @@ Fundación de la aplicación del gimnasio. CUEVA-001A fue aceptada e integrada e
 
 ## Estado actual del producto
 
+Para continuar desde otra computadora o chat, leer el
+[checkpoint de continuidad](docs/engineering/CONTINUAR-CUEVA.md).
+
 El portal del alumno incluye Inicio, Mi Membresía, Entrenamiento,
 Notificaciones y Mi perfil. La base de Notificaciones ya se aplicó en
 Supabase. La activación de los envíos automáticos, la entrega Push y la RPC
