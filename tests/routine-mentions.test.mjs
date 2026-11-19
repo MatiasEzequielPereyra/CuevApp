@@ -1,4 +1,5 @@
 import { routineMentionsKey } from "../src/lib/routines/mentions.ts";
+import { resolveMentionVideoAvailability } from "../src/lib/routines/mention-video-availability.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -95,4 +96,12 @@ test("JSONB key order cannot make a confirmed mention remain unsaved", () => {
   const persisted = {end:12,text:"Sentadilla",start:2,exercise_id:local.exercise_id};
   assert.equal(routineMentionsKey([local]),routineMentionsKey([persisted]));
   assert.notEqual(routineMentionsKey([local]),routineMentionsKey([{...local,start:3}]));
+});
+
+
+test("mention video availability distinguishes confirmed absence from lookup failure", () => {
+  assert.equal(resolveMentionVideoAvailability(exercise, [exercise], false), "available");
+  assert.equal(resolveMentionVideoAvailability(exercise, [], false), "unavailable");
+  assert.equal(resolveMentionVideoAvailability(exercise, [], true), "unknown");
+  assert.equal(resolveMentionVideoAvailability(exercise, null, false), "unknown");
 });
