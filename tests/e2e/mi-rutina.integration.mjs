@@ -108,7 +108,12 @@ async function layoutAndPlayback(browserType, learner) {
           await expect(routine.getByText("45 segundos", { exact: true }).first()).toBeVisible();
           await expect(routine.getByText("25 kg", { exact: true }).first()).toBeVisible();
           await expect(routine.getByText("8-12 repeticiones", { exact: true }).first()).toBeVisible();
-          await expect(routine.getByRole("button", { name: /Sentadilla/ })).toHaveCount(0);
+          const noVideoExercise = routine.getByRole("button", { name: /Sentadilla/ });
+          await expect(noVideoExercise).toHaveCount(2);
+          await noVideoExercise.first().click();
+          await expect(routine.getByText("No se cuenta con video para este ejercicio.", { exact: true })).toBeVisible();
+          await noVideoExercise.first().getByRole("button", { name: "Cerrar aviso" }).click();
+          await expect(routine.getByText("No se cuenta con video para este ejercicio.", { exact: true })).toHaveCount(0);
           await expect(routine.getByText("Descansá entre bloques.", { exact: false })).toBeVisible();
           assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
           await expect(page).toHaveTitle(/CUEVA/);
