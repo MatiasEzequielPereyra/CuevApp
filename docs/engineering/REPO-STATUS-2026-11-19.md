@@ -74,6 +74,12 @@ En particular:
 - `docs/cueva-004-requirements` contiene diferencias en una fuente protegida histórica; no sustituir `docs/product/CUEVA-MASTER-PRODUCT-CONTEXT-V1.md` desde esa rama.
 - `integration/student-portal-main`, `codex/cueva-dashboard-002` y `docs/cueva-work-plans` contienen diferencias propias sin PR asociado; revisar antes de resolverlas.
 
+## Utilidad de limpieza segura (preparada, no ejecutada)
+
+Se agregó [`scripts/prune-merged-branches.ps1`](../../scripts/prune-merged-branches.ps1) para Windows/PowerShell con GitHub CLI autenticado. Ejecutar `./scripts/prune-merged-branches.ps1` hace **dry-run**. Solo `./scripts/prune-merged-branches.ps1 -Apply` intenta borrar: por cada rama vuelve a consultar el ref SHA y el PR merged, y omite cualquier discrepancia. **No se ha ejecutado el borrado remoto desde esta sesión**.
+
+La fotografía de 33 ramas fue tomada **antes de crear** la rama de documentación `docs/cueva-reconcile-20261119`, que no forma parte de las 25 candidatas. Su ciclo de PR/merge también deberá cerrarse en una limpieza posterior.
+
 ## Recomendaciones y procedimiento de limpieza
 
 1. **No tocar `main` ni las siete ramas reservadas.** No borrar ramas únicamente porque figuren detrás de main o estén asociadas a un PR antiguo.
