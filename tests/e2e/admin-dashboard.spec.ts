@@ -117,12 +117,12 @@ test("el panel permite navegar por teclado hasta cuenta y salir", async ({ page,
   if (!baseURL) throw new Error("Se necesita un origen local.");
   await loadDashboard(page);
   await page.route(new URL("/mi-cuenta", baseURL).href, route => route.fulfill({ contentType: "text/html", body: dashboardHtml("dark", accountFixture) }));
-  await page.evaluate(origin => { const base = document.createElement("base"); base.href = origin; document.head.append(base); }, baseURL);
   const skipLink = page.getByRole("link", { name: "Saltar al contenido" });
   await page.keyboard.press("Tab");
   await expect(skipLink).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("main")).toBeFocused();
+  await page.evaluate(origin => { const base = document.createElement("base"); base.href = origin; document.head.append(base); }, baseURL);
   await page.getByRole("link", { name: "Mi cuenta", exact: true }).focus();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(new URL("/mi-cuenta", baseURL).href);
