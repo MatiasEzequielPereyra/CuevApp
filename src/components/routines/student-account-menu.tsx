@@ -32,7 +32,7 @@ export function StudentAccountMenu({ profileActive = false }: { profileActive?: 
             <StudentIcon name="user" />
           </Link>
           <form method="post" action="/api/acceso/salir">
-            <button type="submit" aria-label="Cerrar sesión" title="Cerrar sesión">
+            <button className="student-account-signout" type="submit" aria-label="Cerrar sesión" title="Cerrar sesión">
               <StudentIcon name="log-out" />
             </button>
           </form>
