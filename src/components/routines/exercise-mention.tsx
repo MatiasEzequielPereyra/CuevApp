@@ -55,7 +55,7 @@ export function ExerciseMention({ exerciseId, name, description, text }: Exercis
         aria-expanded={open}
         aria-controls={panelId}
         onFocus={() => setOpen(true)}
-        onClick={() => setOpen(value => !value)}
+        onClick={() => setOpen(true)}
       >
         {text}
       </button>
