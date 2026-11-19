@@ -1,5 +1,7 @@
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import { cpSync, copyFileSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { join, relative, resolve, sep } from "node:path";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { BrowserContext } from "@playwright/test";
 import type { Student } from "../../src/components/students/student-form";
@@ -118,23 +120,45 @@ export async function signIn(context: BrowserContext, origin: string, user = ses
 }
 
 export function startStudentsApp(origin: string, endpoint: string) {
-  // Next isolates its development build from the production server used by the other suites.
+  // Next's dev lock, generated types and caches belong to a project directory,
+  // not a port. Snapshot the real sources so concurrent fixtures share no writes.
+  const source = process.cwd();
+  const parent = resolve(source, ".next", "fixture-apps");
+  mkdirSync(parent, { recursive: true });
+  const workspace = mkdtempSync(join(parent, "app-"));
+  function removeWorkspace() {
+    const owned = relative(parent, workspace);
+    if (!owned.startsWith("app-") || owned.includes(sep) || resolve(parent, owned) !== workspace) {
+      throw new Error("Refusing to remove a fixture directory outside its owned parent");
+    }
+    rmSync(workspace, { recursive: true, force: true });
+  }
+  try {
+    for (const directory of ["src", "public"]) cpSync(join(source, directory), join(workspace, directory), { recursive: true });
+    for (const file of ["package.json", "tsconfig.json", "next.config.ts"]) copyFileSync(join(source, file), join(workspace, file));
+  } catch (error) { removeWorkspace(); throw error; }
   const entry = `
     const { createServer } = require("node:http");
     const next = require("next");
     const { hostname, port } = new URL(process.env.CUEVA_PRODUCT_ORIGIN);
+    let handle;
     const server = createServer((request, response) => handle(request, response));
-    const app = next({ dev: true, dir: process.cwd(), hostname, port: Number(port), httpServer: server });
-    const handle = app.getRequestHandler();
-    app.prepare().then(() => server.listen(Number(port), hostname)).catch(error => {
-      console.error(error);
-      process.exitCode = 1;
-    });
+    (async () => {
+      // The copied Next config is unchanged; cwd still resolves shared assets
+      // and dependencies from the actual repository.
+      const app = next({ dev: true, dir: process.env.CUEVA_FIXTURE_WORKSPACE,
+        hostname, port: Number(port), httpServer: server });
+      handle = app.getRequestHandler();
+      server.on("error", error => { console.error(error); process.exit(1); });
+      await app.prepare();
+      server.listen(Number(port), hostname);
+    })().catch(error => { console.error(error); process.exit(1); });
   `;
   const processHandle = spawn(process.execPath, ["-e", entry], {
     stdio: ["ignore", "inherit", "inherit"], windowsHide: true,
     env: {
       ...process.env,
+      CUEVA_FIXTURE_WORKSPACE: workspace,
       NODE_ENV: "development",
       NEXT_TELEMETRY_DISABLED: "1",
       CUEVA_PRODUCT_AUTH_LOCAL: "1",
@@ -148,13 +172,20 @@ export function startStudentsApp(origin: string, endpoint: string) {
       CUEVA_SERVICE_KEY: "synthetic-service",
     },
   });
+  let closing: Promise<void> | undefined;
   return {
     processHandle,
-    async close() {
-      if (processHandle.exitCode !== null || processHandle.signalCode !== null) return;
-      const stopped = once(processHandle, "exit");
-      processHandle.kill();
-      await stopped;
+    workspace,
+    close() {
+      closing ??= (async () => {
+        if (processHandle.exitCode === null && processHandle.signalCode === null) {
+          const stopped = once(processHandle, "exit");
+          const force = setTimeout(() => processHandle.kill("SIGKILL"), 5_000);
+          try { processHandle.kill(); await stopped; } finally { clearTimeout(force); }
+        }
+        removeWorkspace();
+      })();
+      return closing;
     },
   };
 }

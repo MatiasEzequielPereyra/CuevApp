@@ -1,5 +1,13 @@
 # Checkpoint CUEVA
 
+## CUEVA-CI-FIXTURES-001 — REVIEW — 2026-11-19
+
+[Aislamiento y lifecycle de fixtures](fixture-isolation-review.md) documenta la
+reproducción de dos Next en un checkout, el estado sintético incompleto de foco
+y la conservación del error original. Sin producto, SQL ni operación alojada.
+HEAD, base actualizada y CI exacta se registran en el PR común para integrar
+antes de actualizar #63/#67. Skills y resultados en el informe enlazado.
+
 ## CUEVA-CI-PICOMATCH-001 — REVIEW — 2026-11-18
 
 El Product Owner autorizó en el chat una excepción temporal del aviso
