@@ -146,6 +146,7 @@ export default async function MyRoutine() {
                 key={publication.published_at}
                 plan={plan}
                 videoIds={videoIds}
+                videosAvailable={!videos?.error}
               />
             )}
 
