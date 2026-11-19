@@ -1,5 +1,35 @@
 # Checkpoint CUEVA
 
+## CUEVA-CI-FIXTURES-001 — REVIEW — 2026-11-19
+
+[Aislamiento y lifecycle de fixtures](fixture-isolation-review.md) documenta la
+reproducción de dos Next en un checkout, el estado sintético incompleto de foco
+y la conservación del error original. Sin producto, SQL ni operación alojada.
+HEAD, base actualizada y CI exacta se registran en el PR común para integrar
+antes de actualizar #63/#67. Skills y resultados en el informe enlazado.
+
+## CUEVA-CI-PICOMATCH-001 — REVIEW — 2026-11-18
+
+El Product Owner autorizó en el chat una excepción temporal del aviso
+`GHSA-fc5q-39xc-vjpf` en herramientas de desarrollo. La
+[política acotada y su retiro](dependency-audit-policy.md) conservan el audit
+de producción bloqueante y rechazan otros avisos. Vence el 2026-11-25.
+Esta excepción acepta un riesgo; no corrige picomatch. La base verificada es
+`d90be98ffd2f891df3bb8083b10726f985b261c1`. El PR registra el HEAD, las pruebas
+y la decisión independiente antes de integrar; no se ejecutan cambios de datos.
+
+Verificación local nueva: 23 pruebas del evaluador aprobadas; audit de producción
+sin vulnerabilidades. El audit completo conserva 14 hallazgos causados por el
+mismo aviso y el gate los identifica como `ACCEPTED_RISK` temporal. Documentos,
+fuentes, manifiesto, escaneo de secretos y diff aprobados. CI e integración se
+registran en el PR, sin atribuir estos resultados a la versión alojada.
+
+SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`,
+`cueva-acceptance-audit`, `cueva-release`, `code-review`, `pr`,
+`vercel:deployments-cicd`. SKILL_SOURCES: `.agents/skills/<nombre>/SKILL.md`
+y guías del host.
+
+
 ## PR #67 — CUEVA-006D — CI validado, draft — 2026-11-18
 
 Base `0832c9ef17a04289528148f76ac2057703db3746`; HEAD documental actualizado
