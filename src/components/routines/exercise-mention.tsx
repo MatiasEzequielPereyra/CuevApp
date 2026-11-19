@@ -7,11 +7,11 @@ type ExerciseMentionProps = {
   exerciseId: string;
   name: string;
   description: string | null;
-  hasVideo: boolean;
+  videoAvailability: "available" | "unavailable" | "unknown";
   text: string;
 };
 
-export function ExerciseMention({ exerciseId, name, description, hasVideo, text }: ExerciseMentionProps) {
+export function ExerciseMention({ exerciseId, name, description, videoAvailability, text }: ExerciseMentionProps) {
   const [open, setOpen] = useState(false);
   const instanceId = useId();
   const root = useRef<HTMLSpanElement>(null);
@@ -66,7 +66,7 @@ export function ExerciseMention({ exerciseId, name, description, hasVideo, text 
         <span id={panelId} className="my-routine-mention-preview" role="dialog" aria-label={`Ejercicio: ${name}`}>
           <strong>{name}</strong>
           {description && <span>{description}</span>}
-          {hasVideo ? <Link href="/ejercicios">Abrir catálogo de ejercicios</Link> : <span role="status">Aún no se encuentra con video disponible</span>}
+          {videoAvailability === "available" ? <Link href="/ejercicios">Abrir catálogo de ejercicios</Link> : videoAvailability === "unavailable" ? <span role="status">Aún no se encuentra con video disponible</span> : <span role="status">No pudimos comprobar si hay un video disponible.</span>}
         </span>
       )}
     </span>
