@@ -118,8 +118,20 @@
   list-style: none;
 }
 .receipts-action-primary:hover { border-color: #4642cb; background: #4642cb; color: #fff; }
-.receipts-review { min-width: 0; }
-.receipts-review > summary { display: inline-flex; list-style: none; user-select: none; }
+.dashboard .receipts-review { min-width: 0; margin-block: 0; }
+.dashboard .receipts-review > summary.receipts-action-primary {
+  display: inline-flex;
+  padding: 10px 14px;
+  color: #fff;
+  font-weight: 700;
+  list-style: none;
+  user-select: none;
+}
+.dashboard .receipts-review > summary.receipts-action-primary:hover {
+  color: #fff;
+  border-color: #4642cb;
+  background: #4642cb;
+}
 .receipts-review > summary::-webkit-details-marker { display: none; }
 .receipts-review > summary svg { transition: transform .16s ease; }
 .receipts-review[open] { flex-basis: 100%; }
