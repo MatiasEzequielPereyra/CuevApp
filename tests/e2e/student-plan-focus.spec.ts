@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { signIn, startStudentsApp, studentFixture } from "./admin-students-fixture";
+import { attachFocusEvidence } from "./focus-evidence";
 import { routineEditorFixture } from "./routine-editor-fixture";
 
 const origin = "http://127.0.0.1:3235";
+const publicationId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 const exerciseId = "bbbbbbbb-bbbb-4bbb-8bbb-000000000001";
 const routines = routineEditorFixture();
 test.use({ hasTouch: true });
@@ -13,12 +15,16 @@ let app: ReturnType<typeof startStudentsApp>;
 test.beforeAll(async () => {
   fixture = await studentFixture(async (request, url) => {
     if (url.pathname === "/cueva_routine_publications") {
-      const row = { content: "", published_at: "2026-11-18T12:00:00Z", plan: { version: 2, days: [
+      const row = { id: publicationId, content: "", published_at: "2026-11-18T12:00:00Z", plan: { version: 2, days: [
         { id: "push", name: "Empuje", blocks: [{ id: "block", name: "Principal", rounds: 2, exercises: [
           { id: "press", exercise_id: exerciseId, name: "Press militar", mode: "weight", reps: "10", weight_kg: 20, note: "" },
         ] }] },
         { id: "pull", name: "Tirón", blocks: [] },
       ] } };
+      return { body: request.headers.accept?.includes("vnd.pgrst.object") ? row : [row] };
+    }
+    if (url.pathname === "/cueva_routine_text_publications") {
+      const row = { publication_id: publicationId, format: "blocks", text_content: "", block_content: "", mentions: [] };
       return { body: request.headers.accept?.includes("vnd.pgrst.object") ? row : [row] };
     }
     if (url.pathname === "/rpc/cueva_my_routine_video_ids") return { body: [exerciseId] };
@@ -31,6 +37,7 @@ test.beforeAll(async () => {
   });
   app = startStudentsApp(origin, fixture.endpoint);
   await expect.poll(async () => {
+    if (app.processHandle.exitCode !== null) throw new Error(`El servidor de foco salió con código ${app.processHandle.exitCode}.`);
     try { return (await fetch(`${origin}/mi-rutina`)).status; } catch { return 0; }
   }, { timeout: 55_000 }).toBe(200);
 });
@@ -119,7 +126,6 @@ test("cerrar el video conserva el foco de Tab entre Empuje y Tirón", async ({ p
       await expect(pull).toHaveAttribute("aria-pressed", "true");
     }
   } finally {
-    const trace = await page.evaluate(() => Reflect.get(window, "cuevaFocusTrace"));
-    await testInfo.attach("focus-events", { body: JSON.stringify(trace, null, 2), contentType: "application/json" });
+    await attachFocusEvidence(page, testInfo);
   }
 });
