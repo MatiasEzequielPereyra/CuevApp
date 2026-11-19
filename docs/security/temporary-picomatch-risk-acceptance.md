@@ -2,7 +2,7 @@
 
 Fecha de evaluación: 2026-11-17  
 Rama evaluada: `feature/routine-text-mentions`  
-HEAD validado en CI: `11e9169d4bf9d796a7cced3c4ff6572393061b41`  
+HEAD validado en CI: `e32109a7c22212e974bf4767200e5a49f37ead47`  
 Estado: excepción técnica acotada implementada en CI; no equivale a declarar el hallazgo corregido.
 
 ## Hallazgo
@@ -18,7 +18,7 @@ Ambas instalaciones están marcadas como dependencias de desarrollo en el
 lockfile. El árbol de dependencias las alcanza desde tooling de ESLint/Next y
 TypeScript-ESLint. No son dependencias runtime directas de la aplicación.
 
-La ejecución CI comprobada el 2026-11-18 sobre el HEAD `11e9169d4bf9d796a7cced3c4ff6572393061b41` confirma que:
+La ejecución CI comprobada el 2026-11-18 sobre el HEAD `e32109a7c22212e974bf4767200e5a49f37ead47` confirma que:
 - `npm audit --omit=dev --audit-level=moderate`: 0 vulnerabilidades.
 - `npm audit --audit-level=moderate`: falla por el aviso de Picomatch y su
   propagación por dependencias transitivas.
@@ -65,7 +65,7 @@ esta excepción y confirmar que ambas instalaciones vulnerables desaparecieron.
 ## Estado de aprobación
 
 La autorización para mantener esta excepción técnica acotada se recibió en la conversación
-de trabajo. La validación de CI sobre el HEAD `11e9169d4bf9d796a7cced3c4ff6572393061b41` volvió a aprobar el verificador estricto y la auditoría crítica. La excepción técnica se implementa mediante `scripts/check-dependency-audit.mjs`.
+de trabajo. La validación de CI sobre el HEAD `e32109a7c22212e974bf4767200e5a49f37ead47` volvió a aprobar el verificador estricto y la auditoría crítica. La excepción técnica se implementa mediante `scripts/check-dependency-audit.mjs`.
 El verificador permite únicamente el grafo de 14 entradas reportado por npm,
 las versiones y rutas dev fijadas en el lockfile, y el advisory exacto. Sus
 pruebas positivas y negativas se ejecutan en CI. La excepción permanece
@@ -75,4 +75,11 @@ del PR estén verdes; no autoriza merge por sí sola.
 
 ## Revalidación del HEAD — 2026-11-18
 
-El HEAD `11e9169d4bf9d796a7cced3c4ff6572393061b41` volvió a pasar Verify foundation, incluyendo el verificador estricto del grafo y `npm audit --audit-level=critical`. Esto confirma el comportamiento del gate en esta ejecución; no convierte la excepción en una corrección del advisory ni reemplaza la revisión periódica y su vencimiento.
+El HEAD `e32109a7c22212e974bf4767200e5a49f37ead47` volvió a pasar Verify foundation, incluyendo el verificador estricto del grafo y `npm audit --audit-level=critical`. Esto confirma el comportamiento del gate en esta ejecución; no convierte la excepción en una corrección del advisory ni reemplaza la revisión periódica y su vencimiento.
+
+
+## Revalidación vigente — 2026-11-18
+
+HEAD de CUEVA-006D validado por la suite actual: `e32109a7c22212e974bf4767200e5a49f37ead47`. Verify foundation finalizó SUCCESS en https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44407225632, incluyendo los controles de auditoría configurados. Esto acredita que el gate pasó en ese commit, no que Picomatch haya recibido un parche ni que el advisory retirado del feed esté corregido.
+
+La excepción temporal conserva su alcance estricto y su fecha límite: **2026-11-25**. Antes de esa fecha debe revisarse nuevamente el árbol y la disponibilidad de una versión oficial corregida y compatible; no extender automáticamente la excepción. Si no existe corrección compatible, se debe elevar la decisión de riesgo antes del vencimiento, sin actualizar Node/Next ni introducir overrides arbitrarios.
