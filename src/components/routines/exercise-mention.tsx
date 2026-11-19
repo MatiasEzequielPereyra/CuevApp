@@ -40,6 +40,7 @@ export function ExerciseMention({ exerciseId, name, description, text }: Exercis
     <span
       className="my-routine-mention-wrap"
       ref={root}
+      data-exercise-id={exerciseId}
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={event => {
         if (!root.current?.contains(event.relatedTarget as Node | null)) setOpen(false);
