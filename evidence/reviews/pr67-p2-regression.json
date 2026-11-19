@@ -1,0 +1,31 @@
+{
+  "base": "5a222ca0138dab4f3acd2c151a91b513d3197652",
+  "dependency_pr": 72,
+  "stale_suggestions": {
+    "before": {
+      "action": "hold @sent response after @press results; press Enter",
+      "expected": "@sent\\n without a mention",
+      "observed": "Press militar"
+    },
+    "after": {
+      "keyboard": "PASS",
+      "touch": "PASS",
+      "assertions": "old option absent; zero stale mentions; new selection persists Sentadilla UUID"
+    }
+  },
+  "json_text": {
+    "before": {
+      "number": "no exception; base and sidecar changed",
+      "later_assertions": "not treated as independent old-type acceptance proofs after first mutation"
+    },
+    "after": {
+      "number": "22023 and full snapshot unchanged",
+      "boolean": "22023 and full snapshot unchanged",
+      "object": "22023 and full snapshot unchanged",
+      "sql_assertions": 60
+    },
+    "scope": "native PostgreSQL; synthetic Auth/Storage SQL boundary; full schema replay in CI"
+  },
+  "hosted": "NOT_RUN",
+  "dependency_state": "MERGED in verified base"
+}

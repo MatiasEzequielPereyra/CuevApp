@@ -254,3 +254,56 @@
 }
 
 .routine-picker-confirm button { width: 100%; }
+
+.routine-format-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid var(--dash-border);
+  padding-block-end: 8px;
+}
+.routine-editor-compact .routine-format-tabs button[aria-pressed="true"] {
+  border-color: var(--dash-accent);
+  background: var(--dash-accent-soft);
+  color: var(--dash-accent);
+  font-weight: 700;
+}
+.routine-text-editor {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  position: relative;
+}
+.routine-text-editor > label { font-weight: 650; }
+.routine-editor-compact .routine-text-editor textarea {
+  min-height: 260px;
+  resize: vertical;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.routine-mention-suggestions {
+  display: grid;
+  gap: 4px;
+  max-height: 240px;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--dash-border);
+  border-radius: 10px;
+  background: var(--dash-panel);
+  box-shadow: 0 8px 24px rgb(0 0 0 / .12);
+}
+.routine-mention-suggestions button {
+  width: 100%;
+  min-height: 42px;
+  text-align: start;
+  background: transparent;
+}
+.routine-mention-suggestions button[aria-selected="true"],
+.routine-mention-suggestions button:hover {
+  background: var(--dash-accent-soft);
+  border-color: var(--dash-accent);
+}
+.routine-text-mention-count {
+  color: var(--dash-muted);
+  font-size: .875rem;
+}

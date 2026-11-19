@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { studentAdmin } from "@/lib/students/server";
 import { productConfig } from "@/lib/product-auth/server";
-import { readRoutineJson } from "@/lib/routines/request";
+import { readRoutineJson, routineReadIsConsistent } from "@/lib/routines/request";
 import { uuid } from "@/lib/routines/types";
 
 const reply = (data: object, status = 200) => NextResponse.json(data, { status, headers: { "Cache-Control": "no-store" } });
@@ -14,15 +14,64 @@ export async function GET(req: Request) {
     const offset = Number(params.get("offset") ?? 0);
     if (!Number.isSafeInteger(offset) || offset < 0 || offset > 1000000) return reply({ message: "Página inválida." }, 400);
     const { data, error } = await client.from("cueva_routine_templates").select("id,title,content,revision,plan").order("title").order("id").range(offset, offset + 100);
-    return error ? reply({ message: "No pudimos cargar las plantillas." }, 503) : reply({ templates: data?.slice(0, 100), more: (data?.length ?? 0) > 100 });
+    if (error) return reply({ message: "No pudimos cargar las plantillas." }, 503);
+    const rows = data?.slice(0, 100) ?? [];
+    const textResult = rows.length ? await client.from("cueva_routine_text_drafts")
+      .select("owner_id,format,text_content,block_content,mentions,revision")
+      .eq("kind", "template").in("owner_id", rows.map(item => item.id)) : { data: [], error: null };
+    if (textResult.error) return reply({ message: "No pudimos cargar las plantillas." }, 503);
+    const textById = new Map((textResult.data ?? []).map(item => [item.owner_id, item]));
+    if (rows.some(item => !routineReadIsConsistent(item.revision, textById.get(item.id)?.revision))) {
+      return reply({ message: "Las plantillas cambiaron mientras cargábamos. Reintentá." }, 503);
+    }
+    const templates = rows.map(item => {
+      const text = textById.get(item.id);
+      return {
+        ...item,
+        content: text?.block_content ?? item.content,
+        format: text?.format ?? "blocks",
+        text_content: text?.text_content ?? "",
+        mentions: text?.mentions ?? [],
+      };
+    });
+    return reply({ templates, more: (data?.length ?? 0) > 100 });
   }
   const id = params.get("id") ?? "";
   if (!uuid.test(id)) return reply({ message: "Identificador inválido." }, 400);
   const template = params.get("kind") === "template";
-  const { data, error } = await client.from(template ? "cueva_routine_templates" : "cueva_routine_drafts")
-    .select(template ? "content,revision,title,plan" : "content,revision,plan").eq(template ? "id" : "student_id", id).maybeSingle();
-  if (error) return reply({ message: "No pudimos cargar la revisión. Tu texto sigue en el editor." }, 503);
-  return reply({ note: data ?? { content: "", revision: 0, ...(template ? { title: "" } : {}) } });
+  type RoutineRow = { content: string; revision: number; plan?: unknown; title?: string };
+  const routineQuery = async (): Promise<{ data: RoutineRow | null; error: unknown }> => {
+    if (template) {
+      const result = await client.from("cueva_routine_templates")
+        .select("content,revision,title,plan").eq("id", id).maybeSingle();
+      return { data: result.data as RoutineRow | null, error: result.error };
+    }
+    const result = await client.from("cueva_routine_drafts")
+      .select("content,revision,plan").eq("student_id", id).maybeSingle();
+    return { data: result.data as RoutineRow | null, error: result.error };
+  };
+  const [routineResult, textResult] = await Promise.all([
+    routineQuery(),
+    client.from("cueva_routine_text_drafts")
+      .select("format,text_content,block_content,mentions,revision")
+      .eq("kind", template ? "template" : "draft").eq("owner_id", id).maybeSingle(),
+  ]);
+  if (routineResult.error || textResult.error) return reply({ message: "No pudimos cargar la revisión. Tu texto sigue en el editor." }, 503);
+  const data = routineResult.data;
+  const textDocument = textResult.data;
+  // These reads run concurrently and are not a shared database snapshot.
+  // A save committed between them can otherwise mix two revisions in the
+  // comparison UI. Refuse that transient result and let the admin retry.
+  if (!routineReadIsConsistent(data?.revision, textDocument?.revision)) {
+    return reply({ message: "La rutina cambió mientras consultábamos la revisión. Volvé a comparar; tu borrador sigue en el editor." }, 503);
+  }
+  return reply({ note: {
+    ...(data ?? { content: "", revision: 0, ...(template ? { title: "" } : {}) }),
+    content: textDocument?.block_content ?? data?.content ?? "",
+    format: textDocument?.format ?? "blocks",
+    text_content: textDocument?.text_content ?? "",
+    mentions: textDocument?.mentions ?? [],
+  } });
 }
 
 export async function POST(req: Request) {
@@ -38,9 +87,10 @@ export async function POST(req: Request) {
     || (p.kind === "template" && (typeof p.title !== "string" || !p.title.trim() || p.title.length > 100 || p.title.includes("\0")))) {
     return reply({ message: "Revisá el contenido y el título (hasta 40.000 caracteres)." }, 400);
   }
-  const { data, error } = await client.rpc("cueva_routine_write", {
+  const { data, error } = await client.rpc("cueva_routine_text_write", {
     p_kind: p.kind, p_id: p.id, p_revision: p.revision, p_content: p.content,
     p_title: p.kind === "template" ? p.title : null, p_operation: p.operation, p_plan: p.plan ?? null,
+    p_format: p.format ?? "blocks", p_text_content: p.text_content ?? "", p_mentions: p.mentions ?? [],
   });
   if (error) {
     if (error.code === "40001") return reply({ message: "Hay cambios en otra ventana. Tu texto se conserva. Compará las versiones antes de guardar.", conflict: true }, 409);

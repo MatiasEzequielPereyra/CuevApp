@@ -14,3 +14,11 @@ export async function readRoutineJson(req: Request, limit = 350000) {
   try { return JSON.parse(new TextDecoder().decode(Buffer.concat(chunks))); }
   catch { return null; }
 }
+
+/** A routine and its text document must come from the same committed revision. */
+export function routineReadIsConsistent(
+  routineRevision: number | null | undefined,
+  textRevision: number | null | undefined,
+): boolean {
+  return (textRevision ?? 0) === (routineRevision ?? 0);
+}

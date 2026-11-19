@@ -1,5 +1,5 @@
 begin;
-select plan(14);
+select plan(60);
 
 -- Stable test identities and sessions. All fixtures are rolled back at the end.
 insert into auth.users(id,aud,role,email,created_at,updated_at) values
@@ -27,18 +27,19 @@ insert into public.cueva_profiles(user_id,role) values
 
 insert into public.cueva_students(id,first_name,last_name,email,joined_on) values
  ('b3000000-0000-4000-8000-000000000001','Student','A','routine-student-a@example.test',date '2026-01-01'),
- ('b3000000-0000-4000-8000-000000000002','Student','B','routine-student-b@example.test',date '2026-01-01');
+ ('b3000000-0000-4000-8000-000000000002','Student','B','routine-student-b@example.test',date '2026-01-01'),
+ ('b3000000-0000-4000-8000-000000000003','Student','C','routine-student-c@example.test',date '2026-01-01');
 
 insert into public.cueva_student_invitations(student_id,email,user_id,state,lease,requested_by) values
  ('b3000000-0000-4000-8000-000000000001','routine-student-a@example.test','b1000000-0000-4000-8000-000000000002','sent','b4000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001'),
  ('b3000000-0000-4000-8000-000000000002','routine-student-b@example.test','b1000000-0000-4000-8000-000000000003','sent','b4000000-0000-4000-8000-000000000002','b1000000-0000-4000-8000-000000000001');
 
-insert into public.cueva_exercises(id,name,revision,updated_by,description,video_url) values
- ('b5000000-0000-4000-8000-000000000001','Press banca',1,'b1000000-0000-4000-8000-000000000001','Ejercicio vigente','https://youtu.be/abcdefghijk'),
- ('b5000000-0000-4000-8000-000000000002','Sentadilla',1,'b1000000-0000-4000-8000-000000000001','Segundo ejercicio vigente',null),
- ('b5000000-0000-4000-8000-000000000003','Ejercicio anterior',1,'b1000000-0000-4000-8000-000000000001','Solo en publicación vieja',null),
- ('b5000000-0000-4000-8000-000000000004','Ejercicio de B',1,'b1000000-0000-4000-8000-000000000001','Asignado a otro alumno',null),
- ('b5000000-0000-4000-8000-000000000005','Catálogo sin asignar',1,'b1000000-0000-4000-8000-000000000001','No debe aparecer',null);
+insert into public.cueva_exercises(id,name,revision,updated_by,description,video_url,active) values
+ ('b5000000-0000-4000-8000-000000000001','Press banca',1,'b1000000-0000-4000-8000-000000000001','Ejercicio vigente','https://youtu.be/abcdefghijk',true),
+ ('b5000000-0000-4000-8000-000000000002','Sentadilla',1,'b1000000-0000-4000-8000-000000000001','Segundo ejercicio vigente',null,true),
+ ('b5000000-0000-4000-8000-000000000003','Ejercicio anterior',1,'b1000000-0000-4000-8000-000000000001','Solo en publicación vieja',null,true),
+ ('b5000000-0000-4000-8000-000000000004','Ejercicio de B',1,'b1000000-0000-4000-8000-000000000001','Asignado a otro alumno',null,true),
+ ('b5000000-0000-4000-8000-000000000005','Catálogo sin asignar',1,'b1000000-0000-4000-8000-000000000001','No debe aparecer',null,false);
 
 -- A has an older publication and a newer one. The latest plan deliberately
 -- repeats Press banca in two blocks to assert the RPC returns distinct exercises.
@@ -49,6 +50,19 @@ insert into public.cueva_routine_publications(id,student_id,draft_revision,conte
   '{"version":2,"days":[{"id":"b7000000-0000-4000-8000-000000000002","name":"Día actual","blocks":[{"id":"b8000000-0000-4000-8000-000000000002","name":"Bloque uno","rounds":3,"exercises":[{"id":"b9000000-0000-4000-8000-000000000002","exercise_id":"b5000000-0000-4000-8000-000000000001","name":"Press banca","note":""},{"id":"b9000000-0000-4000-8000-000000000003","exercise_id":"b5000000-0000-4000-8000-000000000002","name":"Sentadilla","note":""}]},{"id":"b8000000-0000-4000-8000-000000000003","name":"Bloque dos","rounds":2,"exercises":[{"id":"b9000000-0000-4000-8000-000000000004","exercise_id":"b5000000-0000-4000-8000-000000000001","name":"Press banca","note":""}]}]}]}'::jsonb),
  ('b6000000-0000-4000-8000-000000000003','b3000000-0000-4000-8000-000000000002',1,'Rutina de B','b1000000-0000-4000-8000-000000000001',
   '{"version":2,"days":[{"id":"b7000000-0000-4000-8000-000000000003","name":"Día B","blocks":[{"id":"b8000000-0000-4000-8000-000000000004","name":"Bloque B","rounds":3,"exercises":[{"id":"b9000000-0000-4000-8000-000000000005","exercise_id":"b5000000-0000-4000-8000-000000000004","name":"Ejercicio de B","note":""}]}]}]}'::jsonb);
+
+insert into public.cueva_routine_text_publications(
+ publication_id,student_id,format,text_content,block_content,mentions,published_by
+) values
+ ('b6000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000001','text','Ejercicio anterior','',
+  '[{"exercise_id":"b5000000-0000-4000-8000-000000000003","start":0,"end":18,"text":"Ejercicio anterior"}]'::jsonb,
+  'b1000000-0000-4000-8000-000000000001'),
+ ('b6000000-0000-4000-8000-000000000002','b3000000-0000-4000-8000-000000000001','text','Ejercicio extra: Catálogo sin asignar','',
+  '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":17,"end":37,"text":"Catálogo sin asignar"}]'::jsonb,
+  'b1000000-0000-4000-8000-000000000001'),
+ ('b6000000-0000-4000-8000-000000000003','b3000000-0000-4000-8000-000000000002','text','Ejercicio de B','',
+  '[{"exercise_id":"b5000000-0000-4000-8000-000000000004","start":0,"end":14,"text":"Ejercicio de B"}]'::jsonb,
+  'b1000000-0000-4000-8000-000000000001');
 
 select ok(has_function_privilege('authenticated','public.cueva_student_assigned_exercises()','EXECUTE'),
  'authenticated can call the public assigned-exercises RPC');
@@ -66,6 +80,16 @@ select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000002'
 select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000002','role','authenticated','session_id','b2000000-0000-4000-8000-000000000002')::text,true);
 set local role authenticated;
 
+select is((select count(*)::integer from public.cueva_student_mentioned_exercises()),1,
+ 'student A receives only the exercise mentioned in their latest text publication');
+select ok(exists(select 1 from public.cueva_student_mentioned_exercises()
+ where id='b5000000-0000-4000-8000-000000000005' and name='Catálogo sin asignar'),
+ 'a text mention resolves its exercise without creating a block assignment');
+select ok(not exists(select 1 from public.cueva_student_mentioned_exercises()
+ where id in ('b5000000-0000-4000-8000-000000000003','b5000000-0000-4000-8000-000000000004')),
+ 'older and other-student mentions are excluded');
+select is((select count(*)::integer from public.cueva_routine_text_publications),1,
+ 'student A can read only their latest text publication');
 select is((select count(*)::integer from public.cueva_student_assigned_exercises()),2,
  'student A receives only the two distinct exercises in the latest publication');
 select ok(exists(select 1 from public.cueva_student_assigned_exercises() where id='b5000000-0000-4000-8000-000000000001' and name='Press banca' and description='Ejercicio vigente' and has_video),
@@ -81,6 +105,8 @@ select is((select count(*)::integer from public.cueva_exercises),0,
 -- A second authenticated student can see only their own assigned routine.
 select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000003',true);
 select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000003','role','authenticated','session_id','b2000000-0000-4000-8000-000000000003')::text,true);
+select is((select count(*)::integer from public.cueva_student_mentioned_exercises()),1,
+ 'student B receives only their own mentioned exercise');
 select is((select count(*)::integer from public.cueva_student_assigned_exercises()),1,
  'student B receives only their own assigned exercise');
 select ok(exists(select 1 from public.cueva_student_assigned_exercises() where id='b5000000-0000-4000-8000-000000000004'),
@@ -92,12 +118,261 @@ select ok(not exists(select 1 from public.cueva_student_assigned_exercises() whe
 -- An authenticated administrator has no student-owner binding and gets no rows.
 select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000001',true);
 select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000001','role','authenticated','session_id','b2000000-0000-4000-8000-000000000001')::text,true);
+select is((select count(*)::integer from public.cueva_student_mentioned_exercises()),0,
+ 'administrator cannot use the mention RPC to read a student document');
+select is((public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',0,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000001',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)->>'revision')::integer,1,'text routine and UUID mention save as one version');
+
+select is((public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',0,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000001',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)->>'revision')::integer,1,'exact retries return the same text revision');
+
+-- Publication snapshots are committed atomically with their text document.
+-- Student C has no pre-existing publication, so the test exercises the first
+-- publish and its idempotent retry without relying on seeded historical rows.
+select is((public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',0,'Bloque inicial',null,
+ 'ba000000-0000-4000-8000-000000000010',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)->>'revision')::integer,1,'publication fixture saves its initial text draft');
+
+select throws_ok($$select public.cueva_routine_text_write(
+ 'publish','b3000000-0000-4000-8000-000000000003',1,'Bloque alterado',null,
+ 'ba000000-0000-4000-8000-000000000011',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)$$,'40001',null,'a text-document mismatch aborts publication');
+
+select is((select count(*)::integer from public.cueva_routine_publications
+ where student_id='b3000000-0000-4000-8000-000000000003'),0,
+ 'a failed text snapshot leaves no base publication behind');
+
+select is((public.cueva_routine_text_write(
+ 'publish','b3000000-0000-4000-8000-000000000003',1,'Bloque inicial',null,
+ 'ba000000-0000-4000-8000-000000000012',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)->>'draft_revision')::integer,1,'publication commits the expected draft revision');
+
+select is((public.cueva_routine_text_write(
+ 'publish','b3000000-0000-4000-8000-000000000003',1,'Bloque inicial',null,
+ 'ba000000-0000-4000-8000-000000000012',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)->>'draft_revision')::integer,1,'retry after a lost publish response returns the committed snapshot');
+
+select throws_ok($$select public.cueva_routine_text_write(
+ 'publish','b3000000-0000-4000-8000-000000000003',1,'Otro bloque',null,
+ 'ba000000-0000-4000-8000-000000000012',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)$$,'22023',null,'a publication operation ID cannot be replayed with altered snapshot data');
+
+select is((select count(*)::integer from public.cueva_routine_publications p
+ join public.cueva_routine_text_publications t on t.publication_id=p.id
+ where p.student_id='b3000000-0000-4000-8000-000000000003'),1,
+ 'one atomic base publication and text snapshot remain after retries');
+
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',0,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000001',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000002","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)$$,'40001',null,'a reused save ID cannot replace mention UUIDs');
+
+-- A template may preserve an inactive historical reference, but it must
+-- not authorize introducing that exercise into an unrelated student draft.
+reset role;
+insert into public.cueva_routine_text_drafts(
+ kind,owner_id,revision,format,text_content,block_content,mentions,save_id,updated_by
+) values (
+ 'template','ba100000-0000-4000-8000-000000000001',1,'text','Catálogo sin asignar','',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":0,"end":20,"text":"Catálogo sin asignar"}]'::jsonb,
+ 'ba200000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001'
+);
+set local role authenticated;
+
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',1,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000006',null,'text','Catálogo sin asignar',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":0,"end":20,"text":"Catálogo sin asignar"}]'::jsonb
+)$$,'22023',null,'a new mention of an inactive exercise is rejected');
+
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',1,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000007',null,'text','Catálogo sin asignar',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":0,"end":20,"text":"Catálogo sin asignar"}]'::jsonb
+)$$,'22023',null,'an inactive reference in any template cannot authorize a new mention in another draft');
+
+-- An inactive reference already in this exact draft may be preserved, but
+-- it cannot be duplicated to create an additional new mention.
+reset role;
+update public.cueva_routine_text_drafts
+set format='text', text_content='Catálogo sin asignar', block_content='',
+    mentions='[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":0,"end":20,"text":"Catálogo sin asignar"}]'::jsonb
+where kind='draft' and owner_id='b3000000-0000-4000-8000-000000000003';
+set local role authenticated;
+
+select is((public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',1,'Catálogo sin asignar',null,
+ 'ba000000-0000-4000-8000-000000000020',null,'text','Catálogo sin asignar',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":0,"end":20,"text":"Catálogo sin asignar"}]'::jsonb
+)->>'revision')::integer,2,'an existing inactive mention in the same draft can be preserved');
+
+select is((public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',2,'Catálogo sin asignar',null,
+ 'ba000000-0000-4000-8000-000000000022',null,'text','Nota: Catálogo sin asignar',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":6,"end":26,"text":"Catálogo sin asignar"}]'::jsonb
+)->>'revision')::integer,3,'an inactive historical mention survives insertion before its original occurrence');
+
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',3,'Catálogo sin asignar',null,
+ 'ba000000-0000-4000-8000-000000000023',null,'text','Nota: Catálogo sin asignar y Catálogo sin asignar',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":29,"end":49,"text":"Catálogo sin asignar"}]'::jsonb
+)$$,'22023',null,'an inactive historical UUID cannot be moved to a newly appended duplicate occurrence');
+
+select is((public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',1,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000030',null,'text','🙂 Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":2,"end":13,"text":"Press banca"}]'::jsonb
+)->>'revision')::integer,2,'the actual editor code-point offsets save a mention after an emoji');
+select is((public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',3,'Catálogo sin asignar',null,
+ 'ba000000-0000-4000-8000-000000000031',null,'text','🙂 Nota: Catálogo sin asignar',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":8,"end":28,"text":"Catálogo sin asignar"}]'::jsonb
+)->>'revision')::integer,4,'an inactive historical mention survives an emoji inserted before it');
+select is((public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',3,'Catálogo sin asignar',null,
+ 'ba000000-0000-4000-8000-000000000031',null,'text','🙂 Nota: Catálogo sin asignar',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":8,"end":28,"text":"Catálogo sin asignar"}]'::jsonb
+)->>'revision')::integer,4,'an emoji mention retry returns the same revision');
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',4,'Catálogo sin asignar',null,
+ 'ba000000-0000-4000-8000-000000000032',null,'text','🙂 Nota: Catálogo sin asignar',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":9,"end":29,"text":"Catálogo sin asignar"}]'::jsonb
+)$$,'22023',null,'UTF-16 offsets are rejected because the contract is code points');
+
+-- The pre-rollout public API must also update the sidecar atomically.
+select is((public.cueva_routine_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',4,'Bloques heredados',null,
+ 'ba000000-0000-4000-8000-000000000040',null
+)->>'revision')::integer,5,'legacy block save advances the shared revision');
+select is((select text_content from public.cueva_routine_text_drafts
+ where kind='draft' and owner_id='b3000000-0000-4000-8000-000000000003'),
+ '🙂 Nota: Catálogo sin asignar','legacy saves retain hidden free text');
+select is((select revision from public.cueva_routine_text_drafts
+ where kind='draft' and owner_id='b3000000-0000-4000-8000-000000000003'),5,
+ 'legacy save leaves no base-sidecar revision gap');
+select is((public.cueva_routine_write(
+ 'publish','b3000000-0000-4000-8000-000000000003',5,'Bloques heredados',null,
+ 'ba000000-0000-4000-8000-000000000041',null
+)->>'draft_revision')::integer,5,'legacy publication writes an atomic sidecar snapshot');
+select is((public.cueva_routine_write(
+ 'publish','b3000000-0000-4000-8000-000000000003',5,'Bloques heredados',null,
+ 'ba000000-0000-4000-8000-000000000041',null
+)->>'draft_revision')::integer,5,'legacy publication replay returns its immutable snapshot');
+select is((public.cueva_routine_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',5,'Otra revisión',null,
+ 'ba000000-0000-4000-8000-000000000042',null
+)->>'revision')::integer,6,'legacy draft can advance after a publication');
+select is((public.cueva_routine_write(
+ 'publish','b3000000-0000-4000-8000-000000000003',5,'Bloques heredados',null,
+ 'ba000000-0000-4000-8000-000000000041',null
+)->>'draft_revision')::integer,5,'legacy publication retry uses its snapshot after draft advancement');
+-- Represents a publication created before migration and backfilled as text.
+reset role;
+insert into public.cueva_routine_publications(id,student_id,draft_revision,content,published_by)
+ values('ba000000-0000-4000-8000-000000000050','b3000000-0000-4000-8000-000000000003',99,
+ 'Texto anterior','b1000000-0000-4000-8000-000000000001');
+insert into public.cueva_routine_text_publications(publication_id,student_id,format,text_content,block_content,mentions,published_by)
+ values('ba000000-0000-4000-8000-000000000050','b3000000-0000-4000-8000-000000000003','text',
+ 'Texto anterior','Texto anterior','[]','b1000000-0000-4000-8000-000000000001');
+set local role authenticated;
+select is((public.cueva_routine_write(
+ 'publish','b3000000-0000-4000-8000-000000000003',99,'Texto anterior',null,
+ 'ba000000-0000-4000-8000-000000000050',null
+)->>'draft_revision')::integer,99,'a pre-migration text publication keeps its idempotent legacy replay');
+select ok(not has_function_privilege('authenticated',
+ 'cueva_private.routine_write(text,uuid,integer,text,text,uuid,jsonb)','EXECUTE'),
+ 'clients cannot bypass the sidecar writer through the private base function');
+
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000003',2,'Catálogo sin asignar y Catálogo sin asignar',null,
+ 'ba000000-0000-4000-8000-000000000021',null,'text','Catálogo sin asignar y Catálogo sin asignar',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":0,"end":20,"text":"Catálogo sin asignar"},{"exercise_id":"b5000000-0000-4000-8000-000000000005","start":23,"end":43,"text":"Catálogo sin asignar"}]'::jsonb
+)$$,'22023',null,'an inactive historical mention cannot be duplicated into a new occurrence');
+
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',1,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000003',null,'text','Press banca',
+ '[{"exercise_id":"not-a-uuid","start":0,"end":11,"text":"Press banca"}]'::jsonb
+)$$,'22023',null,'invalid exercise UUIDs are rejected by the database');
+
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',1,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000002',null,'text','Press banca',
+ '[{"exercise_id":"b5000000-0000-4000-8000-000000000001","start":0,"end":99,"text":"Press banca"}]'::jsonb
+)$$,'22023',null,'invalid mention offsets are rejected in the database');
+
+
+-- JSON text extraction must not coerce an invalid mention scalar into persisted data.
+create temp table mention_type_guard_before as select jsonb_build_object(
+ 'base',(select to_jsonb(d) from public.cueva_routine_drafts d where student_id='b3000000-0000-4000-8000-000000000001'),
+ 'text',(select to_jsonb(t) from public.cueva_routine_text_drafts t where kind='draft' and owner_id='b3000000-0000-4000-8000-000000000001'),
+ 'published',(select coalesce(jsonb_agg(to_jsonb(p) order by p.id),'[]'::jsonb) from public.cueva_routine_publications p where student_id='b3000000-0000-4000-8000-000000000001')
+) as document;
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',2,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000060',null,'text','123',
+ jsonb_build_array(jsonb_build_object('exercise_id','b5000000-0000-4000-8000-000000000001',
+ 'start',0,'end',char_length('123'),'text','123'::jsonb))
+)$$,'22023',null,'mention text rejects JSON number before writing');
+select is(jsonb_build_object(
+ 'base',(select to_jsonb(d) from public.cueva_routine_drafts d where student_id='b3000000-0000-4000-8000-000000000001'),
+ 'text',(select to_jsonb(t) from public.cueva_routine_text_drafts t where kind='draft' and owner_id='b3000000-0000-4000-8000-000000000001'),
+ 'published',(select coalesce(jsonb_agg(to_jsonb(p) order by p.id),'[]'::jsonb) from public.cueva_routine_publications p where student_id='b3000000-0000-4000-8000-000000000001')
+),(select document from mention_type_guard_before),
+ 'invalid number leaves the base, sidecar and publications unchanged');
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',2,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000061',null,'text','true',
+ jsonb_build_array(jsonb_build_object('exercise_id','b5000000-0000-4000-8000-000000000001',
+ 'start',0,'end',char_length('true'),'text','true'::jsonb))
+)$$,'22023',null,'mention text rejects JSON boolean before writing');
+select is(jsonb_build_object(
+ 'base',(select to_jsonb(d) from public.cueva_routine_drafts d where student_id='b3000000-0000-4000-8000-000000000001'),
+ 'text',(select to_jsonb(t) from public.cueva_routine_text_drafts t where kind='draft' and owner_id='b3000000-0000-4000-8000-000000000001'),
+ 'published',(select coalesce(jsonb_agg(to_jsonb(p) order by p.id),'[]'::jsonb) from public.cueva_routine_publications p where student_id='b3000000-0000-4000-8000-000000000001')
+),(select document from mention_type_guard_before),
+ 'invalid boolean leaves the base, sidecar and publications unchanged');
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',2,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000062',null,'text','{"label": "x"}',
+ jsonb_build_array(jsonb_build_object('exercise_id','b5000000-0000-4000-8000-000000000001',
+ 'start',0,'end',char_length('{"label": "x"}'),'text','{"label": "x"}'::jsonb))
+)$$,'22023',null,'mention text rejects JSON object before writing');
+select is(jsonb_build_object(
+ 'base',(select to_jsonb(d) from public.cueva_routine_drafts d where student_id='b3000000-0000-4000-8000-000000000001'),
+ 'text',(select to_jsonb(t) from public.cueva_routine_text_drafts t where kind='draft' and owner_id='b3000000-0000-4000-8000-000000000001'),
+ 'published',(select coalesce(jsonb_agg(to_jsonb(p) order by p.id),'[]'::jsonb) from public.cueva_routine_publications p where student_id='b3000000-0000-4000-8000-000000000001')
+),(select document from mention_type_guard_before),
+ 'invalid object leaves the base, sidecar and publications unchanged');
+
 select is((select count(*)::integer from public.cueva_student_assigned_exercises()),0,
  'administrator cannot use the student RPC to read exercise assignments');
+
+select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000003',true);
+select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000003','role','authenticated','session_id','b2000000-0000-4000-8000-000000000003')::text,true);
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',0,'',null,
+ 'ba000000-0000-4000-8000-000000000004',null,'blocks','', '[]'::jsonb
+ )$$,'42501',null,'an authenticated student cannot write routine text');
 
 -- A valid session without a cueva_profiles role is also denied by the owner check.
 select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000004',true);
 select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000004','role','authenticated','session_id','b2000000-0000-4000-8000-000000000004')::text,true);
+
+
 select is((select count(*)::integer from public.cueva_student_assigned_exercises()),0,
  'authenticated account without an alumno profile receives no exercises');
 
@@ -105,6 +380,12 @@ reset role;
 set local role anon;
 select throws_ok($$select * from public.cueva_student_assigned_exercises()$$,'42501',null,
  'anonymous execution is rejected by database privileges');
+select throws_ok($$select * from public.cueva_student_mentioned_exercises()$$,'42501',null,
+ 'anonymous mention lookup is rejected by database privileges');
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',0,'',null,
+ 'ba000000-0000-4000-8000-000000000005',null,'blocks','', '[]'::jsonb
+ )$$,'42501',null,'anonymous routine text writes are rejected by database privileges');
 reset role;
 
 select * from finish();

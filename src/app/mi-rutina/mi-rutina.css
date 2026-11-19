@@ -242,3 +242,14 @@
     padding-inline: 18px;
   }
 }
+
+.my-routine-mention {
+  display: inline;
+  padding: 1px 4px;
+  border-radius: 5px;
+  background: var(--dash-accent-soft);
+  color: var(--dash-accent);
+  font-weight: 700;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}

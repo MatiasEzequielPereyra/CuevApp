@@ -1,5 +1,16 @@
 # Checkpoint CUEVA
 
+## PR #67 — Correcciones P2 — REVIEW — 2026-11-19
+
+[Entrega vigente](pr67-corrections-20261119.md) sobre main
+`5a222ca0138dab4f3acd2c151a91b513d3197652`, que incluye Correo y el arreglo de foco.
+Se preservan ambos flujos y scripts, se impiden sugerencias obsoletas y se exige
+texto JSON de tipo string antes de escribir. SQL60/60 en PostgreSQL aislado.
+El arreglo común de pruebas #72 ya está integrado en esta base; HEAD,
+CI y revisión independiente finales se registran en el PR. Sin merge, deploy ni
+operación alojada. Las evidencias anteriores son históricas, no del nuevo HEAD.
+Skills y fuentes en el informe enlazado.
+
 ## CUEVA-CI-FIXTURES-001 — REVIEW — 2026-11-19
 
 [Aislamiento y lifecycle de fixtures](fixture-isolation-review.md) documenta la
@@ -28,6 +39,26 @@ SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`,
 `cueva-acceptance-audit`, `cueva-release`, `code-review`, `pr`,
 `vercel:deployments-cicd`. SKILL_SOURCES: `.agents/skills/<nombre>/SKILL.md`
 y guías del host.
+
+
+## PR #67 — CUEVA-006D — CI validado, draft — 2026-11-18
+
+Base `0832c9ef17a04289528148f76ac2057703db3746`; HEAD documental actualizado
+`b9b7d4096f81fc212d1f635576d972dfdc7cc0f0`. La implementación funcional fue
+validada en `0c4e9c3`; los commits posteriores son solo documentación. La CI se
+repitió sobre `11e9169`: Verify foundation, Membership SQL, Receipt Storage,
+Supabase fresh/upgrade/hosted-compatible y Vercel Preview SUCCESS. La rama está
+143 commits ahead y cero behind de main. PR abierto, mergeable y draft; sin
+reviews ni hilos registrados.
+
+La primera corrida del código `0c4e9c3` tuvo una intermitencia WebKit móvil;
+el reintento pasó sin cambios de código, aserciones ni timeouts. La flakiness
+sigue siendo riesgo conocido. No se integró #67 ni se aplicó SQL en Supabase
+hosted. La revisión humana final y la autorización de merge siguen pendientes.
+Ver [informe](pr67-portal-review.md) para runs, jobs, limitaciones y secuencia
+operativa.
+
+SKILLS_SELECTED / SKILLS_APPLIED / SKILL_SOURCES: detallados en el informe.
 
 ## Estado vigente verificado — 2026-11-17
 

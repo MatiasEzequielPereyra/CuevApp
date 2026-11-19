@@ -364,3 +364,186 @@ for (const width of [360, 390, 1440]) {
     });
   }
 }
+
+
+test("aplicar una plantilla confirma antes de reemplazar un borrador solo de texto", async ({ page }) => {
+  await page.goto(`${origin}/rutinas?alumno=${shortId}`);
+  const editor = page.getByRole("region", { name: "Editor de rutina" });
+  await editor.getByRole("button", { name: "Texto libre" }).click();
+  const textarea = editor.getByRole("textbox", { name: "Rutina en texto libre" });
+  await textarea.fill("Rutina personalizada que no debe perderse");
+  await editor.getByText("Usar plantilla", { exact: true }).click();
+  await editor.getByRole("combobox", { name: "Plantilla" }).selectOption("cccccccc-cccc-4ccc-8ccc-cccccccccccc");
+  page.once("dialog", async dialog => {
+    expect(dialog.message()).toContain("¿Reemplazar el contenido del borrador");
+    await dialog.dismiss();
+  });
+  await editor.getByRole("button", { name: "Copiar al borrador" }).click();
+  await expect(textarea).toHaveValue("Rutina personalizada que no debe perderse");
+});
+
+test("reintentar un guardado cuya respuesta se perdió reutiliza la misma operación", async ({ page }) => {
+  await page.goto(`${origin}/rutinas?alumno=${shortId}`);
+  const editor = page.getByRole("region", { name: "Editor de rutina" });
+  await editor.getByRole("button", { name: "Texto libre" }).click();
+  routines.loseNextSaveResponse();
+  const textarea = editor.getByRole("textbox", { name: "Rutina en texto libre" });
+  await textarea.fill("Rutina confirmada en servidor aunque se perdió la respuesta");
+  await expect(editor.getByRole("alert")).toContainText("No se pudo guardar");
+  await editor.getByRole("button", { name: "Reintentar guardado" }).click();
+  await expect(editor.getByText("Borrador guardado", { exact: true })).toBeVisible();
+  expect(routines.operations.filter(step => step === "draft")).toHaveLength(1);
+  expect(routines.saveOperationIds).toHaveLength(2);
+  expect(routines.saveOperationIds[1]).toBe(routines.saveOperationIds[0]);
+  await expect(textarea).toHaveValue("Rutina confirmada en servidor aunque se perdió la respuesta");
+});
+
+test("texto libre vincula menciones por UUID y publica la instantánea visible para el alumno", async ({ page, browser }) => {
+  await page.setViewportSize({ width: 390, height: 820 });
+  await page.goto(`${origin}/rutinas?alumno=${shortId}`);
+  const editor = page.getByRole("region", { name: "Editor de rutina" });
+  await expect(editor.getByText("Usar plantilla")).toBeVisible();
+  await editor.getByRole("button", { name: "Texto libre" }).click();
+  const textarea = editor.getByRole("textbox", { name: "Rutina en texto libre" });
+  await textarea.fill("@Sentadilla");
+  const suggestion = editor.getByRole("option", { name: "Sentadilla" });
+  await expect(suggestion).toBeVisible();
+  await suggestion.click();
+  await expect(textarea).toHaveValue("Sentadilla");
+  await textarea.press("End");
+  await textarea.press("Enter");
+  await textarea.type("Remo");
+  const directSuggestion = editor.getByRole("option", { name: "Remo" });
+  await expect(directSuggestion).toBeVisible();
+  await directSuggestion.click();
+  await expect(textarea).toHaveValue("Sentadilla\nRemo");
+  await expect(editor.getByText("2 menciones vinculadas")).toBeVisible();
+  await expect.poll(() => routines.operations).toEqual(["draft"]);
+  await editor.getByRole("button", { name: "Publicar rutina" }).click();
+  await expect(editor.getByText("Rutina publicada.")).toBeVisible();
+  await expect.poll(() => routines.operations).toEqual(["draft", "publish"]);
+  await editor.getByText("Última rutina publicada").click();
+  await expect(editor.locator("pre").last()).toHaveText("Sentadilla\nRemo");
+
+  const learner = await browser.newContext();
+  try {
+    await signIn(learner, origin, routines.studentUser);
+    const studentPage = await learner.newPage();
+    await studentPage.goto(`${origin}/mi-rutina`);
+    await expect(studentPage.getByRole("heading", { name: "Mi rutina", exact: true })).toBeVisible();
+    const publishedText = studentPage.locator("section.my-routine-notes");
+    await expect(publishedText).toContainText("Sentadilla");
+    await expect(publishedText).toContainText("Remo");
+    await expect(studentPage.getByRole("heading", { name: "Ejercicios mencionados" })).toBeVisible();
+    await expect(studentPage.getByRole("list").getByText("Sentadilla", { exact: true })).toBeVisible();
+    await expect(studentPage.getByRole("list").getByText("Remo", { exact: true })).toBeVisible();
+  } finally {
+    await learner.close();
+  }
+});
+
+
+test("cargas mezcladas no habilitan guardar borradores ni plantillas", async ({ page }) => {
+  await page.goto(`${origin}/rutinas?alumno=${shortId}`);
+  const editor = page.getByRole("region", { name: "Editor de rutina" });
+  await editor.getByRole("button", { name: "Texto libre" }).click();
+  await editor.getByRole("textbox", { name: "Rutina en texto libre" }).fill("Revisión confirmada");
+  await expect.poll(() => routines.operations).toEqual(["draft"]);
+  routines.setStaleDraft(true);
+  await page.reload();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("No pudimos cargar la rutina");
+  await expect(editor).toHaveCount(0);
+  const comparison = await page.request.get(`${origin}/api/rutinas?id=${shortId}`);
+  expect(comparison.status()).toBe(503);
+  routines.setStaleDraft(false);
+  routines.setStaleTemplate(true);
+  await page.goto(`${origin}/rutinas/plantillas?id=cccccccc-cccc-4ccc-8ccc-cccccccccccc`);
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("No pudimos cargar las plantillas");
+  await expect(editor).toHaveCount(0);
+  expect((await page.request.get(`${origin}/api/rutinas?templates=1`)).status()).toBe(503);
+});
+
+test("una falla del documento publicado no muestra el formato anterior", async ({ page, browser }) => {
+  await page.goto(`${origin}/rutinas?alumno=${shortId}`);
+  const editor = page.getByRole("region", { name: "Editor de rutina" });
+  await editor.getByRole("button", { name: "Texto libre" }).click();
+  const text = editor.getByRole("textbox", { name: "Rutina en texto libre" });
+  await text.fill("🙂 @Sentadilla");
+  await editor.getByRole("option", { name: "Sentadilla" }).click();
+  await expect(text).toHaveValue("🙂 Sentadilla");
+  await expect.poll(() => routines.operations).toEqual(["draft"]);
+  await editor.getByRole("button", { name: "Publicar rutina" }).click();
+  await expect(editor.getByText("Rutina publicada.")).toBeVisible();
+  const learner = await browser.newContext();
+  try {
+    await signIn(learner, origin, routines.studentUser);
+    const studentPage = await learner.newPage();
+    await studentPage.goto(`${origin}/mi-rutina`);
+    await expect(studentPage.locator(".my-routine-mention")).toHaveText("Sentadilla");
+    routines.setPublicationReadError(true);
+    await studentPage.reload();
+    await expect(studentPage.getByRole("heading", { name: "No pudimos cargar tu rutina" })).toBeVisible();
+    await expect(studentPage.locator(".my-routine-notes")).toHaveCount(0);
+    await expect(studentPage.getByRole("group", { name: "Día de entrenamiento" })).toHaveCount(0);
+  } finally { await learner.close(); }
+});
+
+
+for (const interaction of ["teclado", "toque"] as const) {
+  test(`sugerencias obsoletas no se insertan con ${interaction} mientras llega otra búsqueda`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 1100 });
+    let release!: () => void;
+    const held = new Promise<void>(resolve => { release = resolve; });
+    let waiting = false;
+    let intercepted = false;
+    await page.route("**/api/ejercicios?*", async route => {
+      const query = new URL(route.request().url()).searchParams.get("q")?.toLowerCase();
+      if (query === "sent" && !intercepted) {
+        intercepted = true;
+        waiting = true;
+        await held;
+      }
+      await route.continue().catch(() => {}); // A new query may abort this held response.
+    });
+    try {
+      await page.goto(`${origin}/rutinas?alumno=${shortId}`);
+      const editor = page.getByRole("region", { name: "Editor de rutina" });
+      await editor.getByRole("button", { name: "Texto libre" }).click();
+      const textarea = editor.getByRole("textbox", { name: "Rutina en texto libre" });
+      await textarea.fill("@press");
+      const previous = editor.getByRole("option", { name: "Press militar", exact: true });
+      await expect(previous).toBeVisible();
+      await previous.scrollIntoViewIfNeeded();
+      const bounds = await previous.boundingBox();
+      expect(bounds).not.toBeNull();
+      await textarea.fill("@sent");
+      await expect.poll(() => waiting).toBe(true);
+      if (interaction === "teclado") {
+        await textarea.press("Enter");
+        await expect(textarea).toHaveValue("@sent\n");
+        await textarea.fill("@sent");
+      } else {
+        await page.touchscreen.tap(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height / 2);
+        await expect(textarea).toHaveValue("@sent");
+      }
+      await expect(editor.getByText("0 menciones vinculadas")).toBeVisible();
+      await expect(previous).toHaveCount(0);
+      release();
+      const current = editor.getByRole("option", { name: "Sentadilla", exact: true });
+      await expect(current).toBeVisible();
+      if (interaction === "teclado") {
+        await textarea.focus();
+        await textarea.press("ArrowDown");
+        await textarea.press("Enter");
+      } else await current.tap();
+      await expect(textarea).toHaveValue("Sentadilla");
+      await expect(editor.getByText("1 mención vinculada")).toBeVisible();
+      await expect(previous).toHaveCount(0);
+      await expect.poll(async () => {
+        const response = await page.request.get(`${origin}/api/rutinas?id=${shortId}`);
+        const data = await response.json();
+        return data.note?.text_content === "Sentadilla" ? data.note.mentions?.map((mention: { exercise_id: string }) => mention.exercise_id) : [];
+      }).toEqual(["bbbbbbbb-bbbb-4bbb-8bbb-000000000000"]);
+    } finally { release(); }
+  });
+}

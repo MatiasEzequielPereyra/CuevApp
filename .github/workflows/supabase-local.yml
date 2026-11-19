@@ -7,6 +7,7 @@ on:
       - ".github/workflows/supabase-local.yml"
       - "tests/billing-concurrency.test.mjs"
       - "tests/notifications-claim-concurrency.test.mjs"
+      - "tests/routine-publication-concurrency.test.mjs"
       - "tests/notifications-*.test.mjs"
       - "src/app/api/notifications/**"
       - "src/lib/notifications/**"
@@ -21,6 +22,7 @@ on:
       - ".github/workflows/supabase-local.yml"
       - "tests/billing-concurrency.test.mjs"
       - "tests/notifications-claim-concurrency.test.mjs"
+      - "tests/routine-publication-concurrency.test.mjs"
       - "tests/notifications-*.test.mjs"
       - "src/app/api/notifications/**"
       - "src/lib/notifications/**"
@@ -182,6 +184,13 @@ jobs:
           export "$test_db_var=${DB_URL:-postgresql://postgres:postgres@127.0.0.1:$DB_PORT/postgres}"
           node tests/notifications-claim-concurrency.test.mjs | tee "$MIGRATION_EVIDENCE/notification-claim-concurrency.txt"
 
+      - name: Verify concurrent routine publication by two administrators
+        run: |
+          eval "$(supabase --workdir "$SUPABASE_TEST_DIR" status -o env)"
+          test_db_var=CUEVA_TEST_DATABASE_URL
+          export "$test_db_var=${DB_URL:-postgresql://postgres:postgres@127.0.0.1:$DB_PORT/postgres}"
+          node tests/routine-publication-concurrency.test.mjs | tee "$MIGRATION_EVIDENCE/routine-publication-concurrency.txt"
+
       - name: Install Chromium for authenticated integration test
         run: npx playwright install --with-deps chromium
 
@@ -228,6 +237,7 @@ jobs:
           }
 
           if [[ "$MIGRATION_PATH" == fresh ]]; then
+            node tests/e2e/routine-mentions.integration.mjs | tee "$MIGRATION_EVIDENCE/routine-mentions.txt"
             node tests/e2e/mi-rutina.integration.mjs | tee "$MIGRATION_EVIDENCE/mi-rutina.txt" || {
               cat /tmp/cueva-next.log
               exit 1
