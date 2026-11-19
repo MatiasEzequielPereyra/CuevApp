@@ -25,9 +25,10 @@ function VideoIcon() {
   return <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M6 3.5v13l10-6.5Z" /></svg>;
 }
 
-export function StudentPlan({ plan, videoIds }: { plan: Plan; videoIds: string[] }) {
+export function StudentPlan({ plan, videoIds, videosAvailable = true }: { plan: Plan; videoIds: string[]; videosAvailable?: boolean }) {
   const [selected, setSelected] = useState("");
   const [playing, setPlaying] = useState<{ name: string; id: string } | null>(null);
+  const [videoNotice, setVideoNotice] = useState<string | null>(null);
   const [playback, setPlayback] = useState<Playback>({ state: "loading" });
   const dialog = useRef<HTMLDialogElement>(null);
   const dialogTitle = useId();
@@ -62,6 +63,11 @@ export function StudentPlan({ plan, videoIds }: { plan: Plan; videoIds: string[]
   }
 
   function openVideo(event: MouseEvent<HTMLButtonElement>, exercise: Target | LegacyTarget) {
+    if (!videosAvailable || !videos.has(exercise.exercise_id)) {
+      setVideoNotice(current => current === exercise.id ? null : exercise.id);
+      return;
+    }
+    setVideoNotice(null);
     trigger.current = event.currentTarget;
     position.current = { x: window.scrollX, y: window.scrollY };
     setPlaying({ id: exercise.exercise_id, name: exercise.name });
@@ -129,12 +135,18 @@ export function StudentPlan({ plan, videoIds }: { plan: Plan; videoIds: string[]
             {block.exercises.length > 0 ? (
               <ol role="list">
                 {block.exercises.map((exercise, exerciseIndex) => (
-                  <li key={exercise.id}>
-                    <button type="button" className="my-routine-exercise" aria-haspopup="dialog" onClick={event => openVideo(event, exercise)}>
+                  <li key={exercise.id} className="my-routine-exercise-item">
+                    <button type="button" className="my-routine-exercise" aria-haspopup={videos.has(exercise.exercise_id) ? "dialog" : undefined} aria-expanded={videoNotice === exercise.id ? true : undefined} aria-describedby={videoNotice === exercise.id ? `video-notice-${exercise.id}` : undefined} onClick={event => openVideo(event, exercise)}>
                       <span className="my-routine-exercise-order" aria-hidden="true">{exerciseIndex + 1}</span>
                       <ExerciseDetails exercise={exercise} />
                       <span className="my-routine-video-label"><VideoIcon /> Video</span>
                     </button>
+                    {videoNotice === exercise.id && (
+                      <span id={`video-notice-${exercise.id}`} className="my-routine-video-notice" role="status">
+                        <span>{videosAvailable ? "No se cuenta con video para este ejercicio." : "No pudimos comprobar si hay un video disponible. Intentá nuevamente más tarde."}</span>
+                        <button type="button" aria-label="Cerrar aviso" onClick={() => setVideoNotice(null)}>×</button>
+                      </span>
+                    )}
                   </li>
                 ))}
               </ol>
