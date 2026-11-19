@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { canSubmitPasswordChange } from "@/lib/student-profile-form-validation";
 
 /** Only the readiness flag enters React state; passwords stay in their input elements. */
 export function PasswordChangeForm({ gateUntilValid = false }: { gateUntilValid?: boolean } = {}) {
@@ -12,9 +13,7 @@ export function PasswordChangeForm({ gateUntilValid = false }: { gateUntilValid?
     const next = form.elements.namedItem("new_password") as HTMLInputElement | null;
     const confirmation = form.elements.namedItem("confirm_password") as HTMLInputElement | null;
     setReady(Boolean(current && next && confirmation
-      && form.checkValidity()
-      && next.value === confirmation.value
-      && next.value !== current.value));
+      && canSubmitPasswordChange(current.value, next.value, confirmation.value, form.checkValidity())));
   }
 
   return <form className={gateUntilValid ? "access-fields student-profile-form" : "access-fields"}
