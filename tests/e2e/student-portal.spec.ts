@@ -219,6 +219,16 @@ for (const changed of [false, true]) {
     await expect(page.locator(".student-profile-header")).toBeVisible();
     await expect(page.getByRole("region", { name: "Seguridad de la cuenta" }).getByLabel("Contraseña actual", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Actualizar contraseña" })).toBeVisible();
+    await expect(page.getByLabel("Nuevo correo electrónico", { exact: true })).toBeVisible();
     await expect(page.getByRole("status")).toHaveCount(changed ? 1 : 0);
   });
 }
+
+test("el parámetro de correo no confirma Auth y conserva ambos formularios", async ({ page }) => {
+  const exported = loadStudentPage("src/app/mi-perfil/page.tsx", "alumno");
+  const component = exported.default as (props: { searchParams: Promise<{ correo: string }> }) => Promise<React.ReactElement>;
+  await page.setContent(renderToStaticMarkup(await component({ searchParams: Promise.resolve({ correo: "confirmado" }) })));
+  await expect(page.getByLabel("Nuevo correo electrónico", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Contraseña actual", { exact: true })).toBeVisible();
+  await expect(page.getByRole("status")).toHaveCount(0);
+});
