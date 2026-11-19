@@ -69,7 +69,7 @@ async function mount(page: Page, baseURL: string, state: "pending" | "rejected",
   const url = new URL("/__receipts-queue-ui-fixture", baseURL).href;
   await page.route(url, route => route.fulfill({
     contentType: "text/html; charset=utf-8",
-    body: `<!doctype html><html lang="es-AR" data-theme="${options.theme ?? "light"}"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${style}</style></head><body>${html}</body></html>`,
+    body: `<!doctype html><html lang="es-AR" data-theme="${options.theme ?? "light"}"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>CUEVA · Comprobantes de pago</title><style>${style}</style></head><body>${html}</body></html>`,
   }));
   await page.goto(url);
 }
