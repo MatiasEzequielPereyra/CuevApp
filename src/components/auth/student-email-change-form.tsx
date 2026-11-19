@@ -1,16 +1,15 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { canSubmitEmailChange } from "@/lib/student-profile-form-validation";
 
 export function StudentEmailChangeForm({ currentEmail }: { currentEmail: string }) {
   const [ready, setReady] = useState(false);
-  const existing = currentEmail.trim().toLocaleLowerCase("es-AR");
 
   function updateAvailability(event: FormEvent<HTMLFormElement>) {
     const input = event.currentTarget.elements.namedItem("email") as HTMLInputElement | null;
     if (!input) return setReady(false);
-    const next = input.value.trim();
-    setReady(next.length > 0 && input.validity.valid && next.toLocaleLowerCase("es-AR") !== existing);
+    setReady(canSubmitEmailChange(input.value, currentEmail, input.validity.valid));
   }
 
   return (
