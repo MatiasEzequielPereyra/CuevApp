@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { AdminProfileMenu } from "./admin-profile-menu";
-import { PasswordChangeForm } from "@/components/auth/password-change-form";
 import "./admin-home.css";
 
 type IconName = "home" | "users" | "calendar" | "wallet" | "file" | "user" | "arrow" | "dumbbell" | "bell";
@@ -31,25 +30,13 @@ const navigationAreas: { id: AdminSection; href: string; name: string; descripti
 ];
 
 type AdminProps = { displayName: string; email: string; role: string; logo: ReactNode; themePicker: ReactNode; accountActions?: ReactNode };
-export function AdminAccountActions({ ownerOnly, passwordChanged = false }: { ownerOnly: boolean; passwordChanged?: boolean }) {
-  return <>
-    <section aria-labelledby="admin-password-heading">
-      <h3 id="admin-password-heading">Seguridad de la cuenta</h3>
-      <p>Cambiá tu contraseña confirmando primero la actual.</p>
-      <PasswordChangeForm />
-      {passwordChanged && <p role="status">Tu contraseña se actualizó correctamente.</p>}
-    </section>
-    {ownerOnly ? <p>Las invitaciones y la recuperación de alumnos estarán disponibles cuando terminemos de configurar el correo del gimnasio.</p> : <><form method="post" action="/api/acceso/admin-invitar"><label>Correo del alumno <input name="email" type="email" required/></label><button>Invitar</button></form><form method="post" action="/api/acceso/admin-recuperar"><label>Correo del alumno <input name="email" type="email" maxLength={254} autoComplete="email" required/></label><button>Enviar enlace de recuperación</button></form></>}
-  </>;
-}
-
-
-export function AdminShell({ displayName, email, role, logo, themePicker, accountActions, active = "inicio", children, }: AdminProps & { active?: "inicio" | AdminSection; children: ReactNode;}) {
+export function AdminShell({ displayName, email, role, logo, themePicker, accountActions, active = "inicio", children, }: AdminProps & { active?: "inicio" | "cuenta" | AdminSection; children: ReactNode;}) {
 
   const isHome = active === "inicio";
+  const isAccount = active === "cuenta";
   const panelLink = isHome ? "#inicio" : "/cuenta";
-  const accountLink = isHome ? "#cuenta" : "/cuenta#cuenta";
-  return <div className={isHome ? "dashboard dash-home" : "dashboard"} id="inicio">
+  const accountLink = "/mi-cuenta";
+  return <div className={isHome ? "dashboard dash-home" : isAccount ? "dashboard dash-personal" : "dashboard"} id="inicio">
     <a className="skip-link" href="#panel" tabIndex={0}>Saltar al contenido</a>
     <aside className="dash-sidebar" aria-label="Barra lateral">
       <a href={panelLink} className="dash-brand" aria-label="CUEVA, inicio">{logo}<span>CUEVA <small>GESTIÓN DE GIMNASIO</small></span></a>
@@ -57,15 +44,15 @@ export function AdminShell({ displayName, email, role, logo, themePicker, accoun
       <nav className="dash-side-nav" aria-label="Navegación principal">
         <a href={panelLink} className={active === "inicio" ? "dash-nav-active" : undefined} aria-current={active === "inicio" ? "page" : undefined}><Icon name="home"/>Inicio</a>
         {navigationAreas.map(area => <a href={area.href} key={area.id} className={active === area.id ? "dash-nav-active" : undefined} aria-current={active === area.id ? "page" : undefined}><Icon name={area.icon}/>{area.name}</a>)}
-        <a href={accountLink}><Icon name="user"/>Mi cuenta</a>
+        <a href={accountLink} className={isAccount ? "dash-nav-active" : undefined} aria-current={isAccount ? "page" : undefined}><Icon name="user"/>Mi cuenta</a>
       </nav>
       <div className="dash-sidebar-bottom"><span className="dash-avatar" aria-hidden="true">{displayName.charAt(0).toUpperCase()}</span><div><strong>{displayName}</strong><small>{role}</small></div></div>
     </aside>
     <div className="dash-content">
-      <header className="dash-header dash-admin-header"><div className="dash-mobile-brand">{logo}<span>CUEVA</span></div><div className="dash-breadcrumb">CUEVA <span>/</span> {navigationAreas.find(area => area.id === active)?.name ?? "Panel de administración"}</div><div className="dash-header-actions">{themePicker}<AdminProfileMenu accountLink={accountLink}><Icon name="user"/></AdminProfileMenu></div></header>
+      <header className="dash-header dash-admin-header"><div className="dash-mobile-brand">{logo}<span>CUEVA</span></div><div className="dash-breadcrumb">CUEVA <span>/</span> {isAccount ? "Mi cuenta" : navigationAreas.find(area => area.id === active)?.name ?? "Panel de administración"}</div><div className="dash-header-actions">{themePicker}<AdminProfileMenu accountLink={accountLink}><Icon name="user"/></AdminProfileMenu></div></header>
       <main className="dash-main" id="panel" tabIndex={-1}>
         {children}
-        {isHome && <section className="dash-account dash-home-profile" id="cuenta" aria-labelledby="dash-profile-heading" tabIndex={-1}><div><p className="dash-kicker">TU CUENTA</p><h2 id="dash-profile-heading">Tu perfil</h2><p>Sesión iniciada como <strong>{email}</strong></p><span className="dash-account-role">{role}</span></div><form method="post" action="/api/acceso/salir"><button type="submit" className="dash-signout">Cerrar sesión <Icon name="arrow"/></button></form>{accountActions && <div className="dash-account-actions">{accountActions}</div>}</section>}
+        {isAccount && <section className="dash-account dash-home-profile" id="cuenta" aria-labelledby="dash-profile-heading" tabIndex={-1}><div><p className="dash-kicker">TU CUENTA</p><h2 id="dash-profile-heading">Tu perfil</h2><p>Sesión iniciada como <strong>{email}</strong></p><span className="dash-account-role">{role}</span></div><form method="post" action="/api/acceso/salir"><button type="submit" className="dash-signout">Cerrar sesión <Icon name="arrow"/></button></form>{accountActions && <div className="dash-account-actions">{accountActions}</div>}</section>}
         <footer className="dash-footer"><span>CUEVA <i/> UN LUGAR PARA AVANZAR</span><span>Hecho para acompañar tu entrenamiento.</span></footer>
       </main>
     </div>
@@ -89,7 +76,7 @@ export function AdminShell({ displayName, email, role, logo, themePicker, accoun
       <a href="/ejercicios" tabIndex={0} aria-current={active === "ejercicios" ? "page" : undefined}>
         <Icon name="dumbbell"/><span>Ejercicios</span>
       </a>
-      <a href={accountLink} tabIndex={0}><Icon name="user"/><span>Cuenta</span></a>
+      <a href={accountLink} tabIndex={0} aria-current={isAccount ? "page" : undefined}><Icon name="user"/><span>Cuenta</span></a>
     </nav>
 
   </div>;

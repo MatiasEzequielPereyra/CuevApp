@@ -313,3 +313,8 @@
     padding-inline: 18px;
   }
 }
+
+.students-recovery { border-top: 1px solid var(--dash-border); padding-block-start: 12px; }
+.students-recovery summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--dash-accent); font-weight: 650; }
+.students-recovery form { margin-block-start: 12px; }
+.students-recovery .students-action { margin-block-start: 4px; }

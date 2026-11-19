@@ -97,11 +97,17 @@ try {
   assert.equal((await login(student, student.initial, studentSession)).status, 303);
   let old = student.initial;
   if (!rejected) {
-    await checkPassword(staff, staffSession, "/cuenta");
+    await checkPassword(staff, staffSession, "/mi-cuenta");
     old = await checkPassword(student, studentSession, "/mi-perfil");
     console.log("PASS: admin and alumno changed their own password, wrong current and old passwords rejected.");
   }
 
+  const accessPage = await staffSession(`/alumnos?id=${studentId}`);
+  assert.equal(accessPage.status, 200);
+  const profileMarkup = await accessPage.text();
+  assert.match(profileMarkup, /Recuperar acceso del alumno/);
+  assert.match(profileMarkup, /Enviar enlace de recuperación/);
+  assert.match(profileMarkup, /action="\/api\/acceso\/admin-recuperar"/);
   const fields = { email: student.email };
   assert.equal((await studentSession("/api/acceso/admin-recuperar", fields)).status, 403);
   const recovery = await staffSession("/api/acceso/admin-recuperar", fields);
@@ -119,6 +125,8 @@ try {
     console.log("PASS: SMTP rejection -> 503, no mail, gate closed with reset reserved, retry -> 409.");
   } else {
     assert.equal(recovery.status, 303);
+    assert.equal(new URL(recovery.headers.get("location")).pathname, "/alumnos");
+    assert.equal(new URL(recovery.headers.get("location")).searchParams.get("id"), studentId);
     assert.equal(state.operation_kind, null);
     const recover = session();
     assert.equal((await recover("/api/acceso/invitacion", await readRecoveryMail(student.email))).status, 303);

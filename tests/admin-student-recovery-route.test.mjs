@@ -130,7 +130,7 @@ test("sends a recovery link only to the Auth account linked to that student", as
   reset();
   const response = await run(" Alumno@Example.Test ");
   assert.equal(response.status, 303);
-  assert.equal(response.headers.get("location"), "https://cueva.example/cuenta");
+  assert.equal(response.headers.get("location"), "https://cueva.example/alumnos?id=c3000000-0000-4000-8000-000000000001&recuperacion=enviada");
   assert.deepEqual(state.calls.slice(0, 3), [
     { table: "cueva_students", column: "email", value: "alumno@example.test" },
     { table: "cueva_student_invitations", column: "student_id", value: studentId },
