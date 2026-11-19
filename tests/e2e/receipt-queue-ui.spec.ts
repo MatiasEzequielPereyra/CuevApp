@@ -31,7 +31,7 @@ async function renderQueue(state: "pending" | "rejected", options: { offset?: nu
     auth: { getUser: async () => ({ data: { user: { email: "admin@example.test" } } }) },
     from: () => query,
   };
-  const module = { exports: {} as { default?: React.ComponentType<any> } };
+  const module = { exports: {} as { default?: (props: { searchParams: Promise<Record<string, string>> }) => Promise<React.ReactNode> } };
   const fakeLink = ({ href, children, ...rest }: { href: string; children: React.ReactNode }) =>
     React.createElement("a", { ...rest, href }, children);
   const requireFixture = (id: string) => {
