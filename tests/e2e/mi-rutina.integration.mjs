@@ -112,7 +112,7 @@ async function layoutAndPlayback(browserType, learner) {
           await expect(noVideoExercise).toHaveCount(2);
           await noVideoExercise.first().click();
           await expect(routine.getByText("No se cuenta con video para este ejercicio.", { exact: true })).toBeVisible();
-          await noVideoExercise.first().getByRole("button", { name: "Cerrar aviso" }).click();
+          await routine.locator(".my-routine-exercise-item").filter({ has: noVideoExercise.first() }).getByRole("button", { name: "Cerrar aviso" }).click();
           await expect(routine.getByText("No se cuenta con video para este ejercicio.", { exact: true })).toHaveCount(0);
           await expect(routine.getByText("Descansá entre bloques.", { exact: false })).toBeVisible();
           assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
