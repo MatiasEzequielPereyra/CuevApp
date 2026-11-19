@@ -125,12 +125,20 @@ async function layoutAndPlayback(browserType, learner) {
           await row.evaluate(node => node.scrollIntoView({ block: "center" }));
           const y = await page.evaluate(() => scrollY);
           if (width === 390) {
-            await row.evaluate(node => node.focus());
+            await row.evaluate(node => {
+              const selector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+              const focusable = [...document.querySelectorAll(selector)].filter(element =>
+                element.getClientRects().length && getComputedStyle(element).visibility !== "hidden"
+              );
+              const index = focusable.indexOf(node);
+              const previous = focusable[index - 1];
+              if (!previous) throw new Error("No se encontró el control anterior para probar la navegación por teclado");
+              previous.focus();
+            });
             await page.keyboard.press("Tab");
-            await page.keyboard.press("Shift+Tab");
             await expect(row).toBeFocused();
             await expect(row).toHaveCSS("outline-style", "solid");
-            await row.press("Enter");
+            await page.keyboard.press("Enter");
           } else if (width === 360) {
             await row.tap({ position: { x: 6, y: 7 } });
           } else {
