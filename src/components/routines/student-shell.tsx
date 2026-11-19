@@ -7,9 +7,9 @@ import { StudentIcon, type StudentIconName } from "./student-icon";
 type StudentSection = "cuenta" | "rutina" | "membresia" | "notificaciones" | "perfil";
 
 const navigation: { href: string; label: string; name?: string; section: StudentSection; icon: StudentIconName }[] = [
-  { href: "/cuenta", label: "Inicio", section: "cuenta", icon: "home" },
   { href: "/mi-rutina", label: "Rutina", name: "Rutina de entrenamiento", section: "rutina", icon: "dumbbell" },
   { href: "/mi-membresia", label: "Cuotas", name: "Cuotas · Mi Membresía", section: "membresia", icon: "wallet" },
+  { href: "/cuenta", label: "Inicio", section: "cuenta", icon: "home" },
   { href: "/notificaciones", label: "Avisos", name: "Avisos y notificaciones", section: "notificaciones", icon: "bell" },
 ];
 
@@ -34,8 +34,12 @@ export function StudentShell({ children, active = "cuenta" }: { children: ReactN
           <nav className="student-routine-nav" aria-label="Navegación del alumno">
             {navigation.map(item => (
               <Link key={item.section} href={item.href} aria-label={item.name}
+                className={item.section === "cuenta" ? "student-mobile-home" : undefined}
                 aria-current={active === item.section ? "page" : undefined}>
                 <span className="student-nav-icon"><StudentIcon name={item.icon} /></span>
+                {item.section === "cuenta" && (
+                  <span className="student-home-brand" aria-hidden="true"><BrandMark size={54} decorative /></span>
+                )}
                 <span>{item.label}</span>
               </Link>
             ))}
