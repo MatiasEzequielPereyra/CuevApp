@@ -4,7 +4,7 @@ La [revisión sobre main publicado](../engineering/pr67-portal-review.md) reempl
 los resultados históricos siguientes para la entrega actual. Incluye correcciones
 Unicode, snapshot, escritor compatible y orden operativo.
 
-Fecha: 2026-11-18. Estado: implementación en rama aislada; CI aprobado en HEAD `11e9169d4bf9d796a7cced3c4ff6572393061b41`. Revisión final de integración pendiente.
+Fecha: 2026-11-18. Estado: implementación en rama aislada; CI aprobado en HEAD `e32109a7c22212e974bf4767200e5a49f37ead47`. Revisión final de integración pendiente.
 
 ## Modelo de edición
 
@@ -100,7 +100,7 @@ usando las consultas y autorizaciones actuales.
   deploy, Auth ni cambios de roles en esta fase.
 
 
-## Evidencia de validación — HEAD `11e9169d4bf9d796a7cced3c4ff6572393061b41`
+## Evidencia de validación — HEAD `e32109a7c22212e974bf4767200e5a49f37ead47`
 
 Los workflows de GitHub Actions finalizaron correctamente sobre el mismo SHA del PR:
 
@@ -119,7 +119,7 @@ Runs:
 Esta evidencia no representa una migración aplicada en Supabase alojado ni una autorización de merge o despliegue.
 
 
-## Corrección del cleanup del autocompletado — HEAD `11e9169d4bf9d796a7cced3c4ff6572393061b41`
+## Corrección del cleanup del autocompletado — HEAD `e32109a7c22212e974bf4767200e5a49f37ead47`
 
 El cleanup del efecto del autocompletado usa una bandera local de ciclo de vida
 para impedir que callbacks asíncronos actualicen estado después del desmontaje.
@@ -134,4 +134,16 @@ pruebas SQL, concurrencia e integración autenticada; Vercel Preview informó
 success. Esta evidencia corresponde al SHA indicado, no a ejecuciones previas.
 
 
-Los commits `ae8c572` y `11e9169` actualizan documentación únicamente. La CI fue repetida sobre `11e9169d4bf9d796a7cced3c4ff6572393061b41`: Verify foundation, Membership SQL, Receipt Storage, Supabase fresh/upgrade/hosted-compatible y Vercel Preview SUCCESS. Ver evidencias vigentes en `docs/engineering/pr67-portal-review.md`.
+Los commits `ae8c572` y `11e9169` actualizan documentación únicamente. La CI fue repetida sobre `e32109a7c22212e974bf4767200e5a49f37ead47`: Verify foundation, Membership SQL, Receipt Storage, Supabase fresh/upgrade/hosted-compatible y Vercel Preview SUCCESS. Ver evidencias vigentes en `docs/engineering/pr67-portal-review.md`.
+
+
+## Revalidación vigente — 2026-11-18
+
+La evidencia histórica anterior queda conservada como registro, pero está supersedida para el estado actual por la validación del HEAD `e32109a7c22212e974bf4767200e5a49f37ead47`:
+- Verify foundation: SUCCESS — https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44407225632.
+- Supabase local migrations fresh, upgrade y hosted-compatible: SUCCESS — https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44407225160. Fresh completó en el reintento específico tras la cancelación inicial.
+- Membership SQL y Receipt Storage: SUCCESS — https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44407225334.
+- Vercel Preview: SUCCESS.
+- PR #67 permanece abierto, draft y mergeable; sin reviews ni review threads registrados al revisar.
+
+La validación se ejecutó en CI aislada. No se aplicó SQL a Supabase alojado ni se autorizó merge o despliegue. La revisión independiente final sigue pendiente. La intermitencia WebKit móvil observada en una ejecución anterior permanece como riesgo conocido: el reintento pasó, pero no demuestra que la causa esté corregida.
