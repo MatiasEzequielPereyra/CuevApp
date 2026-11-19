@@ -76,6 +76,6 @@ Puede quedar el padre vacío `.next/fixture-apps`; no contiene un servidor vivo.
 No se opera Docker ni se modifica el checkout activo del Orchestrator.
 
 SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`,
-`cueva-acceptance-audit`, `diagnosing-bugs`, `code-review`, `pr`.
+`cueva-acceptance-audit`, `diagnosing-bugs`, `resolving-merge-conflicts`, `code-review`, `pr`.
 SKILL_SOURCES: `.agents/skills/<nombre>/SKILL.md`, guías del host y documentación
 Next instalada `custom-server.md` / `distDir.md`.
