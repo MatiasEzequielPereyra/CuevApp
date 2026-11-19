@@ -8,6 +8,7 @@ import { ThemePicker } from "@/components/theme/theme-picker";
 import { buenosAiresDate } from "@/lib/students/date";
 import { studentSearchFilter } from "@/lib/students/search";
 import { studentAdmin } from "@/lib/students/server";
+import { productConfig } from "@/lib/product-auth/server";
 import "./alumnos.css";
 
 export const dynamic = "force-dynamic";
@@ -62,12 +63,15 @@ function StudentList({ rows, q }: { rows: Student[]; q: string }) {
   );
 }
 
-function StudentProfile({ student, saved, invitationResult, invitationState, invitationError, eligibility }: {
+function StudentProfile({ student, saved, invitationResult, invitationState, invitationError, invitationHasAccount, recoveryAllowed, recoveryResult, eligibility }: {
   student: Student;
   saved: boolean;
   invitationResult: string;
   invitationState: string | undefined;
   invitationError: boolean;
+  invitationHasAccount: boolean;
+  recoveryAllowed: boolean;
+  recoveryResult: string;
   eligibility: string;
 }) {
   const { id, first_name, last_name, email, dni, joined_on, active } = student;
@@ -95,6 +99,17 @@ function StudentProfile({ student, saved, invitationResult, invitationState, inv
         {invitationResult === "existing" && <p role="status">Ya existe una cuenta con ese correo. No se vinculó automáticamente; requiere revisión.</p>}
         {["unavailable", "failed", "review"].includes(invitationResult) && <p role="status">Ficha guardada; la invitación no se confirmó. Consultá el estado antes de reintentar.</p>}
         <InvitationAction id={id} {...(invitationState ? { state: invitationState } : {})} />
+        {recoveryResult === "enviada" && <p className="students-feedback" role="status">Se envió un enlace de recuperación al correo de esta ficha.</p>}
+        {!invitationError && invitationState === "sent" && invitationHasAccount && recoveryAllowed && (
+          <details className="students-recovery">
+            <summary>Recuperar acceso del alumno</summary>
+            <p>Si el alumno olvidó su contraseña o no puede ingresar, podés enviarle un enlace de recuperación. Su sesión anterior dejará de tener acceso hasta que complete el proceso. Evitá repetir el envío si hay una solicitud pendiente.</p>
+            <form method="post" action="/api/acceso/admin-recuperar">
+              <input type="hidden" name="email" value={email} />
+              <button className="students-action" type="submit">Enviar enlace de recuperación</button>
+            </form>
+          </details>
+        )}
       </section>
       <section className="students-panel students-danger" aria-labelledby="students-delete">
         <h2 id="students-delete">Eliminar ficha</h2>
@@ -149,11 +164,13 @@ export default async function Students({ searchParams }: { searchParams: Promise
     content = <StudentForm key={student.id} student={student} defaultJoinedOn={buenosAiresDate()} />;
   } else if (isProfile) {
     const [invitation, deletion] = await Promise.all([
-      client.from("cueva_student_invitations").select("state").eq("student_id", student.id).maybeSingle(),
+      client.from("cueva_student_invitations").select("state,user_id").eq("student_id", student.id).maybeSingle(),
       client.rpc("cueva_delete_empty_student", { p_student: student.id, p_expected_email: student.email, p_confirm: false }),
     ]);
     content = <StudentProfile student={student} saved={!!params.guardado} invitationResult={String(params.invitacion)}
       invitationState={invitation.data?.state} invitationError={!!invitation.error}
+      invitationHasAccount={!!invitation.data?.user_id} recoveryAllowed={!productConfig()?.ownerOnly}
+      recoveryResult={typeof params.recuperacion === "string" ? params.recuperacion : ""}
       eligibility={deletion.error ? "unavailable" : String(deletion.data ?? "unavailable")} />;
   } else if (id) {
     content = <section className="students-panel students-result"><h2>No se encontró la ficha</h2></section>;

@@ -29,7 +29,6 @@ const fixtureProps = {
   displayName: "Alex", email: "alex@example.test", role: "Administrador",
   logo: React.createElement("img", { src: `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`, alt: "CUEVA", width: 42, height: 42, className: "brand-mark" }),
   themePicker: React.createElement("div", { className: "theme-picker", role: "group", "aria-label": "Elegir tema" }, ["Claro", "Oscuro", "Sistema"].map((label) => React.createElement("button", { key: label, type: "button", "aria-pressed": label === "Sistema" }, label))),
-  accountActions: React.createElement("p", null, "Las invitaciones y la recuperación de alumnos estarán disponibles cuando terminemos de configurar el correo del gimnasio."),
 };
 const fixture = renderToStaticMarkup(React.createElement(AdminDashboard, fixtureProps));
 const longName = "Alejandra María AdministradoraNombreExtraordinariamenteLargo Fernández de la Cruz";
@@ -37,6 +36,11 @@ const longEmail = `${"administracion".repeat(5)}@gimnasio-ejemplo.test`;
 const longFixture = renderToStaticMarkup(React.createElement(AdminDashboard, {
   ...fixtureProps, displayName: longName, email: longEmail,
 }));
+const accountFixture = renderToStaticMarkup(React.createElement(AdminShell, {
+  ...fixtureProps, active: "cuenta",
+  accountActions: React.createElement("div", null, React.createElement("h3", null, "Seguridad de la cuenta")),
+}, React.createElement("h1", null, "Mi cuenta")));
+
 const routinesFixture = renderToStaticMarkup(React.createElement(AdminShell, {
   ...fixtureProps, active: "rutinas",
 }, React.createElement("h1", null, "Rutinas")));
@@ -81,7 +85,7 @@ for (const width of [360, 390, 1440]) {
         await expect(card).toHaveAttribute("href", href);
         await expect(card.locator("a, button")).toHaveCount(0);
       }
-      await expect(page.getByText(longEmail, { exact: true })).toBeVisible();
+      await expect(page.getByText(longEmail, { exact: true })).toHaveCount(0);
       if (width < 681) {
         expect(await greeting.evaluate(element => element.clientHeight > parseFloat(getComputedStyle(element).lineHeight))).toBe(true);
       }
@@ -93,8 +97,9 @@ for (const width of [360, 390, 1440]) {
         await expect(sidebar.getByRole("link", { name: "Comprobantes", exact: true })).toHaveAttribute("href", "/pagos/comprobantes");
         await expect(sidebar.getByRole("link", { name: "Alertas", exact: true })).toHaveAttribute("href", "/alertas");
       }
-      await expect(page.getByRole("heading", { name: "Tu perfil" })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Cerrar sesión" })).toHaveCount(1);
+      await expect(page.getByRole("heading", { name: "Tu perfil" })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Cerrar sesión" })).toHaveCount(0);
+      await expect(page.getByRole("link", { name: width <= 680 ? "Cuenta" : "Mi cuenta", exact: true })).toHaveAttribute("href", "/mi-cuenta");
       const navigation = page.getByRole("navigation", { name: width <= 680 ? "Navegación móvil" : "Navegación principal" });
       const exercises = navigation.getByRole("link", { name: "Ejercicios", exact: true });
       await expect(exercises).toBeVisible();
@@ -108,8 +113,11 @@ for (const width of [360, 390, 1440]) {
   }
 }
 
-test("el panel permite navegar por teclado hasta cuenta y salir", async ({ page }) => {
+test("el panel permite navegar por teclado hasta cuenta y salir", async ({ page, baseURL }) => {
+  if (!baseURL) throw new Error("Se necesita un origen local.");
   await loadDashboard(page);
+  await page.route(new URL("/mi-cuenta", baseURL).href, route => route.fulfill({ contentType: "text/html", body: dashboardHtml("dark", accountFixture) }));
+  await page.evaluate(origin => { const base = document.createElement("base"); base.href = origin; document.head.append(base); }, baseURL);
   const skipLink = page.getByRole("link", { name: "Saltar al contenido" });
   await page.keyboard.press("Tab");
   await expect(skipLink).toBeFocused();
@@ -117,7 +125,7 @@ test("el panel permite navegar por teclado hasta cuenta y salir", async ({ page 
   await expect(page.getByRole("main")).toBeFocused();
   await page.getByRole("link", { name: "Mi cuenta", exact: true }).focus();
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/#cuenta$/);
+  await expect(page).toHaveURL(new URL("/mi-cuenta", baseURL).href);
   await page.getByRole("button", { name: "Cerrar sesión" }).focus();
   await expect(page.getByRole("button", { name: "Cerrar sesión" })).toBeFocused();
 });
@@ -237,7 +245,7 @@ for (const { width, theme } of [{ width: 360, theme: "light" }, { width: 390, th
     await expect(page.getByRole("heading", { name: "Tu perfil" })).toHaveCount(0);
     const navigation = page.getByRole("navigation", { name: width < 681 ? "Navegación móvil" : "Navegación principal" });
     await expect(navigation.getByRole("link", { name: width < 681 ? "Cuenta" : "Mi cuenta", exact: true }))
-      .toHaveAttribute("href", "/cuenta#cuenta");
+      .toHaveAttribute("href", "/mi-cuenta");
 
     const trigger = page.getByRole("button", { name: "Opciones de cuenta" });
     const popover = page.locator("#admin-profile-menu");
@@ -247,7 +255,7 @@ for (const { width, theme } of [{ width: 360, theme: "light" }, { width: 390, th
     await trigger.focus();
     await page.keyboard.press("Enter");
     await expect(popover).toBeVisible();
-    await expect(account).toHaveAttribute("href", "/cuenta#cuenta");
+    await expect(account).toHaveAttribute("href", "/mi-cuenta");
     await page.keyboard.press("Tab");
     await expect(account).toBeFocused();
     await page.keyboard.press("Tab");
@@ -280,14 +288,14 @@ for (const { width, theme } of [{ width: 360, theme: "light" }, { width: 390, th
 for (const width of [360, 390]) {
   test(`el perfil queda por encima de la navegación inferior a ${width}px`, async ({ page, baseURL }) => {
     await page.setViewportSize({ width, height: 740 });
-    const accountUrl = `${baseURL}/cuenta`;
+    const accountUrl = `${baseURL}/mi-cuenta`;
     const routinesUrl = `${baseURL}/rutinas`;
-    await page.route(accountUrl, route => route.fulfill({ contentType: "text/html", body: dashboardHtml("dark", longFixture) }));
+    await page.route(accountUrl, route => route.fulfill({ contentType: "text/html", body: dashboardHtml("dark", accountFixture) }));
     await page.route(routinesUrl, route => route.fulfill({ contentType: "text/html", body: dashboardHtml("dark", routinesFixture) }));
     await page.goto(routinesUrl);
     await page.getByRole("button", { name: "Opciones de cuenta" }).tap();
     await page.getByRole("link", { name: "Ir a tu cuenta" }).tap();
-    await expect(page).toHaveURL(`${accountUrl}#cuenta`);
+    await expect(page).toHaveURL(accountUrl);
     const profile = page.getByRole("region", { name: "Tu perfil" });
     await expect(profile).toBeInViewport({ ratio: 1 });
     const nav = page.getByRole("navigation", { name: "Navegación móvil" });

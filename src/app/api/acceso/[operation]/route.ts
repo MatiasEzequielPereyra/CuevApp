@@ -113,7 +113,7 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
 
     const changed = await auth.auth.updateUser({ password: newPassword });
     if (changed.error || changed.data.user?.id !== current.data.user.id) return fail(503);
-    return redirect(own.data.role === "admin" ? "/cuenta?contrasena=actualizada" : "/mi-perfil?contrasena=actualizada");
+    return redirect(own.data.role === "admin" ? "/mi-cuenta?contrasena=actualizada" : "/mi-perfil?contrasena=actualizada");
   }
   const service = serviceClient();
   if (operation === "admin-invitar" || operation === "admin-recuperar") {
@@ -155,7 +155,7 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
     const sent = await auth.auth.resetPasswordForEmail(targetUser.data.user.email, { redirectTo: url.href });
     if (sent.error) return fail(503);
     const done = await service.rpc("cueva_finish_operation", { p_user: target, p_operation: op, p_generation: begin.data, p_session: null });
-    return done.error || done.data !== true ? fail(503) : redirect("/cuenta");
+    return done.error || done.data !== true ? fail(503) : redirect(`/alumnos?id=${student.data.id}&recuperacion=enviada`);
   }
   if (operation === "invitacion") {
     if (cfg.ownerOnly) return fail(404);

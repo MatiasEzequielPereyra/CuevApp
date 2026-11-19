@@ -135,3 +135,12 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+
+/* La información personal se muestra en Mi cuenta, no en Inicio. */
+.dash-personal .dash-account { max-width: 800px; align-items: flex-start; margin-block-start: 18px; }
+.dash-personal .dash-account-actions { width: 100%; }
+.dash-personal .dash-account-actions section { display: grid; gap: 10px; }
+.dash-personal .dash-account-actions form { display: grid; max-width: 480px; align-items: start; }
+.dash-personal .dash-account-actions input { width: 100%; min-width: 0; }
+.dash-personal .dash-account-actions button { justify-self: start; }
+.dash-personal .dash-main { padding-block-end: calc(100px + env(safe-area-inset-bottom)); }

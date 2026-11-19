@@ -149,7 +149,7 @@ test("allows an administrator to update their own password with the same checks"
   state.role = "admin";
   const response = await run(valid);
   assert.equal(response.status, 303);
-  assert.equal(response.headers.get("location"), "https://cueva.example/cuenta?contrasena=actualizada");
+  assert.equal(response.headers.get("location"), "https://cueva.example/mi-cuenta?contrasena=actualizada");
   assert.deepEqual(state.setSessionArgs, [{ access_token: "fresh-access-token", refresh_token: "fresh-refresh-token" }]);
   assert.deepEqual(state.updateArgs, [{ password: valid.new_password }]);
 });
