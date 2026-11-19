@@ -7,6 +7,7 @@ import ts from "typescript";
 import { StudentIcon } from "../../src/components/routines/student-icon";
 import { PasswordChangeForm } from "../../src/components/auth/password-change-form";
 import { StudentEmailChangeForm } from "../../src/components/auth/student-email-change-form";
+import { canSubmitEmailChange, canSubmitPasswordChange } from "../../src/lib/student-profile-form-validation";
 
 const localRequire = createRequire(__filename);
 const link = ({ children, ...props }: React.ComponentProps<"a">) =>
@@ -325,3 +326,40 @@ test("el parámetro de correo no confirma Auth y conserva ambos formularios", as
   await expect(page.getByRole("button", { name: "Actualizar contraseña" })).toBeDisabled();
   await expect(page.getByRole("status")).toHaveCount(0);
 });
+
+test("los botones solo se habilitan para correos distintos y contraseñas confirmadas", () => {
+  expect(canSubmitEmailChange("", "actual@example.test", false)).toBe(false);
+  expect(canSubmitEmailChange("sin-arroba", "actual@example.test", false)).toBe(false);
+  expect(canSubmitEmailChange("ACTUAL@example.test", "actual@example.test", true)).toBe(false);
+  expect(canSubmitEmailChange("nuevo@example.test", "actual@example.test", true)).toBe(true);
+  expect(canSubmitEmailChange("nuevo@example.test", "actual@example.test", false)).toBe(false);
+
+  const oldPassword = "secreto-anterior";
+  expect(canSubmitPasswordChange("", "clave-segura", "clave-segura", true)).toBe(false);
+  expect(canSubmitPasswordChange(oldPassword, "corta", "corta", false)).toBe(false);
+  expect(canSubmitPasswordChange(oldPassword, "clave-segura", "otra-clave", true)).toBe(false);
+  expect(canSubmitPasswordChange(oldPassword, oldPassword, oldPassword, true)).toBe(false);
+  expect(canSubmitPasswordChange(oldPassword, "clave-segura", "clave-segura", true)).toBe(true);
+  expect(canSubmitPasswordChange(oldPassword, "clave-segura", "clave-segura", false)).toBe(false);
+});
+
+for (const theme of ["light", "dark"] as const) {
+  test(`los botones de Mi perfil cambian visualmente al estar habilitados — ${theme}`, async ({ page }) => {
+    const exported = loadStudentPage("src/app/mi-perfil/page.tsx", "alumno");
+    const component = exported.default as () => Promise<React.ReactElement>;
+    const css = readFileSync("src/app/globals.css", "utf8");
+    const markup = renderToStaticMarkup(await component());
+    await page.setContent(`<!doctype html><html lang="es-AR" data-theme="${theme}" data-preference="system"><head><style>${css}</style></head><body>${markup}</body></html>`);
+    for (const name of ["Enviar verificación", "Actualizar contraseña"]) {
+      const button = page.getByRole("button", { name });
+      await expect(button).toBeDisabled();
+      await expect(button).toHaveCSS("cursor", "not-allowed");
+      // The server-rendered fixture is static; emulate only the enabled state to audit CSS.
+      await button.evaluate(element => element.removeAttribute("disabled"));
+      await expect(button).toBeEnabled();
+      await expect(button).toHaveCSS("cursor", "pointer");
+      await button.hover();
+      await expect(button).toHaveCSS("background-color", theme === "dark" ? "rgb(206, 204, 255)" : "rgb(73, 67, 215)");
+    }
+  });
+}
