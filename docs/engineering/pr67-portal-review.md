@@ -2,7 +2,7 @@
 
 Estado: **CI VALIDADO; revisión final de alcance y operación pendiente; PR en draft**.
 Base actual verificada: `0832c9ef17a04289528148f76ac2057703db3746`.
-HEAD validado: `11e9169d4bf9d796a7cced3c4ff6572393061b41`.
+HEAD validado: `e32109a7c22212e974bf4767200e5a49f37ead47`.
 
 Los commits `ae8c572` y `11e9169` solo actualizan documentación; el código funcional y las pruebas son idénticos al candidato `0c4e9c3`. La CI y Preview se volvieron a ejecutar sobre el HEAD documental actual.
 El PR permanece abierto, mergeable y sin commits detrás de `main`. La evidencia de
@@ -129,7 +129,7 @@ su vencimiento, audit de producción y gate de critical permanecen intactos.
 
 ## Validación del HEAD documental actual — 2026-11-18
 
-HEAD `11e9169d4bf9d796a7cced3c4ff6572393061b41`:
+HEAD `e32109a7c22212e974bf4767200e5a49f37ead47`:
 - Verify foundation: SUCCESS — https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44405490478.
 - Membership SQL y Receipt Storage: SUCCESS — https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44405490404.
 - Supabase local migrations fresh, upgrade y hosted-compatible: SUCCESS — https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44405490419.
@@ -140,3 +140,18 @@ HEAD `11e9169d4bf9d796a7cced3c4ff6572393061b41`:
 Los jobs completaron; algunos pasos condicionales aparecen `skipped` por diseño de cada variante. Los workflows usan stacks aislados y no verifican ni modifican el esquema Supabase alojado. La intermitencia WebKit observada en la primera corrida del código `0c4e9c3` permanece como riesgo conocido, aunque el reintento y HEAD actual pasaron.
 
 El PR continúa en draft. La CI no sustituye revisión final humana ni autoriza merge, despliegue o migración alojada.
+
+
+## Estado vigente del PR y validación — 2026-11-18
+
+Este apartado supersede los identificadores de HEAD, conteos y runs de las secciones históricas anteriores. HEAD validado: `e32109a7c22212e974bf4767200e5a49f37ead47`.
+- Verify foundation: SUCCESS — https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44407225632.
+- Supabase local migrations fresh, upgrade y hosted-compatible: SUCCESS — https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44407225160. El job fresh fue reintentado tras una cancelación y terminó SUCCESS, incluyendo instalación de WebKit e integración autenticada.
+- Membership SQL y Receipt Storage: SUCCESS — https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44407225334.
+- Vercel Preview: SUCCESS.
+- PR #67: abierto, draft, mergeable; 148 commits ahead y 0 behind en la comparación consultada. Sin reviews ni review threads registrados.
+- Revisión focalizada posterior del SQL/API/editor/lector no confirmó defectos críticos, pero no equivale a auditoría exhaustiva ni a aprobación independiente del diff.
+
+La primera ejecución con cancelación de fresh no se cuenta como PASS; el reintento específico sí completó. La intermitencia WebKit móvil observada en una ejecución anterior sigue siendo riesgo conocido, ya que un reintento exitoso no prueba que la causa se haya eliminado.
+
+No se ejecutó migración contra Supabase alojado, no se integró el PR y no se desplegó producción. La revisión independiente y la autorización explícita de merge siguen pendientes. Antes de rollout se mantienen todos los guardrails de backup, inspección de esquema real, dependencias, grants/RLS y postflight descritos arriba.
