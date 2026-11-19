@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 type ExerciseMentionProps = {
   exerciseId: string;
@@ -12,9 +12,10 @@ type ExerciseMentionProps = {
 
 export function ExerciseMention({ exerciseId, name, description, text }: ExerciseMentionProps) {
   const [open, setOpen] = useState(false);
+  const instanceId = useId();
   const root = useRef<HTMLSpanElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  const panelId = `exercise-mention-${exerciseId}-${text.length}`;
+  const panelId = `${instanceId}-exercise-mention`;
 
   useEffect(() => {
     if (!open) return;
