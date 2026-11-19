@@ -1,5 +1,17 @@
 # Checkpoint CUEVA
 
+## Correo publicado; Menciones con correcciones — 2026-11-19
+
+#63 está integrado en `508cb62ba64609293d1ea6057cf84f9bec373bb5` y Vercel
+Production sirve ese SHA. Su migración sigue aplicada como `20261118185514`.
+Se verificaron plantilla y doble confirmación y se habilitó el retorno exacto
+a Mi perfil; el ensayo de buzones y sesión alojados sigue NOT_VERIFIED.
+#67 tiene [dos hallazgos P2](PR67-final-audit-20261119.md) y un conflicto con
+el nuevo main; el ejecutor recibió el handoff. Sus dos migraciones pendientes
+no se aplicaron. La [continuidad](CONTINUAR-CUEVA.md) conserva el detalle vigente.
+
+SKILLS_SELECTED / SKILLS_APPLIED / SKILL_SOURCES: detallados en esos informes.
+
 ## Continuidad entre computadoras — 2026-11-19
 
 Leer primero [Continuar CUEVA](CONTINUAR-CUEVA.md): contiene los SHA actuales,

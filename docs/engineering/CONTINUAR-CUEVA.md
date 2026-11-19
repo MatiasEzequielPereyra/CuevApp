@@ -10,8 +10,8 @@ Revalidar los estados remotos antes de ejecutar el siguiente paso.
 - Sitio: https://cueva-gym.vercel.app
 - Supabase: proyecto `vbkzoojkdkcugxhneyzi`, región `ca-central-1`.
 - Vercel: proyecto `cueva-app`, equipo `matiasezequielpereyras-projects`.
-- `main` funcional: `0832c9ef17a04289528148f76ac2057703db3746`, squash del PR #68.
-- Production: `dpl_48PvXRDcGWNbL4CoJk6aCwbArGhJ`, READY, con ese mismo SHA.
+- `main` funcional: `508cb62ba64609293d1ea6057cf84f9bec373bb5`, squash del PR #63.
+- Production: `dpl_H31uxB9dXxh91d2ED2JZmjTT6GvC`, READY, con ese mismo SHA.
 - Los commits documentales posteriores a esta foto pueden cambiar `main` sin
   cambiar la implementación. Comparar siempre el diff y el SHA publicado.
 
@@ -26,26 +26,32 @@ No se incluyen contraseñas, tokens, enlaces de invitación ni sesiones.
 | --- | --- | --- |
 | [#64 Contraseñas](https://github.com/MatiasEzequielPereyra/CuevApp/pull/64) | merge `a019bded9c4d3340feab2d32c2116e0d4e9796d8` | Integrado antes de #68. |
 | [#68 Hidratación y foco](https://github.com/MatiasEzequielPereyra/CuevApp/pull/68) | candidato `e0bdd681fb11e9f9d31785608bc113328d7b456d` | Integrado en `0832c9e`; Production verificado. |
-| [#63 Cambio de correo](https://github.com/MatiasEzequielPereyra/CuevApp/pull/63) | `de2f3424b9b026d85e62da203bf75450b3a156fd` | DRAFT, sin merge. Esquema aplicado; UI pendiente de publicar. |
-| [#67 Menciones en rutinas](https://github.com/MatiasEzequielPereyra/CuevApp/pull/67) | `f1de91cb4c601c3fd9bdf094605dc8da922c9340` | DRAFT, sin merge ni migración de Menciones aplicada. |
+| [#63 Cambio de correo](https://github.com/MatiasEzequielPereyra/CuevApp/pull/63) | candidato `de2f3424b9b026d85e62da203bf75450b3a156fd` | Integrado en `508cb62`; esquema y Production verificados. |
+| [#67 Menciones en rutinas](https://github.com/MatiasEzequielPereyra/CuevApp/pull/67) | `f1de91cb4c601c3fd9bdf094605dc8da922c9340` | CHANGES_REQUIRED. Sin merge ni migración de Menciones aplicada. |
 
-#63 fue actualizado desde #68. Tiene una corrida Foundation SUCCESS en su HEAD
-y otra corrida de PR CANCELLED; no describir todas las corridas como aprobadas.
-Sus variantes SQL fresh, upgrade y hosted-compatible están aprobadas. Revalidar
-el control cancelado y revisar plantilla de cambio de correo, URL de retorno
-`/mi-perfil?correo=confirmado` y Secure email change antes de publicar. El panel
-de Supabase está accesible, pero esas tres comprobaciones de configuración no
-se terminaron. No modificar SMTP ni flags de Auth para resolverlo a ciegas.
+#63 se integró después de comprobar Foundation SUCCESS del evento push en su
+HEAD y la cancelación del duplicado pull_request del mismo SHA; no se presentó
+el cancelado como PASS. Sus variantes SQL están aprobadas. Se verificó la
+plantilla con `ConfirmationURL`, Secure email change activo y Site URL canónica.
+Se agregó únicamente el retorno exacto
+`https://cueva-gym.vercel.app/mi-perfil?correo=confirmado` a la lista permitida,
+conservando la URL de invitación anterior. No se cambiaron SMTP ni flags de Auth.
+Vercel sirve el SHA del merge y el ingreso respondió HTTP 200. El flujo de doble
+confirmación con buzones y sesión reales alojados sigue NOT_VERIFIED; no se
+enviaron correos de prueba.
 
 #67 tiene nueve checks SUCCESS en el HEAD indicado. La actualización tras #68
 había fallado: dos fixtures competían por el directorio de Next y el ensayo de
 foco no devolvía el documento lateral nuevo. El ejecutor agregó dependencia de
 proyectos en Playwright y la respuesta sintética faltante. Son cambios en
 `playwright.config.ts` y `tests/e2e/student-plan-focus.spec.ts`; conservar las
-aserciones de Tab/Enter y verificarlos en la revisión final. El PR advierte que
-la revisión focalizada no equivale a aprobación independiente exhaustiva del
-candidato actual. La intermitencia histórica de selección móvil WebKit sigue
-registrada; una repetición verde no demuestra por sí sola su causa.
+aserciones de Tab/Enter. La revisión independiente final encontró dos P2:
+selección de sugerencias de una consulta anterior mientras carga la nueva, y
+validación SQL que acepta `mention.text` numérico en vez de exigir una cadena.
+Ver [auditoría y aceptación esperada](PR67-final-audit-20261119.md). El ejecutor
+recibió ambos hallazgos y el conflicto de `package.json` con el main de #63.
+No intentar mergear el HEAD verde anterior: requiere correcciones y CI nueva.
+La intermitencia histórica WebKit sigue registrada.
 
 Evidencia de #67: [Foundation del HEAD](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44442788255)
 y [matriz SQL del HEAD](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44442788361).
@@ -61,6 +67,9 @@ Consulta alojada del 19/11: **31 migraciones** registradas.
 | Sincronización de correo | `20261116130000_cueva_student_email_sync.sql` — `3dc84045aec40ba292bb07ca7c9427d26f9f24591a6bcf6c7c667e8df0293bcb` | APLICADA como versión `20261118185514`, nombre `cueva_student_email_sync`. |
 | Ejercicios asignados | `20261114120000_cueva_student_assigned_exercises.sql` — `c2c391b8dfb72e9d10015fafff09ee6072cf40a56544fab20754bf03f533537c` | PENDIENTE; la RPC pública y privada faltaban. |
 | Menciones | `20261116120000_cueva_routine_text_mentions.sql` — `14f5990bb518dc910ea7bf013ba2c7ef2bb293a8efcaaebac246d2ef0918e2f8` | PENDIENTE; ambas tablas laterales faltaban. |
+
+El hash de Menciones identifica el candidato auditado con un P2 pendiente.
+No aplicarlo tal cual: reemplazarlo por el SQL corregido y su hash revisado.
 
 La RPC `cueva_my_routine_video_ids()` ya existe; **no repetir**
 `20261115160000_cueva_my_routine_video_ids.sql` por su nombre de archivo.
@@ -115,13 +124,12 @@ contraseña PostgreSQL no es la de Gmail ni la de la cuenta de Supabase.
 1. Actualizar `main` y las referencias remotas en un checkout limpio. Leer
    `AGENTS.md`, este archivo, checkpoint, README y los informes vigentes.
    Revalidar HEAD, CI y el SHA servido por Vercel; no asumir que siguen iguales.
-2. Finalizar #63: configuración de confirmación y redirección, control cancelado,
-   revisión del candidato actual y postflight de esquema. La migración de correo
-   ya está aplicada. Integrar sólo con controles obligatorios aprobados y
-   verificar Production. No enviar pruebas sin permiso para el destinatario.
-3. Actualizar #67 con el nuevo `main`, auditar la corrección de las fixtures y
-   verificar el resultado combinado. Si hay defectos, entregar handoff al
-   ejecutor; el Orchestrator no implementa correcciones de producto.
+2. #63 ya está integrado y publicado. Comprobar la conclusión de CI del merge
+   si sigue en curso; no repetir su migración ni enviar pruebas sin permiso
+   para el destinatario. Mantener el límite de aceptación alojada documentado.
+3. Recibir #67 actualizado con main, ambos P2 corregidos y conflicto resuelto.
+   Auditar sólo el delta afectado y verificar el resultado combinado y CI exacta.
+   El ejecutor corrige; el Orchestrator no implementa correcciones de producto.
 4. Con respaldo vigente y preflight, aplicar únicamente Ejercicios asignados
    y Menciones si siguen faltando, usando los bytes aprobados. Respetar el orden,
    límites de espera y postflight. Registrar las versiones alojadas generadas.
@@ -138,10 +146,10 @@ entrenamiento y rutinas offline siguen pendientes de producto.
 
 > Continuá CUEVA leyendo primero AGENTS.md,
 > docs/engineering/CONTINUAR-CUEVA.md, checkpoint y el orden de README.
-> Revalidá GitHub, Supabase y Vercel. Correo tiene una migración alojada aplicada
-> aunque #63 no está mergeado: no la repitas. El usuario ya autorizó el respaldo
+> Revalidá GitHub, Supabase y Vercel. Correo y su migración ya están publicados:
+> no repitas el SQL. El usuario ya autorizó el respaldo
 > y las tres migraciones enumeradas; faltan dos. Auditá los HEAD actuales y
-> completá #63 y después #67 según el orden operativo. El ejecutor corrige;
+> verificá CI de #63 y completá #67 corrigiendo los dos P2 según la auditoría. El ejecutor corrige;
 > vos auditás, integrás y publicás. Conservá el diseño aprobado y optimizá
 > pruebas según el diff. No almacenes claves ni confundas CI con prueba alojada.
 
