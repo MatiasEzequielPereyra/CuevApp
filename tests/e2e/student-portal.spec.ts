@@ -28,13 +28,24 @@ function loadExport(path: string, mocks: Record<string, unknown>) {
   return exported;
 }
 
+const accountMenu = loadExport("src/components/routines/student-account-menu.tsx", {
+  "next/link": { default: link },
+  "./student-icon": { StudentIcon },
+  "./student-account-menu.css": {},
+  "@/lib/theme": {
+    getPreference: () => "system",
+    setPreference: () => undefined,
+    subscribeToPreference: () => () => undefined,
+  },
+});
+
 const shell = loadExport("src/components/routines/student-shell.tsx", {
   "./student-icon": { StudentIcon },
   "next/link": { default: link },
   "@/components/brand/brand-mark": {
     BrandMark: () => React.createElement("span", null, "CUEVA"),
   },
-  "@/components/theme/theme-picker": { ThemePicker: () => null },
+  "./student-account-menu": accountMenu,
 }) as { StudentShell: (props: { children?: React.ReactNode; active?: string }) => React.ReactElement };
 
 const deniedClient = (role: "admin" | "alumno" = "admin") => ({
@@ -75,7 +86,7 @@ function loadStudentPage(path: string, role: "admin" | "alumno" = "admin") {
   });
 }
 
-test("la navegación del alumno contiene las cinco secciones y marca la activa", async ({ page }) => {
+test("la navegación mantiene cuatro secciones y mueve la cuenta al icono superior", async ({ page }) => {
   const markup = renderToStaticMarkup(
     React.createElement(
       shell.StudentShell,
@@ -91,7 +102,6 @@ test("la navegación del alumno contiene las cinco secciones y marca la activa",
     ["Mi Membresía", "/mi-membresia"],
     ["Entrenamiento", "/mi-rutina"],
     ["Notificaciones", "/notificaciones"],
-    ["Mi perfil", "/mi-perfil"],
   ] as const;
 
   for (const [label, href] of expected) {
@@ -99,26 +109,30 @@ test("la navegación del alumno contiene las cinco secciones y marca la activa",
   }
   await expect(nav.getByRole("link", { name: "Notificaciones" })).toHaveAttribute("aria-current", "page");
   await expect(nav.getByRole("link", { name: "Inicio" })).not.toHaveAttribute("aria-current", "page");
+  await expect(nav.getByRole("link")).toHaveCount(4);
+  await expect(nav.getByRole("link", { name: "Mi perfil" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Saltar al contenido" })).toHaveAttribute("href", "#contenido");
-  await expect(page.getByRole("button", { name: "Cerrar sesión" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Opciones de cuenta" })).toBeVisible();
+  await expect(page.locator(".student-account-popover")).toBeHidden();
 });
 
-test("el menú completo entra a 320 px y deja visible el cierre de sesión", async ({ page }) => {
+test("el desplegable por iconos funciona a 320 px con salida protegida y sin desbordar", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 630 });
-  const css = readFileSync("src/app/globals.css", "utf8");
+  const css = ["src/app/globals.css", "src/components/routines/student-account-menu.css"]
+    .map(path => readFileSync(path, "utf8")).join("\n");
   const markup = renderToStaticMarkup(React.createElement(
     shell.StudentShell, { active: "perfil" },
     React.createElement("div", { style: { minHeight: "760px" } }, React.createElement("h1", null, "Mi perfil")),
   ));
-  await page.setContent(`<!doctype html><html lang="es-AR" data-theme="dark"><head><style>${css}</style></head><body>${markup}</body></html>`);
+  await page.setContent(`<!doctype html><html lang="es-AR" data-theme="dark" data-preference="system"><head><style>${css}</style></head><body>${markup}</body></html>`);
   const nav = page.getByRole("navigation", { name: "Navegación del alumno" });
   const links = nav.getByRole("link");
-  await expect(links).toHaveCount(5);
+  await expect(links).toHaveCount(4);
   const dock = await nav.boundingBox();
   expect(dock).toBeTruthy();
   expect((dock?.y ?? 0) + (dock?.height ?? 0)).toBe(630);
-  for (const link of await links.all()) {
-    const box = await link.boundingBox();
+  for (const item of await links.all()) {
+    const box = await item.boundingBox();
     expect(box?.width).toBeGreaterThanOrEqual(44);
     expect(box?.height).toBeGreaterThanOrEqual(44);
     expect((box?.x ?? -1) + (box?.width ?? 321)).toBeLessThanOrEqual(320);
@@ -126,13 +140,67 @@ test("el menú completo entra a 320 px y deja visible el cierre de sesión", asy
   await links.first().focus();
   await page.keyboard.press("Tab");
   await expect(links.nth(1)).toBeFocused();
-  const signout = page.getByRole("button", { name: "Cerrar sesión" });
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+
+  const trigger = page.getByRole("button", { name: "Opciones de cuenta" });
+  await trigger.click();
+  const menu = page.locator(".student-account-popover");
+  await expect(menu).toBeVisible();
+  await expect(menu).toHaveAttribute("popover", "auto");
+  const profile = menu.getByRole("link", { name: "Mi cuenta" });
+  await expect(profile).toHaveAttribute("href", "/mi-perfil");
+  await expect(profile).toHaveAttribute("aria-current", "page");
+  const signout = menu.getByRole("button", { name: "Cerrar sesión" });
   await expect(signout).toBeInViewport();
-  expect((await signout.boundingBox())?.y).toBeLessThan(dock?.y ?? 0);
-  await expect(page.locator('form[action="/api/acceso/salir"]')).toHaveAttribute("method", "post");
+  await expect(menu.locator('form[action="/api/acceso/salir"]')).toHaveAttribute("method", "post");
+  await expect(menu.getByRole("button", { name: "Tema claro" })).toHaveAttribute("aria-pressed", "false");
+  await expect(menu.getByRole("button", { name: "Tema oscuro" })).toHaveAttribute("aria-pressed", "false");
+  await expect(menu.getByRole("button", { name: "Tema del sistema" })).toHaveAttribute("aria-pressed", "true");
+  expect(await menu.locator("a, button").allTextContents()).toEqual(["", "", "", "", ""]);
+  const geometry = await menu.evaluate(element => {
+    const bounds = element.getBoundingClientRect();
+    const targets = [...element.querySelectorAll("a, button")].map(item => item.getBoundingClientRect());
+    return {
+      left: bounds.left, right: bounds.right,
+      minWidth: Math.min(...targets.map(item => item.width)),
+      minHeight: Math.min(...targets.map(item => item.height)),
+    };
+  });
+  expect(geometry.left).toBeGreaterThanOrEqual(0);
+  expect(geometry.right).toBeLessThanOrEqual(320);
+  expect(geometry.minWidth).toBeGreaterThanOrEqual(44);
+  expect(geometry.minHeight).toBeGreaterThanOrEqual(44);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
+  await expect(trigger).toBeFocused();
 });
+
+for (const width of [360, 390, 1440]) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`el menú del alumno abre sin recortar iconos en ${width}px / ${theme}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 850 });
+      const css = ["src/app/globals.css", "src/components/routines/student-account-menu.css"]
+        .map(path => readFileSync(path, "utf8")).join("\n");
+      const markup = renderToStaticMarkup(React.createElement(
+        shell.StudentShell, { active: "rutina" }, React.createElement("h1", null, "Mi rutina"),
+      ));
+      await page.setContent(`<!doctype html><html lang="es-AR" data-theme="${theme}" data-preference="system"><head><style>${css}</style></head><body>${markup}</body></html>`);
+      await page.getByRole("button", { name: "Opciones de cuenta" }).click();
+      const menu = page.locator(".student-account-popover");
+      await expect(menu).toBeVisible();
+      await expect(menu.getByRole("link", { name: "Mi cuenta" })).not.toHaveAttribute("aria-current", "page");
+      const box = await menu.boundingBox();
+      expect(box).toBeTruthy();
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+      await menu.getByRole("link", { name: "Mi cuenta" }).focus();
+      await page.keyboard.press("Tab");
+      await expect(menu.getByRole("button", { name: "Cerrar sesión" })).toBeFocused();
+      await page.keyboard.press("Escape");
+      await expect(menu).toBeHidden();
+    });
+  }
+}
 
 for (const width of [1024, 1440]) {
   for (const theme of ["light", "dark"]) {
