@@ -1,7 +1,7 @@
 # PR #67 — Correcciones P2 — 2026-11-19
 
 Estado de entrega: REVIEW; sin merge, deploy ni SQL alojado. Base de integración
-verificada `508cb62ba64609293d1ea6057cf84f9bec373bb5`, con #63 y #68 integrados.
+verificada `5a222ca0138dab4f3acd2c151a91b513d3197652`, con #63, #68 y #72 integrados.
 Se conservó la rama remota de Menciones hasta
 `f1de91cb4c601c3fd9bdf094605dc8da922c9340`, incluidos sus documentos.
 El PR registra el HEAD definitivo y sus checks exactos.
@@ -13,12 +13,12 @@ notificaciones, rutinas y ambos verificadores de dependencias. Cuenta, Mi perfil
 la API de acceso, el helper Auth y la migración Correo coinciden con main: esta
 entrega no altera esos flujos ni repite sus laboratorios históricos.
 
-El candidato incorpora como dependencia el arreglo de fixtures del [PR #72](https://github.com/MatiasEzequielPereyra/CuevApp/pull/72),
-HEAD `2a08a8b6905987a3705ca221ce573c416871b78e`. Debe integrarse primero.
-Después actualizar #67 desde ese main para retirar del diff la dependencia común
-y revalidar los cambios combinados pertinentes. Es código de pruebas, sin cambios
-de producto. [Causas, reproducción y lifecycle](fixture-isolation-review.md).
-No se pide integrar Correo nuevamente; su SQL alojado es operación del Orchestrator.
+El arreglo común de fixtures del [PR #72](https://github.com/MatiasEzequielPereyra/CuevApp/pull/72)
+ya está integrado en esta base. Su candidato revisado fue
+`2a08a8b6905987a3705ca221ce573c416871b78e`. Al incorporar main se resolvieron
+package.json y checkpoint preservando todos los scripts, la evidencia y ambos
+flujos. El código de fixtures coincide con main; no hay dependencia de otro merge
+pendiente. [Reproducción y lifecycle](fixture-isolation-review.md).
 
 ## Sugerencias obsoletas
 
@@ -68,7 +68,9 @@ SHA256 de los bytes LF versionados: `205f8aeca59dc04b4f54c5f1b0439fd4ade49aa9e44
 
 Ninguna migración aplicada se modifica. Correo conserva exactamente sus bytes de
 main; el Orchestrator informó su registro alojado con versión `20261118185514`.
-Esto no implica que Menciones esté aplicada. Antes de operar se mantienen backup,
+También informó Ejercicios asignados en `20261119124720`, 32 migraciones y
+huella de nueve publicaciones conservada. No se repiten esas migraciones ni se
+atribuye verificación remota propia. Menciones sigue sin aplicación alojada. Antes de operar se mantienen backup,
 contraste de esquema/historial, lista explícita de dependencias, hash, grants/RLS,
 postflight y publicación posterior. No usar el timestamp de Git para deducir
 estado alojado ni reejecutar Correo mediante un push indiscriminado de migraciones.

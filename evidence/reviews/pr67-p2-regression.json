@@ -1,5 +1,5 @@
 {
-  "base": "508cb62ba64609293d1ea6057cf84f9bec373bb5",
+  "base": "5a222ca0138dab4f3acd2c151a91b513d3197652",
   "dependency_pr": 72,
   "stale_suggestions": {
     "before": {
@@ -26,5 +26,6 @@
     },
     "scope": "native PostgreSQL; synthetic Auth/Storage SQL boundary; full schema replay in CI"
   },
-  "hosted": "NOT_RUN"
+  "hosted": "NOT_RUN",
+  "dependency_state": "MERGED in verified base"
 }

@@ -3,10 +3,10 @@
 ## PR #67 — Correcciones P2 — REVIEW — 2026-11-19
 
 [Entrega vigente](pr67-corrections-20261119.md) sobre main
-`508cb62ba64609293d1ea6057cf84f9bec373bb5`, que incluye Correo y el arreglo de foco.
+`5a222ca0138dab4f3acd2c151a91b513d3197652`, que incluye Correo y el arreglo de foco.
 Se preservan ambos flujos y scripts, se impiden sugerencias obsoletas y se exige
 texto JSON de tipo string antes de escribir. SQL60/60 en PostgreSQL aislado.
-El candidato incluye la dependencia de pruebas #72 para integrar primero; HEAD,
+El arreglo común de pruebas #72 ya está integrado en esta base; HEAD,
 CI y revisión independiente finales se registran en el PR. Sin merge, deploy ni
 operación alojada. Las evidencias anteriores son históricas, no del nuevo HEAD.
 Skills y fuentes en el informe enlazado.
