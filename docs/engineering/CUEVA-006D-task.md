@@ -1,6 +1,6 @@
 # CUEVA-006D — Rutinas en texto libre con menciones de ejercicios
 
-Estado: implementación en rama aislada; CI aprobado en HEAD `e32109a7c22212e974bf4767200e5a49f37ead47`; revisión final de integración pendiente.
+Estado actual: correcciones P2 en REVIEW; ver [entrega vigente](pr67-corrections-20261119.md). Las validaciones de HEAD anteriores documentadas abajo son históricas.
 Fecha de decisión: 2026-11-16.
 
 ## Decisión de producto CONFIRMED

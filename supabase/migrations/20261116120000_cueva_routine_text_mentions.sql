@@ -231,6 +231,7 @@ begin
       or jsonb_typeof(v_mention->'end') is distinct from 'number'
       or coalesce(v_mention->>'start','') !~ '^(0|[1-9][0-9]*)$'
       or coalesce(v_mention->>'end','') !~ '^(0|[1-9][0-9]*)$'
+      or jsonb_typeof(v_mention->'text') is distinct from 'string'
       or coalesce(v_mention->>'text','') = ''
     then
       raise exception 'Referencia de ejercicio inválida' using errcode = '22023';

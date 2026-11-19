@@ -1,5 +1,5 @@
 begin;
-select plan(54);
+select plan(60);
 
 -- Stable test identities and sessions. All fixtures are rolled back at the end.
 insert into auth.users(id,aud,role,email,created_at,updated_at) values
@@ -315,6 +315,49 @@ select throws_ok($$select public.cueva_routine_text_write(
 )$$,'22023',null,'invalid mention offsets are rejected in the database');
 
 
+-- JSON text extraction must not coerce an invalid mention scalar into persisted data.
+create temp table mention_type_guard_before as select jsonb_build_object(
+ 'base',(select to_jsonb(d) from public.cueva_routine_drafts d where student_id='b3000000-0000-4000-8000-000000000001'),
+ 'text',(select to_jsonb(t) from public.cueva_routine_text_drafts t where kind='draft' and owner_id='b3000000-0000-4000-8000-000000000001'),
+ 'published',(select coalesce(jsonb_agg(to_jsonb(p) order by p.id),'[]'::jsonb) from public.cueva_routine_publications p where student_id='b3000000-0000-4000-8000-000000000001')
+) as document;
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',2,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000060',null,'text','123',
+ jsonb_build_array(jsonb_build_object('exercise_id','b5000000-0000-4000-8000-000000000001',
+ 'start',0,'end',char_length('123'),'text','123'::jsonb))
+)$$,'22023',null,'mention text rejects JSON number before writing');
+select is(jsonb_build_object(
+ 'base',(select to_jsonb(d) from public.cueva_routine_drafts d where student_id='b3000000-0000-4000-8000-000000000001'),
+ 'text',(select to_jsonb(t) from public.cueva_routine_text_drafts t where kind='draft' and owner_id='b3000000-0000-4000-8000-000000000001'),
+ 'published',(select coalesce(jsonb_agg(to_jsonb(p) order by p.id),'[]'::jsonb) from public.cueva_routine_publications p where student_id='b3000000-0000-4000-8000-000000000001')
+),(select document from mention_type_guard_before),
+ 'invalid number leaves the base, sidecar and publications unchanged');
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',2,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000061',null,'text','true',
+ jsonb_build_array(jsonb_build_object('exercise_id','b5000000-0000-4000-8000-000000000001',
+ 'start',0,'end',char_length('true'),'text','true'::jsonb))
+)$$,'22023',null,'mention text rejects JSON boolean before writing');
+select is(jsonb_build_object(
+ 'base',(select to_jsonb(d) from public.cueva_routine_drafts d where student_id='b3000000-0000-4000-8000-000000000001'),
+ 'text',(select to_jsonb(t) from public.cueva_routine_text_drafts t where kind='draft' and owner_id='b3000000-0000-4000-8000-000000000001'),
+ 'published',(select coalesce(jsonb_agg(to_jsonb(p) order by p.id),'[]'::jsonb) from public.cueva_routine_publications p where student_id='b3000000-0000-4000-8000-000000000001')
+),(select document from mention_type_guard_before),
+ 'invalid boolean leaves the base, sidecar and publications unchanged');
+select throws_ok($$select public.cueva_routine_text_write(
+ 'draft','b3000000-0000-4000-8000-000000000001',2,'Notas de bloque',null,
+ 'ba000000-0000-4000-8000-000000000062',null,'text','{"label": "x"}',
+ jsonb_build_array(jsonb_build_object('exercise_id','b5000000-0000-4000-8000-000000000001',
+ 'start',0,'end',char_length('{"label": "x"}'),'text','{"label": "x"}'::jsonb))
+)$$,'22023',null,'mention text rejects JSON object before writing');
+select is(jsonb_build_object(
+ 'base',(select to_jsonb(d) from public.cueva_routine_drafts d where student_id='b3000000-0000-4000-8000-000000000001'),
+ 'text',(select to_jsonb(t) from public.cueva_routine_text_drafts t where kind='draft' and owner_id='b3000000-0000-4000-8000-000000000001'),
+ 'published',(select coalesce(jsonb_agg(to_jsonb(p) order by p.id),'[]'::jsonb) from public.cueva_routine_publications p where student_id='b3000000-0000-4000-8000-000000000001')
+),(select document from mention_type_guard_before),
+ 'invalid object leaves the base, sidecar and publications unchanged');
+
 select is((select count(*)::integer from public.cueva_student_assigned_exercises()),0,
  'administrator cannot use the student RPC to read exercise assignments');
 
@@ -328,6 +371,8 @@ select throws_ok($$select public.cueva_routine_text_write(
 -- A valid session without a cueva_profiles role is also denied by the owner check.
 select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000004',true);
 select set_config('request.jwt.claims',jsonb_build_object('sub','b1000000-0000-4000-8000-000000000004','role','authenticated','session_id','b2000000-0000-4000-8000-000000000004')::text,true);
+
+
 select is((select count(*)::integer from public.cueva_student_assigned_exercises()),0,
  'authenticated account without an alumno profile receives no exercises');
 

@@ -59,14 +59,20 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   }, [range]);
 
   function updateRange(next: SearchRange) {
-    if (!next) { setResults([]); setPending(false); setError(""); }
-    else { setPending(true); setError(""); }
+    // Invalidate immediately, before effect cleanup can observe the old request.
+    request.current++;
+    setResults([]);
+    setActive(0);
+    setPending(!!next);
+    setError("");
     setRange(next);
   }
 
   function retrySearch() {
     if (!range || disabled) return;
+    request.current++;
     setResults([]);
+    setActive(0);
     setPending(true);
     setError("");
     setRange({ ...range });
@@ -79,7 +85,8 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
 
   function insert(exercise: Exercise) {
     const input = textarea.current;
-    if (!input || !range || disabled) return;
+    if (!input || !range || disabled || pending || error
+      || !results.some(result => result.id === exercise.id)) return;
     const next = value.slice(0, range.start) + exercise.name + value.slice(range.end);
     const start = utf16OffsetToCodePoint(next, range.start);
     const endUtf16 = range.start + exercise.name.length;
@@ -92,11 +99,12 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (!range || (!results.length && !pending)) return;
+    if (!range) return;
+    if (event.key === "Escape") { updateRange(null); return; }
+    if (pending || error || !results.length) return;
     if (event.key === "ArrowDown") { event.preventDefault(); setActive(index => Math.min(index + 1, results.length - 1)); }
     else if (event.key === "ArrowUp") { event.preventDefault(); setActive(index => Math.max(index - 1, 0)); }
     else if (event.key === "Enter" && results[active]) { event.preventDefault(); insert(results[active]); }
-    else if (event.key === "Escape") updateRange(null);
   }
 
   return <div className="routine-text-editor">
@@ -115,7 +123,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       {pending && <p role="status">Buscando ejercicios…</p>}
       {error && <><p role="alert">{error}</p><button type="button" disabled={disabled || pending} onClick={retrySearch}>Reintentar búsqueda</button></>}
       {!pending && !error && results.length === 0 && <p>No encontramos ejercicios activos con ese nombre.</p>}
-      {results.map((exercise, index) => <button type="button" role="option" aria-selected={active === index} key={exercise.id}
+      {results.map((exercise, index) => <button type="button" role="option" aria-selected={active === index} key={exercise.id} disabled={disabled || pending}
         onMouseDown={event => event.preventDefault()} onClick={() => insert(exercise)}>{exercise.name}</button>)}
     </div>}
     <p>Las menciones quedan vinculadas al ejercicio aunque cambie su nombre. Solo se sugieren ejercicios activos.</p>

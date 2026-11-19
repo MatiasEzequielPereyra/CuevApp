@@ -1,5 +1,8 @@
 # PR #67 — Revisión sobre el portal publicado
 
+La [entrega P2 del 19 de noviembre](pr67-corrections-20261119.md) supersede los
+estados y HEAD históricos de este informe para la revisión actual.
+
 Estado: **CI VALIDADO; revisión final de alcance y operación pendiente; PR en draft**.
 Base actual verificada: `0832c9ef17a04289528148f76ac2057703db3746`.
 HEAD validado: `e32109a7c22212e974bf4767200e5a49f37ead47`.
@@ -63,7 +66,7 @@ qué dependencias ya están aplicadas. No repetir una migración por nombre dist
 | --- | --- |
 | `20261114120000_cueva_student_assigned_exercises.sql` | `c2c391b8dfb72e9d10015fafff09ee6072cf40a56544fab20754bf03f533537c` |
 | `20261115160000_cueva_my_routine_video_ids.sql` | `958e40ea96ef466434ffe821bf208245d5ce3651ca3c24a7ec2e6a3ddb1f4187` |
-| `20261116120000_cueva_routine_text_mentions.sql` | `14f5990bb518dc910ea7bf013ba2c7ef2bb293a8efcaaebac246d2ef0918e2f8` |
+| `20261116120000_cueva_routine_text_mentions.sql` | `205f8aeca59dc04b4f54c5f1b0439fd4ade49aa9e44b588e7af9eabbb720845a` |
 
 La nueva migración depende de las tablas/RPC de acceso, alumnos, invitaciones,
 rutinas, rutinas estructuradas, días y videos. La publicación usa además las RPC

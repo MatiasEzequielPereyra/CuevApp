@@ -487,3 +487,63 @@ test("una falla del documento publicado no muestra el formato anterior", async (
     await expect(studentPage.getByRole("group", { name: "Día de entrenamiento" })).toHaveCount(0);
   } finally { await learner.close(); }
 });
+
+
+for (const interaction of ["teclado", "toque"] as const) {
+  test(`sugerencias obsoletas no se insertan con ${interaction} mientras llega otra búsqueda`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 1100 });
+    let release!: () => void;
+    const held = new Promise<void>(resolve => { release = resolve; });
+    let waiting = false;
+    let intercepted = false;
+    await page.route("**/api/ejercicios?*", async route => {
+      const query = new URL(route.request().url()).searchParams.get("q")?.toLowerCase();
+      if (query === "sent" && !intercepted) {
+        intercepted = true;
+        waiting = true;
+        await held;
+      }
+      await route.continue().catch(() => {}); // A new query may abort this held response.
+    });
+    try {
+      await page.goto(`${origin}/rutinas?alumno=${shortId}`);
+      const editor = page.getByRole("region", { name: "Editor de rutina" });
+      await editor.getByRole("button", { name: "Texto libre" }).click();
+      const textarea = editor.getByRole("textbox", { name: "Rutina en texto libre" });
+      await textarea.fill("@press");
+      const previous = editor.getByRole("option", { name: "Press militar", exact: true });
+      await expect(previous).toBeVisible();
+      await previous.scrollIntoViewIfNeeded();
+      const bounds = await previous.boundingBox();
+      expect(bounds).not.toBeNull();
+      await textarea.fill("@sent");
+      await expect.poll(() => waiting).toBe(true);
+      if (interaction === "teclado") {
+        await textarea.press("Enter");
+        await expect(textarea).toHaveValue("@sent\n");
+        await textarea.fill("@sent");
+      } else {
+        await page.touchscreen.tap(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height / 2);
+        await expect(textarea).toHaveValue("@sent");
+      }
+      await expect(editor.getByText("0 menciones vinculadas")).toBeVisible();
+      await expect(previous).toHaveCount(0);
+      release();
+      const current = editor.getByRole("option", { name: "Sentadilla", exact: true });
+      await expect(current).toBeVisible();
+      if (interaction === "teclado") {
+        await textarea.focus();
+        await textarea.press("ArrowDown");
+        await textarea.press("Enter");
+      } else await current.tap();
+      await expect(textarea).toHaveValue("Sentadilla");
+      await expect(editor.getByText("1 mención vinculada")).toBeVisible();
+      await expect(previous).toHaveCount(0);
+      await expect.poll(async () => {
+        const response = await page.request.get(`${origin}/api/rutinas?id=${shortId}`);
+        const data = await response.json();
+        return data.note?.text_content === "Sentadilla" ? data.note.mentions?.map((mention: { exercise_id: string }) => mention.exercise_id) : [];
+      }).toEqual(["bbbbbbbb-bbbb-4bbb-8bbb-000000000000"]);
+    } finally { release(); }
+  });
+}
