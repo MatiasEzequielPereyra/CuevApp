@@ -2,16 +2,13 @@
 
 Fundación de la aplicación del gimnasio. CUEVA-001A fue aceptada e integrada en el PR #1. La página está publicada en [cueva-gym.vercel.app](https://cueva-gym.vercel.app). Ver el checkpoint para la evidencia y el siguiente encargo.
 
-## Estado actual del producto
+## Estado actual del producto — 19/11/2026
 
-El portal del alumno incluye Inicio, Mi Membresía, Entrenamiento,
-Notificaciones y Mi perfil. La base de Notificaciones ya se aplicó en
-Supabase. La activación de los envíos automáticos, la entrega Push y la RPC
-alojada de ejercicios asignados siguen pendientes.
+Ver el [estado real de GitHub, Vercel, Supabase, ramas y pendientes](docs/engineering/REPO-STATUS-2026-11-19.md). Es la referencia vigente, por encima de los hitos históricos de documentación.
 
-El código publicado incluye rutinas por días y bloques, biblioteca de ejercicios
-y videos, comprobantes, vencimientos y gestión de pagos. Consultar el
-[estado del repositorio y los servicios](docs/engineering/checkpoint.md).
+El `main` integra autenticación por correo e invitaciones administrativas, gestión de alumnos, cuotas y pagos parciales, vencimientos, comprobantes, rutinas por días/bloques y texto libre con referencias a ejercicios, videos y portal del alumno. El acceso usa correo obligatorio y contraseña elegida por el alumno; DNI opcional solamente en su ficha administrativa.
+
+Al 19/11, GitHub `main` sirve la versión `aa7cd3604141` en Vercel Production (READY); Supabase Hosted registra **33 migraciones**, incluida la RPC de ejercicios asignados, los documentos de rutinas y sincronización de correo. **Aún no está activado el cron de recordatorios ni verificada la entrega Push final**, y faltan el registro de entrenamiento y la consulta de rutina offline. La rama CUEVA-006E está en desarrollo y no está integrada.
 
 ## Orden de lectura
 
