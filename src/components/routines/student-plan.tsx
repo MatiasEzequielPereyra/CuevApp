@@ -4,7 +4,7 @@ import { useId, useRef, useState, type MouseEvent, type ReactNode } from "react"
 import type { LegacyTarget, Plan, Target } from "@/lib/routines/types";
 
 type VideoSource = { kind: "storage"; src: string } | { kind: "youtube"; id: string; url: string };
-type Playback = { state: "loading" } | { state: "ready"; source: VideoSource } | { state: "error"; message: string; url?: string };
+type Playback = { state: "loading" } | { state: "empty" } | { state: "ready"; source: VideoSource } | { state: "error"; message: string; url?: string };
 
 function ExerciseDetails({ exercise }: { exercise: Target | LegacyTarget }) {
   return (
@@ -41,6 +41,10 @@ export function StudentPlan({ plan, videoIds }: { plan: Plan; videoIds: string[]
   const videos = new Set(videoIds);
 
   async function loadVideo(id: string) {
+    if (!videos.has(id)) {
+      setPlayback({ state: "empty" });
+      return;
+    }
     const controller = new AbortController();
     request.current?.abort();
     request.current = controller;
@@ -52,7 +56,11 @@ export function StudentPlan({ plan, videoIds }: { plan: Plan; videoIds: string[]
       const data = await response.json();
       if (controller.signal.aborted) return;
       if (!response.ok) {
-        setPlayback({ state: "error", message: data.message || "No pudimos cargar el video." });
+        if (response.status === 404 || data.message === "Sin video disponible.") {
+          setPlayback({ state: "empty" });
+        } else {
+          setPlayback({ state: "error", message: data.message || "No pudimos cargar el video." });
+        }
         return;
       }
       setPlayback({ state: "ready", source: data as VideoSource });
@@ -85,6 +93,7 @@ export function StudentPlan({ plan, videoIds }: { plan: Plan; videoIds: string[]
   const youtube = playback.state === "ready" && playback.source.kind === "youtube" ? playback.source : null;
   let media: ReactNode;
   if (playback.state === "loading") media = <p role="status">Cargando video…</p>;
+  else if (playback.state === "empty") media = <p role="status">Aún no se encuentra con video disponible</p>;
   else if (playback.state === "error") media = (
     <>
       <p role="alert">{playback.message}</p>
@@ -130,18 +139,11 @@ export function StudentPlan({ plan, videoIds }: { plan: Plan; videoIds: string[]
               <ol role="list">
                 {block.exercises.map((exercise, exerciseIndex) => (
                   <li key={exercise.id}>
-                    {videos.has(exercise.exercise_id) ? (
-                      <button type="button" className="my-routine-exercise" aria-haspopup="dialog" onClick={event => openVideo(event, exercise)}>
-                        <span className="my-routine-exercise-order" aria-hidden="true">{exerciseIndex + 1}</span>
-                        <ExerciseDetails exercise={exercise} />
-                        <span className="my-routine-video-label"><VideoIcon /> Video</span>
-                      </button>
-                    ) : (
-                      <div className="my-routine-exercise">
-                        <span className="my-routine-exercise-order" aria-hidden="true">{exerciseIndex + 1}</span>
-                        <ExerciseDetails exercise={exercise} />
-                      </div>
-                    )}
+                    <button type="button" className="my-routine-exercise" aria-haspopup="dialog" onClick={event => openVideo(event, exercise)}>
+                      <span className="my-routine-exercise-order" aria-hidden="true">{exerciseIndex + 1}</span>
+                      <ExerciseDetails exercise={exercise} />
+                      <span className="my-routine-video-label"><VideoIcon /> Video</span>
+                    </button>
                   </li>
                 ))}
               </ol>
