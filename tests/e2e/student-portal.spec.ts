@@ -6,6 +6,7 @@ import { createRequire } from "node:module";
 import ts from "typescript";
 import { StudentIcon } from "../../src/components/routines/student-icon";
 import { PasswordChangeForm } from "../../src/components/auth/password-change-form";
+import { StudentEmailChangeForm } from "../../src/components/auth/student-email-change-form";
 
 const localRequire = createRequire(__filename);
 const link = ({ children, ...props }: React.ComponentProps<"a">) =>
@@ -78,6 +79,7 @@ function loadStudentPage(path: string, role: "admin" | "alumno" = "admin") {
     "@/components/notifications/notification-inbox": { NotificationInbox: () => null },
     "@/components/notifications/push-notification-settings": { PushNotificationSettings: () => null },
     "@/components/auth/password-change-form": { PasswordChangeForm },
+    "@/components/auth/student-email-change-form": { StudentEmailChangeForm },
     "@/lib/payments/money": { pesos: (value: string) => value },
     "@/lib/product-auth/server": {
       productConfig: () => ({ ownerOnly: true }),
@@ -111,6 +113,8 @@ test("la navegación mantiene cuatro secciones y mueve la cuenta al icono superi
   await expect(nav.getByRole("link", { name: "Inicio" })).not.toHaveAttribute("aria-current", "page");
   await expect(nav.getByRole("link")).toHaveCount(4);
   await expect(nav.getByRole("link", { name: "Mi perfil" })).toHaveCount(0);
+  await expect(nav.getByRole("link")).toHaveText(["Rutina", "Cuotas", "Inicio", "Avisos"]);
+  await expect(nav.getByRole("link", { name: "Inicio" }).locator(".student-home-brand")).toHaveCount(1);
   await expect(page.getByRole("link", { name: "Saltar al contenido" })).toHaveAttribute("href", "#contenido");
   await expect(page.getByRole("button", { name: "Opciones de cuenta" })).toBeVisible();
   await expect(page.locator(".student-account-popover")).toBeHidden();
@@ -151,6 +155,9 @@ test("el desplegable por iconos funciona a 320 px con salida protegida y sin des
   await expect(profile).toHaveAttribute("aria-current", "page");
   const signout = menu.getByRole("button", { name: "Cerrar sesión" });
   await expect(signout).toBeInViewport();
+  await signout.hover();
+  await expect(signout).toHaveCSS("color", "rgb(255, 169, 182)");
+  await expect(signout).toHaveCSS("background-color", "rgb(71, 36, 43)");
   await expect(menu.locator('form[action="/api/acceso/salir"]')).toHaveAttribute("method", "post");
   await expect(menu.getByRole("button", { name: "Tema claro" })).toHaveAttribute("aria-pressed", "false");
   await expect(menu.getByRole("button", { name: "Tema oscuro" })).toHaveAttribute("aria-pressed", "false");
@@ -169,6 +176,14 @@ test("el desplegable por iconos funciona a 320 px con salida protegida y sin des
   expect(geometry.right).toBeLessThanOrEqual(320);
   expect(geometry.minWidth).toBeGreaterThanOrEqual(44);
   expect(geometry.minHeight).toBeGreaterThanOrEqual(44);
+  const center = nav.getByRole("link", { name: "Inicio", exact: true });
+  const logo = center.locator(".student-home-brand");
+  await expect(logo).toBeVisible();
+  const logoBounds = await logo.boundingBox();
+  expect(logoBounds).toBeTruthy();
+  expect(Math.abs((logoBounds!.x + logoBounds!.width / 2) - 160)).toBeLessThanOrEqual(1.5);
+  const icon = nav.getByRole("link", { name: "Rutina de entrenamiento" }).locator(".student-icon");
+  expect(logoBounds!.width).toBeGreaterThan((await icon.boundingBox())!.width);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.keyboard.press("Escape");
   await expect(menu).toBeHidden();
@@ -287,6 +302,10 @@ for (const changed of [false, true]) {
     await expect(page.locator(".student-profile-header")).toBeVisible();
     await expect(page.getByRole("region", { name: "Seguridad de la cuenta" }).getByLabel("Contraseña actual", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Actualizar contraseña" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Actualizar contraseña" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Enviar verificación" })).toBeDisabled();
+    await expect(page.locator('form[action="/api/acceso/cambiar-contrasena"]')).toHaveAttribute("method", "post");
+    await expect(page.locator('form[action="/api/acceso/cambiar-correo"]')).toHaveAttribute("method", "post");
     await expect(page.getByLabel("Nuevo correo electrónico", { exact: true })).toBeVisible();
     await expect(page.getByRole("status")).toHaveCount(changed ? 1 : 0);
   });
@@ -298,5 +317,7 @@ test("el parámetro de correo no confirma Auth y conserva ambos formularios", as
   await page.setContent(renderToStaticMarkup(await component({ searchParams: Promise.resolve({ correo: "confirmado" }) })));
   await expect(page.getByLabel("Nuevo correo electrónico", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Contraseña actual", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Enviar verificación" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Actualizar contraseña" })).toBeDisabled();
   await expect(page.getByRole("status")).toHaveCount(0);
 });
