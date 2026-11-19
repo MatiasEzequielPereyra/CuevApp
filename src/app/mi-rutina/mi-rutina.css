@@ -178,6 +178,43 @@
   font-weight: 650;
 }
 
+.my-routine-exercise-item {
+  position: relative;
+}
+
+.my-routine-video-notice {
+  position: absolute;
+  z-index: 10;
+  inset-inline-end: 12px;
+  inset-block-end: calc(100% - 8px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(320px, calc(100vw - 40px));
+  padding: 9px 11px;
+  border: 1px solid var(--dash-border);
+  border-radius: 10px;
+  background: var(--dash-panel);
+  color: var(--dash-text);
+  box-shadow: 0 6px 20px rgb(0 0 0 / .18);
+  font-size: .875rem;
+  line-height: 1.35;
+}
+
+.my-routine .my-routine-video-notice button {
+  flex: none;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--dash-panel-alt);
+  color: var(--dash-text);
+  font: inherit;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
 .my-routine-exercise-note,
 .my-routine-muted,
 .my-routine-empty-block {
