@@ -125,7 +125,10 @@ async function layoutAndPlayback(browserType, learner) {
           await row.evaluate(node => node.scrollIntoView({ block: "center" }));
           const y = await page.evaluate(() => scrollY);
           if (width === 390) {
-            await row.focus();
+            await row.evaluate(node => node.focus());
+            await page.keyboard.press("Tab");
+            await page.keyboard.press("Shift+Tab");
+            await expect(row).toBeFocused();
             await expect(row).toHaveCSS("outline-style", "solid");
             await row.press("Enter");
           } else if (width === 360) {
