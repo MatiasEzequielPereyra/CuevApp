@@ -1,27 +1,38 @@
 # Checkpoint CUEVA
 
-## Correo publicado; Menciones con correcciones — 2026-11-19
+## Correo y ejercicios asignados; Menciones en corrección — 2026-11-19
 
 #63 está integrado en `508cb62ba64609293d1ea6057cf84f9bec373bb5` y Vercel
 Production sirve ese SHA. Su migración sigue aplicada como `20261118185514`.
 Se verificaron plantilla y doble confirmación y se habilitó el retorno exacto
 a Mi perfil; el ensayo de buzones y sesión alojados sigue NOT_VERIFIED.
-#67 tiene [dos hallazgos P2](PR67-final-audit-20261119.md) y un conflicto con
-el nuevo main; el ejecutor recibió el handoff. Sus dos migraciones pendientes
-no se aplicaron. La [continuidad](CONTINUAR-CUEVA.md) conserva el detalle vigente.
+#67 tiene [dos hallazgos P2](PR67-final-audit-20261119.md); el ejecutor está
+corrigiéndolos e incorporando el nuevo main. Ejercicios asignados ya se aplicó
+como `20261119124720`: hay 32 migraciones, publicaciones intactas y sin lectura
+sin sesión. Menciones sigue sin aplicar. La [continuidad](CONTINUAR-CUEVA.md)
+conserva el detalle vigente.
 
 SKILLS_SELECTED / SKILLS_APPLIED / SKILL_SOURCES: detallados en esos informes.
 
 ## Continuidad entre computadoras — 2026-11-19
 
 Leer primero [Continuar CUEVA](CONTINUAR-CUEVA.md): contiene los SHA actuales,
-evidencia, autorizaciones, respaldo y orden operativo. #68 está integrado y
-publicado en `0832c9ef17a04289528148f76ac2057703db3746`. #63 y #67 siguen abiertos.
-La migración de correo de #63 **ya está aplicada** en Supabase como
-`20261118185514`; las de Ejercicios asignados y Menciones siguen pendientes.
+evidencia, autorizaciones, respaldo y orden operativo. #63 y #68 están integrados;
+#67 sigue pendiente. Las migraciones de Correo y Ejercicios asignados ya están
+aplicadas en Supabase; sólo falta la de Menciones de este lote autorizado.
 Esta foto posterior prevalece sobre los estados históricos que siguen abajo.
 
 SKILLS_SELECTED / SKILLS_APPLIED / SKILL_SOURCES: detallados en el documento.
+## CUEVA-CI-FIXTURES-001 — INTEGRADO — 2026-11-19
+
+[Aislamiento y lifecycle de fixtures](fixture-isolation-review.md) documenta la
+reproducción de dos Next en un checkout, el estado sintético incompleto de foco
+y la conservación del error original. Sin producto, SQL ni operación alojada.
+PR #72 integrado en `5a222ca0138dab4f3acd2c151a91b513d3197652` desde el
+candidato `2a08a8b6905987a3705ca221ce573c416871b78e`. Foundation y las tres
+variantes SQL del evento PR aprobaron. Un fresh del push duplicado seguía en
+curso al integrar y no se presenta como PASS. Revisión independiente favorable.
+Skills y resultados en el informe enlazado.
 
 ## CUEVA-CI-PICOMATCH-001 — REVIEW — 2026-11-18
 

@@ -9,8 +9,8 @@ Para continuar desde otra computadora o chat, leer el
 
 El portal del alumno incluye Inicio, Mi Membresía, Entrenamiento,
 Notificaciones y Mi perfil. La base de Notificaciones ya se aplicó en
-Supabase. La activación de los envíos automáticos, la entrega Push y la RPC
-alojada de ejercicios asignados siguen pendientes.
+Supabase. La consulta alojada de ejercicios asignados está aplicada. La
+activación de los envíos automáticos y la entrega Push siguen pendientes.
 
 El código publicado incluye rutinas por días y bloques, biblioteca de ejercicios
 y videos, comprobantes, vencimientos y gestión de pagos. Consultar el
