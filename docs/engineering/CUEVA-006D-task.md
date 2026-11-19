@@ -1,6 +1,6 @@
 # CUEVA-006D — Rutinas en texto libre con menciones de ejercicios
 
-Estado: implementación en rama aislada; CI aprobado en HEAD `11e9169d4bf9d796a7cced3c4ff6572393061b41`; revisión final de integración pendiente.
+Estado: implementación en rama aislada; CI aprobado en HEAD `e32109a7c22212e974bf4767200e5a49f37ead47`; revisión final de integración pendiente.
 Fecha de decisión: 2026-11-16.
 
 ## Decisión de producto CONFIRMED
@@ -102,7 +102,7 @@ migración en el handoff; el Orchestrator realiza auditoría e integración.
 
 - PR: https://github.com/MatiasEzequielPereyra/CuevApp/pull/67
 - Rama: `feature/routine-text-mentions`.
-- HEAD con CI aprobado: `11e9169d4bf9d796a7cced3c4ff6572393061b41`.
+- HEAD con CI aprobado: `e32109a7c22212e974bf4767200e5a49f37ead47`.
 - Verify foundation: exitoso; `npm run verify`, verificación de seguridad, auditoría runtime/prod, tests del verificador estricto de auditoría y `npm audit --audit-level=critical` aprobados.
 - Auditoría runtime/prod: `npm audit --omit=dev --audit-level=moderate` sin vulnerabilidades.
 - Auditoría completa: permanece una excepción temporal estricta para `GHSA-fc5q-39xc-vjpf` en Picomatch dev-only; no se declara corregida.
@@ -119,4 +119,17 @@ migración en el handoff; el Orchestrator realiza auditoría e integración.
 - El PR #67 continúa en borrador hasta completar la revisión final humana y recibir autorización explícita de integración.
 
 
-Los commits `ae8c572` y `11e9169` actualizan documentación únicamente. La CI se repitió sobre `11e9169d4bf9d796a7cced3c4ff6572393061b41` y Verify, Membership SQL, Receipt Storage, las tres variantes de migraciones y Vercel Preview finalizaron SUCCESS. La revisión independiente final y la autorización de merge siguen pendientes.
+Los commits `ae8c572` y `11e9169` actualizan documentación únicamente. La CI se repitió sobre `e32109a7c22212e974bf4767200e5a49f37ead47` y Verify, Membership SQL, Receipt Storage, las tres variantes de migraciones y Vercel Preview finalizaron SUCCESS. La revisión independiente final y la autorización de merge siguen pendientes.
+
+
+## Revalidación vigente — 2026-11-18
+
+Este bloque supersede el HEAD y los resultados de CI citados en handoffs anteriores. HEAD actual validado: `e32109a7c22212e974bf4767200e5a49f37ead47`.
+- Verify foundation: SUCCESS — https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44407225632.
+- Supabase local migrations fresh, upgrade y hosted-compatible: SUCCESS — https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44407225160; fresh completó tras reintento del job cancelado.
+- Membership SQL y Receipt Storage: SUCCESS — https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44407225334.
+- Vercel Preview: SUCCESS.
+- PR #67 sigue abierto y draft; mergeable, 148 commits ahead y 0 behind según la comparación consultada. No hay reviews ni review threads registrados.
+- La revisión independiente final sigue pendiente. No hubo cambios en Supabase hosted, merge ni deploy de producción.
+
+La flakiness de WebKit móvil observada anteriormente queda como riesgo conocido, no como defecto corregido: el reintento y la suite actual pasaron sin modificar timeouts ni aserciones.
