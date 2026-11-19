@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand/brand-mark";
-import { ThemePicker } from "@/components/theme/theme-picker";
+import { StudentAccountMenu } from "./student-account-menu";
 import { StudentIcon, type StudentIconName } from "./student-icon";
 
 type StudentSection = "cuenta" | "rutina" | "membresia" | "notificaciones" | "perfil";
@@ -11,7 +11,6 @@ const navigation: { href: string; label: string; name?: string; section: Student
   { href: "/mi-rutina", label: "Rutina", name: "Rutina de entrenamiento", section: "rutina", icon: "dumbbell" },
   { href: "/mi-membresia", label: "Cuotas", name: "Cuotas · Mi Membresía", section: "membresia", icon: "wallet" },
   { href: "/notificaciones", label: "Avisos", name: "Avisos y notificaciones", section: "notificaciones", icon: "bell" },
-  { href: "/mi-perfil", label: "Perfil", name: "Mi perfil", section: "perfil", icon: "user" },
 ];
 
 export function StudentPageHeading({ title, children }: { title: string; children?: ReactNode }) {
@@ -41,16 +40,11 @@ export function StudentShell({ children, active = "cuenta" }: { children: ReactN
               </Link>
             ))}
           </nav>
-          <ThemePicker />
+          <StudentAccountMenu profileActive={active === "perfil"} />
         </div>
       </header>
       <main className="dash-main student-main" id="contenido" tabIndex={-1}>
         {children}
-        {active === "perfil" && (
-          <form className="student-signout" method="post" action="/api/acceso/salir">
-            <button className="dash-signout" type="submit">Cerrar sesión</button>
-          </form>
-        )}
       </main>
     </div>
   );
