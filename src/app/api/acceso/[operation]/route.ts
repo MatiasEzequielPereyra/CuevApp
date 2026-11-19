@@ -2,7 +2,7 @@ import { inviteStudent } from "@/lib/student-invitation/server";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { localFetch, pendingUserClient, productConfig, serviceClient, userClient } from "@/lib/product-auth/server";
+import { emailChangeCookie, emailChangeMaxAge, localFetch, pendingUserClient, productConfig, serviceClient, signEmailChange, userClient } from "@/lib/product-auth/server";
 
 export const dynamic = "force-dynamic";
 const fail = (status: number) => new Response("No se pudo completar la solicitud", { status, headers: { "Cache-Control": "no-store" } });
@@ -63,6 +63,24 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
     return error ? fail(401) : redirect("/cuenta");
   }
   if (operation === "salir") { const { error } = await auth.auth.signOut(); return error ? fail(503) : redirect("/ingresar"); }
+  if (operation === "cambiar-correo") {
+    const email = String(form.get("email") ?? "").trim().toLowerCase();
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail(400);
+    const current = await auth.auth.getUser();
+    if (current.error || !current.data.user) return fail(401);
+    const own = await auth.from("cueva_profiles").select("role").maybeSingle();
+    if (own.error || own.data?.role !== "alumno") return fail(403);
+    if (email === current.data.user.email?.trim().toLowerCase()) return redirect("/mi-perfil?correo=igual");
+    const changed = await auth.auth.updateUser({ email }, {
+      emailRedirectTo: new URL("/mi-perfil?correo=confirmado", cfg.origin).href,
+    });
+    if (changed.error || changed.data.user?.id !== current.data.user.id) return fail(503);
+    const response = redirect("/mi-perfil?correo=pendiente");
+    response.cookies.set(emailChangeCookie, signEmailChange(cfg.serviceKey, current.data.user.id, email), {
+      httpOnly: true, secure: !cfg.local, sameSite: "lax", path: "/mi-perfil", maxAge: emailChangeMaxAge,
+    });
+    return response;
+  }
   if (operation === "cambiar-contrasena") {
     const currentPassword = String(form.get("current_password") ?? "");
     const newPassword = String(form.get("new_password") ?? "");
