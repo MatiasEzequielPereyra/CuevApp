@@ -31,7 +31,7 @@ async function renderQueue(state: "pending" | "rejected", options: { offset?: nu
     auth: { getUser: async () => ({ data: { user: { email: "admin@example.test" } } }) },
     from: () => query,
   };
-  const module = { exports: {} as { default?: (props: { searchParams: Promise<Record<string, string>> }) => Promise<React.ReactNode> } };
+  const pageModule = { exports: {} as { default?: (props: { searchParams: Promise<Record<string, string>> }) => Promise<React.ReactNode> } };
   const fakeLink = ({ href, children, ...rest }: { href: string; children: React.ReactNode }) =>
     React.createElement("a", { ...rest, href }, children);
   const requireFixture = (id: string) => {
@@ -54,8 +54,8 @@ async function renderQueue(state: "pending" | "rejected", options: { offset?: nu
     };
     return requireNode(id);
   };
-  new Function("require", "module", "exports", source)(requireFixture, module, module.exports);
-  const Queue = module.exports.default;
+  new Function("require", "module", "exports", source)(requireFixture, pageModule, pageModule.exports);
+  const Queue = pageModule.exports.default;
   if (!Queue) throw new Error("No se cargó la página real de comprobantes.");
   const content = await Queue({ searchParams: Promise.resolve({
     ...(state === "rejected" ? { estado: "resueltos" } : {}),
