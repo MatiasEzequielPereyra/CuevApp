@@ -706,7 +706,6 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
 }
 .student-brand { display: inline-flex; flex: none; align-items: center; border-radius: 50%; }
 .student-brand .brand-mark { border-radius: 50%; }
-.student-dashboard .student-topbar .theme-picker button { min-height: 42px; }
 .student-icon { width: 20px; height: 20px; flex: none; display: block; }
 .student-routine-nav { display: flex; align-items: center; gap: 4px; }
 .student-routine-nav a {
@@ -864,7 +863,6 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
 .student-profile { max-width: 680px; }
 .student-profile-avatar { flex: none; display: grid; place-items: center; width: 62px; height: 62px; border-radius: 16px; background: var(--dash-accent-soft); color: var(--dash-accent); font-size: 1.35rem; font-weight: 800; }
 .student-profile-data > div { display: grid; gap: 6px; padding: 14px 0; border-block: 1px solid var(--dash-border); }
-.student-signout { width: fit-content; }
 .membership-summary { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
 .membership-balance dd { font-size: clamp(1.05rem, 2.3vw, 1.45rem); }
 .membership-history, .membership-records, .membership-payment-list { display: grid; gap: 10px; }
@@ -904,7 +902,7 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
     z-index: 5;
     inset: auto 0 0;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 2px;
     padding: 5px max(6px, env(safe-area-inset-right)) calc(5px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
     background: var(--dash-panel);
