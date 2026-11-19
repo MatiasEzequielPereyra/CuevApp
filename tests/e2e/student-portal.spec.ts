@@ -44,7 +44,11 @@ const shell = loadExport("src/components/routines/student-shell.tsx", {
   "./student-icon": { StudentIcon },
   "next/link": { default: link },
   "@/components/brand/brand-mark": {
-    BrandMark: () => React.createElement("span", null, "CUEVA"),
+    BrandMark: ({ size = 46, decorative = false }: { size?: number; decorative?: boolean }) =>
+      React.createElement("img", {
+        src: `data:image/svg+xml;base64,${Buffer.from(readFileSync("public/brand/cueva-symbol.svg")).toString("base64")}`,
+        alt: decorative ? "" : "CUEVA", width: size, height: size, className: "brand-mark",
+      }),
   },
   "./student-account-menu": accountMenu,
 }) as { StudentShell: (props: { children?: React.ReactNode; active?: string }) => React.ReactElement };
