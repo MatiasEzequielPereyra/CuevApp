@@ -28,7 +28,7 @@
 
 * { box-sizing: border-box; }
 html { scroll-padding-top: 24px; }
-body { margin: 0; background: var(--background); color: var(--text); font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing: antialiased; }
+body { margin: 0; background: var(--background); color: var(--text); font-family: var(--font-cueva-manrope, Arial), Helvetica, sans-serif; -webkit-font-smoothing: antialiased; }
 a { color: inherit; }
 button { font: inherit; }
 ::selection { color: var(--background); background: var(--text); }
@@ -866,7 +866,17 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
 .student-shortcut-copy { flex: 1; min-width: 0; display: grid; gap: 3px; }
 .student-shortcut-copy > span { color: var(--dash-muted); font-size: .825rem; line-height: 1.35; }
 .student-shortcut > svg { color: var(--dash-muted); }
-.student-shortcut:hover, .student-training:hover { border-color: var(--dash-accent); }
+.student-shortcut:hover, .student-training:hover, .student-quota-link:hover { border-color: var(--dash-accent); }
+.student-quota-link {
+  color: var(--dash-text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color .15s ease;
+}
+.student-quota-link:focus-visible { border-color: var(--dash-accent); }
+@media (prefers-reduced-motion: reduce) {
+  .student-quota-link { transition: none; }
+}
 .student-note { padding: 12px 14px; border-radius: 10px; background: var(--dash-panel-alt); border-inline-start: 3px solid var(--dash-accent); }
 .student-note a { color: var(--dash-accent); }
 .student-profile { max-width: 680px; }
