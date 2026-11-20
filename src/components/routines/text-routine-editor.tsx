@@ -1,11 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { RoutineMention } from "@/lib/routines/mentions";
 import { rebaseRoutineMentions, utf16OffsetToCodePoint } from "@/lib/routines/mentions";
 import type { Exercise } from "@/lib/routines/types";
 
 type SearchRange = { start: number; end: number; query: string } | null;
+
+function renderMentionHighlights(value: string, mentions: RoutineMention[]): ReactNode[] {
+  const points = Array.from(value);
+  const parts: ReactNode[] = [];
+  let cursor = 0;
+  [...mentions].sort((a, b) => a.start - b.start).forEach((mention, index) => {
+    if (mention.start < cursor || mention.start < 0 || mention.end > points.length
+      || points.slice(mention.start, mention.end).join("") !== mention.text) return;
+    if (mention.start > cursor) parts.push(points.slice(cursor, mention.start).join(""));
+    parts.push(<strong className="routine-text-mention-highlight" key={`mention-${mention.exercise_id}-${mention.start}-${index}`}>{mention.text}</strong>);
+    cursor = mention.end;
+  });
+  if (cursor < points.length) parts.push(points.slice(cursor).join(""));
+  // Preserve a visible final line when the source ends with a newline.
+  if (value.endsWith("\\n")) parts.push("\\u200b");
+  return parts;
+}
 
 function searchRange(value: string, cursor: number): SearchRange {
   const before = value.slice(0, cursor);
@@ -22,7 +39,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   value: string; mentions: RoutineMention[]; disabled: boolean;
   onChange: (value: string, mentions: RoutineMention[]) => void;
 }) {
-  const textarea = useRef<HTMLTextAreaElement>(null), request = useRef(0);
+  const textarea = useRef<HTMLTextAreaElement>(null), highlight = useRef<HTMLDivElement>(null), request = useRef(0);
   const [range, setRange] = useState<SearchRange>(null);
   const [results, setResults] = useState<Exercise[]>([]);
   const [pending, setPending] = useState(false), [error, setError] = useState("");
@@ -98,6 +115,13 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     requestAnimationFrame(() => { input.focus(); input.setSelectionRange(endUtf16, endUtf16); });
   }
 
+  function syncHighlightScroll() {
+    if (textarea.current && highlight.current) {
+      highlight.current.scrollTop = textarea.current.scrollTop;
+      highlight.current.scrollLeft = textarea.current.scrollLeft;
+    }
+  }
+
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (!range) return;
     if (event.key === "Escape") { updateRange(null); return; }
@@ -109,8 +133,13 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
 
   return <div className="routine-text-editor">
     <label htmlFor="routine-free-text">Rutina en texto libre</label>
-    <textarea ref={textarea} id="routine-free-text" rows={16} maxLength={40000} value={value} disabled={disabled}
+    <div className="routine-text-input">
+      <div ref={highlight} className="routine-text-highlight-layer" aria-hidden="true">
+        {renderMentionHighlights(value, mentions)}
+      </div>
+      <textarea ref={textarea} id="routine-free-text" rows={16} maxLength={40000} value={value} disabled={disabled}
       aria-autocomplete="list" aria-controls="routine-mention-options"
+      onScroll={syncHighlightScroll}
       onChange={event => handleChange(event.target.value, event.target.selectionStart)}
       onClick={event => updateRange(searchRange(value, event.currentTarget.selectionStart))}
       onKeyUp={event => {
