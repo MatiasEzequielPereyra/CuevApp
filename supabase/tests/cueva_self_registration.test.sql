@@ -1,5 +1,5 @@
 begin;
-select plan(18);
+select plan(17);
 
 -- These synthetic Auth users and sessions exist only inside this rollback.
 insert into auth.users
