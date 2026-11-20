@@ -2,8 +2,8 @@
 
 import { useId, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import type { LegacyTarget, Plan, Target } from "@/lib/routines/types";
+import { parseVideoSource, type VideoSource } from "@/lib/routines/video-source";
 
-type VideoSource = { kind: "storage"; src: string } | { kind: "youtube"; id: string; url: string };
 type Playback = { state: "loading" } | { state: "ready"; source: VideoSource } | { state: "error"; message: string; url?: string };
 
 function ExerciseDetails({ exercise }: { exercise: Target | LegacyTarget }) {
@@ -50,13 +50,18 @@ export function StudentPlan({ plan, videoIds, videosAvailable = true }: { plan: 
       const response = await fetch(`/api/ejercicios/video?id=${encodeURIComponent(id)}&player=1`, {
         signal: AbortSignal.any([controller.signal, AbortSignal.timeout(12000)]), cache: "no-store",
       });
-      const data = await response.json();
+      const data: unknown = await response.json();
       if (controller.signal.aborted) return;
       if (!response.ok) {
         setPlayback({ state: "error", message: data.message || "No pudimos cargar el video." });
         return;
       }
-      setPlayback({ state: "ready", source: data as VideoSource });
+      const source = parseVideoSource(data);
+      if (!source) {
+        setPlayback({ state: "error", message: "El recurso de video no tiene un formato válido." });
+        return;
+      }
+      setPlayback({ state: "ready", source });
     } catch {
       if (!controller.signal.aborted) setPlayback({ state: "error", message: "No pudimos cargar el video. Intentá nuevamente." });
     }
