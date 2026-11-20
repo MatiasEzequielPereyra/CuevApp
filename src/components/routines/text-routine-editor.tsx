@@ -20,7 +20,7 @@ function renderMentionHighlights(value: string, mentions: RoutineMention[]): Rea
   });
   if (cursor < points.length) parts.push(points.slice(cursor).join(""));
   // Preserve a visible final line when the source ends with a newline.
-  if (value.endsWith("\\n")) parts.push("\\u200b");
+  if (value.endsWith("\n")) parts.push("\u200b");
   return parts;
 }
 
@@ -148,6 +148,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       }}
       onKeyDown={onKeyDown}
       placeholder={"Escribí la rutina completa…\n\nPodés mencionar ejercicios con @ o escribir su nombre."} />
+    </div>
     {range && <div className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos">
       {pending && <p role="status">Buscando ejercicios…</p>}
       {error && <><p role="alert">{error}</p><button type="button" disabled={disabled || pending} onClick={retrySearch}>Reintentar búsqueda</button></>}
