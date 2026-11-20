@@ -70,7 +70,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
           {videoAvailability === "available" ? <button type="button" className="my-routine-mention-play" onClick={() => { setOpen(false); setPlayerOpen(true); }}>Ver video</button> : videoAvailability === "unavailable" ? <span role="status">Aún no se encuentra con video disponible</span> : <span role="status">No pudimos comprobar si hay un video disponible.</span>}
         </span>
       )}
-      <ExerciseVideoDialog exerciseId={exerciseId} exerciseName={name} open={playerOpen} onClose={() => { setPlayerOpen(false); trigger.current?.focus({ preventScroll: true }); }} />
+      {playerOpen && <ExerciseVideoDialog exerciseId={exerciseId} exerciseName={name} open onClose={() => { setPlayerOpen(false); trigger.current?.focus({ preventScroll: true }); }} />}
     </span>
   );
 }
