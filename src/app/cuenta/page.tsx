@@ -19,7 +19,21 @@ export default async function AccountPage() {
   const auth = await userClient(true);
   const { data: { user }, error } = await auth.auth.getUser();
   if (error || !user) redirect("/ingresar");
-  const profile = await auth.from("cueva_profiles").select("role").maybeSingle();
+  let profile = await auth.from("cueva_profiles").select("role").maybeSingle();
+  // A new user may have confirmed the email on another device, without
+  // completing the one-time callback. Complete only their own new enrollment.
+  if (!profile.error && !profile.data && cfg.selfRegistrationEnabled && user.email_confirmed_at) {
+    const enrollment = await auth.rpc("cueva_complete_self_registration");
+    if (enrollment.error || enrollment.data === "needs_review" || enrollment.data === "invalid") {
+      return <main className="shell"><h1>Tu registro está pendiente</h1>
+        <p>Tu correo está confirmado. Si ya existe una ficha con ese correo, el gimnasio debe verificar la vinculación. No hace falta solicitar otra invitación.</p>
+        <a href="/ingresar">Volver al ingreso</a>
+      </main>;
+    }
+    if (enrollment.data === "created") {
+      profile = await auth.from("cueva_profiles").select("role").maybeSingle();
+    }
+  }
   if (profile.error || !profile.data) return <main><h1>Acceso no disponible</h1></main>;
   if (profile.data.role !== "admin" && profile.data.role !== "alumno") return <main><h1>Acceso restringido</h1></main>;
   if (profile.data.role === "alumno") {
