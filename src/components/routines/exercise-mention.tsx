@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { ExerciseVideoDialog } from "@/components/routines/exercise-video-dialog";
 import { useEffect, useId, useRef, useState } from "react";
 
 type ExerciseMentionProps = {
@@ -13,6 +13,7 @@ type ExerciseMentionProps = {
 
 export function ExerciseMention({ exerciseId, name, description, videoAvailability, text }: ExerciseMentionProps) {
   const [open, setOpen] = useState(false);
+  const [playerOpen, setPlayerOpen] = useState(false);
   const instanceId = useId();
   const root = useRef<HTMLSpanElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -66,7 +67,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
         <span id={panelId} className="my-routine-mention-preview" role="dialog" aria-label={`Ejercicio: ${name}`}>
           <strong>{name}</strong>
           {description && <span>{description}</span>}
-          {videoAvailability === "available" ? <Link href="/ejercicios">Abrir catálogo de ejercicios</Link> : videoAvailability === "unavailable" ? <span role="status">Aún no se encuentra con video disponible</span> : <span role="status">No pudimos comprobar si hay un video disponible.</span>}
+          {videoAvailability === "available" ? <button type="button" className="my-routine-mention-play" onClick={() => { setOpen(false); setPlayerOpen(true); }}>Ver video</button> : videoAvailability === "unavailable" ? <span role="status">Aún no se encuentra con video disponible</span> : <span role="status">No pudimos comprobar si hay un video disponible.</span>}
         </span>
       )}
     </span>
