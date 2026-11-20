@@ -16,6 +16,7 @@ export const dynamic = "force-dynamic";
 const invitationLabels: Partial<Record<string, string>> = {
   blocked: "Pendiente de habilitar correo general",
   sent: "Enviada",
+  self_registered: "Registro personal confirmado",
   processing: "En proceso; revisar si no finaliza",
   review: "Requiere revisión antes de reenviar",
   failed: "No enviada; se puede reintentar",
@@ -100,7 +101,7 @@ function StudentProfile({ student, saved, invitationResult, invitationState, inv
         {["unavailable", "failed", "review"].includes(invitationResult) && <p role="status">Ficha guardada; la invitación no se confirmó. Consultá el estado antes de reintentar.</p>}
         <InvitationAction id={id} {...(invitationState ? { state: invitationState } : {})} />
         {recoveryResult === "enviada" && <p className="students-feedback" role="status">Se envió un enlace de recuperación al correo de esta ficha.</p>}
-        {!invitationError && invitationState === "sent" && invitationHasAccount && recoveryAllowed && (
+        {!invitationError && (invitationState === "sent" || invitationState === "self_registered") && invitationHasAccount && recoveryAllowed && (
           <details className="students-recovery">
             <summary>Recuperar acceso del alumno</summary>
             <p>Si el alumno olvidó su contraseña o no puede ingresar, podés enviarle un enlace de recuperación. Su sesión anterior dejará de tener acceso hasta que complete el proceso. Evitá repetir el envío si hay una solicitud pendiente.</p>
