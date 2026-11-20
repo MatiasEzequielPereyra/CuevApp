@@ -14,7 +14,7 @@ const config = () => ({ selfRegistrationEnabled: enabled, local: false });
 
 function load(path: string) {
   const { outputText } = ts.transpileModule(readFileSync(path, "utf8"), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
+    compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: false },
   });
   const exported = {} as Record<string, unknown>;
   new Function("require", "exports", outputText)((id: string) => {
