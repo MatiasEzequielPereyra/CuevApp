@@ -53,7 +53,11 @@ export function StudentPlan({ plan, videoIds, videosAvailable = true }: { plan: 
       const data: unknown = await response.json();
       if (controller.signal.aborted) return;
       if (!response.ok) {
-        setPlayback({ state: "error", message: data.message || "No pudimos cargar el video." });
+        const message = typeof data === "object" && data !== null && "message" in data &&
+          typeof data.message === "string" && data.message.trim()
+          ? data.message
+          : "No pudimos cargar el video.";
+        setPlayback({ state: "error", message });
         return;
       }
       const source = parseVideoSource(data);
