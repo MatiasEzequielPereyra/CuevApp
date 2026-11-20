@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { productConfig, userClient } from "@/lib/product-auth/server";
+import { completeSelfRegistration } from "@/lib/product-auth/self-registration";
 
 export const dynamic = "force-dynamic";
 
@@ -31,9 +32,8 @@ export async function GET(request: Request) {
       return redirect("/registrarse?estado=enlace-invalido");
     }
 
-    const enrollment = await auth.rpc("cueva_complete_self_registration");
-    if (enrollment.error) return redirect("/registro-pendiente");
-    if (enrollment.data === "created" || enrollment.data === "existing") {
+    const enrollment = await completeSelfRegistration(auth, verified.data.user.id);
+    if (enrollment === "created" || enrollment === "existing") {
       return redirect("/cuenta");
     }
     return redirect("/registro-pendiente");
