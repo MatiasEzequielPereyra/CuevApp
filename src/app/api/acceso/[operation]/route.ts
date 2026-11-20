@@ -56,6 +56,38 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
       return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
     } catch { return fail(503); }
   }
+  if (operation === "registrarse") {
+    if (!cfg.selfRegistrationEnabled || cfg.ownerOnly) return fail(404);
+    const first = String(form.get("first_name") ?? "").trim();
+    const last = String(form.get("last_name") ?? "").trim();
+    const email = String(form.get("email") ?? "").trim().toLowerCase();
+    const password = String(form.get("password") ?? "");
+    const confirmation = String(form.get("confirm_password") ?? "");
+    if (!first || first.length > 80 || !last || last.length > 80
+      || email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)
+      || password.length < 8 || password.length > 1024 || password !== confirmation) return fail(400);
+    try {
+      // Never use service_role for public sign-ups. Auth must send its own
+      // confirmation email; a provider configured for auto-confirm is refused.
+      const signup = createClient(cfg.url, cfg.key, {
+        ...(cfg.local ? { global: { fetch: localFetch(cfg) } } : {}),
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      });
+      const result = await signup.auth.signUp({
+        email, password,
+        options: {
+          emailRedirectTo: new URL("/confirmar-registro", cfg.origin).href,
+          data: { first_name: first, last_name: last, full_name: `${first} ${last}` },
+        },
+      });
+      if (result.error && result.error.code !== "user_already_exists") return fail(503);
+      if (result.data?.session) return fail(503);
+      // Do not reveal whether Auth already knows this email.
+      return NextResponse.redirect(new URL("/registrarse?estado=enviado", cfg.origin), {
+        status: 303, headers: { "Cache-Control": "no-store" },
+      });
+    } catch { return fail(503); }
+  }
   const auth = await userClient();
   const redirect = (path: string) => NextResponse.redirect(new URL(path, cfg.origin), { status: 303, headers: { "Cache-Control": "no-store" } });
   if (operation === "ingresar") {
