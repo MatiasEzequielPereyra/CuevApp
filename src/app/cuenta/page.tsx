@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { productConfig, userClient } from "@/lib/product-auth/server";
+import { completeSelfRegistration } from "@/lib/product-auth/self-registration";
 import { AdminDashboard } from "@/components/dashboard/admin-dashboard";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { ThemePicker } from "@/components/theme/theme-picker";
@@ -23,14 +24,14 @@ export default async function AccountPage() {
   // A new user may have confirmed the email on another device, without
   // completing the one-time callback. Complete only their own new enrollment.
   if (!profile.error && !profile.data && cfg.selfRegistrationEnabled && user.email_confirmed_at) {
-    const enrollment = await auth.rpc("cueva_complete_self_registration");
-    if (enrollment.error || enrollment.data === "needs_review" || enrollment.data === "invalid") {
+    const enrollment = await completeSelfRegistration(auth, user.id);
+    if (enrollment === "needs_review" || enrollment === "invalid" || enrollment === "error") {
       return <main className="shell"><h1>Tu registro está pendiente</h1>
         <p>Tu correo está confirmado. Si ya existe una ficha con ese correo, el gimnasio debe verificar la vinculación. No hace falta solicitar otra invitación.</p>
         <a href="/ingresar">Volver al ingreso</a>
       </main>;
     }
-    if (enrollment.data === "created") {
+    if (enrollment === "created") {
       profile = await auth.from("cueva_profiles").select("role").maybeSingle();
     }
   }
