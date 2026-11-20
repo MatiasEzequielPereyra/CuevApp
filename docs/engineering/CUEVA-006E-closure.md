@@ -1,8 +1,8 @@
 # CUEVA-006E — Preview y acceso a videos desde menciones
 
-**Estado:** implementación completa; aceptación final condicionada a CI del HEAD documentado abajo.  
+**Estado:** validación final completada en la rama; código funcional probado y documentación sincronizada.  
 **Rama:** `feature/cueva-006e-exercise-mention-preview`  
-**HEAD de trabajo:** `1d5727920d654da565c6f2ed7bc399e493ee9b39`  
+**HEAD de trabajo:** `84721676367f5aa593617bd642b01a06596c3cb3`  
 **Base sincronizada:** `main` en `e9dffe16de5ae76eb01eb24b4de490dd3e33b806`.
 
 ## Alcance entregado
@@ -42,13 +42,13 @@ Los workflows de validación fueron iniciados sobre los siguientes commits:
 
 | Control | Run | SHA |
 |---|---:|---|
-| Verify foundation | [44789586155](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44789586155) | `1d5727920d654da565c6f2ed7bc399e493ee9b39` |
+| Verify foundation | [44789734329](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44789734329) | `84721676367f5aa593617bd642b01a06596c3cb3` |
 | CUEVA-006E routine mentions E2E | [44789581834](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44789581834) | `1d5727920d654da565c6f2ed7bc399e493ee9b39` |
 | CUEVA-006E isolated checks | [44789575161](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44789575161) | `034d35900df05aa29289a3731ebd1c51cb18366a` |
 | Supabase local migrations (fresh / upgrade / hosted-compatible) | [44789562128](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44789562128) | `7aa65b35eb179a790eb11f4a63f330020c7d631e` |
 | Membership SQL / Receipt Storage | [44789028155](https://github.com/MatiasEzequielPereyra/CuevApp/actions/runs/44789028155) | `be9c2dda1bc5457cb54309f014fbdf60180e64ae` |
 
-No marcar los runs como aprobados hasta consultar sus conclusiones finales. Los cambios posteriores a cada SHA de validación son documentación o configuración de workflows; el código funcional y la suite de tests se mantienen iguales desde `7aa65b3`.
+Todos los runs citados finalizaron en `success`. Verify foundation se ejecutó sobre el HEAD actual e incluyó instalación de Chromium/WebKit, `npm run verify`, verificación de seguridad, auditorías de dependencias y controles adicionales. El E2E autenticado pasó sobre `1d572792`; el único commit entre ese SHA y el HEAD actual agrega este informe documental, sin modificar código, pruebas ni workflows. Las migraciones fresh/upgrade/hosted-compatible pasaron sobre `7aa65b3`; las migraciones no cambiaron después. Los controles aislados pasaron sobre `034d359`; el Verify foundation actual también ejecuta la suite agregada que incorpora la política de fuentes de video.
 
 ## Límites de cierre
 
