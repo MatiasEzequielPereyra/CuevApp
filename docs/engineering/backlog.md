@@ -2,10 +2,10 @@
 
 ## Estado vigente reconciliado — 2026-11-20
 
-- **CUEVA-006D:** PR #67 integrado en `main`; no está en Draft ni pendiente de merge. Ver [encargo y handoff](CUEVA-006D-task.md).
-- **CUEVA-006E:** preview de menciones de ejercicios y reproductor inline implementados en `feature/cueva-006e-exercise-mention-preview`; sincronización con el main actual realizada en `be9c2dda1bc5457cb54309f014fbdf60180e64ae`. La validación del merge HEAD debe finalizar antes de declarar aceptación. Ver [cierre técnico](CUEVA-006E-closure.md).
+- **CUEVA-006D:** PR #67 integrado en `main`; cerrado. Ver [encargo y handoff](CUEVA-006D-task.md).
+- **CUEVA-006E:** implementación terminada y PR #82 abierto contra `main`, en `feature/cueva-006e-exercise-mention-preview`. Los cinco workflows asociados al PR pasaron en HEAD `9807876c0ccf1bbf9ad5c6bcbee5c60213b417a0`; la reconciliación documental genera un nuevo HEAD cuyos checks deben confirmarse antes de integrar. No se ha mergeado ni desplegado a producción. Ver [PR #82](https://github.com/MatiasEzequielPereyra/CuevApp/pull/82) y [cierre técnico](CUEVA-006E-closure.md).
 - **CUEVA-PWA-INSTALL-001:** instalación guiada Android/iOS integrada en main mediante PR #80. La lectura offline de rutinas sigue siendo un alcance distinto y pendiente.
-- CUEVA-003B sigue cerrada. No reabrir Vencimientos ni modificar su baseline.
+- CUEVA-003B Vencimientos y CUEVA-006D permanecen cerradas. No reabrir ni alterar esos baselines.
 
 Esta sección supersede los estados anteriores de tracks que contradigan los incrementos y PR indicados; las secciones inferiores se conservan como historial.
 
