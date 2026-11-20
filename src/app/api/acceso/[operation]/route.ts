@@ -64,7 +64,7 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
     const password = String(form.get("password") ?? "");
     const confirmation = String(form.get("confirm_password") ?? "");
     if (!first || first.length > 80 || !last || last.length > 80
-      || email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)
+      || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
       || password.length < 8 || password.length > 1024 || password !== confirmation) return fail(400);
     try {
       // Never use service_role for public sign-ups. Auth must send its own
