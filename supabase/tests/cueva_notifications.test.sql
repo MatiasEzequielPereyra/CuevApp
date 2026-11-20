@@ -1,6 +1,15 @@
 begin;
 select plan(100);
 
+-- Anchor all future/past due-date fixtures to one Buenos Aires calendar day.
+-- This keeps worker-claim and lease tests valid after November 2026, without
+-- changing the worker's real rule: expired notifications cannot be dispatched.
+select set_config(
+  'test.cueva_today',
+  ((clock_timestamp() at time zone 'America/Argentina/Buenos_Aires')::date)::text,
+  true
+);
+
 -- Isolated fixtures: two students, two linked identities, one administrator.
 insert into auth.users(id,aud,role,email,created_at,updated_at)
 values
@@ -42,18 +51,18 @@ values ('b5000000-0000-4000-8000-000000000001',date '2026-11-01',10000,'b1000000
 
 insert into public.cueva_periods(id,student_id,month,due_on,cents,price_id,actor)
 values
- ('b6000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000001',date '2026-11-01',date '2026-11-20',10000,'b5000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001'),
- ('b6000000-0000-4000-8000-000000000002','b3000000-0000-4000-8000-000000000002',date '2026-11-01',date '2026-11-21',12000,'b5000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001'),
- ('b6000000-0000-4000-8000-000000000003','b3000000-0000-4000-8000-000000000002',date '2026-12-01',date '2026-12-20',12000,'b5000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001');
+ ('b6000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000001',date '2026-11-01',(current_setting('test.cueva_today')::date + 14),10000,'b5000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001'),
+ ('b6000000-0000-4000-8000-000000000002','b3000000-0000-4000-8000-000000000002',date '2026-11-01',(current_setting('test.cueva_today')::date + 15),12000,'b5000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001'),
+ ('b6000000-0000-4000-8000-000000000003','b3000000-0000-4000-8000-000000000002',date '2026-12-01',(current_setting('test.cueva_today')::date + 45),12000,'b5000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001');
 
 insert into public.cueva_payments(id,period_id,cents,paid_on,method,actor)
 values ('b7000000-0000-4000-8000-000000000001','b6000000-0000-4000-8000-000000000001',2500,date '2026-11-10','transferencia','b1000000-0000-4000-8000-000000000001');
 
 insert into public.cueva_notifications(id,period_id,reminder_days,due_on,scheduled_at)
 values
- ('b8000000-0000-4000-8000-000000000001','b6000000-0000-4000-8000-000000000001',5,date '2026-11-20',timestamptz '2026-11-15 12:00:00-03'),
- ('b8000000-0000-4000-8000-000000000002','b6000000-0000-4000-8000-000000000002',5,date '2026-11-21',timestamptz '2026-11-16 12:00:00-03'),
- ('b8000000-0000-4000-8000-000000000003','b6000000-0000-4000-8000-000000000003',5,date '2026-12-20',timestamptz '2026-12-15 12:00:00-03');
+ ('b8000000-0000-4000-8000-000000000001','b6000000-0000-4000-8000-000000000001',5,(current_setting('test.cueva_today')::date + 14),timestamptz '2026-11-15 12:00:00-03'),
+ ('b8000000-0000-4000-8000-000000000002','b6000000-0000-4000-8000-000000000002',5,(current_setting('test.cueva_today')::date + 15),timestamptz '2026-11-16 12:00:00-03'),
+ ('b8000000-0000-4000-8000-000000000003','b6000000-0000-4000-8000-000000000003',5,(current_setting('test.cueva_today')::date + 45),timestamptz '2026-12-15 12:00:00-03');
 
 insert into public.cueva_notification_deliveries(
  id,notification_id,channel,status,attempt_count,next_attempt_at,last_attempt_at,lease_token,lease_expires_at,provider_started_at
@@ -109,8 +118,8 @@ select is(public.cueva_update_notification_schedule(time '13:00'),time '13:00','
 reset role;
 select is((select send_time from public.cueva_notification_settings where singleton),time '13:00','new common send time is persisted');
 select is((select count(*)::integer from public.cueva_notification_audit where action='schedule_changed' and actor_id='b1000000-0000-4000-8000-000000000001'),1,'schedule change is audited with its actor');
-select is((select scheduled_at from public.cueva_notifications where id='b8000000-0000-4000-8000-000000000001'),timestamptz '2026-11-15 13:00:00-03','pending notification schedule follows the configured local time');
-select is((select next_attempt_at from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000001'),timestamptz '2026-11-15 13:00:00-03','unattempted delivery schedule is updated');
+select is((select scheduled_at from public.cueva_notifications where id='b8000000-0000-4000-8000-000000000001'),(((current_setting('test.cueva_today')::date + 9)::timestamp + time '13:00') at time zone 'America/Argentina/Buenos_Aires'),'pending notification schedule follows the configured local time');
+select is((select next_attempt_at from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000001'),(((current_setting('test.cueva_today')::date + 9)::timestamp + time '13:00') at time zone 'America/Argentina/Buenos_Aires'),'unattempted delivery schedule is updated');
 select is((select next_attempt_at from public.cueva_notification_deliveries where id='b9000000-0000-4000-8000-000000000002'),timestamptz '2026-11-15 12:15:00-03','delivery with a previous attempt keeps its retry schedule');
 
 reset role;
@@ -123,7 +132,7 @@ select results_eq(
 );
 
 reset role;
-select throws_ok($$insert into public.cueva_notifications(id,period_id,reminder_days,due_on,scheduled_at) values ('b8000000-0000-4000-8000-000000000003','b6000000-0000-4000-8000-000000000001',5,date '2026-11-20',now())$$,'23505',null,'logical notification identity is unique by period, type, and due date');
+select throws_ok($$insert into public.cueva_notifications(id,period_id,reminder_days,due_on,scheduled_at) values ('b8000000-0000-4000-8000-000000000003','b6000000-0000-4000-8000-000000000001',5,(current_setting('test.cueva_today')::date + 14),now())$$,'23505',null,'logical notification identity is unique by period, type, and due date');
 select throws_ok($$insert into public.cueva_notification_deliveries(id,notification_id,channel,status,attempt_count,next_attempt_at,lease_token) values ('b9000000-0000-4000-8000-000000000004','b8000000-0000-4000-8000-000000000002','push','processing',0,now(),gen_random_uuid())$$,'23514',null,'processing delivery requires both lease token and expiry');
 select throws_ok($$insert into public.cueva_notification_inbox(id,delivery_id,notification_id,student_id,user_id,title,body) values ('ba000000-0000-4000-8000-000000000002','b9000000-0000-4000-8000-000000000001','b8000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000002','b1000000-0000-4000-8000-000000000003','Wrong owner','Should fail')$$,'23514',null,'internal inbox enforces the delivery, student, and linked user relationship');
 
@@ -146,7 +155,7 @@ select ok(
 -- A provider-started email must remain reconcilable even if its parent was
 -- cancelled and the due date has since passed.
 update public.cueva_notifications
-set status = 'cancelled', cancellation_reason = 'cancelled_test', due_on = date '2026-11-10'
+set status = 'cancelled', cancellation_reason = 'cancelled_test', due_on = (current_setting('test.cueva_today')::date - 10)
 where id = 'b8000000-0000-4000-8000-000000000002';
 
 update public.cueva_notifications
@@ -364,7 +373,7 @@ select is((select started from public.cueva_mark_notification_delivery_started(
 )), true, 'active email lease can persist provider start');
 -- Cancellation/expiry after the provider-start marker cannot erase uncertainty.
 update public.cueva_notifications
-set status = 'cancelled', cancellation_reason = 'cancelled_test', due_on = date '2026-11-10'
+set status = 'cancelled', cancellation_reason = 'cancelled_test', due_on = (current_setting('test.cueva_today')::date - 10)
 where id = 'b8000000-0000-4000-8000-000000000001';
 select is((select delivery_status from public.cueva_finalize_notification_delivery(
   'b9000000-0000-4000-8000-000000000005',
@@ -682,7 +691,7 @@ insert into public.cueva_notifications(id,period_id,reminder_days,due_on,schedul
 values (
  'b8000000-0000-4000-8000-000000000004',
  'b6000000-0000-4000-8000-000000000003',
- 1,date '2026-12-20',clock_timestamp()
+ 1,(current_setting('test.cueva_today')::date + 45),clock_timestamp()
 );
 insert into public.cueva_notification_deliveries(
  id,notification_id,channel,status,attempt_count,next_attempt_at
@@ -805,7 +814,7 @@ insert into public.cueva_notifications(id,period_id,reminder_days,due_on,schedul
 values (
  'b8000000-0000-4000-8000-000000000005',
  'b6000000-0000-4000-8000-000000000002',
- 1,date '2026-11-21',clock_timestamp()
+ 1,(current_setting('test.cueva_today')::date + 15),clock_timestamp()
 );
 insert into public.cueva_notification_deliveries(
  id,notification_id,channel,status,attempt_count,next_attempt_at,lease_token,lease_expires_at
@@ -849,7 +858,7 @@ insert into public.cueva_notification_push_deliveries(
  clock_timestamp()+interval '5 minutes'
 );
 update public.cueva_periods
-set due_on = date '2026-12-22'
+set due_on = (current_setting('test.cueva_today')::date + 47)
 where id = 'b6000000-0000-4000-8000-000000000003';
 insert into public.cueva_payments(id,period_id,cents,paid_on,method,actor)
 values (
@@ -862,7 +871,7 @@ insert into public.cueva_notifications(id,period_id,reminder_days,due_on,schedul
 values (
  'b8000000-0000-4000-8000-000000000006',
  'b6000000-0000-4000-8000-000000000003',
- 1,date '2026-12-22',clock_timestamp()
+ 1,(current_setting('test.cueva_today')::date + 47),clock_timestamp()
 );
 insert into public.cueva_notification_deliveries(
  id,notification_id,channel,status,attempt_count,next_attempt_at,lease_token,lease_expires_at
