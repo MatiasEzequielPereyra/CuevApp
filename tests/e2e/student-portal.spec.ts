@@ -99,6 +99,9 @@ function loadStudentPage(path: string, role: "admin" | "alumno" = "admin") {
     "@/components/auth/password-change-form": { PasswordChangeForm },
     "@/components/auth/student-email-change-form": { StudentEmailChangeForm },
     "@/lib/payments/money": { pesos: (value: string) => value },
+    "@/lib/product-auth/self-registration": {
+      completeSelfRegistration: async () => { throw Error("Fixture must not enroll any synthetic account"); },
+    },
     "@/lib/product-auth/server": {
       productConfig: () => ({ ownerOnly: true }),
       userClient: async () => deniedClient(role),
