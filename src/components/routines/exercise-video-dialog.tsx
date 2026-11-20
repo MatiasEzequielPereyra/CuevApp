@@ -92,7 +92,7 @@ export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }:
         : <><iframe title={`Video de ${exerciseName}`} src={`https://www.youtube-nocookie.com/embed/${playback.source.id}?autoplay=1&playsinline=1`}
             allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen
             referrerPolicy="strict-origin-when-cross-origin"
-            onError={() => setPlayback({ state: "error", message: "No pudimos cargar el reproductor de YouTube.", url: youtubeUrl })} />
+            onError={() => setPlayback({ state: "error", message: "No pudimos cargar el reproductor de YouTube.", ...(youtubeUrl ? { url: youtubeUrl } : {}) })} />
           <a href={playback.source.url} target="_blank" rel="noopener noreferrer">Abrir en YouTube</a></>;
 
   return (
