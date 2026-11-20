@@ -2,13 +2,14 @@
 
 ## Estado vigente — 2026-11-20 · CUEVA-006E
 
-- CUEVA-006D / PR #67 está integrado en main; las referencias históricas que lo describen como Draft o pendiente quedan supersedidas por este estado.
-- CUEVA-006E continúa aislada en `feature/cueva-006e-exercise-mention-preview`. HEAD de código funcional validado: `d1c2bfb4868029308b017f71b79d37e9692abc30`; HEAD de rama al actualizar este checkpoint: `e22ce153b5b028f3a903b14d46133117a81c8dcc`; main: `e9dffe16de5ae76eb01eb24b4de490dd3e33b806`; comparación: 70 commits ahead, 0 behind. Los commits posteriores al HEAD funcional solo actualizan documentación y filtros de workflows.
-- La sincronización conserva los cambios de main de PR #80 (instalación PWA) y PR #81 (fixtures de notificaciones con fechas relativas), junto con la implementación de menciones/video. Para `supabase/tests/cueva_notifications.test.sql` se conserva la versión dinámica de #81.
-- Validación CI de código disponible: Verify foundation SUCCESS en run 44789734329 (SHA `84721676367f5aa593617bd642b01a06596c3cb3`); E2E de menciones SUCCESS en run 44789581834 (SHA `1d5727920d654da565c6f2ed7bc399e493ee9b39`); checks aislados SUCCESS en run 44789575161 (SHA `034d35900df05aa29289a3731ebd1c51cb18366a`); migraciones Supabase fresh/upgrade/hosted-compatible SUCCESS en run 44789562128 (SHA `7aa65b35eb179a790eb11f4a63f330020c7d631e`). Los cambios recientes de filtros de CI todavía requieren una corrida posterior para confirmar los disparadores actualizados.
-- No hay PR de 006E; no se integró a main, no se desplegó y no se aplicaron migraciones en Supabase hosted. CUEVA-003B permanece cerrada y CUEVA-005 no se reabrió.
-- Ver [cierre técnico CUEVA-006E](CUEVA-006E-closure.md) para alcance, migraciones, evidencia y límites.
-
+- CUEVA-006D / PR #67 está integrado en main y permanece cerrado.
+- CUEVA-006E está implementada en `feature/cueva-006e-exercise-mention-preview`; PR #82 abierto contra `main`, no Draft y mergeable en la última lectura. No está mergeado ni desplegado a producción.
+- HEAD de código validado por los cinco workflows asociados al PR: `9807876c0ccf1bbf9ad5c6bcbee5c60213b417a0`. Base `main`: `e9dffe16de5ae76eb01eb24b4de490dd3e33b806`. La reconciliación documental en curso cambia el HEAD; los checks del nuevo commit deben confirmarse antes de integración.
+- CI del PR #82: Verify foundation #1313, routine mentions E2E #25, isolated checks #15, Supabase local migrations #679 y Membership SQL #342; todos SUCCESS sobre el HEAD indicado. Ver [PR #82](https://github.com/MatiasEzequielPereyra/CuevApp/pull/82).
+- El Preview Vercel del PR fue reportado Ready; no equivale a publicación de producción.
+- La sincronización conserva PR #80 (instalación PWA) y PR #81 (fixtures de notificaciones con fechas relativas). Las migraciones de 006E se probaron localmente; no se aplicaron a Supabase hosted.
+- CUEVA-003B Vencimientos y CUEVA-006D permanecen cerradas. CUEVA-005 no se reabre.
+- Ver [cierre técnico CUEVA-006E](CUEVA-006E-closure.md) para alcance, migraciones, pruebas y límites.
 ## PR #67 — Correcciones P2 — REVIEW — 2026-11-19
 
 [Entrega vigente](pr67-corrections-20261119.md) sobre main
