@@ -15,6 +15,7 @@ export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }:
   const request = useRef<AbortController | null>(null);
   const titleId = useId();
   const [playback, setPlayback] = useState<Playback>({ state: "loading" });
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     const element = dialog.current;
@@ -54,7 +55,7 @@ export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }:
       controller.abort();
       request.current = null;
     };
-  }, [exerciseId, open]);
+  }, [exerciseId, open, retry]);
 
   function close() {
     request.current?.abort();
@@ -64,7 +65,7 @@ export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }:
   const media = playback.state === "loading"
     ? <p role="status">Cargando video…</p>
     : playback.state === "error"
-      ? <><p role="alert">{playback.message}</p><button type="button" onClick={() => { setPlayback({ state: "loading" }); request.current?.abort(); const event = new Event("retry"); dialog.current?.dispatchEvent(event); }}>Reintentar</button>{playback.url && <a href={playback.url} target="_blank" rel="noopener noreferrer">Abrir en YouTube</a>}</>
+      ? <><p role="alert">{playback.message}</p><button type="button" onClick={() => setRetry(value => value + 1)}>Reintentar</button>{playback.url && <a href={playback.url} target="_blank" rel="noopener noreferrer">Abrir en YouTube</a>}</>
       : playback.source.kind === "storage"
         ? <video controls autoPlay playsInline preload="metadata" aria-label={exerciseName} src={playback.source.src}
             onError={() => setPlayback({ state: "error", message: "No pudimos reproducir el video." })} />
