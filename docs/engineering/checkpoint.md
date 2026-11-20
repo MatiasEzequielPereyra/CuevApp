@@ -3,11 +3,11 @@
 ## Estado vigente — 2026-11-20 · CUEVA-006E
 
 - CUEVA-006D / PR #67 está integrado en main; las referencias históricas que lo describen como Draft o pendiente quedan supersedidas por este estado.
-- CUEVA-006E continúa aislada en `feature/cueva-006e-exercise-mention-preview`. HEAD sincronizado: `be9c2dda1bc5457cb54309f014fbdf60180e64ae`; main: `e9dffe16de5ae76eb01eb24b4de490dd3e33b806`; comparación: 55 commits ahead, 0 behind.
-- La sincronización conserva la implementación de menciones/video y suma los cambios de main de PR #80 (instalación PWA) y PR #81 (fixtures de notificaciones con fechas relativas). Para `supabase/tests/cueva_notifications.test.sql` se conserva la versión dinámica de #81, que reemplaza el fixture puntual de 006E sin debilitar restricciones ni lógica de producción.
-- Validación sobre el merge HEAD: Verify foundation run 44789028288; Membership SQL run 44789028155; Supabase local migrations run 44789028172. Consultar su estado real en Actions; no atribuir PASS hasta que concluyan. Los workflows focalizados de 006E deben confirmarse por separado.
-- Sin PR de 006E, sin merge a main, sin deploy y sin migraciones en Supabase hosted. CUEVA-003B permanece cerrada y fuera de alcance.
-- Ver [cierre técnico CUEVA-006E](CUEVA-006E-closure.md) para alcance, migraciones, evidencia y pendientes.
+- CUEVA-006E continúa aislada en `feature/cueva-006e-exercise-mention-preview`. HEAD actual: `d1c2bfb4868029308b017f71b79d37e9692abc30`; main: `e9dffe16de5ae76eb01eb24b4de490dd3e33b806`; comparación: 66 commits ahead, 0 behind.
+- La sincronización conserva los cambios de main de PR #80 (instalación PWA) y PR #81 (fixtures de notificaciones con fechas relativas), junto con la implementación de menciones/video. Para `supabase/tests/cueva_notifications.test.sql` se conserva la versión dinámica de #81.
+- Validación CI disponible: Verify foundation SUCCESS en run 44789734329 (SHA `84721676367f5aa593617bd642b01a06596c3cb3`); E2E de menciones SUCCESS en run 44789581834 (SHA `1d5727920d654da565c6f2ed7bc399e493ee9b39`); checks aislados SUCCESS en run 44789575161 (SHA `034d35900df05aa29289a3731ebd1c51cb18366a`); migraciones Supabase fresh/upgrade/hosted-compatible SUCCESS en run 44789562128 (SHA `7aa65b35eb179a790eb11f4a63f330020c7d631e`). El commit HEAD posterior solo actualiza evidencia documental.
+- No hay PR de 006E; no se integró a main, no se desplegó y no se aplicaron migraciones en Supabase hosted. CUEVA-003B permanece cerrada y CUEVA-005 no se reabrió.
+- Ver [cierre técnico CUEVA-006E](CUEVA-006E-closure.md) para alcance, migraciones, evidencia y límites.
 
 ## PR #67 — Correcciones P2 — REVIEW — 2026-11-19
 
