@@ -149,8 +149,12 @@ update public.cueva_notifications
 set status = 'cancelled', cancellation_reason = 'cancelled_test', due_on = date '2026-11-10'
 where id = 'b8000000-0000-4000-8000-000000000002';
 
+-- The worker claim/retry scenario tests dispatch mechanics, not the due-date
+-- cutoff. Keep its notification future-dated relative to the CI clock so the
+-- fixture remains valid on every run date.
 update public.cueva_notifications
-set scheduled_at = clock_timestamp()
+set due_on = (clock_timestamp() at time zone 'America/Argentina/Buenos_Aires')::date + 30,
+    scheduled_at = clock_timestamp()
 where id = 'b8000000-0000-4000-8000-000000000001';
 update public.cueva_notification_deliveries
 set next_attempt_at = clock_timestamp()
