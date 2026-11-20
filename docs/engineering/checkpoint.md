@@ -10,6 +10,7 @@
 - La sincronización conserva PR #80 (instalación PWA) y PR #81 (fixtures de notificaciones con fechas relativas). Las migraciones de 006E se probaron localmente; no se aplicaron a Supabase hosted.
 - CUEVA-003B Vencimientos y CUEVA-006D permanecen cerradas. CUEVA-005 no se reabre.
 - Ver [cierre técnico CUEVA-006E](CUEVA-006E-closure.md) para alcance, migraciones, pruebas y límites.
+
 ## PR #67 — Correcciones P2 — REVIEW — 2026-11-19
 
 [Entrega vigente](pr67-corrections-20261119.md) sobre main
