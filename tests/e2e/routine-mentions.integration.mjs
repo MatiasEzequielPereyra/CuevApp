@@ -47,6 +47,10 @@ try {
   await editor.getByRole("button", {name:"Texto libre"}).click();
   await editor.getByRole("textbox", {name:"Rutina en texto libre"}).fill(`🙂 @${exerciseName}`);
   await editor.getByRole("option", {name:exerciseName}).click();
+  const highlightedMention = editor.locator(".routine-text-mention-highlight");
+  await expect(highlightedMention).toHaveText(exerciseName);
+  await expect(highlightedMention).toHaveCSS("font-weight", "750");
+  await expect(highlightedMention).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(editor.getByText("Borrador guardado", {exact:true})).toBeVisible();
   const {rows:[draft]} = await db.query("select revision,text_content,mentions from public.cueva_routine_text_drafts where kind='draft' and owner_id=$1", [studentId]);
   assert.equal(draft.text_content,`🙂 ${exerciseName}`);
