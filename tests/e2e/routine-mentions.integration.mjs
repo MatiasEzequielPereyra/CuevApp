@@ -85,7 +85,21 @@ try {
   await pupil.locator("h1").click();
   await expect(preview).toHaveCount(0);
   await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
-  console.log("PASS: real isolated Auth → textarea emoji mention → API → PostgreSQL code-point snapshot → explicit publication → linked learner highlight.");
+
+  // A linked exercise with a confirmed video must launch the in-routine player.
+  await db.query("update public.cueva_exercises set video_url='https://www.youtube.com/watch?v=dQw4w9WgXcQ' where id=$1", [exerciseId]);
+  await pupil.reload();
+  await mention.hover();
+  await expect(preview.getByRole("button", {name:"Ver video"})).toBeVisible();
+  await preview.getByRole("button", {name:"Ver video"}).click();
+  const player = pupil.getByRole("dialog", {name:exerciseName});
+  await expect(player).toBeVisible();
+  await expect(player.locator("iframe")).toHaveAttribute("src", /youtube-nocookie.com\/embed\/dQw4w9WgXcQ/);
+  await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
+  await player.getByRole("button", {name:"Cerrar"}).click();
+  await expect(player).toHaveCount(0);
+  await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
+  console.log("PASS: authenticated text mention preview, no-video state, inline video playback, keyboard dismissal and no navigation.");
 } finally {
   await browser?.close();
   // Immutable synthetic publications are removed with this disposable stack.
