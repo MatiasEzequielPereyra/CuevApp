@@ -11,7 +11,11 @@ test("accepts HTTPS Supabase Storage signed URLs", () => {
   });
 });
 
-test("accepts loopback HTTP Storage URLs only for the isolated local lab", () => {\n  assert.equal(parseVideoSource({ kind: "storage", src: "http://127.0.0.1:55424/storage/v1/object/sign/videos/a.mp4?token=local" })?.kind, "storage");\n});\n\ntest("rejects non-HTTPS remote, malformed and credential-bearing storage URLs", () => {
+test("accepts loopback HTTP Storage URLs only for the isolated local lab", () => {
+  assert.equal(parseVideoSource({ kind: "storage", src: "http://127.0.0.1:55424/storage/v1/object/sign/videos/a.mp4?token=local" })?.kind, "storage");
+});
+
+test("rejects non-HTTPS remote, malformed and credential-bearing storage URLs", () => {
   for (const src of ["http://localhost:54321/video.mp4", "http://192.168.1.5/video.mp4", "javascript:alert(1)", "https://user:pass@example.com/video.mp4", "not a url"]) {
     assert.equal(parseVideoSource({ kind: "storage", src }), null, src);
   }
@@ -35,7 +39,8 @@ test("rejects malformed YouTube IDs, mismatched URLs, unsafe hosts and extra URL
     { kind: "youtube", id, url: `https://youtu.be/${id}?autoplay=1` },
     { kind: "youtube", id, url: `https://youtu.be/${id}#fragment` },
     { kind: "youtube", id, url: `https://user@youtu.be/${id}` },
-    { kind: "youtube", id, url: `https://www.youtube.com/watch?v=${id}&redirect=evil` },\n    { kind: "youtube", id, url: `https://www.youtube.com/watch?v=${id}&v=${id}` },
+    { kind: "youtube", id, url: `https://www.youtube.com/watch?v=${id}&redirect=evil` },
+    { kind: "youtube", id, url: `https://www.youtube.com/watch?v=${id}&v=${id}` },
   ];
   for (const value of invalid) assert.equal(parseVideoSource(value), null);
 });
