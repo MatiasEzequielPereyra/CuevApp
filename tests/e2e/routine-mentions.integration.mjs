@@ -57,10 +57,34 @@ try {
   await pupilContext.addCookies(learner.cookies);
   const pupil = await pupilContext.newPage();
   await pupil.goto(`${origin}/mi-rutina`);
-  await expect(pupil.locator(".my-routine-mention")).toHaveText(exerciseName);
+  const mention = pupil.locator(".my-routine-mention");
+  await expect(mention).toHaveText(exerciseName);
   await expect(pupil.locator(".my-routine-notes")).toContainText(`🙂 ${exerciseName}`);
   await expect(pupil.getByRole("heading", {name:"Ejercicios mencionados"})).toBeVisible();
   await expect(pupil.getByRole("group", {name:"Día de entrenamiento"})).toHaveCount(0);
+
+  // The preview is intentionally a compact inline disclosure: it must not
+  // navigate away from the routine when a referenced exercise has no video.
+  await mention.hover();
+  const preview = pupil.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`});
+  await expect(preview.getByText(exerciseName, {exact:true})).toBeVisible();
+  await expect(preview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
+  await expect(preview.getByRole("link")).toHaveCount(0);
+  await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
+  await pupil.locator("h1").click();
+  await expect(preview).toHaveCount(0);
+
+  await mention.focus();
+  await expect(preview).toBeVisible();
+  await pupil.keyboard.press("Escape");
+  await expect(preview).toHaveCount(0);
+  await expect(mention).toBeFocused();
+
+  await mention.click();
+  await expect(preview).toBeVisible();
+  await pupil.locator("h1").click();
+  await expect(preview).toHaveCount(0);
+  await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
   console.log("PASS: real isolated Auth → textarea emoji mention → API → PostgreSQL code-point snapshot → explicit publication → linked learner highlight.");
 } finally {
   await browser?.close();
