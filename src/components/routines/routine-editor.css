@@ -312,6 +312,7 @@
   width: 100%;
   min-height: 260px;
   resize: vertical;
+  font: inherit;
   line-height: 1.55;
   white-space: pre-wrap;
   background: transparent;
