@@ -1,5 +1,14 @@
 # Backlog de CUEVA
 
+## Estado vigente reconciliado — 2026-11-20
+
+- **CUEVA-006D:** PR #67 integrado en `main`; no está en Draft ni pendiente de merge. Ver [encargo y handoff](CUEVA-006D-task.md).
+- **CUEVA-006E:** preview de menciones de ejercicios y reproductor inline implementados en `feature/cueva-006e-exercise-mention-preview`; sincronización con el main actual realizada en `be9c2dda1bc5457cb54309f014fbdf60180e64ae`. La validación del merge HEAD debe finalizar antes de declarar aceptación. Ver [cierre técnico](CUEVA-006E-closure.md).
+- **CUEVA-PWA-INSTALL-001:** instalación guiada Android/iOS integrada en main mediante PR #80. La lectura offline de rutinas sigue siendo un alcance distinto y pendiente.
+- CUEVA-003B sigue cerrada. No reabrir Vencimientos ni modificar su baseline.
+
+Esta sección supersede los estados anteriores de tracks que contradigan los incrementos y PR indicados; las secciones inferiores se conservan como historial.
+
 ## Estado vigente reconciliado — 2026-11-17
 
 - El portal del alumno, Mi Membresía, comprobantes, Vencimientos y Pagos están
