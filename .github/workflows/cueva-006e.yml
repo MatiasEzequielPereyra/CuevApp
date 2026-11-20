@@ -5,17 +5,29 @@ on:
     branches:
       - feature/cueva-006e-exercise-mention-preview
     paths:
+      - "src/app/mi-rutina/page.tsx"
+      - "src/app/mi-rutina/mi-rutina.css"
       - "src/components/routines/exercise-mention.tsx"
+      - "src/components/routines/student-plan.tsx"
       - "src/lib/routines/mention-video-availability.ts"
       - "src/lib/routines/mentions.ts"
+      - "supabase/migrations/20261119130000_cueva_mention_video_availability.sql"
       - "tests/routine-mentions.test.mjs"
+      - "tests/e2e/routine-mentions.integration.mjs"
+      - "tests/e2e/mi-rutina.integration.mjs"
       - ".github/workflows/cueva-006e.yml"
   pull_request:
     paths:
+      - "src/app/mi-rutina/page.tsx"
+      - "src/app/mi-rutina/mi-rutina.css"
       - "src/components/routines/exercise-mention.tsx"
+      - "src/components/routines/student-plan.tsx"
       - "src/lib/routines/mention-video-availability.ts"
       - "src/lib/routines/mentions.ts"
+      - "supabase/migrations/20261119130000_cueva_mention_video_availability.sql"
       - "tests/routine-mentions.test.mjs"
+      - "tests/e2e/routine-mentions.integration.mjs"
+      - "tests/e2e/mi-rutina.integration.mjs"
       - ".github/workflows/cueva-006e.yml"
 
 permissions:
