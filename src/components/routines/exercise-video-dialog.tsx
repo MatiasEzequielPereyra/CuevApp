@@ -5,6 +5,17 @@ import { useEffect, useId, useRef, useState } from "react";
 type VideoSource = { kind: "storage"; src: string } | { kind: "youtube"; id: string; url: string };
 type Playback = { state: "loading" } | { state: "ready"; source: VideoSource } | { state: "error"; message: string; url?: string };
 
+function isVideoSource(value: unknown): value is VideoSource {
+  if (!value || typeof value !== "object") return false;
+  const source = value as Record<string, unknown>;
+  if (source.kind === "storage") return typeof source.src === "string" && source.src.startsWith("https://");
+  return source.kind === "youtube"
+    && typeof source.id === "string"
+    && /^[A-Za-z0-9_-]{11}$/.test(source.id)
+    && typeof source.url === "string"
+    && /^https:\/\/(www\.)?(youtube\.com\/(watch\?v=|shorts\/|embed\/)|youtu\.be\/)[A-Za-z0-9_-]{11}$/.test(source.url);
+}
+
 export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }: {
   exerciseId: string;
   exerciseName: string;
@@ -29,24 +40,25 @@ export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }:
     const controller = new AbortController();
     request.current?.abort();
     request.current = controller;
-    setPlayback({ state: "loading" });
     void (async () => {
       try {
         const response = await fetch(`/api/ejercicios/video?id=${encodeURIComponent(exerciseId)}&player=1`, {
           signal: AbortSignal.any([controller.signal, AbortSignal.timeout(12000)]),
           cache: "no-store",
         });
-        const data = await response.json();
+        const data: unknown = await response.json();
         if (controller.signal.aborted) return;
         if (!response.ok) {
-          setPlayback({ state: "error", message: data.message || "No pudimos cargar el video." });
+          const message = data && typeof data === "object" && "message" in data && typeof data.message === "string"
+            ? data.message : "No pudimos cargar el video.";
+          setPlayback({ state: "error", message });
           return;
         }
-        if (data?.kind !== "storage" && data?.kind !== "youtube") {
+        if (!isVideoSource(data)) {
           setPlayback({ state: "error", message: "El recurso de video no tiene un formato válido." });
           return;
         }
-        setPlayback({ state: "ready", source: data as VideoSource });
+        setPlayback({ state: "ready", source: data });
       } catch {
         if (!controller.signal.aborted) setPlayback({ state: "error", message: "No pudimos cargar el video. Intentá nuevamente." });
       }
@@ -57,6 +69,11 @@ export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }:
     };
   }, [exerciseId, open, retry]);
 
+  function retryPlayback() {
+    setPlayback({ state: "loading" });
+    setRetry(value => value + 1);
+  }
+
   function close() {
     request.current?.abort();
     onClose();
@@ -65,7 +82,7 @@ export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }:
   const media = playback.state === "loading"
     ? <p role="status">Cargando video…</p>
     : playback.state === "error"
-      ? <><p role="alert">{playback.message}</p><button type="button" onClick={() => setRetry(value => value + 1)}>Reintentar</button>{playback.url && <a href={playback.url} target="_blank" rel="noopener noreferrer">Abrir en YouTube</a>}</>
+      ? <><p role="alert">{playback.message}</p><button type="button" onClick={retryPlayback}>Reintentar</button>{playback.url && <a href={playback.url} target="_blank" rel="noopener noreferrer">Abrir en YouTube</a>}</>
       : playback.source.kind === "storage"
         ? <video controls autoPlay playsInline preload="metadata" aria-label={exerciseName} src={playback.source.src}
             onError={() => setPlayback({ state: "error", message: "No pudimos reproducir el video." })} />
