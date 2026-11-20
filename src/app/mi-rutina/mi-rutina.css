@@ -338,3 +338,30 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+
+.my-routine-mention-preview > button.my-routine-mention-play {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 5px 10px;
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  background: var(--dash-accent-soft);
+  color: var(--dash-accent);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.my-routine-dialog > header > button {
+  min-height: 40px;
+  padding: 7px 12px;
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  background: var(--dash-panel-alt);
+  color: var(--dash-text);
+  font: inherit;
+  cursor: pointer;
+}
