@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { Manrope } from "next/font/google";
 import { THEME_BOOTSTRAP } from "@/lib/theme";
 import "./globals.css";
+
+const manrope = Manrope({ subsets: ["latin"], display: "swap", variable: "--font-cueva-manrope" });
 
 export const metadata: Metadata = {
   title: "CUEVA · Un lugar para avanzar",
@@ -12,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es-AR" suppressHydrationWarning>
+    <html lang="es-AR" className={manrope.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
       </head>

@@ -1,0 +1,98 @@
+/* Student-only account menu. The native auto popover supplies outside-click and Escape dismissal. */
+.student-account {
+  margin-inline-start: auto;
+  flex: none;
+}
+
+.student-account-trigger {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+  background: var(--dash-panel-alt);
+  color: var(--dash-text);
+  cursor: pointer;
+}
+
+.student-account-trigger:hover,
+.student-account-trigger:active {
+  color: var(--dash-accent);
+  background: var(--dash-accent-soft);
+}
+
+.student-account-popover {
+  position: fixed;
+  inset: calc((var(--student-topbar-height, 70px) + 44px) / 2 + 8px)
+    max(clamp(16px, 4vw, 38px), calc((100vw - 1120px) / 2 + clamp(16px, 4vw, 38px)))
+    auto auto;
+  width: 214px;
+  max-width: calc(100vw - 32px);
+  margin: 0;
+  padding: 9px;
+  border: 1px solid var(--dash-border);
+  border-radius: 14px;
+  background: var(--dash-panel);
+  color: var(--dash-text);
+  box-shadow: 0 12px 30px rgb(0 0 0 / .2);
+}
+
+.student-account-popover:popover-open {
+  display: grid;
+  gap: 8px;
+}
+
+.student-account-actions,
+.student-account-themes {
+  display: grid;
+  gap: 6px;
+}
+
+.student-account-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.student-account-actions form { min-width: 0; margin: 0; }
+.student-account-themes {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding-top: 9px;
+  border-top: 1px solid var(--dash-border);
+}
+
+.student-account-popover :is(a, button) {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 8px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--dash-text);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.student-account-popover :is(a, button):hover,
+.student-account-popover a[aria-current="page"],
+.student-account-popover button[aria-pressed="true"] {
+  background: var(--dash-accent-soft);
+  color: var(--dash-accent);
+}
+
+/* Dangerous action: only sign-out turns red on hover and keyboard focus. */
+.student-account-popover .student-account-signout:is(:hover, :focus-visible) {
+  background: #fee7e7;
+  color: #b91c1c;
+}
+:root[data-theme="dark"] .student-account-popover .student-account-signout:is(:hover, :focus-visible) {
+  background: #47242b;
+  color: #ffa9b6;
+}
+
+.student-account-trigger .student-icon { width: 23px; height: 23px; }
+.student-account-popover .student-icon { width: 22px; height: 22px; }
+
+@media (max-width: 840px) {
+  .student-account-popover { --student-topbar-height: 60px; }
+}

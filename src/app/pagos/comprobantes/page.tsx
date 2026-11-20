@@ -1,4 +1,5 @@
 import Link from "next/link";
+import "./comprobantes.css";
 import { AdminShell } from "@/components/dashboard/admin-dashboard";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { ThemePicker } from "@/components/theme/theme-picker";
@@ -33,30 +34,65 @@ export default async function ReceiptQueue({ searchParams }: { searchParams: Pro
   const rows = (data ?? []) as unknown as QueueEntry[];
   const pageLink = (index: number) => `/pagos/comprobantes?estado=${resolved ? "resueltos" : "pendientes"}&desde=${index}`;
   return <AdminShell displayName={user.email ?? "Cuenta CUEVA"} email={user.email ?? ""} role="Administrador"
-    logo={<BrandMark size={42}/>} themePicker={<ThemePicker/>} active="comprobantes">
-    <Link href="/pagos">Volver a Pagos y cuotas</Link>
-    <h1>Comprobantes de pago</h1>
-    <nav className="routine-actions" aria-label="Estado de comprobantes">
-      <Link href="/pagos/comprobantes" aria-current={!resolved ? "page" : undefined}>Pendientes</Link>
-      <Link href="/pagos/comprobantes?estado=resueltos" aria-current={resolved ? "page" : undefined}>Resueltos</Link>
-    </nav>
-    {error ? <p>No pudimos cargar los comprobantes. <Link href={pageLink(offset)}>Reintentar</Link></p> : <>
-      {!rows.length && <p>{resolved ? "Todavía no hay comprobantes resueltos." : "No hay comprobantes pendientes."}</p>}
-      <div className="membership-history">
-        {rows.slice(0, pageSize).map(row => <section key={row.id} className="membership-card">
-          <h2>{row.student.first_name} {row.student.last_name}</h2>
-          <p>Período {row.period.month.slice(0, 7)} · {receiptState[row.state]}</p>
-          <p>Presentado el <time dateTime={row.submitted_at}>{submittedDate.format(new Date(row.submitted_at))}</time></p>
-          {row.resolved_at && <p>Resuelto el <time dateTime={row.resolved_at}>{submittedDate.format(new Date(row.resolved_at))}</time></p>}
-          {row.rejection_reason && <p>Motivo del rechazo: {row.rejection_reason}</p>}
-          <a href={`/api/comprobantes?id=${row.id}`} target="_blank" rel="noopener noreferrer">Abrir comprobante</a>
-          {row.state === "pending" && <details><summary>Revisar comprobante</summary><ReceiptReview id={row.id} today={buenosAiresDate()}/></details>}
-        </section>)}
-      </div>
-      <nav className="routine-actions" aria-label="Páginas de comprobantes">
-        {offset > 0 && <Link href={pageLink(Math.max(0, offset - pageSize))}>Página anterior</Link>}
-        {rows.length > pageSize && <Link href={pageLink(offset + pageSize)}>Página siguiente</Link>}
-      </nav>
-    </>}
+    logo={<BrandMark size={42} />} themePicker={<ThemePicker />} active="comprobantes">
+    <div className="receipts-page">
+      <header className="receipts-header">
+        <Link href="/pagos" className="receipts-back receipts-control">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg>
+          Volver a Pagos y cuotas
+        </Link>
+        <div className="receipts-heading">
+          <span className="receipts-kicker">ADMINISTRACIÓN DE PAGOS</span>
+          <h1>Comprobantes de pago</h1>
+          <p>Consultá los comprobantes enviados por los alumnos y revisá cada presentación.</p>
+        </div>
+        <nav className="receipts-tabs" aria-label="Estado de comprobantes">
+          <Link className="receipts-tab" href="/pagos/comprobantes" aria-current={!resolved ? "page" : undefined}>Pendientes</Link>
+          <Link className="receipts-tab" href="/pagos/comprobantes?estado=resueltos" aria-current={resolved ? "page" : undefined}>Resueltos</Link>
+        </nav>
+      </header>
+
+      {error ? <section className="receipts-message" role="alert">
+        <p>No pudimos cargar los comprobantes.</p>
+        <Link className="receipts-control" href={pageLink(offset)}>Reintentar</Link>
+      </section> : <>
+        {!rows.length && <section className="receipts-message"><p>{resolved ? "Todavía no hay comprobantes resueltos." : "No hay comprobantes pendientes."}</p></section>}
+        {rows.length > 0 && <div className="receipts-list">
+          {rows.slice(0, pageSize).map(row => <article key={row.id} className="receipts-card">
+            <div className="receipts-card-header">
+              <div className="receipts-card-identity">
+                <h2>{row.student.first_name} {row.student.last_name}</h2>
+                <p>Período {row.period.month.slice(0, 7)}</p>
+              </div>
+              <span className="receipts-status" data-state={row.state}>{receiptState[row.state]}</span>
+            </div>
+            <div className="receipts-card-meta">
+              <p>Presentado el <time dateTime={row.submitted_at}>{submittedDate.format(new Date(row.submitted_at))}</time></p>
+              {row.resolved_at && <p>Resuelto el <time dateTime={row.resolved_at}>{submittedDate.format(new Date(row.resolved_at))}</time></p>}
+              {row.rejection_reason && <p>Motivo del rechazo: {row.rejection_reason}</p>}
+            </div>
+            <div className="receipts-card-actions">
+              <a className="receipts-action receipts-action-secondary" href={"/api/comprobantes?id=" + row.id}
+                target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-3M13 3h8v8m0-8L10 14"/></svg>
+                Abrir comprobante
+                <span className="receipts-sr-only"> (se abre en una pestaña nueva)</span>
+              </a>
+              {row.state === "pending" && <details className="receipts-review">
+                <summary className="receipts-action receipts-action-primary">
+                  Revisar comprobante
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                </summary>
+                <div className="receipts-review-panel"><ReceiptReview id={row.id} today={buenosAiresDate()}/></div>
+              </details>}
+            </div>
+          </article>)}
+        </div>}
+        {(offset > 0 || rows.length > pageSize) && <nav className="receipts-pagination" aria-label="Páginas de comprobantes">
+          {offset > 0 && <Link className="receipts-control" href={pageLink(Math.max(0, offset - pageSize))}>Página anterior</Link>}
+          {rows.length > pageSize && <Link className="receipts-control" href={pageLink(offset + pageSize)}>Página siguiente</Link>}
+        </nav>}
+      </>}
+    </div>
   </AdminShell>;
 }

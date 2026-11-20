@@ -40,7 +40,7 @@ const shell = loadExport("src/components/routines/student-shell.tsx", {
   "./student-icon": { StudentIcon },
   "next/link": { default: link },
   "@/components/brand/brand-mark": { BrandMark: () => "CUEVA" },
-  "@/components/theme/theme-picker": { ThemePicker: () => null },
+  "./student-account-menu": { StudentAccountMenu: () => React.createElement("button", { type: "button", "aria-label": "Opciones de cuenta" }) },
 });
 const upload = loadExport("src/components/receipts/receipt-upload.tsx", {
   "next/navigation": { useRouter: () => ({ refresh: () => undefined }) },

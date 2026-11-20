@@ -1,17 +1,17 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand/brand-mark";
-import { ThemePicker } from "@/components/theme/theme-picker";
+import { StudentAccountMenu } from "./student-account-menu";
 import { StudentIcon, type StudentIconName } from "./student-icon";
 
 type StudentSection = "cuenta" | "rutina" | "membresia" | "notificaciones" | "perfil";
 
 const navigation: { href: string; label: string; name?: string; section: StudentSection; icon: StudentIconName }[] = [
-  { href: "/cuenta", label: "Inicio", section: "cuenta", icon: "home" },
   { href: "/mi-rutina", label: "Rutina", name: "Rutina de entrenamiento", section: "rutina", icon: "dumbbell" },
   { href: "/mi-membresia", label: "Cuotas", name: "Cuotas · Mi Membresía", section: "membresia", icon: "wallet" },
+  { href: "/cuenta", label: "Inicio", section: "cuenta", icon: "home" },
   { href: "/notificaciones", label: "Avisos", name: "Avisos y notificaciones", section: "notificaciones", icon: "bell" },
-  { href: "/mi-perfil", label: "Perfil", name: "Mi perfil", section: "perfil", icon: "user" },
+  { href: "/mi-perfil", label: "Mi cuenta", section: "perfil", icon: "user" },
 ];
 
 export function StudentPageHeading({ title, children }: { title: string; children?: ReactNode }) {
@@ -35,22 +35,21 @@ export function StudentShell({ children, active = "cuenta" }: { children: ReactN
           <nav className="student-routine-nav" aria-label="Navegación del alumno">
             {navigation.map(item => (
               <Link key={item.section} href={item.href} aria-label={item.name}
+                className={item.section === "cuenta" ? "student-mobile-home" : item.section === "perfil" ? "student-mobile-profile" : undefined}
                 aria-current={active === item.section ? "page" : undefined}>
                 <span className="student-nav-icon"><StudentIcon name={item.icon} /></span>
+                {item.section === "cuenta" && (
+                  <span className="student-home-brand" aria-hidden="true"><BrandMark size={54} decorative /></span>
+                )}
                 <span>{item.label}</span>
               </Link>
             ))}
           </nav>
-          <ThemePicker />
+          <StudentAccountMenu profileActive={active === "perfil"} />
         </div>
       </header>
       <main className="dash-main student-main" id="contenido" tabIndex={-1}>
         {children}
-        {active === "perfil" && (
-          <form className="student-signout" method="post" action="/api/acceso/salir">
-            <button className="dash-signout" type="submit">Cerrar sesión</button>
-          </form>
-        )}
       </main>
     </div>
   );

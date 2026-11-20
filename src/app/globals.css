@@ -28,7 +28,7 @@
 
 * { box-sizing: border-box; }
 html { scroll-padding-top: 24px; }
-body { margin: 0; background: var(--background); color: var(--text); font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing: antialiased; }
+body { margin: 0; background: var(--background); color: var(--text); font-family: var(--font-cueva-manrope, Arial), Helvetica, sans-serif; -webkit-font-smoothing: antialiased; }
 a { color: inherit; }
 button { font: inherit; }
 ::selection { color: var(--background); background: var(--text); }
@@ -676,6 +676,9 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
   --student-waiting-bg: #fff0d7;
   --student-negative-text: #a22e42;
   --student-negative-bg: #fce7eb;
+  --student-action-bg: #5955ed;
+  --student-action-hover: #4943d7;
+  --student-action-ink: #fff;
   display: block;
   min-height: 100dvh;
 }
@@ -686,6 +689,9 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
   --student-waiting-bg: #3e2e20;
   --student-negative-text: #ffc0c9;
   --student-negative-bg: #442631;
+  --student-action-bg: #aaa7ff;
+  --student-action-hover: #ceccff;
+  --student-action-ink: #15151c;
 }
 .student-topbar {
   position: sticky;
@@ -706,7 +712,6 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
 }
 .student-brand { display: inline-flex; flex: none; align-items: center; border-radius: 50%; }
 .student-brand .brand-mark { border-radius: 50%; }
-.student-dashboard .student-topbar .theme-picker button { min-height: 42px; }
 .student-icon { width: 20px; height: 20px; flex: none; display: block; }
 .student-routine-nav { display: flex; align-items: center; gap: 4px; }
 .student-routine-nav a {
@@ -728,6 +733,9 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
   background: var(--dash-accent-soft);
 }
 .student-nav-icon { display: grid; place-items: center; }
+.student-home-brand { display: none; }
+/* Desktop already provides the same account entry in the top-right menu. */
+.student-routine-nav .student-mobile-profile { display: none; }
 .student-dashboard :is(a, button, summary):focus-visible {
   outline: 2px solid var(--dash-accent);
   outline-offset: 3px;
@@ -858,13 +866,51 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
 .student-shortcut-copy { flex: 1; min-width: 0; display: grid; gap: 3px; }
 .student-shortcut-copy > span { color: var(--dash-muted); font-size: .825rem; line-height: 1.35; }
 .student-shortcut > svg { color: var(--dash-muted); }
-.student-shortcut:hover, .student-training:hover { border-color: var(--dash-accent); }
+.student-shortcut:hover, .student-training:hover, .student-quota-link:hover { border-color: var(--dash-accent); }
+.student-quota-link {
+  color: var(--dash-text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color .15s ease;
+}
+.student-quota-link:focus-visible { border-color: var(--dash-accent); }
+@media (prefers-reduced-motion: reduce) {
+  .student-quota-link { transition: none; }
+}
 .student-note { padding: 12px 14px; border-radius: 10px; background: var(--dash-panel-alt); border-inline-start: 3px solid var(--dash-accent); }
 .student-note a { color: var(--dash-accent); }
 .student-profile { max-width: 680px; }
 .student-profile-avatar { flex: none; display: grid; place-items: center; width: 62px; height: 62px; border-radius: 16px; background: var(--dash-accent-soft); color: var(--dash-accent); font-size: 1.35rem; font-weight: 800; }
 .student-profile-data > div { display: grid; gap: 6px; padding: 14px 0; border-block: 1px solid var(--dash-border); }
-.student-signout { width: fit-content; }
+
+/* Student profile: a submit action looks active only after the inputs are valid. */
+.student-dashboard .student-profile-form button[type="submit"] {
+  min-height: 48px;
+  border: 1px solid var(--dash-border);
+  border-radius: 10px;
+  background: var(--dash-panel-alt);
+  color: var(--dash-muted);
+  font-weight: 750;
+  cursor: not-allowed;
+  transition: background-color .14s, color .14s, border-color .14s, transform .14s;
+}
+.student-dashboard .student-profile-form button[type="submit"]:disabled {
+  opacity: .68;
+}
+.student-dashboard .student-profile-form button[type="submit"]:not(:disabled) {
+  background: var(--student-action-bg);
+  border-color: var(--student-action-bg);
+  color: var(--student-action-ink);
+  cursor: pointer;
+}
+.student-dashboard .student-profile-form button[type="submit"]:not(:disabled):is(:hover, :focus-visible) {
+  background: var(--student-action-hover);
+  border-color: var(--student-action-hover);
+  transform: translateY(-1px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .student-dashboard .student-profile-form button[type="submit"] { transition: none; }
+}
 .membership-summary { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
 .membership-balance dd { font-size: clamp(1.05rem, 2.3vw, 1.45rem); }
 .membership-history, .membership-records, .membership-payment-list { display: grid; gap: 10px; }
@@ -925,6 +971,42 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
   .student-routine-nav a[aria-current="page"] { background: transparent; }
   .student-routine-nav a[aria-current="page"] .student-nav-icon { background: var(--dash-accent-soft); }
   .student-nav-icon { width: min(49px, 100%); height: 27px; border-radius: 20px; }
+
+  /* Keep the four established links. The single Inicio link is a larger, centered CUEVA mark. */
+  .student-routine-nav a[href="/mi-rutina"] { grid-column: 1; grid-row: 1; }
+  .student-routine-nav a[href="/mi-membresia"] { grid-column: 2; grid-row: 1; }
+  .student-routine-nav a.student-mobile-home { grid-column: 3; grid-row: 1; }
+  .student-routine-nav a[href="/notificaciones"] { grid-column: 4; grid-row: 1; }
+  .student-routine-nav a.student-mobile-profile { display: flex; grid-column: 5; grid-row: 1; }
+  .student-routine-nav a.student-mobile-home {
+    overflow: visible;
+    min-height: 72px;
+    padding: 0 2px 2px;
+    gap: 2px;
+    font-weight: 800;
+  }
+  .student-routine-nav .student-mobile-home .student-nav-icon { display: none; }
+  .student-routine-nav .student-home-brand {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 54px;
+    height: 54px;
+    max-width: 100%;
+    margin-top: -11px;
+    border-radius: 50%;
+    background: var(--dash-panel);
+    box-shadow: 0 0 0 2px var(--dash-border), 0 4px 12px rgb(0 0 0 / .2);
+  }
+  .student-routine-nav .student-home-brand .brand-mark {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 50%;
+  }
+  .student-routine-nav .student-mobile-home[aria-current="page"] .student-home-brand {
+    box-shadow: 0 0 0 2px var(--dash-accent), 0 4px 12px rgb(0 0 0 / .2);
+  }
 }
 @media (max-width: 650px) {
   .student-home-grid, .membership-summary, .student-notifications { grid-template-columns: minmax(0, 1fr); }

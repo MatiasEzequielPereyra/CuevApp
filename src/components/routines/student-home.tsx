@@ -35,7 +35,7 @@ export function StudentHome({ name, membership, unread }: {
     <>
       <StudentPageHeading title={name ? `Hola, ${name}` : "Inicio"} />
       <div className="student-home-grid">
-        <section className="student-card student-quota" aria-labelledby="student-quota-title">
+        <Link className="student-card student-quota student-quota-link" href="/mi-membresia" aria-labelledby="student-quota-title">
           <div className="student-card-heading">
             <span className="student-icon-tile"><StudentIcon name="wallet" /></span>
             <h2 id="student-quota-title">Tu cuota</h2>
@@ -46,8 +46,8 @@ export function StudentHome({ name, membership, unread }: {
             <div><dt>Vencimiento</dt><dd><time dateTime={period.due_on}>{dateFormat.format(new Date(`${period.due_on}T00:00:00Z`))}</time></dd></div>
           </dl> : <p>{membership ? "Todavía no hay una cuota registrada para este período." : "No pudimos consultar el estado de tu cuota."}</p>}
           {membership && !membership.active && <p>Membresía inactiva</p>}
-          <Link className="student-text-link" href="/mi-membresia">Ver mi membresía <StudentIcon name="arrow" /></Link>
-        </section>
+          <span className="student-text-link">Ver mi membresía <StudentIcon name="arrow" /></span>
+        </Link>
         <Link className="student-card student-training" href="/mi-rutina">
           <span className="student-icon-tile"><StudentIcon name="dumbbell" /></span>
           <h2>Mi rutina</h2>
