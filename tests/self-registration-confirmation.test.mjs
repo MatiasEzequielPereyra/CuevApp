@@ -32,6 +32,13 @@ new Function("require", "module", "exports", outputText)(name => {
       status: init.status, headers: { location: String(url), ...init.headers },
     }) },
   };
+  if (name === "@/lib/product-auth/self-registration") return {
+    completeSelfRegistration: async (_auth, id) => {
+      assert.equal(id, "fixture");
+      state.rpcCalls++;
+      return state.enrollment;
+    },
+  };
   if (name === "@/lib/product-auth/server") return {
     productConfig: () => ({
       origin, selfRegistrationEnabled: state.enabled, ownerOnly: false,
