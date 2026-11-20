@@ -6,6 +6,8 @@ import { createRequire } from "node:module";
 import ts from "typescript";
 import { StudentIcon } from "../../src/components/routines/student-icon";
 import { PasswordChangeForm } from "../../src/components/auth/password-change-form";
+import { StudentEmailChangeForm } from "../../src/components/auth/student-email-change-form";
+import { canSubmitEmailChange, canSubmitPasswordChange } from "../../src/lib/student-profile-form-validation";
 
 const localRequire = createRequire(__filename);
 const link = ({ children, ...props }: React.ComponentProps<"a">) =>
@@ -43,7 +45,11 @@ const shell = loadExport("src/components/routines/student-shell.tsx", {
   "./student-icon": { StudentIcon },
   "next/link": { default: link },
   "@/components/brand/brand-mark": {
-    BrandMark: () => React.createElement("span", null, "CUEVA"),
+    BrandMark: ({ size = 46, decorative = false }: { size?: number; decorative?: boolean }) =>
+      React.createElement("img", {
+        src: `data:image/svg+xml;base64,${Buffer.from(readFileSync("public/brand/cueva-symbol.svg")).toString("base64")}`,
+        alt: decorative ? "" : "CUEVA", width: size, height: size, className: "brand-mark",
+      }),
   },
   "./student-account-menu": accountMenu,
 }) as { StudentShell: (props: { children?: React.ReactNode; active?: string }) => React.ReactElement };
@@ -78,6 +84,7 @@ function loadStudentPage(path: string, role: "admin" | "alumno" = "admin") {
     "@/components/notifications/notification-inbox": { NotificationInbox: () => null },
     "@/components/notifications/push-notification-settings": { PushNotificationSettings: () => null },
     "@/components/auth/password-change-form": { PasswordChangeForm },
+    "@/components/auth/student-email-change-form": { StudentEmailChangeForm },
     "@/lib/payments/money": { pesos: (value: string) => value },
     "@/lib/product-auth/server": {
       productConfig: () => ({ ownerOnly: true }),
@@ -111,6 +118,8 @@ test("la navegación mantiene cuatro secciones y mueve la cuenta al icono superi
   await expect(nav.getByRole("link", { name: "Inicio" })).not.toHaveAttribute("aria-current", "page");
   await expect(nav.getByRole("link")).toHaveCount(4);
   await expect(nav.getByRole("link", { name: "Mi perfil" })).toHaveCount(0);
+  await expect(nav.getByRole("link")).toHaveText(["Rutina", "Cuotas", "Inicio", "Avisos"]);
+  await expect(nav.getByRole("link", { name: "Inicio" }).locator(".student-home-brand")).toHaveCount(1);
   await expect(page.getByRole("link", { name: "Saltar al contenido" })).toHaveAttribute("href", "#contenido");
   await expect(page.getByRole("button", { name: "Opciones de cuenta" })).toBeVisible();
   await expect(page.locator(".student-account-popover")).toBeHidden();
@@ -151,6 +160,9 @@ test("el desplegable por iconos funciona a 320 px con salida protegida y sin des
   await expect(profile).toHaveAttribute("aria-current", "page");
   const signout = menu.getByRole("button", { name: "Cerrar sesión" });
   await expect(signout).toBeInViewport();
+  await signout.hover();
+  await expect(signout).toHaveCSS("color", "rgb(255, 169, 182)");
+  await expect(signout).toHaveCSS("background-color", "rgb(71, 36, 43)");
   await expect(menu.locator('form[action="/api/acceso/salir"]')).toHaveAttribute("method", "post");
   await expect(menu.getByRole("button", { name: "Tema claro" })).toHaveAttribute("aria-pressed", "false");
   await expect(menu.getByRole("button", { name: "Tema oscuro" })).toHaveAttribute("aria-pressed", "false");
@@ -169,6 +181,14 @@ test("el desplegable por iconos funciona a 320 px con salida protegida y sin des
   expect(geometry.right).toBeLessThanOrEqual(320);
   expect(geometry.minWidth).toBeGreaterThanOrEqual(44);
   expect(geometry.minHeight).toBeGreaterThanOrEqual(44);
+  const center = nav.getByRole("link", { name: "Inicio", exact: true });
+  const logo = center.locator(".student-home-brand");
+  await expect(logo).toBeVisible();
+  const logoBounds = await logo.boundingBox();
+  expect(logoBounds).toBeTruthy();
+  expect(Math.abs((logoBounds!.x + logoBounds!.width / 2) - 160)).toBeLessThanOrEqual(1.5);
+  const icon = nav.getByRole("link", { name: "Rutina de entrenamiento" }).locator(".student-icon");
+  expect(logoBounds!.width).toBeGreaterThan((await icon.boundingBox())!.width);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.keyboard.press("Escape");
   await expect(menu).toBeHidden();
@@ -287,6 +307,10 @@ for (const changed of [false, true]) {
     await expect(page.locator(".student-profile-header")).toBeVisible();
     await expect(page.getByRole("region", { name: "Seguridad de la cuenta" }).getByLabel("Contraseña actual", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Actualizar contraseña" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Actualizar contraseña" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Enviar verificación" })).toBeDisabled();
+    await expect(page.locator('form[action="/api/acceso/cambiar-contrasena"]')).toHaveAttribute("method", "post");
+    await expect(page.locator('form[action="/api/acceso/cambiar-correo"]')).toHaveAttribute("method", "post");
     await expect(page.getByLabel("Nuevo correo electrónico", { exact: true })).toBeVisible();
     await expect(page.getByRole("status")).toHaveCount(changed ? 1 : 0);
   });
@@ -298,5 +322,44 @@ test("el parámetro de correo no confirma Auth y conserva ambos formularios", as
   await page.setContent(renderToStaticMarkup(await component({ searchParams: Promise.resolve({ correo: "confirmado" }) })));
   await expect(page.getByLabel("Nuevo correo electrónico", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Contraseña actual", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Enviar verificación" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Actualizar contraseña" })).toBeDisabled();
   await expect(page.getByRole("status")).toHaveCount(0);
 });
+
+test("los botones solo se habilitan para correos distintos y contraseñas confirmadas", () => {
+  expect(canSubmitEmailChange("", "actual@example.test", false)).toBe(false);
+  expect(canSubmitEmailChange("sin-arroba", "actual@example.test", false)).toBe(false);
+  expect(canSubmitEmailChange("ACTUAL@example.test", "actual@example.test", true)).toBe(false);
+  expect(canSubmitEmailChange("nuevo@example.test", "actual@example.test", true)).toBe(true);
+  expect(canSubmitEmailChange("nuevo@example.test", "actual@example.test", false)).toBe(false);
+
+  const oldPassword = "secreto-anterior";
+  expect(canSubmitPasswordChange("", "clave-segura", "clave-segura", true)).toBe(false);
+  expect(canSubmitPasswordChange(oldPassword, "corta", "corta", false)).toBe(false);
+  expect(canSubmitPasswordChange(oldPassword, "clave-segura", "otra-clave", true)).toBe(false);
+  expect(canSubmitPasswordChange(oldPassword, oldPassword, oldPassword, true)).toBe(false);
+  expect(canSubmitPasswordChange(oldPassword, "clave-segura", "clave-segura", true)).toBe(true);
+  expect(canSubmitPasswordChange(oldPassword, "clave-segura", "clave-segura", false)).toBe(false);
+});
+
+for (const theme of ["light", "dark"] as const) {
+  test(`los botones de Mi perfil cambian visualmente al estar habilitados — ${theme}`, async ({ page }) => {
+    const exported = loadStudentPage("src/app/mi-perfil/page.tsx", "alumno");
+    const component = exported.default as () => Promise<React.ReactElement>;
+    const css = readFileSync("src/app/globals.css", "utf8");
+    const markup = renderToStaticMarkup(await component());
+    await page.setContent(`<!doctype html><html lang="es-AR" data-theme="${theme}" data-preference="system"><head><style>${css}</style></head><body>${markup}</body></html>`);
+    for (const name of ["Enviar verificación", "Actualizar contraseña"]) {
+      const button = page.getByRole("button", { name });
+      await expect(button).toBeDisabled();
+      await expect(button).toHaveCSS("cursor", "not-allowed");
+      // The server-rendered fixture is static; emulate only the enabled state to audit CSS.
+      await button.evaluate(element => element.removeAttribute("disabled"));
+      await expect(button).toBeEnabled();
+      await expect(button).toHaveCSS("cursor", "pointer");
+      await button.hover();
+      await expect(button).toHaveCSS("background-color", theme === "dark" ? "rgb(206, 204, 255)" : "rgb(73, 67, 215)");
+    }
+  });
+}

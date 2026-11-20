@@ -80,6 +80,16 @@
   color: var(--dash-accent);
 }
 
+/* Dangerous action: only sign-out turns red on hover and keyboard focus. */
+.student-account-popover .student-account-signout:is(:hover, :focus-visible) {
+  background: #fee7e7;
+  color: #b91c1c;
+}
+:root[data-theme="dark"] .student-account-popover .student-account-signout:is(:hover, :focus-visible) {
+  background: #47242b;
+  color: #ffa9b6;
+}
+
 .student-account-trigger .student-icon { width: 23px; height: 23px; }
 .student-account-popover .student-icon { width: 22px; height: 22px; }
 
