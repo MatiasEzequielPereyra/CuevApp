@@ -410,13 +410,14 @@ for (const theme of ["light", "dark"] as const) {
     await expect(card.locator("a")).toHaveCount(0);
     await expect(page.locator(".student-training")).toHaveAttribute("href", "/mi-rutina");
     const initial = await card.evaluate(element => getComputedStyle(element).borderColor);
+    const accent = await card.locator(".student-icon-tile").evaluate(element => getComputedStyle(element).color);
+    expect(initial).not.toBe(accent);
     await card.hover({ position: { x: 35, y: 30 } });
-    // Wait for the real 150ms border transition rather than sampling on the first frame.
-    await expect.poll(() => card.evaluate(element => getComputedStyle(element).borderColor)).not.toBe(initial);
-    const hovered = await card.evaluate(element => getComputedStyle(element).borderColor);
+    // Playwright retries until the 150ms CSS transition reaches its final color.
+    await expect(card).toHaveCSS("border-color", accent);
     await card.focus();
     await expect(card).toBeFocused();
-    await expect.poll(() => card.evaluate(element => getComputedStyle(element).borderColor)).toBe(hovered);
+    await expect(card).toHaveCSS("border-color", accent);
   });
 }
 
