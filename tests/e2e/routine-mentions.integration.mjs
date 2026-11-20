@@ -91,9 +91,18 @@ try {
   await pupil.reload();
   await mention.hover();
   await expect(preview.getByRole("button", {name:"Ver video"})).toBeVisible();
+  const videoApi = url => url.pathname === "/api/ejercicios/video" && url.searchParams.get("id") === exerciseId && url.searchParams.get("player") === "1";
+  await pupil.route("**/api/ejercicios/video**", async route => {
+    if (!videoApi(new URL(route.request().url()))) return route.continue();
+    await route.fulfill({status:503,contentType:"application/json",body:JSON.stringify({message:"Video temporalmente no disponible."})});
+  });
   await preview.getByRole("button", {name:"Ver video"}).click();
   const player = pupil.getByRole("dialog", {name:exerciseName});
   await expect(player).toBeVisible();
+  await expect(player.getByRole("alert")).toHaveText("Video temporalmente no disponible.");
+  await expect(player.getByRole("button", {name:"Reintentar"})).toBeVisible();
+  await pupil.unroute("**/api/ejercicios/video**");
+  await player.getByRole("button", {name:"Reintentar"}).click();
   await expect(player.locator("iframe")).toHaveAttribute("src", /youtube-nocookie.com\/embed\/dQw4w9WgXcQ/);
   await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
   await player.getByRole("button", {name:"Cerrar"}).click();
