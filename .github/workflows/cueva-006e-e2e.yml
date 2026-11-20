@@ -1,0 +1,132 @@
+name: CUEVA-006E routine mentions E2E
+
+on:
+  push:
+    branches:
+      - feature/cueva-006e-exercise-mention-preview
+    paths:
+      - "src/app/mi-rutina/**"
+      - "src/app/rutinas/**"
+      - "src/components/routines/**"
+      - "src/lib/routines/**"
+      - "supabase/migrations/**"
+      - "tests/e2e/routine-mentions.integration.mjs"
+      - "tests/routine-mentions.test.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/cueva-006e-e2e.yml"
+  pull_request:
+    paths:
+      - "src/app/mi-rutina/**"
+      - "src/app/rutinas/**"
+      - "src/components/routines/**"
+      - "src/lib/routines/**"
+      - "supabase/migrations/**"
+      - "tests/e2e/routine-mentions.integration.mjs"
+      - "tests/routine-mentions.test.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/cueva-006e-e2e.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  routine-mentions-e2e:
+    name: Authenticated routine mentions E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Run focused mention unit tests
+        run: npm run test:routines:mentions
+
+      - name: Install Supabase CLI v2
+        uses: supabase/setup-cli@v3
+        with:
+          version: v2.stable
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Create disposable Supabase stack with the complete migration chain
+        run: |
+          workdir="$(mktemp -d)"
+          evidence="$RUNNER_TEMP/cueva-006e-e2e"
+          mkdir -p "$workdir/supabase/migrations" "$evidence"
+          cp supabase/config.toml "$workdir/supabase/"
+          read -r DB_PORT SMTP_PORT < <(python3 -c 'import socket; sockets = [socket.socket(), socket.socket()]; [s.bind(("0.0.0.0", 0)) for s in sockets]; print(*(s.getsockname()[1] for s in sockets)); [s.close() for s in sockets]')
+          sed -i -e "s/^port = 55432$/port = $DB_PORT/" \
+                 -e "s/^port = 55424$/port = $SMTP_PORT/" \
+            "$workdir/supabase/config.toml"
+          cp supabase/migrations/*.sql "$workdir/supabase/migrations/"
+          echo "SUPABASE_TEST_DIR=$workdir" >> "$GITHUB_ENV"
+          echo "DB_PORT=$DB_PORT" >> "$GITHUB_ENV"
+          echo "MIGRATION_EVIDENCE=$evidence" >> "$GITHUB_ENV"
+          if ! supabase --workdir "$workdir" start > "$RUNNER_TEMP/cueva-006e-supabase-start.log" 2>&1; then
+            cat "$RUNNER_TEMP/cueva-006e-supabase-start.log" | tee "$evidence/supabase-start.log"
+            exit 1
+          fi
+          supabase --workdir "$workdir" migration list --local | tee "$evidence/migrations.txt"
+
+      - name: Run authenticated editor-to-student mention flow
+        run: |
+          eval "$(supabase --workdir "$SUPABASE_TEST_DIR" status -o env)"
+          export API_URL="${API_URL:-${SUPABASE_URL:-http://127.0.0.1:54321}}"
+          export ANON_KEY="${ANON_KEY:-${SUPABASE_ANON_KEY:-${PUBLISHABLE_KEY:-${SUPABASE_PUBLISHABLE_KEY:-}}}}"
+          export CUEVA_SERVICE_KEY="${SERVICE_ROLE_KEY-${SUPABASE_SERVICE_ROLE_KEY-${SECRET_KEY-${SUPABASE_SECRET_KEY-}}}}"
+          export DB_URL="${DB_URL:-postgresql://postgres:postgres@127.0.0.1:$DB_PORT/postgres}"
+          : "${DB_URL:?Supabase local database URL is unavailable}"
+          : "${ANON_KEY:?Supabase CLI did not provide an anonymous/publishable key}"
+          : "${CUEVA_SERVICE_KEY:?Supabase CLI did not provide a service/secret key}"
+          export CUEVA_PRODUCT_AUTH_LOCAL=1
+          export CUEVA_SUPABASE_URL="$API_URL"
+          export CUEVA_PUBLISHABLE_KEY="$ANON_KEY"
+          export CUEVA_PRODUCT_ORIGIN="http://127.0.0.1:3000"
+          export CUEVA_AUTH_URL="$API_URL/auth/v1"
+          export CUEVA_REST_URL="$API_URL/rest/v1"
+          export CUEVA_LAB_STORAGE_ORIGIN="$API_URL"
+          export NEXT_TELEMETRY_DISABLED=1
+          npm run dev -- --port 3000 > "$RUNNER_TEMP/cueva-006e-next.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 90); do
+            if curl --silent --fail http://127.0.0.1:3000/ingresar >/dev/null; then
+              break
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              cat "$RUNNER_TEMP/cueva-006e-next.log"
+              exit 1
+            fi
+            sleep 2
+          done
+          curl --silent --show-error --fail http://127.0.0.1:3000/ingresar >/dev/null || {
+            cat "$RUNNER_TEMP/cueva-006e-next.log"
+            exit 1
+          }
+          node tests/e2e/routine-mentions.integration.mjs | tee "$MIGRATION_EVIDENCE/routine-mentions-e2e.txt" || {
+            cat "$RUNNER_TEMP/cueva-006e-next.log"
+            exit 1
+          }
+
+      - name: Upload focused E2E evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cueva-006e-routine-mentions-e2e
+          path: ${{ runner.temp }}/cueva-006e-e2e/
+          if-no-files-found: warn
