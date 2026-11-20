@@ -38,7 +38,7 @@
     "verify:dependencies": "node scripts/verify-dependencies.mjs",
     "test:account-password-change": "node --test tests/account-password-change-route.test.mjs tests/admin-student-recovery-route.test.mjs",
     "test:student-email-change": "node --test tests/student-email-change-route.test.mjs",
-    "test:self-registration": "node --test tests/self-registration-route.test.mjs tests/self-registration-confirmation.test.mjs",
+    "test:self-registration": "node --test tests/self-registration-route.test.mjs tests/self-registration-confirmation.test.mjs tests/self-registration-service.test.mjs",
     "test:fixtures": "node --experimental-strip-types tests/e2e/fixture-lifecycle.integration.mjs"
   },
   "dependencies": {
