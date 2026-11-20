@@ -54,6 +54,19 @@ const shell = loadExport("src/components/routines/student-shell.tsx", {
   "./student-account-menu": accountMenu,
 }) as { StudentShell: (props: { children?: React.ReactNode; active?: string }) => React.ReactElement };
 
+const home = loadExport("src/components/routines/student-home.tsx", {
+  "next/link": { default: link },
+  "@/lib/payments/money": { pesos: (amount: string) => `${amount}` },
+  "./student-icon": { StudentIcon },
+  "./student-shell": shell,
+}) as {
+  StudentHome: (props: {
+    name?: string;
+    membership: { active: boolean; current: { due_on: string; balance: string; status: "pending" | "paid" | "overdue" } | null } | null;
+    unread: number | null;
+  }) => React.ReactElement;
+};
+
 const deniedClient = (role: "admin" | "alumno" = "admin") => ({
   auth: {
     getUser: async () => ({
@@ -376,3 +389,53 @@ for (const theme of ["light", "dark"] as const) {
     }
   });
 }
+
+for (const theme of ["light", "dark"] as const) {
+  test(`el panel completo Tu cuota abre Mi membresía con hover y teclado (${theme})`, async ({ page }) => {
+    const css = readFileSync("src/app/globals.css", "utf8");
+    const markup = renderToStaticMarkup(React.createElement(home.StudentHome, {
+      name: "Alumno",
+      membership: {
+        active: true,
+        current: { due_on: "2026-11-30", balance: "18000.00", status: "pending" },
+      },
+      unread: 1,
+    }));
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.setContent(`<!doctype html><html lang="es-AR" data-theme="${theme}"><head><style>${css}</style></head><body><div class="dashboard student-dashboard"><main class="dash-main student-main">${markup}</main></div></body></html>`);
+    const card = page.getByRole("link", { name: "Tu cuota" });
+    await expect(card).toHaveAttribute("href", "/mi-membresia");
+    await expect(card).toContainText("Ver mi membresía");
+    await expect(card.locator(".student-quota-details")).toBeVisible();
+    await expect(card.locator("a")).toHaveCount(0);
+    await expect(page.locator(".student-training")).toHaveAttribute("href", "/mi-rutina");
+    const initial = await card.evaluate(element => getComputedStyle(element).borderColor);
+    await card.hover({ position: { x: 35, y: 30 } });
+    const hovered = await card.evaluate(element => getComputedStyle(element).borderColor);
+    expect(hovered).not.toBe(initial);
+    await card.focus();
+    await expect(card).toBeFocused();
+    const focused = await card.evaluate(element => getComputedStyle(element).borderColor);
+    expect(focused).toBe(hovered);
+  });
+}
+
+test("Tu cuota sigue navegable incluso si aún no hay datos de membresía", async ({ page }) => {
+  const markup = renderToStaticMarkup(React.createElement(home.StudentHome, {
+    membership: null, unread: null,
+  }));
+  await page.setContent(markup);
+  const card = page.getByRole("link", { name: "Tu cuota" });
+  await expect(card).toHaveAttribute("href", "/mi-membresia");
+  await expect(card).toContainText("No pudimos consultar el estado de tu cuota.");
+  await expect(card.locator("a")).toHaveCount(0);
+});
+
+test("la tipografía Manrope está configurada globalmente y conserva un fallback", () => {
+  const layout = readFileSync("src/app/layout.tsx", "utf8");
+  const css = readFileSync("src/app/globals.css", "utf8");
+  expect(layout).toContain('import { Manrope } from "next/font/google";');
+  expect(layout).toContain('variable: "--font-cueva-manrope"');
+  expect(layout).toContain('className={manrope.variable}');
+  expect(css).toContain('font-family: var(--font-cueva-manrope, Arial), Helvetica, sans-serif');
+});
