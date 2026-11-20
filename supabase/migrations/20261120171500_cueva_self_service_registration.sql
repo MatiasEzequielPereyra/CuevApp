@@ -9,23 +9,22 @@ alter table public.cueva_student_invitations
   add constraint cueva_student_invitations_state_check
   check (state in ('blocked','processing','sent','review','failed','self_registered'));
 
-create function public.cueva_complete_self_registration()
+create function cueva_private.complete_self_registration(p_user uuid, p_session uuid)
 returns text
 language plpgsql
 security definer
 set search_path = ''
 as $$
 declare
-  v_user_id uuid := auth.uid();
+  v_user_id uuid := p_user;
   v_email text;
   v_first text;
   v_last text;
   v_student uuid;
-  v_session uuid;
   v_session_created timestamptz;
   v_user auth.users%rowtype;
 begin
-  if v_user_id is null then return 'unauthenticated'; end if;
+  if v_user_id is null or p_session is null then return 'unauthenticated'; end if;
 
   -- Lock the Auth user so two simultaneous confirmation callbacks cannot
   -- create two separate student records for the same identity.
@@ -35,12 +34,8 @@ begin
     return 'unverified';
   end if;
 
-  if nullif(current_setting('request.jwt.claims', true)::jsonb ->> 'session_id', '') is null then
-    return 'unauthenticated';
-  end if;
-  v_session := (current_setting('request.jwt.claims', true)::jsonb ->> 'session_id')::uuid;
   select created_at into v_session_created
-    from auth.sessions where id = v_session and user_id = v_user_id;
+    from auth.sessions where id = p_session and user_id = v_user_id;
   if v_session_created is null then return 'unauthenticated'; end if;
 
   -- Never overwrite or activate an invited, administrative, recovering
@@ -104,9 +99,24 @@ exception when unique_violation then
 end;
 $$;
 
-revoke all on function public.cueva_complete_self_registration()
+revoke all on function cueva_private.complete_self_registration(uuid,uuid)
   from public, anon, authenticated, service_role;
-grant execute on function public.cueva_complete_self_registration()
-  to authenticated;
+grant execute on function cueva_private.complete_self_registration(uuid,uuid)
+  to service_role;
+
+-- The only REST-accessible wrapper is INVOKER and available to the
+-- server-side service key. Public and authenticated clients cannot call it.
+create function public.cueva_complete_self_registration(p_user uuid, p_session uuid)
+returns text
+language sql
+security invoker
+set search_path = ''
+as $
+  select cueva_private.complete_self_registration(p_user, p_session)
+$;
+revoke all on function public.cueva_complete_self_registration(uuid,uuid)
+  from public, anon, authenticated;
+grant execute on function public.cueva_complete_self_registration(uuid,uuid)
+  to service_role;
 
 commit;
