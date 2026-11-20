@@ -1,5 +1,5 @@
 begin;
-select plan(17);
+select plan(18);
 
 -- These synthetic Auth users and sessions exist only inside this rollback.
 insert into auth.users
@@ -37,35 +37,37 @@ insert into cueva_private.access_state(user_id,ready,session_not_before)
 insert into public.cueva_profiles(user_id,role)
  values ('d1000000-0000-4000-8000-000000000005','admin');
 
-select ok(has_function_privilege('authenticated','public.cueva_complete_self_registration()','EXECUTE'),
- 'verified authenticated users can invoke the enrollment function');
-select ok(not has_function_privilege('anon','public.cueva_complete_self_registration()','EXECUTE'),
+select ok(has_function_privilege('service_role','public.cueva_complete_self_registration(uuid,uuid)','EXECUTE'),
+ 'only server-side service_role may invoke account enrollment');
+select ok(not has_function_privilege('authenticated','public.cueva_complete_self_registration(uuid,uuid)','EXECUTE'),
+ 'end users cannot call enrollment directly through Data API');
+select ok(not has_function_privilege('anon','public.cueva_complete_self_registration(uuid,uuid)','EXECUTE'),
  'anonymous users cannot invoke self registration');
 select ok(not exists(
  select 1 from pg_proc p cross join lateral aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) permission
- where p.oid='public.cueva_complete_self_registration()'::regprocedure
+ where p.oid='public.cueva_complete_self_registration(uuid,uuid)'::regprocedure
    and permission.grantee=0 and permission.privilege_type='EXECUTE'),
  'PUBLIC cannot invoke the privileged enrollment function');
 
 select set_config('request.jwt.claims',
  jsonb_build_object('sub','d1000000-0000-4000-8000-000000000002',
  'role','authenticated','session_id','d2000000-0000-4000-8000-000000000002')::text,true);
-set local role authenticated;
-select is(public.cueva_complete_self_registration(),'unverified','no email confirmation means no enrollment');
+set local role service_role;
+select is(public.cueva_complete_self_registration('d1000000-0000-4000-8000-000000000002'::uuid,'d2000000-0000-4000-8000-000000000002'::uuid),'unverified','no email confirmation means no enrollment');
 reset role;
 
 select set_config('request.jwt.claims',
  jsonb_build_object('sub','d1000000-0000-4000-8000-000000000004',
  'role','authenticated','session_id','d2000000-0000-4000-8000-000000000004')::text,true);
-set local role authenticated;
-select is(public.cueva_complete_self_registration(),'unverified','auto-confirm without any confirmation mail is rejected');
+set local role service_role;
+select is(public.cueva_complete_self_registration('d1000000-0000-4000-8000-000000000004'::uuid,'d2000000-0000-4000-8000-000000000004'::uuid),'unverified','auto-confirm without any confirmation mail is rejected');
 reset role;
 
 select set_config('request.jwt.claims',
  jsonb_build_object('sub','d1000000-0000-4000-8000-000000000003',
  'role','authenticated','session_id','d2000000-0000-4000-8000-000000000003')::text,true);
-set local role authenticated;
-select is(public.cueva_complete_self_registration(),'needs_review','verified email cannot claim existing administrative student file');
+set local role service_role;
+select is(public.cueva_complete_self_registration('d1000000-0000-4000-8000-000000000003'::uuid,'d2000000-0000-4000-8000-000000000003'::uuid),'needs_review','verified email cannot claim existing administrative student file');
 reset role;
 select is((select count(*)::integer from public.cueva_student_invitations where student_id='d3000000-0000-4000-8000-000000000001'),0,
  'existing student remains unlinked');
@@ -73,8 +75,8 @@ select is((select count(*)::integer from public.cueva_student_invitations where 
 select set_config('request.jwt.claims',
  jsonb_build_object('sub','d1000000-0000-4000-8000-000000000005',
  'role','authenticated','session_id','d2000000-0000-4000-8000-000000000005')::text,true);
-set local role authenticated;
-select is(public.cueva_complete_self_registration(),'existing','administrator can never be converted into a student');
+set local role service_role;
+select is(public.cueva_complete_self_registration('d1000000-0000-4000-8000-000000000005'::uuid,'d2000000-0000-4000-8000-000000000005'::uuid),'existing','administrator can never be converted into a student');
 reset role;
 select is((select role from public.cueva_profiles where user_id='d1000000-0000-4000-8000-000000000005'),'admin',
  'administrator role remains unchanged');
@@ -82,13 +84,17 @@ select is((select role from public.cueva_profiles where user_id='d1000000-0000-4
 select set_config('request.jwt.claims',
  jsonb_build_object('sub','d1000000-0000-4000-8000-000000000001',
  'role','authenticated','session_id','d2000000-0000-4000-8000-000000000001')::text,true);
+set local role service_role;
+select is(public.cueva_complete_self_registration('d1000000-0000-4000-8000-000000000001'::uuid,'d2000000-0000-4000-8000-000000000001'::uuid),'created','verified new identity is enrolled');
+reset role;
 set local role authenticated;
-select is(public.cueva_complete_self_registration(),'created','verified new identity is enrolled');
 select is((select role from public.cueva_profiles),'alumno',
  'self registered user sees their own student role through the existing gate');
 select is((select count(*)::integer from public.cueva_students),0,
  'new user still cannot read student records directly');
-select is(public.cueva_complete_self_registration(),'existing',
+reset role;
+set local role service_role;
+select is(public.cueva_complete_self_registration('d1000000-0000-4000-8000-000000000001'::uuid,'d2000000-0000-4000-8000-000000000001'::uuid),'existing',
  'repeating enrollment never duplicates accounts');
 reset role;
 
