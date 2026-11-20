@@ -2,7 +2,7 @@
 
 **Estado:** validación final completada en la rama; código funcional probado y documentación sincronizada.  
 **Rama:** `feature/cueva-006e-exercise-mention-preview`  
-**HEAD de trabajo:** `84721676367f5aa593617bd642b01a06596c3cb3`  
+**HEAD de trabajo:** `d1c2bfb4868029308b017f71b79d37e9692abc30`  
 **Base sincronizada:** `main` en `e9dffe16de5ae76eb01eb24b4de490dd3e33b806`.
 
 ## Alcance entregado
@@ -55,4 +55,4 @@ Todos los runs citados finalizaron en `success`. Verify foundation se ejecutó s
 - No se abrió PR, no se integró 006E a main ni se desplegó.
 - No se aplicaron migraciones en Supabase hosted.
 - CUEVA-003B Vencimientos permanece cerrada; CUEVA-005 no se reabrió.
-- La aceptación final requiere todos los gates indicados en verde y revisión del diff final de la rama.
+- La validación técnica y la revisión del diff de integración están completadas. La rama está 66 commits ahead y 0 behind de main. No se abrió PR, no se integró ni se desplegó; la integración queda pendiente de autorización explícita.
