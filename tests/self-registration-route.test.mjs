@@ -33,7 +33,7 @@ function load(path) {
   const { outputText } = ts.transpileModule(readFileSync(path, "utf8"), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   });
-  const module = { exports: {} };
+  const loaded = { exports: {} };
   const runtimeRequire = name => {
     if (name === "next/server") return next;
     if (name === "@supabase/supabase-js") return { createClient: () => supabase };
@@ -46,8 +46,8 @@ function load(path) {
     };
     return require(name);
   };
-  new Function("require", "module", "exports", outputText)(runtimeRequire, module, module.exports);
-  return module.exports;
+  new Function("require", "module", "exports", outputText)(runtimeRequire, loaded, loaded.exports);
+  return loaded.exports;
 }
 const { POST } = load("src/app/api/acceso/[operation]/route.ts");
 function reset() {
