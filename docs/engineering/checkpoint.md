@@ -1,5 +1,14 @@
 # Checkpoint CUEVA
 
+## Estado vigente — 2026-11-20 · CUEVA-006E
+
+- CUEVA-006D / PR #67 está integrado en main; las referencias históricas que lo describen como Draft o pendiente quedan supersedidas por este estado.
+- CUEVA-006E continúa aislada en `feature/cueva-006e-exercise-mention-preview`. HEAD sincronizado: `be9c2dda1bc5457cb54309f014fbdf60180e64ae`; main: `e9dffe16de5ae76eb01eb24b4de490dd3e33b806`; comparación: 55 commits ahead, 0 behind.
+- La sincronización conserva la implementación de menciones/video y suma los cambios de main de PR #80 (instalación PWA) y PR #81 (fixtures de notificaciones con fechas relativas). Para `supabase/tests/cueva_notifications.test.sql` se conserva la versión dinámica de #81, que reemplaza el fixture puntual de 006E sin debilitar restricciones ni lógica de producción.
+- Validación sobre el merge HEAD: Verify foundation run 44789028288; Membership SQL run 44789028155; Supabase local migrations run 44789028172. Consultar su estado real en Actions; no atribuir PASS hasta que concluyan. Los workflows focalizados de 006E deben confirmarse por separado.
+- Sin PR de 006E, sin merge a main, sin deploy y sin migraciones en Supabase hosted. CUEVA-003B permanece cerrada y fuera de alcance.
+- Ver [cierre técnico CUEVA-006E](CUEVA-006E-closure.md) para alcance, migraciones, evidencia y pendientes.
+
 ## PR #67 — Correcciones P2 — REVIEW — 2026-11-19
 
 [Entrega vigente](pr67-corrections-20261119.md) sobre main
