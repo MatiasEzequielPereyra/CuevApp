@@ -111,9 +111,9 @@ returns text
 language sql
 security invoker
 set search_path = ''
-as $
+as $$
   select cueva_private.complete_self_registration(p_user, p_session)
-$;
+$$;
 revoke all on function public.cueva_complete_self_registration(uuid,uuid)
   from public, anon, authenticated;
 grant execute on function public.cueva_complete_self_registration(uuid,uuid)
