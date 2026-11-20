@@ -1,4 +1,6 @@
 import { StudentPlan } from "@/components/routines/student-plan";
+import { ExerciseMention } from "@/components/routines/exercise-mention";
+import { resolveMentionVideoAvailability } from "@/lib/routines/mention-video-availability";
 import type { ReactNode } from "react";
 import type { Plan } from "@/lib/routines/types";
 import Link from "next/link";
@@ -9,17 +11,18 @@ import "./mi-rutina.css";
 
 export const dynamic = "force-dynamic";
 
-type MentionedExercise = { id: string; name: string; description: string | null };
+type MentionedExercise = { id: string; name: string; description: string | null; videoAvailability: "available" | "unavailable" | "unknown" };
 type RoutineMention = { exercise_id: string; start: number; end: number; text: string };
 
-function renderRoutineText(text: string, mentions: RoutineMention[], allowedExerciseIds: Set<string>) {
+function renderRoutineText(text: string, mentions: RoutineMention[], exercisesById: Map<string, MentionedExercise>) {
   const points = Array.from(text);
   const parts: ReactNode[] = [];
   let cursor = 0;
   [...mentions].sort((a, b) => a.start - b.start).forEach((mention, index) => {
-    if (!allowedExerciseIds.has(mention.exercise_id) || mention.start < cursor || mention.end > points.length || points.slice(mention.start, mention.end).join("") !== mention.text) return;
+    const exercise = exercisesById.get(mention.exercise_id);
+    if (!exercise || mention.start < cursor || mention.end > points.length || points.slice(mention.start, mention.end).join("") !== mention.text) return;
     if (mention.start > cursor) parts.push(points.slice(cursor, mention.start).join(""));
-    parts.push(<span className="my-routine-mention" key={index}>{mention.text}</span>);
+    parts.push(<ExerciseMention key={`${mention.exercise_id}:${mention.start}:${index}`} exerciseId={exercise.id} name={exercise.name} description={exercise.description} videoAvailability={exercise.videoAvailability} text={mention.text} />);
     cursor = mention.end;
   });
   if (cursor < points.length) parts.push(points.slice(cursor).join(""));
@@ -98,8 +101,11 @@ export default async function MyRoutine() {
       ? assigned.data
       : [];
 
-  const mentionedExercises: MentionedExercise[] = textDocument?.data?.format === "text" && !mentioned?.error && Array.isArray(mentioned?.data) ? mentioned.data : [];
+  const mentionedExercises: MentionedExercise[] = textDocument?.data?.format === "text" && !mentioned?.error && Array.isArray(mentioned?.data)
+    ? mentioned.data.map(exercise => ({ ...exercise, videoAvailability: resolveMentionVideoAvailability(exercise.id, videos?.data, Boolean(videos?.error)) }))
+    : [];
   const textMode = textDocument?.data?.format === "text";
+  const mentionedExercisesById = new Map(mentionedExercises.map(exercise => [exercise.id, exercise]));
   const describedExercises = textMode ? [] : assignedExercises.filter(
     exercise => exercise.description?.trim()
   );
@@ -141,13 +147,14 @@ export default async function MyRoutine() {
                 key={publication.published_at}
                 plan={plan}
                 videoIds={videoIds}
+                videosAvailable={!videos?.error}
               />
             )}
 
             {textMode && textDocument?.data?.text_content && (
               <section className="my-routine-panel my-routine-notes">
                 <h2>Rutina</h2>
-                <p>{renderRoutineText(textDocument.data.text_content, (textDocument.data.mentions ?? []) as RoutineMention[], new Set(mentionedExercises.map(exercise => exercise.id)))}</p>
+                <p>{renderRoutineText(textDocument.data.text_content, (textDocument.data.mentions ?? []) as RoutineMention[], mentionedExercisesById)}</p>
               </section>
             )}
             {!textMode && publication.content && (
