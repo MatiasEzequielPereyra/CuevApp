@@ -46,4 +46,6 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Test routine mention validation and video availability
-        run: npm run test:routines:mentions
+        run: |
+          npm run test:routines:mentions
+          npm run test:routines:video-source
