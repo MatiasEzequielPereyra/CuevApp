@@ -1,20 +1,9 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { parseVideoSource, type VideoSource } from "@/lib/routines/video-source";
 
-type VideoSource = { kind: "storage"; src: string } | { kind: "youtube"; id: string; url: string };
 type Playback = { state: "loading" } | { state: "ready"; source: VideoSource } | { state: "error"; message: string; url?: string };
-
-function isVideoSource(value: unknown): value is VideoSource {
-  if (!value || typeof value !== "object") return false;
-  const source = value as Record<string, unknown>;
-  if (source.kind === "storage") return typeof source.src === "string" && source.src.startsWith("https://");
-  return source.kind === "youtube"
-    && typeof source.id === "string"
-    && /^[A-Za-z0-9_-]{11}$/.test(source.id)
-    && typeof source.url === "string"
-    && /^https:\/\/(www\.)?(youtube\.com\/(watch\?v=|shorts\/|embed\/)|youtu\.be\/)[A-Za-z0-9_-]{11}$/.test(source.url);
-}
 
 export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }: {
   exerciseId: string;
@@ -54,11 +43,12 @@ export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }:
           setPlayback({ state: "error", message });
           return;
         }
-        if (!isVideoSource(data)) {
+        const source = parseVideoSource(data);
+        if (!source) {
           setPlayback({ state: "error", message: "El recurso de video no tiene un formato válido." });
           return;
         }
-        setPlayback({ state: "ready", source: data });
+        setPlayback({ state: "ready", source });
       } catch {
         if (!controller.signal.aborted) setPlayback({ state: "error", message: "No pudimos cargar el video. Intentá nuevamente." });
       }
