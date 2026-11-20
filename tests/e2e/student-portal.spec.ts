@@ -411,12 +411,12 @@ for (const theme of ["light", "dark"] as const) {
     await expect(page.locator(".student-training")).toHaveAttribute("href", "/mi-rutina");
     const initial = await card.evaluate(element => getComputedStyle(element).borderColor);
     await card.hover({ position: { x: 35, y: 30 } });
+    // Wait for the real 150ms border transition rather than sampling on the first frame.
+    await expect.poll(() => card.evaluate(element => getComputedStyle(element).borderColor)).not.toBe(initial);
     const hovered = await card.evaluate(element => getComputedStyle(element).borderColor);
-    expect(hovered).not.toBe(initial);
     await card.focus();
     await expect(card).toBeFocused();
-    const focused = await card.evaluate(element => getComputedStyle(element).borderColor);
-    expect(focused).toBe(hovered);
+    await expect.poll(() => card.evaluate(element => getComputedStyle(element).borderColor)).toBe(hovered);
   });
 }
 
