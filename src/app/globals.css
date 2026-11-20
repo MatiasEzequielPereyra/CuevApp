@@ -734,6 +734,8 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
 }
 .student-nav-icon { display: grid; place-items: center; }
 .student-home-brand { display: none; }
+/* Desktop already provides the same account entry in the top-right menu. */
+.student-routine-nav .student-mobile-profile { display: none; }
 .student-dashboard :is(a, button, summary):focus-visible {
   outline: 2px solid var(--dash-accent);
   outline-offset: 3px;
@@ -964,7 +966,8 @@ h3 { margin: 30px 0 12px; font-size: 20px; letter-spacing: -.025em; }
   .student-routine-nav a[href="/mi-rutina"] { grid-column: 1; grid-row: 1; }
   .student-routine-nav a[href="/mi-membresia"] { grid-column: 2; grid-row: 1; }
   .student-routine-nav a.student-mobile-home { grid-column: 3; grid-row: 1; }
-  .student-routine-nav a[href="/notificaciones"] { grid-column: 4 / span 2; grid-row: 1; }
+  .student-routine-nav a[href="/notificaciones"] { grid-column: 4; grid-row: 1; }
+  .student-routine-nav a.student-mobile-profile { display: flex; grid-column: 5; grid-row: 1; }
   .student-routine-nav a.student-mobile-home {
     overflow: visible;
     min-height: 72px;

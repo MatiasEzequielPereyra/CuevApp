@@ -116,9 +116,9 @@ test("la navegación mantiene cuatro secciones y mueve la cuenta al icono superi
   }
   await expect(nav.getByRole("link", { name: "Notificaciones" })).toHaveAttribute("aria-current", "page");
   await expect(nav.getByRole("link", { name: "Inicio" })).not.toHaveAttribute("aria-current", "page");
-  await expect(nav.getByRole("link")).toHaveCount(4);
-  await expect(nav.getByRole("link", { name: "Mi perfil" })).toHaveCount(0);
-  await expect(nav.getByRole("link")).toHaveText(["Rutina", "Cuotas", "Inicio", "Avisos"]);
+  await expect(nav.getByRole("link")).toHaveCount(5);
+  await expect(nav.getByRole("link", { name: "Mi cuenta" })).toHaveAttribute("href", "/mi-perfil");
+  await expect(nav.getByRole("link")).toHaveText(["Rutina", "Cuotas", "Inicio", "Avisos", "Mi cuenta"]);
   await expect(nav.getByRole("link", { name: "Inicio" }).locator(".student-home-brand")).toHaveCount(1);
   await expect(page.getByRole("link", { name: "Saltar al contenido" })).toHaveAttribute("href", "#contenido");
   await expect(page.getByRole("button", { name: "Opciones de cuenta" })).toBeVisible();
@@ -136,7 +136,9 @@ test("el desplegable por iconos funciona a 320 px con salida protegida y sin des
   await page.setContent(`<!doctype html><html lang="es-AR" data-theme="dark" data-preference="system"><head><style>${css}</style></head><body>${markup}</body></html>`);
   const nav = page.getByRole("navigation", { name: "Navegación del alumno" });
   const links = nav.getByRole("link");
-  await expect(links).toHaveCount(4);
+  await expect(links).toHaveCount(5);
+  await expect(nav.getByRole("link", { name: "Mi cuenta" })).toHaveAttribute("aria-current", "page");
+  await expect(nav.getByRole("link", { name: "Mi cuenta" })).toHaveAttribute("href", "/mi-perfil");
   const dock = await nav.boundingBox();
   expect(dock).toBeTruthy();
   expect((dock?.y ?? 0) + (dock?.height ?? 0)).toBe(630);
@@ -181,6 +183,10 @@ test("el desplegable por iconos funciona a 320 px con salida protegida y sin des
   expect(geometry.right).toBeLessThanOrEqual(320);
   expect(geometry.minWidth).toBeGreaterThanOrEqual(44);
   expect(geometry.minHeight).toBeGreaterThanOrEqual(44);
+  const profileLink = nav.getByRole("link", { name: "Mi cuenta" });
+  const profileBounds = await profileLink.boundingBox();
+  expect(profileBounds?.x).toBeGreaterThan(0);
+  expect((profileBounds?.x ?? 0) + (profileBounds?.width ?? 0)).toBeLessThanOrEqual(320);
   const center = nav.getByRole("link", { name: "Inicio", exact: true });
   const logo = center.locator(".student-home-brand");
   await expect(logo).toBeVisible();
@@ -205,6 +211,13 @@ for (const width of [360, 390, 1440]) {
         shell.StudentShell, { active: "rutina" }, React.createElement("h1", null, "Mi rutina"),
       ));
       await page.setContent(`<!doctype html><html lang="es-AR" data-theme="${theme}" data-preference="system"><head><style>${css}</style></head><body>${markup}</body></html>`);
+      const accountNav = page.getByRole("navigation", { name: "Navegación del alumno" }).getByRole("link", { name: "Mi cuenta" });
+      if (width <= 840) {
+        await expect(accountNav).toBeVisible();
+        await expect(accountNav).toHaveAttribute("href", "/mi-perfil");
+      } else {
+        await expect(accountNav).toHaveCount(0);
+      }
       await page.getByRole("button", { name: "Opciones de cuenta" }).click();
       const menu = page.locator(".student-account-popover");
       await expect(menu).toBeVisible();

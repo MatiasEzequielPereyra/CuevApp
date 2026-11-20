@@ -11,6 +11,7 @@ const navigation: { href: string; label: string; name?: string; section: Student
   { href: "/mi-membresia", label: "Cuotas", name: "Cuotas · Mi Membresía", section: "membresia", icon: "wallet" },
   { href: "/cuenta", label: "Inicio", section: "cuenta", icon: "home" },
   { href: "/notificaciones", label: "Avisos", name: "Avisos y notificaciones", section: "notificaciones", icon: "bell" },
+  { href: "/mi-perfil", label: "Mi cuenta", section: "perfil", icon: "user" },
 ];
 
 export function StudentPageHeading({ title, children }: { title: string; children?: ReactNode }) {
@@ -34,7 +35,7 @@ export function StudentShell({ children, active = "cuenta" }: { children: ReactN
           <nav className="student-routine-nav" aria-label="Navegación del alumno">
             {navigation.map(item => (
               <Link key={item.section} href={item.href} aria-label={item.name}
-                className={item.section === "cuenta" ? "student-mobile-home" : undefined}
+                className={item.section === "cuenta" ? "student-mobile-home" : item.section === "perfil" ? "student-mobile-profile" : undefined}
                 aria-current={active === item.section ? "page" : undefined}>
                 <span className="student-nav-icon"><StudentIcon name={item.icon} /></span>
                 {item.section === "cuenta" && (
