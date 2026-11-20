@@ -53,7 +53,9 @@ jobs:
         run: npm ci
 
       - name: Run focused mention unit tests
-        run: npm run test:routines:mentions
+        run: |
+          npm run test:routines:mentions
+          npm run test:routines:video-source
 
       - name: Install Supabase CLI v2
         uses: supabase/setup-cli@v3
