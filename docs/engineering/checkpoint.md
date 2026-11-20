@@ -1,5 +1,29 @@
 # Checkpoint CUEVA
 
+## Estado vigente reconciliado — 2026-11-19 (prevalece sobre REVIEW históricos)
+
+El [inventario verificado de GitHub, Supabase, Vercel y 33 ramas](REPO-STATUS-2026-11-19.md)
+registra `main` en `aa7cd36041412aa1b14a4d2b0f6145728084cb5d`, CI
+general y migraciones locales PASS; producción Vercel READY en ese SHA,
+Supabase Hosted ACTIVE_HEALTHY con **33 migraciones** y la RPC
+`public.cueva_student_assigned_exercises()` ya alojada. La migración de
+sincronización de correo y `cueva_routine_text_mentions` también figuran alojadas.
+
+No hay PRs abiertos. Se auditaron 25 ramas exactas de PRs MERGED, pero **no
+fueron borradas**; otras 7 tienen trabajo no integrado o evidencia insuficiente.
+La rama funcional CUEVA-006E no está en main y su CI fresh falla en la prueba
+de interfaz «Cerrar aviso» (Sentadilla), aunque Verify foundation y las matrices
+upgrade/hosted-compatible aprobaron. No debe integrarse sin corrección y auditoría.
+
+CUEVA-005 todavía no tiene `pg_cron` ni `pg_net` en Hosted; no declarar
+recordatorios automáticos o entrega Push en producción. Registro de resultados
+de ejercicios y rutina offline siguen pendientes. El informe enlazado contiene
+los SHAs, referencias, riesgos y acciones pendientes.
+
+**Los informes inferiores se conservan como evidencia histórica a su fecha.**
+En particular, el estado REVIEW de PR #67 y la frase «RPC pendiente» del
+17/11 quedaron superados por las verificaciones del 19/11.
+
 ## PR #67 — Correcciones P2 — REVIEW — 2026-11-19
 
 [Entrega vigente](pr67-corrections-20261119.md) sobre main

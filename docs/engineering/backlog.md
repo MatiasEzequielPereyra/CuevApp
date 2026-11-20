@@ -1,18 +1,15 @@
 # Backlog de CUEVA
 
-## Estado vigente reconciliado — 2026-11-17
+## Estado vigente reconciliado — 2026-11-19
 
-- El portal del alumno, Mi Membresía, comprobantes, Vencimientos y Pagos están
-  publicados. La RPC alojada de ejercicios asignados está pendiente.
-- CUEVA-005 tiene el código publicado y las doce migraciones aplicadas. Quedan
-  pendientes la entrega Push y la activación de envíos automáticos.
-- CUEVA-006 incluye editor, biblioteca de ejercicios y lectura de la rutina
-  publicada. El registro e historial de entrenamiento siguen pendientes.
-- La PWA se puede instalar y abrir desde el ícono. Falta la consulta de rutinas
-  sin conexión.
-
-Ver [checkpoint](checkpoint.md) para la verificación de GitHub, Vercel y Supabase.
-Las secciones inferiores conservan el historial de planificación y entrega.
+- Fuente principal: [foto operativa y auditoría de ramas](REPO-STATUS-2026-11-19.md), sobre `main` `aa7cd3604141`.
+- Integrados y desplegados en Vercel: portal del alumno, cuentas/cambio de contraseñas y correo, Mi Membresía, alumnos, pagos, comprobantes, vencimientos, editor de rutinas con bloques y texto libre con menciones. El último deployment de producción figura READY, sin atribuirle recorridos autenticados no comprobados.
+- Supabase Hosted: **33 migraciones**, incluida `cueva_student_assigned_exercises` (RPC alojada), `cueva_student_email_sync` y `cueva_routine_text_mentions`. Verificar permisos y recorridos con usuarios autorizados antes de cerrar aceptación funcional.
+- CUEVA-005: bandeja y lógica de envíos implementadas, pero **cron y pg_net no instalados** en Hosted, por lo tanto no declarar los recordatorios automáticos operativos. Entrega Push real y aceptación alojada pendientes.
+- CUEVA-006: registro de entrenamiento y resultados históricos pendientes; la consulta sin conexión de rutinas también pendiente.
+- Siguiente implementación técnica pendiente: CUEVA-006E, rama sin integrar y con fallo de prueba E2E `mi-rutina.integration.mjs` en fresh; no fusionar hasta corregir, revalidar y auditar.
+- Mantenimiento: 25 ramas de PRs merged y SHAs iguales a sus HEAD están preparadas para limpieza, **pero el borrado remoto no fue ejecutado**; otras siete se conservan para evaluación adicional, además de `main`. No ejecutar eliminación masiva por antigüedad.
+- El contenido más abajo conserva su valor histórico; sus estados REVIEW/NOT_STARTED son anteriores y no reemplazan estas observaciones verificadas.
 
 ## Incremento vigente — CUEVA-006C, 2026-11-06
 
