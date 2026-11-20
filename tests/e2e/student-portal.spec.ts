@@ -211,6 +211,13 @@ for (const width of [360, 390, 1440]) {
         shell.StudentShell, { active: "rutina" }, React.createElement("h1", null, "Mi rutina"),
       ));
       await page.setContent(`<!doctype html><html lang="es-AR" data-theme="${theme}" data-preference="system"><head><style>${css}</style></head><body>${markup}</body></html>`);
+      const accountNav = page.getByRole("navigation", { name: "Navegación del alumno" }).getByRole("link", { name: "Mi cuenta" });
+      if (width <= 840) {
+        await expect(accountNav).toBeVisible();
+        await expect(accountNav).toHaveAttribute("href", "/mi-perfil");
+      } else {
+        await expect(accountNav).toHaveCount(0);
+      }
       await page.getByRole("button", { name: "Opciones de cuenta" }).click();
       const menu = page.locator(".student-account-popover");
       await expect(menu).toBeVisible();
