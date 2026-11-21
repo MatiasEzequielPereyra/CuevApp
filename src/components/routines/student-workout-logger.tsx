@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 
 type WorkoutSet = { reps: string; weight: string; duration: string };
 type HistorySet = { set_number: number; reps: number | null; weight_kg: number | null; duration_seconds: number | null };
