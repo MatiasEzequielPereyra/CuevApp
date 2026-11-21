@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent as ReactClipboardEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type { RoutineMention } from "@/lib/routines/mentions";
-import { getRoutineMentionHues, rebaseRoutineMentions, utf16OffsetToCodePoint } from "@/lib/routines/mentions";
+import { codePointSlice, getRoutineMentionHues, rebaseRoutineMentions, utf16OffsetToCodePoint, validateRoutineMentions } from "@/lib/routines/mentions";
 import type { Exercise } from "@/lib/routines/types";
 import { ExerciseVideoDialog } from "@/components/routines/exercise-video-dialog";
 import type { CSSProperties } from "react";
@@ -77,6 +77,40 @@ function floatingPosition(caret: DOMRect, preferredWidth: number) {
     ? Math.min(caret.bottom + 4, window.innerHeight - maxHeight - 8)
     : Math.max(8, caret.top - maxHeight - 4);
   return { left, top, width };
+}
+
+
+function escapeClipboardHtml(value: string) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function readClipboardMentions(html: string, expectedText: string): RoutineMention[] {
+  const parsed = new DOMParser().parseFromString(html, "text/html");
+  let text = "";
+  const mentions: RoutineMention[] = [];
+  function visit(node: Node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      text += node.textContent ?? "";
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    const element = node as HTMLElement;
+    if (element.tagName === "BR") {
+      text += "\n";
+      return;
+    }
+    const start = Array.from(text).length;
+    for (const child of Array.from(element.childNodes)) visit(child);
+    const end = Array.from(text).length;
+    const exerciseId = element.getAttribute("data-cuevapp-exercise-id");
+    if (exerciseId && end > start) {
+      mentions.push({ exercise_id: exerciseId, start, end, text: codePointSlice(text, start, end) });
+    }
+  }
+  visit(parsed.body);
+  if (text !== expectedText || mentions.length === 0) return [];
+  try { return validateRoutineMentions(text, mentions); } catch { return []; }
 }
 
 export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
@@ -161,6 +195,94 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     setPending(true);
     setError("");
     setRange({ ...range });
+  }
+
+  function copyMentionSelection(event: ReactClipboardEvent<HTMLTextAreaElement>) {
+    const input = event.currentTarget;
+    if (input.selectionStart === input.selectionEnd) return false;
+    const start = utf16OffsetToCodePoint(value, input.selectionStart);
+    const end = utf16OffsetToCodePoint(value, input.selectionEnd);
+    const selectedText = value.slice(input.selectionStart, input.selectionEnd);
+    const copied = mentions
+      .filter(mention => mention.start >= start && mention.end <= end)
+      .map(mention => ({ ...mention, start: mention.start - start, end: mention.end - start }));
+    if (!copied.length) return false;
+
+    let cursor = 0;
+    let html = "";
+    for (const mention of copied) {
+      html += escapeClipboardHtml(codePointSlice(selectedText, cursor, mention.start)).replace(/\n/g, "<br>");
+      html += '<span data-cuevapp-exercise-id="' + mention.exercise_id + '">' + escapeClipboardHtml(mention.text) + "</span>";
+      cursor = mention.end;
+    }
+    html += escapeClipboardHtml(codePointSlice(selectedText, cursor, Array.from(selectedText).length)).replace(/\n/g, "<br>");
+    event.clipboardData.setData("text/plain", selectedText);
+    event.clipboardData.setData("text/html", "<div>" + html + "</div>");
+    try {
+      event.clipboardData.setData("application/x-cuevapp-routine-mentions", JSON.stringify({
+        version: 1, text: selectedText, mentions: copied,
+      }));
+    } catch { /* HTML clipboard data remains as a cross-browser fallback. */ }
+    event.preventDefault();
+    return true;
+  }
+
+  function handleCopy(event: ReactClipboardEvent<HTMLTextAreaElement>) {
+    copyMentionSelection(event);
+  }
+
+  function handleCut(event: ReactClipboardEvent<HTMLTextAreaElement>) {
+    if (!copyMentionSelection(event)) return;
+    const input = event.currentTarget;
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const next = value.slice(0, start) + value.slice(end);
+    input.setRangeText("", start, end, "end");
+    onChange(next, rebaseRoutineMentions(value, next, mentions));
+    updateRange(null);
+  }
+
+  function handlePaste(event: ReactClipboardEvent<HTMLTextAreaElement>) {
+    const input = event.currentTarget;
+    const plain = event.clipboardData.getData("text/plain");
+    if (!plain) return;
+    let pastedMentions: RoutineMention[] = [];
+    const custom = event.clipboardData.getData("application/x-cuevapp-routine-mentions");
+    if (custom) {
+      try {
+        const payload = JSON.parse(custom) as { version?: number; text?: string; mentions?: unknown };
+        if (payload.version === 1 && payload.text === plain) {
+          pastedMentions = validateRoutineMentions(plain, payload.mentions);
+        }
+      } catch { pastedMentions = []; }
+    }
+    if (!pastedMentions.length) {
+      const html = event.clipboardData.getData("text/html");
+      if (html) pastedMentions = readClipboardMentions(html, plain);
+    }
+    if (!pastedMentions.length) return;
+
+    event.preventDefault();
+    const selectionStart = input.selectionStart;
+    const selectionEnd = input.selectionEnd;
+    const pasteStart = utf16OffsetToCodePoint(value, selectionStart);
+    const pasteLength = Array.from(plain).length;
+    const pasteEnd = pasteStart + pasteLength;
+    const next = value.slice(0, selectionStart) + plain + value.slice(selectionEnd);
+    const preserved = rebaseRoutineMentions(value, next, mentions)
+      .filter(mention => mention.end <= pasteStart || mention.start >= pasteEnd);
+    const inserted = pastedMentions.map(mention => ({
+      ...mention, start: mention.start + pasteStart, end: mention.end + pasteStart,
+    }));
+    const nextMentions = validateRoutineMentions(next, [...preserved, ...inserted].sort((a, b) => a.start - b.start));
+    input.setRangeText(plain, selectionStart, selectionEnd, "end");
+    onChange(next, nextMentions);
+    updateRange(null);
+    previewRequest.current++;
+    setPreview(null);
+    setPreviewError("");
+    setPreviewPending(false);
+    setPreviewPosition(null);
   }
 
   function handleChange(next: string, cursor: number) {
@@ -289,6 +411,9 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       aria-autocomplete="list" aria-controls="routine-mention-options"
       onScroll={syncHighlightScroll}
       onChange={event => handleChange(event.target.value, event.target.selectionStart)}
+      onCopy={handleCopy}
+      onCut={handleCut}
+      onPaste={handlePaste}
       onClick={event => { updateRange(null); void openMentionAtCursor(event.currentTarget); }}
       onKeyDown={onKeyDown}
       placeholder={"Escribí la rutina completa…\n\nPodés mencionar ejercicios con @ o escribir su nombre."} />
