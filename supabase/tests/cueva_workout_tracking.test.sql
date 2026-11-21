@@ -82,7 +82,7 @@ select is((public.cueva_workout_update(
  'c8100000-0000-4000-8000-000000000001',1,'quick','weight',74,null,'[]'::jsonb)->'entry'->>'revision')::integer,2,
  'students can edit their own prior workout result with revision increment');
 select is((public.cueva_workout_update(
- 'c8100000-0000-4000-8000-000000000001',1,'quick','weight',74,null,'[]'::jsonb)->'entry'->>'quick_weight_kg')::numeric,74,
+ 'c8100000-0000-4000-8000-000000000001',1,'quick','weight',74,null,'[]'::jsonb)->'entry'->>'quick_weight_kg')::numeric,74::numeric,
  'replaying the same update is idempotent');
 select throws_ok($stale_update$select public.cueva_workout_update(
  'c8100000-0000-4000-8000-000000000001',1,'quick','weight',80,null,'[]'::jsonb)$stale_update$,
