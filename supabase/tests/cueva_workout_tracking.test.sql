@@ -193,7 +193,7 @@ select throws_ok($owner_update$select public.cueva_workout_update(
  '42501',null,'student B cannot edit student A workout history');
 select is(public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')->>'last_weight_kg',null,
  'history is isolated by authenticated student');
-select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000003')->>'last_weight_kg')::numeric,45,
+select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000003')->>'last_weight_kg')::numeric,45::numeric,
  'text exercise history is keyed by UUID for its owner');
 
 reset role;
