@@ -17,7 +17,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
   const [open, setOpen] = useState(false);
   const [playerOpen, setPlayerOpen] = useState(false);
   const instanceId = useId();
-  const root = useRef<HTMLSpanElement>(null);
+  const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const panelId = `${instanceId}-exercise-mention`;
 
