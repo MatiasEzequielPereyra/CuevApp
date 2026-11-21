@@ -2,29 +2,24 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { RoutineMention } from "@/lib/routines/mentions";
-import { rebaseRoutineMentions, utf16OffsetToCodePoint } from "@/lib/routines/mentions";
+import { getRoutineMentionHues, rebaseRoutineMentions, utf16OffsetToCodePoint } from "@/lib/routines/mentions";
 import type { Exercise } from "@/lib/routines/types";
 import { ExerciseVideoDialog } from "@/components/routines/exercise-video-dialog";
 import type { CSSProperties } from "react";
 
 type SearchRange = { start: number; end: number; query: string } | null;
 
-function mentionHue(mention: RoutineMention): number {
-  const seed = mention.exercise_id + ":" + mention.start + ":" + mention.end;
-  let hash = 2166136261;
-  for (let i = 0; i < seed.length; i++) hash = Math.imul(hash ^ seed.charCodeAt(i), 16777619);
-  return (hash >>> 0) % 360;
-}
-
 function renderMentionHighlights(value: string, mentions: RoutineMention[]): ReactNode[] {
   const points = Array.from(value);
   const parts: ReactNode[] = [];
   let cursor = 0;
-  [...mentions].sort((a, b) => a.start - b.start).forEach((mention, index) => {
+  const orderedMentions = [...mentions].sort((a, b) => a.start - b.start);
+  const hues = getRoutineMentionHues(orderedMentions);
+  orderedMentions.forEach((mention, index) => {
     if (mention.start < cursor || mention.start < 0 || mention.end > points.length
       || points.slice(mention.start, mention.end).join("") !== mention.text) return;
     if (mention.start > cursor) parts.push(points.slice(cursor, mention.start).join(""));
-    parts.push(<strong className="routine-text-mention-highlight" style={{ "--mention-hue": mentionHue(mention) } as CSSProperties} key={`mention-${mention.exercise_id}-${mention.start}-${index}`}>{mention.text}</strong>);
+    parts.push(<strong className="routine-text-mention-highlight" style={{ "--mention-hue": hues.get(mention.exercise_id + ":" + mention.start + ":" + mention.end) ?? 250 } as CSSProperties} key={`mention-${mention.exercise_id}-${mention.start}-${index}`}>{mention.text}</strong>);
     cursor = mention.end;
   });
   if (cursor < points.length) parts.push(points.slice(cursor).join(""));
