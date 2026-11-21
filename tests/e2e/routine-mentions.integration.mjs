@@ -130,10 +130,8 @@ try {
   // the textarea's native caret placement and React click handler together.
   await adminTextarea.click({position:mentionClickPoint});
   const adminPreview = page.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`});
-  await expect(adminPreview).toBeVisible();
+  await expect(adminPreview).toHaveCount(0);
   await expect(page.getByRole("listbox", { name: "Ejercicios sugeridos" })).toHaveCount(0);
-  await expect(adminPreview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
-  await adminPreview.getByRole("button", {name:"Cerrar"}).click();
   await expect(editor.getByText("Borrador guardado", {exact:true})).toBeVisible();
   const {rows:[draft]} = await db.query("select revision,text_content,mentions from public.cueva_routine_text_drafts where kind='draft' and owner_id=$1", [studentId]);
   assert.equal(draft.text_content,`🙂 ${exerciseName}`);
@@ -208,6 +206,14 @@ try {
   // A linked exercise with a confirmed video opens the player from an explicit
   // action; closing it does not reopen a preview through restored focus/hover.
   await db.query("update public.cueva_exercises set video_url='https://www.youtube.com/watch?v=dQw4w9WgXcQ' where id=$1", [exerciseId]);
+  // In the text editor, selecting a linked exercise opens the player directly;
+  // the autocomplete/preview overlay is reserved for typing @.
+  await adminTextarea.click({position:mentionClickPoint});
+  const adminPlayer = page.getByRole("dialog", {name:exerciseName});
+  await expect(adminPlayer).toBeVisible();
+  await expect(page.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`})).toHaveCount(0);
+  await adminPlayer.getByRole("button", {name:"Cerrar"}).click();
+  await expect(adminPlayer).toHaveCount(0);
   await pupil.reload();
   await expect(logger.getByText("REALIZADO")).toBeVisible();
   await mention.click();
