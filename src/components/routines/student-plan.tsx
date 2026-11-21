@@ -163,7 +163,7 @@ export function StudentPlan({ plan, videoIds, videosAvailable = true }: { plan: 
           </section>
         ))}
       </div>
-      <dialog ref={dialog} className="my-routine-dialog" aria-labelledby={dialogTitle} onClose={restoreReadingPosition}>
+      <dialog ref={dialog} className="my-routine-dialog" aria-labelledby={dialogTitle} onClick={event => { if (event.target === event.currentTarget) dialog.current?.close(); }} onClose={restoreReadingPosition}>
         <header>
           <h2 id={dialogTitle}>{playing?.name ?? "Video del ejercicio"}</h2>
           <form method="dialog"><button type="submit">Cerrar</button></form>
