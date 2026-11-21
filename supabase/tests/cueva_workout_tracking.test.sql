@@ -72,6 +72,12 @@ select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')-
  'last suggestion uses the final set of the most recent workout');
 select is(jsonb_array_length(public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')->'entries'),2,
  'history returns both quick and detailed entries for this UUID');
+select is(jsonb_array_length(public.cueva_workout_history('c7500000-0000-4000-8000-000000000001',1,0)->'entries'),1,
+ 'history pages respect the requested page size');
+select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000001',1,0)->>'has_more')::boolean,true,
+ 'history indicates when older records remain');
+select is(jsonb_array_length(public.cueva_workout_history('c7500000-0000-4000-8000-000000000001',1,1)->'entries'),1,
+ 'history offset returns the next record');
 
 -- A lost response can be retried after the administrator publishes a newer
 -- snapshot. The existing operation must replay instead of creating a duplicate.
