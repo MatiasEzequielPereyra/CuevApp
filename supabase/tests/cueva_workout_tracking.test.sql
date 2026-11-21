@@ -89,6 +89,11 @@ select is(jsonb_array_length(public.cueva_workout_record(
  'timed exercises support different durations per set');
 select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000002')->>'last_duration_seconds')::integer,45,
  'last timed suggestion uses the final set duration');
+select throws_ok($duration_limit$select public.cueva_workout_record(
+ 'c8100000-0000-4000-8000-000000000014','c7600000-0000-4000-8000-000000000002',
+ 'c7500000-0000-4000-8000-000000000002','c7900000-0000-4000-8000-000000000003',
+ 'quick','time',null,86401,'[]'::jsonb)$duration_limit$,'22023',null,
+ 'timed entries above 86400 seconds are rejected');
 select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')->>'last_weight_kg')::numeric,75::numeric,
  'last suggestion uses the final set of the most recent workout');
 select is(jsonb_array_length(public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')->'entries'),2,
