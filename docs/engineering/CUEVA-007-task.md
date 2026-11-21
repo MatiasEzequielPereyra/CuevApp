@@ -50,3 +50,18 @@ Permitir que cada alumno registre lo que realmente realizó, separado de los obj
 ## Límites de entrega
 
 La rama de trabajo es exclusiva de CUEVA-007. CUEVA-003B Vencimientos, CUEVA-005 Notificaciones y CUEVA-006E permanecen como baselines cerrados. La entrega queda en REVIEW hasta auditoría independiente. No mergear ni desplegar sin autorización explícita.
+
+
+## Implementación en curso (2026-11-21)
+
+La rama ya contiene una primera implementación de los siguientes componentes:
+
+- Migración nueva `20261121120000_cueva_workout_tracking.sql`: tablas separadas de entradas y series; escrituras transaccionales; UUID de operación idempotente; verificación del alumno autenticado, publicación vigente, UUID del ejercicio y modalidad peso/tiempo; historial paginado por alumno + UUID.
+- API autenticada `/api/entrenamientos`: no acepta identidad de alumno desde el cliente; limita y valida entradas antes de invocar RPC.
+- Interfaz `StudentWorkoutLogger`: registro rápido, repetición de último peso, series con pesos/repeticiones diferentes e historial con carga de registros anteriores.
+- Integración en rutinas estructuradas y menciones de texto. Las modalidades por tiempo no muestran ni aceptan kg.
+- Editor: autocompletado solo tras escribir `@`; panel y preview flotantes en portal, anclados al cursor/mención y limitados al viewport; creación de ejercicios inexistentes mediante el endpoint de catálogo ya existente; cierre explícito sin reapertura por hover/foco.
+- Reproductor: cierre por botón, Escape y click fuera. La preview de menciones no se abre por hover/foco y no se reactiva al restaurar el foco tras cerrar el reproductor.
+- Pruebas pgTAP y Playwright ampliadas para permisos, aislamiento, idempotencia, modo tiempo, paginación, selección de texto y registro desde menciones.
+
+**Estado de validación:** pendiente. Las primeras ejecuciones de CI detectaron defectos en las pruebas/typing, que se corrigieron en commits posteriores. La aceptación requiere que los workflows del HEAD más reciente terminen en verde; no se aplicó ninguna migración alojada y no se hizo merge.
