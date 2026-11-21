@@ -155,7 +155,7 @@ export default async function MyRoutine() {
             {textMode && textDocument?.data?.text_content && (
               <section className="my-routine-panel my-routine-notes">
                 <h2>Rutina</h2>
-                <p>{renderRoutineText(textDocument.data.text_content, (textDocument.data.mentions ?? []) as RoutineMention[], mentionedExercisesById, publication.id)}</p>
+                <div className="my-routine-text-content">{renderRoutineText(textDocument.data.text_content, (textDocument.data.mentions ?? []) as RoutineMention[], mentionedExercisesById, publication.id)}</div>
               </section>
             )}
             {!textMode && publication.content && (
