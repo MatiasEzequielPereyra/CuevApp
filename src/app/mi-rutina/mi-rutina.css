@@ -290,10 +290,13 @@
   padding: 1px 4px;
   border: 0;
   border-radius: 5px;
-  background: var(--dash-accent-soft);
-  color: var(--dash-accent);
+  background: hsl(var(--mention-hue, 250) 78% 86%);
+  color: hsl(var(--mention-hue, 250) 55% 24%);
   font: inherit;
   font-weight: 700;
+  -webkit-text-stroke: .35px currentColor;
+  text-shadow: .2px 0 currentColor, -.2px 0 currentColor;
+  box-shadow: 2px 0 0 hsl(var(--mention-hue, 250) 78% 86%), -2px 0 0 hsl(var(--mention-hue, 250) 78% 86%);
   text-decoration: underline;
   text-decoration-color: transparent;
   text-underline-offset: 3px;
