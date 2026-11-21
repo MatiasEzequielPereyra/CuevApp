@@ -454,12 +454,23 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
         <strong>{preview.name}</strong>
         {preview.description && <p>{preview.description}</p>}
         {preview.video_url || preview.video_path
-          ? <button type="button" onClick={() => { updateRange(null); setPlayerOpen(true); }}>Ver video</button>
+          ? <button type="button" onClick={() => {
+              // Keep the editor focused so the native dialog restores focus here.
+              textarea.current?.focus({ preventScroll: true });
+              updateRange(null);
+              setPlayerOpen(true);
+            }}>Ver video</button>
           : <span role="status">Aún no se encuentra con video disponible</span>}
         <button type="button" className="routine-text-mention-close" onClick={() => { previewRequest.current++; setPreview(null); setPreviewPosition(null); }}>Cerrar</button>
       </>}
     </div>, document.body)}
-    {playerOpen && preview && <ExerciseVideoDialog exerciseId={preview.id} exerciseName={preview.name} open onClose={() => { setPlayerOpen(false); previewRequest.current++; setPreview(null); setPreviewPosition(null); }} /> }
+    {playerOpen && preview && <ExerciseVideoDialog exerciseId={preview.id} exerciseName={preview.name} open onClose={() => {
+      setPlayerOpen(false);
+      previewRequest.current++;
+      setPreview(null);
+      setPreviewPosition(null);
+      textarea.current?.focus({ preventScroll: true });
+    }} /> }
     {range && suggestionPosition && typeof document !== "undefined" && createPortal(<div ref={suggestionPanel} className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos" style={{ position: "fixed", left: suggestionPosition.left, top: suggestionPosition.top, width: suggestionPosition.width, maxHeight: "min(240px, calc(100dvh - 16px))", zIndex: 1000 }}>
       {pending && <p role="status">Buscando ejercicios…</p>}
       {createError && <p role="alert">{createError}</p>}
