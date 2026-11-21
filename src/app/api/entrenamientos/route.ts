@@ -18,7 +18,7 @@ async function studentClient() {
 
 function validWeight(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value)
-    && value >= 0 && value <= 2000 && Number.isInteger(value * 100);
+    && value >= 0 && value <= 2000 && Math.abs(value * 100 - Math.round(value * 100)) < 1e-8;
 }
 
 export async function GET(req: Request) {
