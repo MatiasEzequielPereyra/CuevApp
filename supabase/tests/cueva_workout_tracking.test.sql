@@ -22,7 +22,8 @@ insert into public.cueva_student_invitations(student_id,email,user_id,state,leas
 insert into public.cueva_exercises(id,name,revision,updated_by,description,active) values
  ('c7500000-0000-4000-8000-000000000001','Press banca',1,'c7100000-0000-4000-8000-000000000001','',true),
  ('c7500000-0000-4000-8000-000000000002','Plancha',1,'c7100000-0000-4000-8000-000000000001','',true),
- ('c7500000-0000-4000-8000-000000000003','Remo',1,'c7100000-0000-4000-8000-000000000001','',true);
+ ('c7500000-0000-4000-8000-000000000003','Remo',1,'c7100000-0000-4000-8000-000000000001','',true),
+ ('c7500000-0000-4000-8000-000000000004','Cardio',1,'c7100000-0000-4000-8000-000000000001','',true,'time');
 insert into public.cueva_routine_publications(id,student_id,draft_revision,content,published_by,plan) values
  ('c7600000-0000-4000-8000-000000000001','c7300000-0000-4000-8000-000000000001',1,'Rutina vieja','c7100000-0000-4000-8000-000000000001',
   '{"version":2,"days":[{"id":"c7700000-0000-4000-8000-000000000001","name":"Día","blocks":[{"id":"c7800000-0000-4000-8000-000000000001","name":"Bloque","rounds":3,"exercises":[{"id":"c7900000-0000-4000-8000-000000000001","exercise_id":"c7500000-0000-4000-8000-000000000001","name":"Press banca","note":"","mode":"weight","reps":"8","weight_kg":50}]}]}]}'::jsonb),
@@ -31,7 +32,7 @@ insert into public.cueva_routine_publications(id,student_id,draft_revision,conte
  ('c7600000-0000-4000-8000-000000000003','c7300000-0000-4000-8000-000000000002',1,'Rutina texto','c7100000-0000-4000-8000-000000000001',null);
 insert into public.cueva_routine_text_publications(publication_id,student_id,format,text_content,block_content,mentions,published_by)
 values ('c7600000-0000-4000-8000-000000000003','c7300000-0000-4000-8000-000000000002','text','Remo','',
- '[{"exercise_id":"c7500000-0000-4000-8000-000000000003","start":0,"end":4,"text":"Remo"}]'::jsonb,
+ '[{"exercise_id":"c7500000-0000-4000-8000-000000000003","start":0,"end":4,"text":"Remo"},{"exercise_id":"c7500000-0000-4000-8000-000000000004","start":5,"end":11,"text":"Cardio"}]'::jsonb,
  'c7100000-0000-4000-8000-000000000001');
 
 select ok(has_function_privilege('authenticated','public.cueva_workout_record(uuid,uuid,uuid,uuid,text,numeric,jsonb)','EXECUTE'),
@@ -118,6 +119,13 @@ select is((public.cueva_workout_record(
  'quick',45,'[]'::jsonb)->'entry'->>'exercise_id'),
  'c7500000-0000-4000-8000-000000000003',
  'text-routine UUID mentions support student workout logging');
+select is((select tracking_mode from public.cueva_student_mentioned_exercises_with_tracking_mode()
+ where id='c7500000-0000-4000-8000-000000000004'),'time',
+ 'text mentions expose the catalog time mode');
+select throws_ok($select public.cueva_workout_record(
+ 'c8100000-0000-4000-8000-000000000009','c7600000-0000-4000-8000-000000000003',
+ 'c7500000-0000-4000-8000-000000000004',null,
+ 'quick',45,'[]'::jsonb)$,'22023',null,'time-based text mentions reject kilogram entries');
 select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000008','c7600000-0000-4000-8000-000000000004',
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000004',
