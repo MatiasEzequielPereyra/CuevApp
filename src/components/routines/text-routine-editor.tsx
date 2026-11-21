@@ -32,12 +32,9 @@ function renderMentionHighlights(value: string, mentions: RoutineMention[]): Rea
 function searchRange(value: string, cursor: number): SearchRange {
   const before = value.slice(0, cursor);
   const at = before.match(/(?:^|\s)@([^@\n]*)$/);
-  const atQuery = at?.[1];
-  if (atQuery !== undefined) return { start: cursor - atQuery.length - 1, end: cursor, query: atQuery.trim() };
-  const prefix = before.match(/(?:^|\s)([^\s@]+)$/);
-  const prefixQuery = prefix?.[1];
-  if (prefixQuery !== undefined && prefixQuery.length >= 2) return { start: cursor - prefixQuery.length, end: cursor, query: prefixQuery };
-  return null;
+  if (!at) return null;
+  const query = at[1] ?? "";
+  return { start: cursor - query.length - 1, end: cursor, query: query.trim() };
 }
 
 export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
@@ -52,7 +49,8 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   const [preview, setPreview] = useState<Exercise | null>(null);
   const [previewPending, setPreviewPending] = useState(false);
   const [previewError, setPreviewError] = useState("");
-  const [playerOpen, setPlayerOpen] = useState(false);\n  const [suggestionPosition, setSuggestionPosition] = useState<{ left: number; top: number; width: number } | null>(null);
+  const [playerOpen, setPlayerOpen] = useState(false);
+  const [suggestionPosition, setSuggestionPosition] = useState<{ left: number; top: number; width: number } | null>(null);
 
   useEffect(() => {
     if (!range) return;
@@ -94,7 +92,58 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     setRange(next);
   }
 
-  useLayoutEffect(() => {\n    const input = textarea.current;\n    if (!range || !input || typeof document === "undefined") { setSuggestionPosition(null); return; }\n    const measure = () => {\n      const style = window.getComputedStyle(input);\n      const mirror = document.createElement("div");\n      const marker = document.createElement("span");\n      const copied = ["font", "fontFamily", "fontSize", "fontWeight", "fontStyle", "letterSpacing", "lineHeight", "textTransform", "textIndent", "paddingTop", "paddingRight", "paddingBottom", "paddingLeft", "borderTopWidth", "borderRightWidth", "borderBottomWidth", "borderLeftWidth", "boxSizing", "whiteSpace", "overflowWrap", "wordBreak" ];\n      mirror.style.position = "fixed"; mirror.style.visibility = "hidden"; mirror.style.pointerEvents = "none";\n      mirror.style.left = `${input.getBoundingClientRect().left}px`; mirror.style.top = `${input.getBoundingClientRect().top}px`;\n      mirror.style.width = `${input.clientWidth}px`; mirror.style.height = "auto"; mirror.style.overflow = "hidden";\n      for (const key of copied) mirror.style.setProperty(key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), style.getPropertyValue(key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)));\n      mirror.style.whiteSpace = "pre-wrap"; mirror.style.overflowWrap = "break-word";\n      const before = input.value.slice(0, input.selectionStart);\n      mirror.textContent = before; marker.textContent = "\\u200b"; mirror.append(marker); document.body.append(mirror);\n      const rect = marker.getBoundingClientRect(); mirror.remove();\n      const inputRect = input.getBoundingClientRect();\n      const left = Math.max(8, Math.min(rect.left, window.innerWidth - 320));\n      const width = Math.min(360, window.innerWidth - 16);\n      const below = window.innerHeight - rect.bottom;\n      const top = below >= 250 || rect.top < 250 ? Math.min(rect.bottom + 4, window.innerHeight - 248) : Math.max(8, rect.top - 244);\n      setSuggestionPosition({ left, top, width });\n    };\n    measure();\n    window.addEventListener("resize", measure);\n    window.addEventListener("scroll", measure, true);\n    return () => { window.removeEventListener("resize", measure); window.removeEventListener("scroll", measure, true); };\n  }, [range, value]);\n\n  function retrySearch() {
+  useLayoutEffect(() => {
+    const input = textarea.current;
+    if (!range || !input || typeof document === "undefined") {
+      setSuggestionPosition(null);
+      return;
+    }
+    const measure = () => {
+      const style = window.getComputedStyle(input);
+      const mirror = document.createElement("div");
+      const marker = document.createElement("span");
+      const properties = [
+        "font", "font-family", "font-size", "font-weight", "font-style",
+        "letter-spacing", "line-height", "text-transform", "text-indent",
+        "padding-top", "padding-right", "padding-bottom", "padding-left",
+        "border-top-width", "border-right-width", "border-bottom-width",
+        "border-left-width", "box-sizing", "white-space", "overflow-wrap", "word-break",
+      ];
+      mirror.style.position = "fixed";
+      mirror.style.visibility = "hidden";
+      mirror.style.pointerEvents = "none";
+      mirror.style.left = input.getBoundingClientRect().left + "px";
+      mirror.style.top = input.getBoundingClientRect().top + "px";
+      mirror.style.width = input.clientWidth + "px";
+      mirror.style.height = "auto";
+      mirror.style.overflow = "hidden";
+      for (const property of properties) mirror.style.setProperty(property, style.getPropertyValue(property));
+      mirror.style.whiteSpace = "pre-wrap";
+      mirror.style.overflowWrap = "break-word";
+      mirror.textContent = input.value.slice(0, input.selectionStart);
+      marker.textContent = "\u200b";
+      mirror.append(marker);
+      document.body.append(mirror);
+      const caret = marker.getBoundingClientRect();
+      mirror.remove();
+      const left = Math.max(8, Math.min(caret.left, window.innerWidth - 320));
+      const width = Math.min(360, window.innerWidth - 16);
+      const below = window.innerHeight - caret.bottom;
+      const top = below >= 250 || caret.top < 250
+        ? Math.min(caret.bottom + 4, window.innerHeight - 248)
+        : Math.max(8, caret.top - 244);
+      setSuggestionPosition({ left, top, width });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+    };
+  }, [range, value]);
+
+  function retrySearch() {
     if (!range || disabled) return;
     request.current++;
     setResults([]);
@@ -166,11 +215,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       aria-autocomplete="list" aria-controls="routine-mention-options"
       onScroll={syncHighlightScroll}
       onChange={event => handleChange(event.target.value, event.target.selectionStart)}
-      onClick={event => { updateRange(searchRange(value, event.currentTarget.selectionStart)); void openMentionAtCursor(event.currentTarget); }}
-      onKeyUp={event => {
-        if (["ArrowDown", "ArrowUp", "Enter", "Escape"].includes(event.key)) return;
-        updateRange(searchRange(value, event.currentTarget.selectionStart));
-      }}
+      onClick={event => { updateRange(null); void openMentionAtCursor(event.currentTarget); }}
       onKeyDown={onKeyDown}
       placeholder={"Escribí la rutina completa…\n\nPodés mencionar ejercicios con @ o escribir su nombre."} />
       {previewPending && <div className="routine-text-mention-preview" role="status">Cargando ejercicio…</div>}
@@ -191,7 +236,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       {!pending && !error && results.length === 0 && <p>No encontramos ejercicios activos con ese nombre.</p>}
       {results.map((exercise, index) => <button type="button" role="option" aria-selected={active === index} key={exercise.id} disabled={disabled || pending}
         onMouseDown={event => event.preventDefault()} onClick={() => insert(exercise)}>{exercise.name}</button>)}
-    </div>}
+    </div>, document.body)}
     <p>Las menciones quedan vinculadas al ejercicio aunque cambie su nombre. Solo se sugieren ejercicios activos.</p>
     <p className="routine-text-mention-count">{mentions.length} {mentions.length === 1 ? "mención vinculada" : "menciones vinculadas"}</p>
   </div>;
