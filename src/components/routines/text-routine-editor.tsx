@@ -89,6 +89,17 @@ function readClipboardMentions(html: string, expectedText: string): RoutineMenti
   const parsed = new DOMParser().parseFromString(html, "text/html");
   let text = "";
   const mentions: RoutineMention[] = [];
+  const blockTags = new Set(["DIV", "P", "LI", "PRE", "BLOCKQUOTE"]);
+  function visitChildren(parent: Node) {
+    const children = Array.from(parent.childNodes);
+    children.forEach((child, index) => {
+      const isBlock = child.nodeType === Node.ELEMENT_NODE
+        && blockTags.has((child as HTMLElement).tagName);
+      if (isBlock && text.length > 0 && !text.endsWith("\n")) text += "\n";
+      visit(child);
+      if (isBlock && index < children.length - 1 && !text.endsWith("\n")) text += "\n";
+    });
+  }
   function visit(node: Node) {
     if (node.nodeType === Node.TEXT_NODE) {
       text += node.textContent ?? "";
@@ -101,16 +112,18 @@ function readClipboardMentions(html: string, expectedText: string): RoutineMenti
       return;
     }
     const start = Array.from(text).length;
-    for (const child of Array.from(element.childNodes)) visit(child);
+    visitChildren(element);
     const end = Array.from(text).length;
     const exerciseId = element.getAttribute("data-cuevapp-exercise-id");
     if (exerciseId && end > start) {
       mentions.push({ exercise_id: exerciseId, start, end, text: codePointSlice(text, start, end) });
     }
   }
-  visit(parsed.body);
-  if (text !== expectedText || mentions.length === 0) return [];
-  try { return validateRoutineMentions(text, mentions); } catch { return []; }
+  visitChildren(parsed.body);
+  const normalizedText = text.replace(/\r\n?/g, "\n");
+  const normalizedExpected = expectedText.replace(/\r\n?/g, "\n");
+  if (normalizedText !== normalizedExpected || mentions.length === 0) return [];
+  try { return validateRoutineMentions(normalizedText, mentions); } catch { return []; }
 }
 
 export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
@@ -200,9 +213,10 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   function copyMentionSelection(event: ReactClipboardEvent<HTMLTextAreaElement>) {
     const input = event.currentTarget;
     if (input.selectionStart === input.selectionEnd) return false;
-    const start = utf16OffsetToCodePoint(value, input.selectionStart);
-    const end = utf16OffsetToCodePoint(value, input.selectionEnd);
-    const selectedText = value.slice(input.selectionStart, input.selectionEnd);
+    const source = input.value;
+    const start = utf16OffsetToCodePoint(source, input.selectionStart);
+    const end = utf16OffsetToCodePoint(source, input.selectionEnd);
+    const selectedText = source.slice(input.selectionStart, input.selectionEnd);
     const copied = mentions
       .filter(mention => mention.start >= start && mention.end <= end)
       .map(mention => ({ ...mention, start: mention.start - start, end: mention.end - start }));
@@ -236,15 +250,16 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     const input = event.currentTarget;
     const start = input.selectionStart;
     const end = input.selectionEnd;
-    const next = value.slice(0, start) + value.slice(end);
+    const source = input.value;
+    const next = source.slice(0, start) + source.slice(end);
     input.setRangeText("", start, end, "end");
-    onChange(next, rebaseRoutineMentions(value, next, mentions));
+    onChange(next, rebaseRoutineMentions(source, next, mentions));
     updateRange(null);
   }
 
   function handlePaste(event: ReactClipboardEvent<HTMLTextAreaElement>) {
     const input = event.currentTarget;
-    const plain = event.clipboardData.getData("text/plain");
+    const plain = event.clipboardData.getData("text/plain").replace(/\r\n?/g, "\n");
     if (!plain) return;
     let pastedMentions: RoutineMention[] = [];
     const custom = event.clipboardData.getData("application/x-cuevapp-routine-mentions");
@@ -264,11 +279,12 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
 
     const selectionStart = input.selectionStart;
     const selectionEnd = input.selectionEnd;
-    const pasteStart = utf16OffsetToCodePoint(value, selectionStart);
+    const source = input.value;
+    const pasteStart = utf16OffsetToCodePoint(source, selectionStart);
     const pasteLength = Array.from(plain).length;
     const pasteEnd = pasteStart + pasteLength;
-    const next = value.slice(0, selectionStart) + plain + value.slice(selectionEnd);
-    const preserved = rebaseRoutineMentions(value, next, mentions)
+    const next = source.slice(0, selectionStart) + plain + source.slice(selectionEnd);
+    const preserved = rebaseRoutineMentions(source, next, mentions)
       .filter(mention => mention.end <= pasteStart || mention.start >= pasteEnd);
     const inserted = pastedMentions.map(mention => ({
       ...mention, start: mention.start + pasteStart, end: mention.end + pasteStart,
@@ -350,7 +366,8 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       setPreview(null); setPreviewError(""); setPreviewPending(false); setPreviewPosition(null);
       return;
     }
-    setPreview(null); setPreviewError(""); setPreviewPending(false); setPreviewPosition(null);
+    setPreview(null); setPreviewError(""); setPreviewPending(false);
+    setPreviewPosition(floatingPosition(measureCaretRect(input), 320));
     try {
       const params = new URLSearchParams({ q: mention.text });
       const response = await fetch("/api/ejercicios?" + params, { cache: "no-store" });
@@ -359,7 +376,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       const exercise = Array.isArray(data.exercises) ? data.exercises.find((item: Exercise) => item.id === mention.exercise_id) : null;
       if (!response.ok || !exercise || (!exercise.video_url && !exercise.video_path)) return;
       setPreview(exercise);
-      setPlayerOpen(true);
+      setPlayerOpen(false);
     } catch {
       // A failed lookup must not open the exercise autocomplete/preview overlay.
     }
