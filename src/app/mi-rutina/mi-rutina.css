@@ -79,7 +79,7 @@
 
 .my-routine-block > header {
   flex-wrap: wrap;
-  background: var(--dash-panel-alt);
+  background: var(--dash-panel);
   border-bottom: 1px solid var(--dash-border);
   border-radius: 13px 13px 0 0;
   padding: 12px 14px;
@@ -130,7 +130,7 @@
 }
 
 .my-routine button.my-routine-exercise:hover {
-  background: var(--dash-panel-alt);
+  background: var(--dash-panel);
 }
 
 .my-routine button.my-routine-exercise:focus-visible {
@@ -168,7 +168,7 @@
 .my-routine-targets > span {
   padding: 3px 7px;
   border-radius: 6px;
-  background: var(--dash-panel-alt);
+  background: var(--dash-panel);
   line-height: 1.35;
 }
 
@@ -208,7 +208,7 @@
   padding: 0 6px;
   border: 0;
   border-radius: 6px;
-  background: var(--dash-panel-alt);
+  background: var(--dash-panel);
   color: var(--dash-text);
   font: inherit;
   font-size: 1.1rem;
@@ -360,7 +360,7 @@
   padding: 7px 12px;
   border: 1px solid var(--dash-border);
   border-radius: 8px;
-  background: var(--dash-panel-alt);
+  background: var(--dash-panel);
   color: var(--dash-text);
   font: inherit;
   cursor: pointer;
@@ -379,7 +379,7 @@
   padding: 6px 10px;
   border: 1px solid var(--dash-border);
   border-radius: 8px;
-  background: var(--dash-panel-alt);
+  background: var(--dash-panel);
   color: var(--dash-text);
   font: inherit;
   font-size: .875rem;
@@ -397,7 +397,7 @@
   padding: 12px;
   border: 1px solid var(--dash-border);
   border-radius: 10px;
-  background: var(--dash-panel-alt);
+  background: var(--dash-panel);
 }
 .student-workout-panel > header {
   display: flex;
@@ -432,7 +432,7 @@
   padding: 8px 10px;
   border: 1px solid var(--dash-border);
   border-radius: 8px;
-  background: var(--dash-bg);
+  background: var(--dash-panel);
   color: var(--dash-text);
   font: inherit;
 }
