@@ -90,6 +90,16 @@ La rama ya contiene una primera implementación de los siguientes componentes:
 - El cierre por toque/click fuera y Escape debe seguir funcionando. Al pasar el puntero al panel no se considera una salida; al cerrar el reproductor no debe reaparecer automáticamente la preview.
 - El acceso «Ver video» debe abrir directamente el reproductor, sin un ciclo intermedio de apertura/cierre de preview ni reactivación por foco.
 
+
+### Resultados visibles directamente en la rutina
+
+- Después de guardar un registro, el resultado real debe quedar visible junto al ejercicio en la propia rutina, sin exigir abrir nuevamente el panel contextual.
+- El resumen debe ser discreto y compacto, y permanecer visible al cerrar el panel, recargar la página y volver a abrir la rutina.
+- Para peso, mostrar el peso registrado y, cuando corresponda, un resumen de series/repeticiones. Para ejercicios por tiempo, mostrar la duración registrada (por ejemplo, planchas) y el detalle de duraciones por serie cuando existan.
+- Los resultados reales deben tener una presentación visual diferenciada de los objetivos planificados por el administrador. Nunca reemplazar ni ocultar el objetivo original.
+- El panel contextual sigue disponible para cargar/editar registros y consultar el historial; la rutina muestra un resumen sin obligar a entrar al panel.
+- Los ejercicios por tiempo no deben mostrar ni aceptar campos de kilogramos. La persistencia debe almacenar duración en segundos con validación de límites y mostrar una unidad legible.
+
 ### Criterios de aceptación adicionales
 
 - Una misma publicación muestra idénticos colores de mención en Admin y Alumno.
