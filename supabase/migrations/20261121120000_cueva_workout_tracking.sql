@@ -299,9 +299,9 @@ returns jsonb
 language sql
 security invoker
 set search_path = ''
-as $$
+as $workout$
   select cueva_private.workout_history(p_exercise_id,p_limit,p_offset)
-$;
+$workout$;
 
 revoke all on function public.cueva_workout_history(uuid,integer,integer)
   from public, anon, authenticated, service_role;
