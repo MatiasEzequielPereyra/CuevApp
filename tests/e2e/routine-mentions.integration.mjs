@@ -72,6 +72,24 @@ try {
       y: element.clientTop + parseFloat(style.paddingTop) + parseFloat(style.lineHeight) / 2,
     };
   }, exerciseName);
+  // Native drag selection must include the full text and linked mention.
+  const drag = await adminTextarea.evaluate(element => {
+    const rect = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    context.font = style.font;
+    const width = context.measureText(element.value).width;
+    return {
+      start: { x: rect.left + element.clientLeft + parseFloat(style.paddingLeft) + 1, y: rect.top + element.clientTop + parseFloat(style.paddingTop) + parseFloat(style.lineHeight) / 2 },
+      end: { x: rect.left + element.clientLeft + parseFloat(style.paddingLeft) + width - 1, y: rect.top + element.clientTop + parseFloat(style.paddingTop) + parseFloat(style.lineHeight) / 2 },
+    };
+  });
+  await page.mouse.move(drag.start.x, drag.start.y);
+  await page.mouse.down();
+  await page.mouse.move(drag.end.x, drag.end.y, { steps: 8 });
+  await page.mouse.up();
+  assert.equal(await adminTextarea.evaluate(element => element.value.slice(element.selectionStart, element.selectionEnd)), `🙂 ${exerciseName}`);
   // Use a real browser pointer click at the visible mention text. This exercises
   // the textarea's native caret placement and React click handler together.
   await adminTextarea.click({position:mentionClickPoint});
