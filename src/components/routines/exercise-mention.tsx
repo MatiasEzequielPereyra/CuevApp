@@ -117,7 +117,13 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
       )}
       {playerOpen && <ExerciseVideoDialog exerciseId={exerciseId} exerciseName={name} open onClose={() => {
         setPlayerOpen(false);
-        trigger.current?.focus({ preventScroll: true });
+        const active = document.activeElement;
+        // Restore focus only when the closing dialog still owns it; do not steal
+        // focus if the user has already moved elsewhere during the close event.
+        if (active === document.body || active === trigger.current
+          || (active instanceof HTMLElement && active.closest("dialog"))) {
+          trigger.current?.focus({ preventScroll: true });
+        }
       }} />}
     </div>
   );
