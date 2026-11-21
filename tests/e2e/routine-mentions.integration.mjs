@@ -51,6 +51,27 @@ try {
   await expect(highlightedMention).toHaveText(exerciseName);
   await expect(highlightedMention).toHaveCSS("font-weight", "750");
   await expect(highlightedMention).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  const adminTextarea = editor.getByRole("textbox", {name:"Rutina en texto libre"});
+  const mentionClickPoint = await adminTextarea.evaluate((element, name) => {
+    const start = element.value.indexOf(name);
+    const style = getComputedStyle(element);
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    context.font = style.font;
+    const before = context.measureText(element.value.slice(0, start)).width;
+    const mention = context.measureText(name.slice(0, Math.floor(name.length / 2))).width;
+    return {
+      x: element.clientLeft + parseFloat(style.paddingLeft) + before + mention,
+      y: element.clientTop + parseFloat(style.paddingTop) + parseFloat(style.lineHeight) / 2,
+    };
+  }, exerciseName);
+  // Use a real browser pointer click at the visible mention text. This exercises
+  // the textarea's native caret placement and React click handler together.
+  await adminTextarea.click({position:mentionClickPoint});
+  const adminPreview = editor.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`});
+  await expect(adminPreview).toBeVisible();
+  await expect(adminPreview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
+  await adminPreview.getByRole("button", {name:"Cerrar"}).click();
   await expect(editor.getByText("Borrador guardado", {exact:true})).toBeVisible();
   const {rows:[draft]} = await db.query("select revision,text_content,mentions from public.cueva_routine_text_drafts where kind='draft' and owner_id=$1", [studentId]);
   assert.equal(draft.text_content,`🙂 ${exerciseName}`);
