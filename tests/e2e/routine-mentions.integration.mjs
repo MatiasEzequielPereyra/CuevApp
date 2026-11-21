@@ -47,6 +47,7 @@ try {
   await editor.getByRole("button", {name:"Texto libre"}).click();
   await editor.getByRole("textbox", {name:"Rutina en texto libre"}).fill(`🙂 @${exerciseName}`);
   await editor.getByRole("option", {name:exerciseName}).click();
+  await expect(editor.getByRole("listbox", { name: "Ejercicios sugeridos" })).toHaveCount(0);
   const highlightedMention = editor.locator(".routine-text-mention-highlight");
   await expect(highlightedMention).toHaveText(exerciseName);
   // Highlight styling must not change inline text metrics: the textarea owns the native caret.
@@ -73,6 +74,7 @@ try {
   await adminTextarea.click({position:mentionClickPoint});
   const adminPreview = editor.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`});
   await expect(adminPreview).toBeVisible();
+  await expect(editor.getByRole("listbox", { name: "Ejercicios sugeridos" })).toHaveCount(0);
   await expect(adminPreview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
   await adminPreview.getByRole("button", {name:"Cerrar"}).click();
   await expect(editor.getByText("Borrador guardado", {exact:true})).toBeVisible();
@@ -91,33 +93,55 @@ try {
   await expect(pupil.getByRole("heading", {name:"Ejercicios mencionados"})).toBeVisible();
   await expect(pupil.getByRole("group", {name:"Día de entrenamiento"})).toHaveCount(0);
 
-  // The preview is intentionally a compact inline disclosure: it must not
-  // navigate away from the routine when a referenced exercise has no video.
-  await mention.hover();
+  // A linked mention never opens a preview from proximity, hover or focus.
   const preview = pupil.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`});
+  await mention.hover();
+  await expect(preview).toHaveCount(0);
+  await mention.focus();
+  await expect(preview).toHaveCount(0);
+  await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
+
+  // A deliberate click opens the inline details; text-only mentions still
+  // expose workout logging even when no video is available.
+  await mention.click();
   await expect(preview.getByText(exerciseName, {exact:true})).toBeVisible();
   await expect(preview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
   await expect(preview.getByRole("link")).toHaveCount(0);
-  await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
+  await preview.getByRole("button", {name:"Registrar peso"}).click();
+  await preview.getByLabel("Peso utilizado (kg)").fill("37.5");
+  await preview.getByRole("button", {name:"Guardar entrenamiento"}).click();
+  await expect(preview.getByRole("status").filter({hasText:"Entrenamiento guardado."})).toBeVisible();
+  await expect.poll(async () => (await db.query(
+    "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
+    [studentId,exerciseId]
+  )).rows[0].count).toBe(1);
+  await preview.getByRole("button", {name:"Guardar último peso"}).click();
+  await expect.poll(async () => (await db.query(
+    "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
+    [studentId,exerciseId]
+  )).rows[0].count).toBe(2);
+  await preview.getByRole("button", {name:"Por series"}).click();
+  const setRows = preview.locator(".student-workout-set");
+  await setRows.nth(0).getByLabel("Repeticiones").fill("10");
+  await setRows.nth(0).getByLabel("Peso (kg)").fill("40");
+  await preview.getByRole("button", {name:"Agregar serie"}).click();
+  await setRows.nth(1).getByLabel("Repeticiones").fill("8");
+  await setRows.nth(1).getByLabel("Peso (kg)").fill("42.5");
+  await preview.getByRole("button", {name:"Guardar entrenamiento"}).click();
+  await expect(preview.getByRole("status").filter({hasText:"Entrenamiento guardado."})).toBeVisible();
+  await expect.poll(async () => (await db.query(
+    "select count(*)::int as count from public.cueva_workout_sets s join public.cueva_workout_entries e on e.id=s.entry_id where e.student_id=$1 and e.exercise_id=$2",
+    [studentId,exerciseId]
+  )).rows[0].count).toBe(2);
   await pupil.locator("h1").click();
   await expect(preview).toHaveCount(0);
-
-  await mention.focus();
-  await expect(preview).toBeVisible();
-  await pupil.keyboard.press("Escape");
-  await expect(preview).toHaveCount(0);
-  await expect(mention).toBeFocused();
-
-  await mention.click();
-  await expect(preview).toBeVisible();
-  await pupil.locator("h1").click();
-  await expect(preview).toHaveCount(0);
   await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
 
-  // A linked exercise with a confirmed video must launch the in-routine player.
+  // A linked exercise with a confirmed video opens the player from an explicit
+  // action; closing it does not reopen a preview through restored focus/hover.
   await db.query("update public.cueva_exercises set video_url='https://www.youtube.com/watch?v=dQw4w9WgXcQ' where id=$1", [exerciseId]);
   await pupil.reload();
-  await mention.hover();
+  await mention.click();
   await expect(preview.getByRole("button", {name:"Ver video"})).toBeVisible();
   const videoApi = url => url.pathname === "/api/ejercicios/video" && url.searchParams.get("id") === exerciseId && url.searchParams.get("player") === "1";
   await pupil.route("**/api/ejercicios/video**", async route => {
@@ -133,8 +157,11 @@ try {
   await player.getByRole("button", {name:"Reintentar"}).click();
   await expect(player.locator("iframe")).toHaveAttribute("src", /youtube-nocookie.com\/embed\/dQw4w9WgXcQ/);
   await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
-  await player.getByRole("button", {name:"Cerrar"}).click();
+  await pupil.mouse.click(1, 1);
   await expect(player).toHaveCount(0);
+  await expect(preview).toHaveCount(0);
+  await mention.hover();
+  await expect(preview).toHaveCount(0);
   await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
   console.log("PASS: authenticated text mention preview, no-video state, inline video playback, keyboard dismissal and no navigation.");
 } finally {
