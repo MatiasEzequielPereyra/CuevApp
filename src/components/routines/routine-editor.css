@@ -385,3 +385,18 @@
 .routine-text-mention-preview p { margin: 0; }
 .routine-text-mention-preview button { justify-self: start; min-height: 40px; }
 .routine-text-mention-preview .routine-text-mention-close { justify-self: end; }
+
+
+.routine-editor-compact .my-routine-dialog {
+  width: min(680px, calc(100% - 24px));
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  padding: 0 12px 12px;
+  border: 1px solid var(--dash-border);
+  border-radius: 14px;
+  background: var(--dash-panel);
+  color: var(--dash-text);
+}
+.routine-editor-compact .my-routine-dialog::backdrop { background: rgb(0 0 0 / .7); }
+.routine-editor-compact .my-routine-dialog > header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.routine-editor-compact .my-routine-dialog :is(video, iframe) { display: block; width: 100%; aspect-ratio: 16 / 9; max-height: 60dvh; border: 0; background: #000; }
