@@ -237,7 +237,8 @@ declare
   v_entries jsonb;
   v_has_more boolean;
 begin
-  if p_exercise_id is null or p_limit not between 1 and 50 or p_offset not between 0 and 100000 then
+  if p_exercise_id is null or p_limit is null or p_offset is null
+    or p_limit not between 1 and 50 or p_offset not between 0 and 100000 then
     raise exception 'Consulta de historial inválida' using errcode = '22023';
   end if;
   select s.id into v_student
