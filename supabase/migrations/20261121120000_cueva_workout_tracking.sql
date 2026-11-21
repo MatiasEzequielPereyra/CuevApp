@@ -43,7 +43,7 @@ create table public.cueva_workout_sets (
   duration_seconds integer,
   primary key (entry_id, set_number),
   constraint cueva_workout_set_value_check check (
-    (weight_kg is not null and weight_kg between 0 and 2000 and duration_seconds is null and reps between 1 and 1000)
+    (weight_kg is not null and weight_kg between 0 and 2000 and duration_seconds is null and reps is not null and reps between 1 and 1000)
     or (weight_kg is null and duration_seconds is not null and duration_seconds between 1 and 86400 and reps is null)
   )
 );
@@ -82,6 +82,7 @@ declare
   v_sets jsonb := '[]'::jsonb;
 begin
   if p_id is null or p_publication_id is null or p_exercise_id is null
+    or p_revision >= 2147483647
     or p_mode is null or p_mode not in ('quick','sets')
     or p_tracking_mode is null or p_tracking_mode not in ('weight','time')
     or p_sets is null or jsonb_typeof(p_sets) is distinct from 'array'
