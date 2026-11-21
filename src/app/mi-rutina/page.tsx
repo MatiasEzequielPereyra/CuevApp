@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 type MentionedExercise = { id: string; name: string; description: string | null; videoAvailability: "available" | "unavailable" | "unknown" };
 type RoutineMention = { exercise_id: string; start: number; end: number; text: string };
 
-function renderRoutineText(text: string, mentions: RoutineMention[], exercisesById: Map<string, MentionedExercise>) {
+function renderRoutineText(text: string, mentions: RoutineMention[], exercisesById: Map<string, MentionedExercise>, publicationId: string) {
   const points = Array.from(text);
   const parts: ReactNode[] = [];
   let cursor = 0;
@@ -22,7 +22,7 @@ function renderRoutineText(text: string, mentions: RoutineMention[], exercisesBy
     const exercise = exercisesById.get(mention.exercise_id);
     if (!exercise || mention.start < cursor || mention.end > points.length || points.slice(mention.start, mention.end).join("") !== mention.text) return;
     if (mention.start > cursor) parts.push(points.slice(cursor, mention.start).join(""));
-    parts.push(<ExerciseMention key={`${mention.exercise_id}:${mention.start}:${index}`} exerciseId={exercise.id} name={exercise.name} description={exercise.description} videoAvailability={exercise.videoAvailability} text={mention.text} />);
+    parts.push(<ExerciseMention key={`${mention.exercise_id}:${mention.start}:${index}`} exerciseId={exercise.id} name={exercise.name} description={exercise.description} videoAvailability={exercise.videoAvailability} text={mention.text} publicationId={publicationId} />);
     cursor = mention.end;
   });
   if (cursor < points.length) parts.push(points.slice(cursor).join(""));
@@ -146,6 +146,7 @@ export default async function MyRoutine() {
               <StudentPlan
                 key={publication.published_at}
                 plan={plan}
+                publicationId={publication.id}
                 videoIds={videoIds}
                 videosAvailable={!videos?.error}
               />
@@ -154,7 +155,7 @@ export default async function MyRoutine() {
             {textMode && textDocument?.data?.text_content && (
               <section className="my-routine-panel my-routine-notes">
                 <h2>Rutina</h2>
-                <p>{renderRoutineText(textDocument.data.text_content, (textDocument.data.mentions ?? []) as RoutineMention[], mentionedExercisesById)}</p>
+                <p>{renderRoutineText(textDocument.data.text_content, (textDocument.data.mentions ?? []) as RoutineMention[], mentionedExercisesById, publication.id)}</p>
               </section>
             )}
             {!textMode && publication.content && (
