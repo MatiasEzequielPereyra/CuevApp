@@ -103,7 +103,7 @@ try {
   // Capture clipboard payload and whether the component suppresses native paste.
   await adminTextarea.evaluate(element => {
     const diagnostics = [];
-    (window as any).__routineClipboardDiagnostics = diagnostics;
+    window.__routineClipboardDiagnostics = diagnostics;
     for (const type of ["copy", "paste"]) window.addEventListener(type, event => {
       const clipboard = event.clipboardData;
       const snapshot = { type, types: clipboard ? Array.from(clipboard.types) : [],
@@ -134,7 +134,7 @@ try {
   await adminTextarea.press("Control+V");
   await expect(highlightedMention).toHaveCount(2);
   await expect(adminTextarea).toHaveValue(`Inicio\n🙂 ${exerciseName}\nFin\nInicio\n🙂 ${exerciseName}\nFin`);
-  console.log("ROUTINE_CLIPBOARD_DIAGNOSTICS", JSON.stringify(await page.evaluate(() => (window as any).__routineClipboardDiagnostics)));
+  console.log("ROUTINE_CLIPBOARD_DIAGNOSTICS", JSON.stringify(await page.evaluate(() => window.__routineClipboardDiagnostics)));
   // Restore one occurrence so the remaining assertions use a single mention.
   await adminTextarea.fill(`🙂 @${exerciseName}`);
   await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:exerciseName, exact:true})).toBeVisible();
