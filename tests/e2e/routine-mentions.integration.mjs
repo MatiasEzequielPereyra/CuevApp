@@ -45,7 +45,11 @@ try {
   await page.goto(`${origin}/rutinas?alumno=${studentId}`);
   const editor = page.getByRole("region", {name:"Editor de rutina"});
   await editor.getByRole("button", {name:"Texto libre"}).click();
-  await editor.getByRole("textbox", {name:"Rutina en texto libre"}).fill(`🙂 @${exerciseName}`);
+  const adminTextarea = editor.getByRole("textbox", {name:"Rutina en texto libre"});
+  await adminTextarea.fill(exerciseName);
+  await expect(editor.getByRole("listbox", {name:"Ejercicios sugeridos"})).toHaveCount(0);
+  await adminTextarea.fill(`🙂 @${exerciseName}`);
+  await expect(editor.getByRole("option", {name:exerciseName})).toBeVisible();
   await editor.getByRole("option", {name:exerciseName}).click();
   await expect(editor.getByRole("listbox", { name: "Ejercicios sugeridos" })).toHaveCount(0);
   const highlightedMention = editor.locator(".routine-text-mention-highlight");
@@ -55,7 +59,6 @@ try {
   await expect(highlightedMention).toHaveCSS("padding-left", "0px");
   await expect(highlightedMention).not.toHaveCSS("text-shadow", "none");
   await expect(highlightedMention).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  const adminTextarea = editor.getByRole("textbox", {name:"Rutina en texto libre"});
   const mentionClickPoint = await adminTextarea.evaluate((element, name) => {
     const start = element.value.indexOf(name);
     const style = getComputedStyle(element);
