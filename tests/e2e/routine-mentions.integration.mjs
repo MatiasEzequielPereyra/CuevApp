@@ -171,8 +171,8 @@ try {
   await logger.getByRole("button", {name:"Agregar serie"}).click();
   await setRows.nth(1).getByLabel("Repeticiones").fill("8");
   await setRows.nth(1).getByLabel("Peso (kg)").fill("42.5");
-  await preview.getByRole("button", {name:"Guardar entrenamiento"}).click();
-  await expect(preview.getByRole("status").filter({hasText:"Entrenamiento guardado."})).toBeVisible();
+  await logger.getByRole("button", {name:"Guardar resultado"}).click();
+  await expect(logger.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
   await expect.poll(async () => (await db.query(
     "select count(*)::int as count from public.cueva_workout_sets s join public.cueva_workout_entries e on e.id=s.entry_id where e.student_id=$1 and e.exercise_id=$2",
     [studentId,exerciseId]
