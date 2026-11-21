@@ -63,7 +63,7 @@ declare
   v_sets jsonb := '[]'::jsonb;
 begin
   if p_id is null or p_publication_id is null or p_exercise_id is null
-    or p_mode not in ('quick','sets') or p_sets is null
+    or p_mode is null or p_mode not in ('quick','sets') or p_sets is null
     or jsonb_typeof(p_sets) is distinct from 'array'
   then
     raise exception 'Registro de entrenamiento inválido' using errcode = '22023';
@@ -174,6 +174,7 @@ begin
   );
 
   if p_mode = 'sets' then
+    v_number := 0;
     for v_set in select value from jsonb_array_elements(p_sets) loop
       v_number := v_number + 1;
       insert into public.cueva_workout_sets(entry_id,set_number,reps,weight_kg)
