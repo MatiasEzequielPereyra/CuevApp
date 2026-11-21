@@ -284,12 +284,11 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       <div ref={highlight} className="routine-text-highlight-layer" aria-hidden="true">
         {renderMentionHighlights(value, mentions)}
       </div>
-      <textarea ref={textarea} id="routine-free-text" rows={16} maxLength={40000} value={value} disabled={disabled}
+      <textarea ref={textarea} id="routine-free-text" rows={16} maxLength={40000} value={value} disabled={disabled || creatingExercise}
       aria-autocomplete="list" aria-controls="routine-mention-options"
       onScroll={syncHighlightScroll}
       onChange={event => handleChange(event.target.value, event.target.selectionStart)}
       onClick={event => { updateRange(null); void openMentionAtCursor(event.currentTarget); }}
-      disabled={disabled || creatingExercise}
       onKeyDown={onKeyDown}
       placeholder={"Escribí la rutina completa…\n\nPodés mencionar ejercicios con @ o escribir su nombre."} />
 
