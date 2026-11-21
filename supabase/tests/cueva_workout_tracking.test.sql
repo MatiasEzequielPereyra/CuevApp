@@ -127,6 +127,11 @@ select is((public.cueva_workout_record(
  'quick',45,'[]'::jsonb)->'entry'->>'exercise_id'),
  'c7500000-0000-4000-8000-000000000003',
  'text-routine UUID mentions support student workout logging');
+select throws_ok($text_target$select public.cueva_workout_record(
+ 'c8100000-0000-4000-8000-000000000010','c7600000-0000-4000-8000-000000000003',
+ 'c7500000-0000-4000-8000-000000000003','c7900000-0000-4000-8000-000000000004',
+ 'quick',45,'[]'::jsonb)$text_target$,'22023',null,
+ 'text mentions cannot be attributed to arbitrary structured target ids');
 select is((select tracking_mode from public.cueva_student_mentioned_exercises_with_tracking_mode()
  where id='c7500000-0000-4000-8000-000000000004'),'time',
  'text mentions expose the catalog time mode');
