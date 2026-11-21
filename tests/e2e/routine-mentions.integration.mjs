@@ -102,10 +102,10 @@ try {
   assert.equal(await adminTextarea.evaluate(element => element.value.slice(element.selectionStart, element.selectionEnd)), `🙂 ${exerciseName}`);
   // Capture clipboard payload and whether the component suppresses native paste.
   await adminTextarea.evaluate(element => {
-    const diagnostics: unknown[] = [];
+    const diagnostics = [];
     (window as any).__routineClipboardDiagnostics = diagnostics;
     for (const type of ["copy", "paste"]) window.addEventListener(type, event => {
-      const clipboard = (event as ClipboardEvent).clipboardData;
+      const clipboard = event.clipboardData;
       const snapshot = { type, types: clipboard ? Array.from(clipboard.types) : [],
         plain: clipboard?.getData("text/plain") ?? "", html: clipboard?.getData("text/html") ?? "",
         custom: clipboard?.getData("application/x-cuevapp-routine-mentions") ?? "",
