@@ -69,6 +69,7 @@ try {
   await expect(highlightedMention).toHaveCSS("padding-left", "0px");
   await expect(highlightedMention).not.toHaveCSS("text-shadow", "none");
   await expect(highlightedMention).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  const adminMentionHue = await highlightedMention.evaluate(element => element.style.getPropertyValue("--mention-hue"));
   const mentionClickPoint = await adminTextarea.evaluate((element, name) => {
     const start = element.value.indexOf(name);
     const style = getComputedStyle(element);
