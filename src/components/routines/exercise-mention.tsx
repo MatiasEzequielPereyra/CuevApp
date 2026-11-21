@@ -3,7 +3,7 @@
 import { createPortal } from "react-dom";
 import { ExerciseVideoDialog } from "@/components/routines/exercise-video-dialog";
 import { StudentWorkoutLogger } from "@/components/routines/student-workout-logger";
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 type ExerciseMentionProps = {
   exerciseId: string;
@@ -27,7 +27,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
   const trigger = useRef<HTMLButtonElement>(null);
   const panelId = `${instanceId}-exercise-mention`;
 
-  function positionPanel() {
+  const positionPanel = useCallback(() => {
     const rect = trigger.current?.getBoundingClientRect();
     if (!rect) return;
     const width = Math.min(320, window.innerWidth - 16);
@@ -38,7 +38,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
       ? Math.min(rect.bottom + 8, window.innerHeight - maxHeight - 8)
       : Math.max(8, rect.top - maxHeight - 8);
     setPosition({ left, top, width });
-  }
+  }, []);
 
   function showPreview() {
     positionPanel();
@@ -68,7 +68,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
       window.removeEventListener("scroll", positionPanel, true);
       window.removeEventListener("resize", positionPanel);
     };
-  }, [open]);
+  }, [open, positionPanel]);
 
   return (
     <div
