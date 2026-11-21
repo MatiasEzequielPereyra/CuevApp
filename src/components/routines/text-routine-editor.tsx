@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent as ReactClipboardEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useCallback } from "react";
 import type { RoutineMention } from "@/lib/routines/mentions";
 import { codePointSlice, getRoutineMentionHues, rebaseRoutineMentions, utf16OffsetToCodePoint, validateRoutineMentions } from "@/lib/routines/mentions";
 import type { Exercise } from "@/lib/routines/types";
