@@ -59,8 +59,8 @@ La rama ya contiene una primera implementación de los siguientes componentes:
 - Migración nueva `20261121120000_cueva_workout_tracking.sql`: tablas separadas de entradas y series; escrituras transaccionales; UUID de operación idempotente; verificación del alumno autenticado, publicación vigente, UUID del ejercicio y modalidad peso/tiempo; historial paginado por alumno + UUID.
 - API autenticada `/api/entrenamientos`: no acepta identidad de alumno desde el cliente; limita y valida entradas antes de invocar RPC.
 - Interfaz `StudentWorkoutLogger`: registro rápido, repetición de último peso, series con pesos/repeticiones diferentes e historial con carga de registros anteriores.
-- Integración en rutinas estructuradas y menciones de texto. Las modalidades por tiempo no muestran ni aceptan kg.
-- Editor: autocompletado solo tras escribir `@`; panel y preview flotantes en portal, anclados al cursor/mención y limitados al viewport; creación de ejercicios inexistentes mediante el endpoint de catálogo ya existente; cierre explícito sin reapertura por hover/foco.
+- Integración en rutinas estructuradas y menciones de texto. En bloques manda el modo del objetivo; en texto, la mención hereda `tracking_mode` del catálogo (`weight`/`time`), editable desde Ejercicios y también elegible al crear inline. Las modalidades por tiempo no muestran ni aceptan kg.
+- Editor: autocompletado solo tras escribir `@`; panel y preview flotantes en portal, anclados al cursor/mención y limitados al viewport; creación de ejercicios inexistentes mediante el endpoint de catálogo ya existente; cierre explícito sin reapertura por hover/foco; selección nativa por arrastre y copia/corte/pegado que conserva UUID de menciones completas mediante metadatos de portapapeles con fallback HTML.
 - Reproductor: cierre por botón, Escape y click fuera. La preview de menciones no se abre por hover/foco y no se reactiva al restaurar el foco tras cerrar el reproductor.
 - Pruebas pgTAP y Playwright ampliadas para permisos, aislamiento, idempotencia, modo tiempo, paginación, selección de texto y registro desde menciones.
 
