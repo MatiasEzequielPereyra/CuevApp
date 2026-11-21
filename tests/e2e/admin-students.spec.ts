@@ -415,14 +415,15 @@ test("texto libre vincula menciones por UUID y publica la instantánea visible p
   await textarea.fill("@Sentadilla");
   await page.waitForTimeout(350);
   console.log("ADMIN_EXERCISE_SEARCH_DIAGNOSTICS", JSON.stringify(exerciseSearchDiagnostics));
-  const suggestion = editor.getByRole("option", { name: "Sentadilla" });
+  // The autocomplete list is rendered in a document.body portal, outside the editor region.
+  const suggestion = page.getByRole("listbox", { name: "Ejercicios sugeridos" }).getByRole("option", { name: "Sentadilla", exact: true });
   await expect(suggestion).toBeVisible();
   await suggestion.click();
   await expect(textarea).toHaveValue("Sentadilla");
   await textarea.press("End");
   await textarea.press("Enter");
   await textarea.type("Remo");
-  const directSuggestion = editor.getByRole("option", { name: "Remo" });
+  const directSuggestion = page.getByRole("listbox", { name: "Ejercicios sugeridos" }).getByRole("option", { name: "Remo", exact: true });
   await expect(directSuggestion).toBeVisible();
   await directSuggestion.click();
   await expect(textarea).toHaveValue("Sentadilla\nRemo");
