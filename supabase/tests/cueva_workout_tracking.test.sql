@@ -123,16 +123,21 @@ select is(jsonb_array_length(public.cueva_workout_history('c7500000-0000-4000-80
 
 -- A lost response can be retried after the administrator publishes a newer
 -- snapshot. The existing operation must replay instead of creating a duplicate.
+select is((public.cueva_workout_record(
+ 'c8100000-0000-4000-8000-000000000015','c7600000-0000-4000-8000-000000000002',
+ 'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000002',
+ 'quick','weight',68,null,'[]'::jsonb)->'entry'->>'quick_weight_kg')::numeric,68::numeric,
+ 'a pending operation is committed before the newer publication exists');
 reset role;
 insert into public.cueva_routine_publications(id,student_id,draft_revision,content,published_by,plan) values
  ('c7600000-0000-4000-8000-000000000004','c7300000-0000-4000-8000-000000000001',3,'Nueva rutina','c7100000-0000-4000-8000-000000000001',
   '{"version":2,"days":[{"id":"c7700000-0000-4000-8000-000000000003","name":"Día","blocks":[{"id":"c7800000-0000-4000-8000-000000000003","name":"Bloque","rounds":3,"exercises":[{"id":"c7900000-0000-4000-8000-000000000004","exercise_id":"c7500000-0000-4000-8000-000000000001","name":"Press banca","note":"","mode":"weight","reps":"8","weight_kg":60},{"id":"c7900000-0000-4000-8000-000000000005","exercise_id":"c7500000-0000-4000-8000-000000000002","name":"Plancha","note":"","mode":"time","duration":60,"unit":"seconds"}]}]}]}'::jsonb);
 set local role authenticated;
 select is((public.cueva_workout_record(
- 'c8100000-0000-4000-8000-000000000001','c7600000-0000-4000-8000-000000000002',
+ 'c8100000-0000-4000-8000-000000000015','c7600000-0000-4000-8000-000000000002',
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000002',
- 'quick','weight',72.5,null,'[]'::jsonb)->'entry'->>'id'),
- 'c8100000-0000-4000-8000-000000000001',
+ 'quick','weight',68,null,'[]'::jsonb)->'entry'->>'id'),
+ 'c8100000-0000-4000-8000-000000000015',
  'an exact retry replays after a newer publication is committed');
 
 select throws_ok($$select public.cueva_workout_record(
