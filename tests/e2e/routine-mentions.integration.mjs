@@ -147,12 +147,14 @@ try {
   // expose workout logging even when no video is available.
   await mention.click();
   await expect(preview.getByText(exerciseName, {exact:true})).toBeVisible();
+  await preview.hover(); // moving from the mention to the panel must not dismiss it.
   await expect(preview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
   await expect(preview.getByRole("link")).toHaveCount(0);
   await logger.getByRole("button", {name:"Registrar peso"}).click();
   await logger.getByLabel("Peso utilizado (kg)").fill("37.5");
   await logger.getByRole("button", {name:"Guardar resultado"}).click();
   await expect(logger.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
+  await expect(logger.getByText("REALIZADO")).toBeVisible();
   await expect.poll(async () => (await db.query(
     "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
     [studentId,exerciseId]
@@ -175,8 +177,10 @@ try {
     "select count(*)::int as count from public.cueva_workout_sets s join public.cueva_workout_entries e on e.id=s.entry_id where e.student_id=$1 and e.exercise_id=$2",
     [studentId,exerciseId]
   )).rows[0].count).toBe(2);
+  await expect(logger.getByText("REALIZADO")).toBeVisible();
   await pupil.locator("h1").click();
   await expect(preview).toHaveCount(0);
+  await expect(logger.getByText("REALIZADO")).toBeVisible();
   await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
 
   // A linked exercise with a confirmed video opens the player from an explicit
