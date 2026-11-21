@@ -376,7 +376,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     }
     document.addEventListener("pointerdown", closeSuggestions);
     return () => document.removeEventListener("pointerdown", closeSuggestions);
-  }, [range]);
+  }, [range, updateRange]);
 
   useEffect(() => {
     if (playerOpen || (!preview && !previewPending && !previewError)) return;
