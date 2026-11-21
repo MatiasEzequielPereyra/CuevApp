@@ -11,7 +11,7 @@ type HistoryEntry = {
   weight_kg: number | null;
   sets: HistorySet[];
 };
-type WorkoutHistory = { last_weight_kg: number | null; entries: HistoryEntry[] };
+type WorkoutHistory = { last_weight_kg: number | null; entries: HistoryEntry[]; has_more: boolean };
 
 function parseWeight(value: string): number | null {
   const normalized = value.trim().replace(",", ".");
@@ -40,15 +40,18 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const busy = useRef(false);
   const operation = useRef<{ fingerprint: string; id: string } | null>(null);
 
-  async function loadHistory() {
+  async function loadHistory(loadMore = false) {
     setLoadingHistory(true);
     try {
-      const response = await fetch("/api/entrenamientos?exercise_id=" + encodeURIComponent(exerciseId), { cache: "no-store" });
+      const offset = loadMore ? history?.entries.length ?? 0 : 0;
+      const response = await fetch("/api/entrenamientos?exercise_id=" + encodeURIComponent(exerciseId) + "&offset=" + offset, { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "No pudimos cargar el historial.");
       const next = data.history as WorkoutHistory;
-      setHistory(next);
-      if (next.last_weight_kg !== null && next.last_weight_kg !== undefined) {
+      setHistory(current => loadMore && current
+        ? { ...next, entries: [...current.entries, ...next.entries] }
+        : next);
+      if (!loadMore && next.last_weight_kg !== null && next.last_weight_kg !== undefined) {
         setWeight(String(next.last_weight_kg));
       }
     } catch (cause) {
@@ -200,6 +203,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
                   ))}
                 </ol>
               )}
+              {history?.has_more && <button type="button" disabled={loadingHistory} onClick={() => void loadHistory(true)}>{loadingHistory ? "Cargando…" : "Cargar registros anteriores"}</button>}
             </div>
           )}
         </div>
