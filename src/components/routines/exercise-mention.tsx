@@ -103,7 +103,12 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
           <strong>{name}</strong>
           {description && <span>{description}</span>}
           {videoAvailability === "available"
-            ? <button type="button" className="my-routine-mention-play" onClick={() => { setOpen(false); setPlayerOpen(true); }}>Ver video</button>
+            ? <button type="button" className="my-routine-mention-play" onClick={() => {
+              // Preserve the exercise trigger as the dialog's native return-focus target.
+              trigger.current?.focus({ preventScroll: true });
+              setOpen(false);
+              setPlayerOpen(true);
+            }}>Ver video</button>
             : videoAvailability === "unavailable"
               ? <span role="status">Aún no se encuentra con video disponible</span>
               : <span role="status">No pudimos comprobar si hay un video disponible.</span>}
