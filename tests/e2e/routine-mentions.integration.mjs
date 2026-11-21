@@ -106,6 +106,18 @@ try {
   await adminTextarea.press("End");
   await adminTextarea.press("Control+V");
   await expect(highlightedMention).toHaveCount(2);
+  // Multi-line arbitrary selections must preserve every linked exercise UUID on paste.
+  await adminTextarea.fill(`Inicio\\n🙂 @${exerciseName}\\nFin`);
+  await expect(page.getByRole("option", {name:exerciseName})).toBeVisible();
+  await page.getByRole("option", {name:exerciseName}).click();
+  await expect(highlightedMention).toHaveCount(1);
+  await adminTextarea.press("Control+A");
+  await adminTextarea.press("Control+C");
+  await adminTextarea.press("End");
+  await adminTextarea.press("Enter");
+  await adminTextarea.press("Control+V");
+  await expect(highlightedMention).toHaveCount(2);
+  await expect(adminTextarea).toHaveValue(`Inicio\\n🙂 ${exerciseName}\\nFin\\nInicio\\n🙂 ${exerciseName}\\nFin`);
   // Restore one occurrence so the remaining assertions use a single mention.
   await adminTextarea.fill(`🙂 @${exerciseName}`);
   await expect(page.getByRole("option", {name:exerciseName})).toBeVisible();
@@ -222,6 +234,16 @@ try {
   await preview.getByRole("button", {name:"Ver video"}).click();
   await expect(player).toBeVisible();
   await pupil.keyboard.press("Escape");
+  await expect(player).toHaveCount(0);
+  await expect(preview).toHaveCount(0);
+  await mention.hover();
+  await expect(preview).toHaveCount(0);
+
+  // Clicking the native dialog backdrop closes the player without restoring a preview.
+  await mention.click();
+  await preview.getByRole("button", {name:"Ver video"}).click();
+  await expect(player).toBeVisible();
+  await pupil.mouse.click(5, 5);
   await expect(player).toHaveCount(0);
   await expect(preview).toHaveCount(0);
   await mention.hover();
