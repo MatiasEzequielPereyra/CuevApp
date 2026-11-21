@@ -287,6 +287,174 @@ revoke all on function public.cueva_workout_record(uuid,uuid,uuid,uuid,text,text
 grant execute on function public.cueva_workout_record(uuid,uuid,uuid,uuid,text,text,numeric,integer,jsonb)
   to authenticated;
 
+create function cueva_private.workout_update(
+  p_id uuid,
+  p_revision integer,
+  p_mode text,
+  p_tracking_mode text,
+  p_weight_kg numeric,
+  p_duration_seconds integer,
+  p_sets jsonb
+) returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $workout_update$
+declare
+  v_entry public.cueva_workout_entries;
+  v_set jsonb;
+  v_number integer := 0;
+  v_reps numeric;
+  v_weight numeric;
+  v_duration numeric;
+  v_sets jsonb := '[]'::jsonb;
+begin
+  if p_id is null or p_revision is null or p_revision < 1
+    or p_mode is null or p_mode not in ('quick','sets')
+    or p_tracking_mode is null or p_tracking_mode not in ('weight','time')
+    or p_sets is null or jsonb_typeof(p_sets) is distinct from 'array'
+  then
+    raise exception 'Actualización de entrenamiento inválida' using errcode = '22023';
+  end if;
+
+  perform pg_advisory_xact_lock(903004001);
+  select * into v_entry from public.cueva_workout_entries where id=p_id for update;
+  if not found or not cueva_private.routine_owner(v_entry.student_id) then
+    raise exception 'Acceso restringido' using errcode = '42501';
+  end if;
+  if v_entry.tracking_mode <> p_tracking_mode then
+    raise exception 'El tipo de registro no coincide con el ejercicio' using errcode = '22023';
+  end if;
+
+  if p_mode = 'quick' then
+    if jsonb_array_length(p_sets) <> 0 then
+      raise exception 'El registro rápido no admite detalle de series' using errcode = '22023';
+    end if;
+    if p_tracking_mode = 'weight' and (
+      p_weight_kg is null or p_weight_kg < 0 or p_weight_kg > 2000
+      or round(p_weight_kg,2) <> p_weight_kg or p_duration_seconds is not null
+    ) then
+      raise exception 'Ingresá un peso válido' using errcode = '22023';
+    elsif p_tracking_mode = 'time' and (
+      p_duration_seconds is null or p_duration_seconds not between 1 and 86400
+      or p_weight_kg is not null
+    ) then
+      raise exception 'Ingresá una duración válida en segundos' using errcode = '22023';
+    end if;
+  else
+    if p_weight_kg is not null or p_duration_seconds is not null
+      or jsonb_array_length(p_sets) not between 1 and 30
+    then
+      raise exception 'El detalle debe incluir entre 1 y 30 series' using errcode = '22023';
+    end if;
+    for v_set in select value from jsonb_array_elements(p_sets) loop
+      v_number := v_number + 1;
+      if jsonb_typeof(v_set) is distinct from 'object' then
+        raise exception 'Revisá los valores de cada serie' using errcode = '22023';
+      end if;
+      if p_tracking_mode = 'weight' then
+        if (v_set - 'reps' - 'weight_kg') <> '{}'::jsonb
+          or jsonb_typeof(v_set->'reps') is distinct from 'number'
+          or jsonb_typeof(v_set->'weight_kg') is distinct from 'number'
+        then
+          raise exception 'Cada serie debe incluir repeticiones y peso' using errcode = '22023';
+        end if;
+        v_reps := (v_set->>'reps')::numeric;
+        v_weight := (v_set->>'weight_kg')::numeric;
+        if v_reps <> trunc(v_reps) or v_reps not between 1 and 1000
+          or v_weight < 0 or v_weight > 2000 or round(v_weight,2) <> v_weight
+        then
+          raise exception 'Cada serie admite 1–1000 repeticiones y 0–2000 kg' using errcode = '22023';
+        end if;
+      else
+        if (v_set - 'duration_seconds') <> '{}'::jsonb
+          or jsonb_typeof(v_set->'duration_seconds') is distinct from 'number'
+        then
+          raise exception 'Cada serie debe incluir una duración' using errcode = '22023';
+        end if;
+        v_duration := (v_set->>'duration_seconds')::numeric;
+        if v_duration <> trunc(v_duration) or v_duration not between 1 and 86400 then
+          raise exception 'Cada serie admite entre 1 y 86400 segundos' using errcode = '22023';
+        end if;
+      end if;
+    end loop;
+  end if;
+
+  select coalesce(jsonb_agg(
+    case when v_entry.tracking_mode = 'weight'
+      then jsonb_build_object('reps', s.reps, 'weight_kg', s.weight_kg)
+      else jsonb_build_object('duration_seconds', s.duration_seconds)
+    end order by s.set_number
+  ), '[]'::jsonb)
+  into v_sets from public.cueva_workout_sets s where s.entry_id=p_id;
+
+  if v_entry.revision = p_revision + 1
+    and v_entry.entry_mode = p_mode
+    and v_entry.quick_weight_kg is not distinct from p_weight_kg
+    and v_entry.quick_duration_seconds is not distinct from p_duration_seconds
+    and (p_mode <> 'sets' or v_sets = p_sets)
+  then
+    return jsonb_build_object('entry',to_jsonb(v_entry),'sets',v_sets);
+  end if;
+  if v_entry.revision <> p_revision then
+    raise exception 'El registro cambió. Actualizá el historial antes de editarlo.' using errcode = '40001';
+  end if;
+
+  update public.cueva_workout_entries
+    set entry_mode=p_mode, quick_weight_kg=p_weight_kg,
+      quick_duration_seconds=p_duration_seconds, revision=revision+1,
+      updated_at=clock_timestamp()
+    where id=p_id returning * into v_entry;
+  delete from public.cueva_workout_sets where entry_id=p_id;
+  v_sets := '[]'::jsonb;
+  if p_mode = 'sets' then
+    v_number := 0;
+    for v_set in select value from jsonb_array_elements(p_sets) loop
+      v_number := v_number + 1;
+      if p_tracking_mode = 'weight' then
+        insert into public.cueva_workout_sets(entry_id,set_number,reps,weight_kg)
+        values(p_id,v_number,(v_set->>'reps')::integer,(v_set->>'weight_kg')::numeric);
+      else
+        insert into public.cueva_workout_sets(entry_id,set_number,duration_seconds)
+        values(p_id,v_number,(v_set->>'duration_seconds')::integer);
+      end if;
+    end loop;
+    select coalesce(jsonb_agg(
+      case when p_tracking_mode = 'weight'
+        then jsonb_build_object('reps', s.reps, 'weight_kg', s.weight_kg)
+        else jsonb_build_object('duration_seconds', s.duration_seconds)
+      end order by s.set_number
+    ), '[]'::jsonb)
+    into v_sets from public.cueva_workout_sets s where s.entry_id=p_id;
+  end if;
+  return jsonb_build_object('entry',to_jsonb(v_entry),'sets',v_sets);
+end;
+$workout_update$;
+
+revoke all on function cueva_private.workout_update(uuid,integer,text,text,numeric,integer,jsonb)
+  from public,anon,authenticated,service_role;
+grant execute on function cueva_private.workout_update(uuid,integer,text,text,numeric,integer,jsonb)
+  to authenticated;
+
+create function public.cueva_workout_update(
+  p_id uuid, p_revision integer, p_mode text, p_tracking_mode text,
+  p_weight_kg numeric, p_duration_seconds integer, p_sets jsonb
+) returns jsonb
+language sql
+security invoker
+set search_path = ''
+as $workout_update_public$
+  select cueva_private.workout_update(
+    p_id,p_revision,p_mode,p_tracking_mode,p_weight_kg,p_duration_seconds,p_sets
+  )
+$workout_update_public$;
+
+revoke all on function public.cueva_workout_update(uuid,integer,text,text,numeric,integer,jsonb)
+  from public,anon,authenticated,service_role;
+grant execute on function public.cueva_workout_update(uuid,integer,text,text,numeric,integer,jsonb)
+  to authenticated;
+
+
 create function cueva_private.workout_history(p_exercise_id uuid, p_limit integer default 30, p_offset integer default 0)
 returns jsonb
 language plpgsql
