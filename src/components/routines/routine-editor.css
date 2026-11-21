@@ -298,8 +298,8 @@
 .routine-text-mention-highlight {
   border-radius: 3px;
   padding: 1px 2px;
-  color: var(--dash-accent);
-  background: var(--dash-accent-soft);
+  color: hsl(var(--mention-hue, 250) 55% 24%);
+  background: hsl(var(--mention-hue, 250) 78% 86%);
   font-weight: 750;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
@@ -329,8 +329,9 @@
 }
 
 .routine-editor-compact .routine-text-input textarea::selection {
-  color: transparent;
-  background: var(--dash-accent-soft);
+  color: var(--dash-text);
+  -webkit-text-fill-color: var(--dash-text);
+  background: color-mix(in srgb, var(--dash-accent) 30%, transparent);
 }
 
 .routine-editor-compact .routine-text-input textarea::placeholder {
@@ -364,3 +365,23 @@
   color: var(--dash-muted);
   font-size: .875rem;
 }
+
+
+.routine-text-mention-preview {
+  position: absolute;
+  z-index: 8;
+  inset-inline-start: 12px;
+  inset-block-end: 12px;
+  display: grid;
+  gap: 8px;
+  width: min(320px, calc(100% - 24px));
+  padding: 12px;
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+  background: var(--dash-panel);
+  color: var(--dash-text);
+  box-shadow: 0 8px 28px rgb(0 0 0 / .2);
+}
+.routine-text-mention-preview p { margin: 0; }
+.routine-text-mention-preview button { justify-self: start; min-height: 40px; }
+.routine-text-mention-preview .routine-text-mention-close { justify-self: end; }
