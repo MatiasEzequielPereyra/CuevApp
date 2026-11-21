@@ -13,14 +13,18 @@ create table public.cueva_workout_entries (
   publication_id uuid not null references public.cueva_routine_publications(id) on delete restrict,
   exercise_id uuid not null references public.cueva_exercises(id) on delete restrict,
   target_id uuid,
+  tracking_mode text not null check (tracking_mode in ('weight','time')),
   entry_mode text not null check (entry_mode in ('quick','sets')),
   quick_weight_kg numeric(7,2),
+  quick_duration_seconds integer,
   performed_at timestamptz not null default clock_timestamp(),
   created_at timestamptz not null default clock_timestamp(),
-  constraint cueva_workout_entry_weight_check check (
-    (entry_mode = 'quick' and quick_weight_kg is not null
-      and quick_weight_kg between 0 and 2000)
-    or (entry_mode = 'sets' and quick_weight_kg is null)
+  constraint cueva_workout_quick_value_check check (
+    (entry_mode = 'quick' and tracking_mode = 'weight'
+      and quick_weight_kg between 0 and 2000 and quick_duration_seconds is null)
+    or (entry_mode = 'quick' and tracking_mode = 'time'
+      and quick_weight_kg is null and quick_duration_seconds between 1 and 86400)
+    or (entry_mode = 'sets' and quick_weight_kg is null and quick_duration_seconds is null)
   )
 );
 
@@ -32,9 +36,14 @@ create index cueva_workout_entries_publication_idx
 create table public.cueva_workout_sets (
   entry_id uuid not null references public.cueva_workout_entries(id) on delete cascade,
   set_number smallint not null check (set_number between 1 and 30),
-  reps smallint not null check (reps between 1 and 1000),
-  weight_kg numeric(7,2) not null check (weight_kg between 0 and 2000),
-  primary key (entry_id, set_number)
+  reps smallint,
+  weight_kg numeric(7,2),
+  duration_seconds integer,
+  primary key (entry_id, set_number),
+  constraint cueva_workout_set_value_check check (
+    (weight_kg between 0 and 2000 and duration_seconds is null and reps between 1 and 1000)
+    or (weight_kg is null and duration_seconds between 1 and 86400 and reps is null)
+  )
 );
 
 alter table public.cueva_workout_entries enable row level security;
