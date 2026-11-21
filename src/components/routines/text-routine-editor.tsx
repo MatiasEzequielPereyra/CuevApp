@@ -423,6 +423,14 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   function onKeyDown(event: ReactKeyboardEvent<HTMLTextAreaElement>) {
     if (!range) return;
     if (event.key === "Escape") { updateRange(null); return; }
+    // React state can briefly lag behind a programmatic insertion or caret move.
+    // Only consume navigation/Enter while the live textarea selection is still
+    // inside the exact @query represented by the currently rendered list.
+    const liveRange = searchRange(event.currentTarget.value, event.currentTarget.selectionStart);
+    if (!liveRange || liveRange.start !== range.start || liveRange.end !== range.end) {
+      updateRange(null);
+      return;
+    }
     if (pending || error || !results.length) return;
     if (event.key === "ArrowDown") { event.preventDefault(); setActive(index => Math.min(index + 1, results.length - 1)); }
     else if (event.key === "ArrowUp") { event.preventDefault(); setActive(index => Math.max(index - 1, 0)); }
