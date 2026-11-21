@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 type WorkoutSet = { reps: string; weight: string };
 type HistorySet = { set_number: number; reps: number; weight_kg: number };
@@ -37,6 +37,8 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const busy = useRef(false);
+  const operation = useRef<{ fingerprint: string; id: string } | null>(null);
 
   async function loadHistory() {
     setLoadingHistory(true);
@@ -64,18 +66,21 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     if (next && !history) await loadHistory();
   }
 
-  async function save() {
-    if (saving) return;
+  async function save(modeOverride?: "quick" | "sets", quickWeightOverride?: number) {
+    if (busy.current) return;
+    busy.current = true;
+    const selectedMode = modeOverride ?? mode;
     setSaving(true);
     setMessage("");
     setError("");
     let payloadSets: { reps: number; weight_kg: number }[] = [];
     let quickWeight: number | null = null;
-    if (mode === "quick") {
-      quickWeight = parseWeight(weight);
+    if (selectedMode === "quick") {
+      quickWeight = quickWeightOverride ?? parseWeight(weight);
       if (quickWeight === null) {
         setError("Ingresá un peso entre 0 y 2000 kg, con hasta dos decimales.");
         setSaving(false);
+        busy.current = false;
         return;
       }
     } else {
@@ -86,8 +91,21 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       if (!payloadSets.length || payloadSets.some(item => !Number.isInteger(item.reps) || item.reps < 1 || item.reps > 1000 || !Number.isFinite(item.weight_kg))) {
         setError("Completá las repeticiones y el peso de cada serie.");
         setSaving(false);
+        busy.current = false;
         return;
       }
+    }
+    const payload = {
+      publication_id: publicationId,
+      exercise_id: exerciseId,
+      target_id: targetId ?? null,
+      mode: selectedMode,
+      weight_kg: selectedMode === "quick" ? quickWeight : null,
+      sets: payloadSets,
+    };
+    const fingerprint = JSON.stringify(payload);
+    if (operation.current?.fingerprint !== fingerprint) {
+      operation.current = { fingerprint, id: crypto.randomUUID() };
     }
     try {
       const response = await fetch("/api/entrenamientos", {
@@ -95,23 +113,20 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
         body: JSON.stringify({
-          id: crypto.randomUUID(),
-          publication_id: publicationId,
-          exercise_id: exerciseId,
-          target_id: targetId ?? null,
-          mode,
-          weight_kg: quickWeight,
-          sets: payloadSets,
+          id: operation.current.id,
+          ...payload,
         }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "No pudimos guardar el registro.");
+      operation.current = null;
       setMessage("Entrenamiento guardado.");
       await loadHistory();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No pudimos guardar el registro.");
     } finally {
       setSaving(false);
+      busy.current = false;
     }
   }
 
@@ -133,6 +148,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
             <p className="student-workout-last">
               Último peso: <strong>{history.last_weight_kg} kg</strong>
               <button type="button" onClick={() => { setMode("quick"); setWeight(String(history.last_weight_kg)); }}>Usar</button>
+              <button type="button" disabled={saving || loadingHistory} onClick={() => void save("quick", history.last_weight_kg)}>Guardar último peso</button>
             </p>
           )}
           <div className="student-workout-modes" role="group" aria-label="Tipo de registro">
