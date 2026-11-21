@@ -207,7 +207,12 @@ try {
   )).rows[0].count).toBe(2);
   await expect(logger.getByText("REALIZADO")).toBeVisible();
   await logger.getByRole("button", {name:"Ver historial"}).click();
-  await logger.getByRole("button", {name:"Editar"}).last().click();
+  // Select the multi-set entry by its recorded reps, not by history position:
+  // the two earlier quick entries are also editable and appear in the same list.
+  const setsHistoryEntry = logger.locator(".student-workout-history li").filter({hasText:"8 rep."});
+  await expect(setsHistoryEntry).toHaveCount(1);
+  await setsHistoryEntry.getByRole("button", {name:"Editar"}).click();
+  await expect(logger.locator(".student-workout-set")).toHaveCount(2);
   await logger.locator(".student-workout-set").nth(1).getByLabel("Peso (kg)").fill("45");
   await logger.getByRole("button", {name:"Guardar cambios"}).click();
   await expect(logger.getByRole("status").filter({hasText:"Cambios guardados."})).toBeVisible();
