@@ -65,3 +65,34 @@ La rama ya contiene una primera implementación de los siguientes componentes:
 - Pruebas pgTAP y Playwright ampliadas para permisos, aislamiento, idempotencia, modo tiempo, paginación, selección de texto y registro desde menciones.
 
 **Estado de validación:** pendiente. Las primeras ejecuciones de CI detectaron defectos en las pruebas/typing, que se corrigieron en commits posteriores. La aceptación requiere que los workflows del HEAD más reciente terminen en verde; no se aplicó ninguna migración alojada y no se hizo merge.
+
+
+## Requisitos adicionales incorporados — 2026-11-21
+
+### Colores de menciones en el perfil del alumno
+
+- La rutina publicada debe conservar los mismos colores de fondo asignados a cada mención en la vista del administrador. No se permite aplicar un único color genérico a todas las menciones del alumno.
+- La asignación visual debe ser estable para una misma publicación y respetar la identidad UUID de la mención; no recalcular colores de forma divergente entre la vista de administración y la vista del alumno.
+- La validación debe cubrir texto libre, menciones repetidas y los casos en que dos ejercicios tengan nombres similares. Los colores son presentación, no autoridad ni identificador.
+
+### Experiencia contextual «Ejercicios Mencionados»
+
+- No mantener una sección independiente que repita el catálogo o la lista de menciones sin aportar acciones.
+- Reemplazarla por acciones contextuales en cada ejercicio/mención dentro de la propia rutina: registro rápido de peso, detalle por series, sugerencia del último peso y acceso al historial del mismo UUID.
+- En menciones de texto libre, el panel contextual debe mostrar también la descripción y el acceso al video/link, sin obligar a desplazarse a otra sección. En ejercicios por bloques, las mismas acciones deben estar disponibles junto al ejercicio.
+- El historial detallado puede abrirse desde ese panel contextual; no debe duplicar una segunda lista general de «Ejercicios Mencionados».
+- Si se conserva algún resumen de ejercicios mencionados, debe ser opcional y aportar una función concreta (por ejemplo, un índice navegable), no ser el lugar principal para registrar resultados.
+
+### Persistencia de la ventana de video/preview
+
+- La ventana emergente no debe cerrarse al mover el puntero desde el nombre del ejercicio hacia el panel de descripción/video. El área interactiva debe incluir tanto el disparador como el panel, sin huecos de hover que disparen el cierre.
+- En desktop, el panel debe permanecer abierto mientras el puntero esté sobre el disparador o el propio panel; en móvil/tablet, debe abrirse por toque y permanecer hasta una acción explícita de cierre, selección de otra acción o toque fuera.
+- El cierre por toque/click fuera y Escape debe seguir funcionando. Al pasar el puntero al panel no se considera una salida; al cerrar el reproductor no debe reaparecer automáticamente la preview.
+- El acceso «Ver video» debe abrir directamente el reproductor, sin un ciclo intermedio de apertura/cierre de preview ni reactivación por foco.
+
+### Criterios de aceptación adicionales
+
+- Una misma publicación muestra idénticos colores de mención en Admin y Alumno.
+- Mover el cursor del nombre al panel emergente permite usar todos sus controles sin que desaparezca; en táctil, el panel no depende de hover.
+- Se puede registrar peso/series e inspeccionar historial desde el propio ejercicio en ambos formatos de rutina, sin una sección redundante.
+- Pruebas E2E deben verificar el trayecto del puntero hacia el panel, el toque en móvil, el click exterior, Escape y que el reproductor no reabra el panel al cerrarse.
