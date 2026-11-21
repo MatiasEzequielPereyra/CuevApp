@@ -206,12 +206,15 @@ try {
   // A linked exercise with a confirmed video opens the player from an explicit
   // action; closing it does not reopen a preview through restored focus/hover.
   await db.query("update public.cueva_exercises set video_url='https://www.youtube.com/watch?v=dQw4w9WgXcQ' where id=$1", [exerciseId]);
-  // In the text editor, selecting a linked exercise opens the player directly;
-  // the autocomplete/preview overlay is reserved for typing @.
+  // Selecting a linked exercise asks for confirmation before opening its player;
+  // the exercise autocomplete remains reserved for typing @.
   await adminTextarea.click({position:mentionClickPoint});
+  const adminPreview = page.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`});
+  await expect(adminPreview).toBeVisible();
   const adminPlayer = page.getByRole("dialog", {name:exerciseName});
+  await expect(adminPlayer).toHaveCount(0);
+  await adminPreview.getByRole("button", {name:"Ver video"}).click();
   await expect(adminPlayer).toBeVisible();
-  await expect(page.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`})).toHaveCount(0);
   await adminPlayer.getByRole("button", {name:"Cerrar"}).click();
   await expect(adminPlayer).toHaveCount(0);
   await pupil.reload();
