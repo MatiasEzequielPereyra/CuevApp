@@ -290,10 +290,11 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = ''
-as $$
+as $history$
 declare
   v_student uuid;
-  v_last numeric;
+  v_last_weight numeric;
+  v_last_duration integer;
   v_entries jsonb;
   v_has_more boolean;
 begin
@@ -312,9 +313,20 @@ begin
   select coalesce(e.quick_weight_kg, (
     select s.weight_kg from public.cueva_workout_sets s
     where s.entry_id = e.id order by s.set_number desc limit 1
-  )) into v_last
+  )) into v_last_weight
   from public.cueva_workout_entries e
   where e.student_id = v_student and e.exercise_id = p_exercise_id
+    and e.tracking_mode = 'weight'
+  order by e.performed_at desc, e.created_at desc, e.id desc
+  limit 1;
+
+  select coalesce(e.quick_duration_seconds, (
+    select s.duration_seconds from public.cueva_workout_sets s
+    where s.entry_id = e.id order by s.set_number desc limit 1
+  )) into v_last_duration
+  from public.cueva_workout_entries e
+  where e.student_id = v_student and e.exercise_id = p_exercise_id
+    and e.tracking_mode = 'time'
   order by e.performed_at desc, e.created_at desc, e.id desc
   limit 1;
 
@@ -332,10 +344,13 @@ begin
       'id', e.id,
       'performed_at', e.performed_at,
       'mode', e.entry_mode,
+      'tracking_mode', e.tracking_mode,
       'weight_kg', e.quick_weight_kg,
+      'duration_seconds', e.quick_duration_seconds,
       'sets', coalesce((
         select jsonb_agg(jsonb_build_object(
-          'set_number', s.set_number, 'reps', s.reps, 'weight_kg', s.weight_kg
+          'set_number', s.set_number, 'reps', s.reps,
+          'weight_kg', s.weight_kg, 'duration_seconds', s.duration_seconds
         ) order by s.set_number)
         from public.cueva_workout_sets s where s.entry_id = e.id
       ), '[]'::jsonb)
@@ -346,9 +361,14 @@ begin
     limit p_limit offset p_offset
   ) row_data;
 
-  return jsonb_build_object('last_weight_kg', v_last, 'entries', v_entries, 'has_more', v_has_more);
+  return jsonb_build_object(
+    'last_weight_kg', v_last_weight,
+    'last_duration_seconds', v_last_duration,
+    'entries', v_entries,
+    'has_more', v_has_more
+  );
 end;
-$$;
+$history$;
 
 revoke all on function cueva_private.workout_history(uuid,integer,integer)
   from public, anon, authenticated, service_role;
@@ -359,9 +379,9 @@ returns jsonb
 language sql
 security invoker
 set search_path = ''
-as $workout$
+as $history_public$
   select cueva_private.workout_history(p_exercise_id,p_limit,p_offset)
-$workout$;
+$history_public$;
 
 revoke all on function public.cueva_workout_history(uuid,integer,integer)
   from public, anon, authenticated, service_role;
