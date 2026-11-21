@@ -104,8 +104,6 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     }
   }, [exerciseId]);
 
-  useEffect(() => { void loadHistory(0, false); }, [loadHistory]);
-
   async function save(modeOverride?: "quick" | "sets", quickValueOverride?: number) {
     if (busy.current) return;
     busy.current = true;
@@ -221,9 +219,11 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     <section className="student-workout" aria-label={"Registro de " + exerciseName} data-tracking-mode={trackingMode}>
       {summary && <p className="student-workout-summary"><strong>REALIZADO</strong><span>{summary}</span></p>}
       <button type="button" className="student-workout-toggle" aria-expanded={expanded} onClick={() => {
-        setExpanded(value => !value);
+        const nextExpanded = !expanded;
+        setExpanded(nextExpanded);
         setMessage("");
         setError("");
+        if (nextExpanded && !history && !loadingHistory) void loadHistory(0);
       }}>
         {expanded ? "Cerrar registro" : trackingMode === "weight" ? "Registrar peso" : "Registrar duración"}
       </button>
