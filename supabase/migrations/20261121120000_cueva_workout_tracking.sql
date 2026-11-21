@@ -104,6 +104,33 @@ begin
   -- Serialize with publication changes and idempotent retries. The caller
   -- cannot select a student identity; ownership comes from the session.
   perform pg_advisory_xact_lock(903004001);
+
+  -- Replay an already committed operation before requiring the publication to
+  -- remain current. A lost HTTP response must not create a duplicate session.
+  select * into v_existing from public.cueva_workout_entries where id = p_id;
+  if found then
+    if not cueva_private.routine_owner(v_existing.student_id) then
+      raise exception 'Acceso restringido' using errcode = '42501';
+    end if;
+    if v_existing.publication_id <> p_publication_id
+      or v_existing.exercise_id <> p_exercise_id
+      or v_existing.target_id is distinct from p_target_id
+      or v_existing.entry_mode <> p_mode
+      or v_existing.quick_weight_kg is distinct from p_weight_kg
+    then
+      raise exception 'El identificador de operación ya fue utilizado' using errcode = '22023';
+    end if;
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'reps', s.reps, 'weight_kg', s.weight_kg
+    ) order by s.set_number), '[]'::jsonb)
+    into v_sets
+    from public.cueva_workout_sets s where s.entry_id = p_id;
+    if p_mode = 'sets' and v_sets <> p_sets then
+      raise exception 'El identificador de operación ya fue utilizado' using errcode = '22023';
+    end if;
+    return jsonb_build_object('entry', to_jsonb(v_existing), 'sets', v_sets);
+  end if;
+
   select p.* into v_publication
   from public.cueva_routine_publications p
   where p.id = p_publication_id
@@ -141,28 +168,6 @@ begin
     or not exists (select 1 from public.cueva_exercises e where e.id = p_exercise_id)
   then
     raise exception 'El ejercicio no admite registro de peso en esta rutina' using errcode = '22023';
-  end if;
-
-  select * into v_existing from public.cueva_workout_entries where id = p_id;
-  if found then
-    if v_existing.student_id <> v_student
-      or v_existing.publication_id <> p_publication_id
-      or v_existing.exercise_id <> p_exercise_id
-      or v_existing.target_id is distinct from p_target_id
-      or v_existing.entry_mode <> p_mode
-      or v_existing.quick_weight_kg is distinct from p_weight_kg
-    then
-      raise exception 'El identificador de operación ya fue utilizado' using errcode = '22023';
-    end if;
-    select coalesce(jsonb_agg(jsonb_build_object(
-      'reps', s.reps, 'weight_kg', s.weight_kg
-    ) order by s.set_number), '[]'::jsonb)
-    into v_sets
-    from public.cueva_workout_sets s where s.entry_id = p_id;
-    if p_mode = 'sets' and v_sets <> p_sets then
-      raise exception 'El identificador de operación ya fue utilizado' using errcode = '22023';
-    end if;
-    return jsonb_build_object('entry', to_jsonb(v_existing), 'sets', v_sets);
   end if;
 
   insert into public.cueva_workout_entries(
