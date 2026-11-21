@@ -211,7 +211,7 @@ try {
   await logger.getByRole("button", {name:"Ver historial"}).click();
   // Select the multi-set entry by its recorded reps, not by history position:
   // the two earlier quick entries are also editable and appear in the same list.
-  const setsHistoryEntry = logger.locator(".student-workout-history li").filter({hasText:"8 rep."});
+  const setsHistoryEntry = logger.locator(".student-workout-history > ol > li").filter({hasText:"8 rep."});
   await expect(setsHistoryEntry).toHaveCount(1);
   await setsHistoryEntry.getByRole("button", {name:"Editar"}).click();
   await expect(logger.locator(".student-workout-set")).toHaveCount(2);
