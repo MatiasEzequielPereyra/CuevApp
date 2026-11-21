@@ -350,20 +350,18 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       setPreview(null); setPreviewError(""); setPreviewPending(false); setPreviewPosition(null);
       return;
     }
-    setPreview(null); setPreviewError(""); setPreviewPending(true);
-    setPreviewPosition(floatingPosition(measureCaretRect(input), 320));
+    setPreview(null); setPreviewError(""); setPreviewPending(false); setPreviewPosition(null);
     try {
       const params = new URLSearchParams({ q: mention.text });
       const response = await fetch("/api/ejercicios?" + params, { cache: "no-store" });
       const data = await response.json();
       if (sequence !== previewRequest.current) return;
       const exercise = Array.isArray(data.exercises) ? data.exercises.find((item: Exercise) => item.id === mention.exercise_id) : null;
-      if (!response.ok || !exercise) throw new Error(data.message || "No pudimos cargar los datos del ejercicio.");
+      if (!response.ok || !exercise || (!exercise.video_url && !exercise.video_path)) return;
       setPreview(exercise);
-    } catch (cause) {
-      if (sequence === previewRequest.current) setPreviewError(cause instanceof Error ? cause.message : "No pudimos cargar los datos del ejercicio.");
-    } finally {
-      if (sequence === previewRequest.current) setPreviewPending(false);
+      setPlayerOpen(true);
+    } catch {
+      // A failed lookup must not open the exercise autocomplete/preview overlay.
     }
   }
 
