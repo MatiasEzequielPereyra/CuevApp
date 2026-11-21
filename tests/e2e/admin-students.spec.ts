@@ -405,7 +405,16 @@ test("texto libre vincula menciones por UUID y publica la instantánea visible p
   await expect(editor.getByText("Usar plantilla")).toBeVisible();
   await editor.getByRole("button", { name: "Texto libre" }).click();
   const textarea = editor.getByRole("textbox", { name: "Rutina en texto libre" });
+  const exerciseSearchDiagnostics: Array<{ url: string; status: number; body: unknown }> = [];
+  page.on("response", async response => {
+    if (!response.url().includes("/api/ejercicios?q=Sentadilla")) return;
+    let body: unknown = null;
+    try { body = await response.json(); } catch { /* keep status when response is not JSON */ }
+    exerciseSearchDiagnostics.push({ url: response.url(), status: response.status(), body });
+  });
   await textarea.fill("@Sentadilla");
+  await page.waitForTimeout(350);
+  console.log("ADMIN_EXERCISE_SEARCH_DIAGNOSTICS", JSON.stringify(exerciseSearchDiagnostics));
   const suggestion = editor.getByRole("option", { name: "Sentadilla" });
   await expect(suggestion).toBeVisible();
   await suggestion.click();
