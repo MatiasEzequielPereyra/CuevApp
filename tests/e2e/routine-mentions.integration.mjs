@@ -107,9 +107,13 @@ try {
   await adminTextarea.press("Control+V");
   await expect(highlightedMention).toHaveCount(2);
   // Multi-line arbitrary selections must preserve every linked exercise UUID on paste.
-  await adminTextarea.fill(`Inicio\n🙂 @${exerciseName}\nFin`);
+  await adminTextarea.fill("Inicio\n🙂 @");
+  await adminTextarea.pressSequentially(exerciseName);
   await expect(page.getByRole("option", {name:exerciseName})).toBeVisible();
   await page.getByRole("option", {name:exerciseName}).click();
+  await adminTextarea.press("End");
+  await adminTextarea.press("Enter");
+  await adminTextarea.pressSequentially("Fin");
   await expect(highlightedMention).toHaveCount(1);
   await adminTextarea.press("Control+A");
   await adminTextarea.press("Control+C");
