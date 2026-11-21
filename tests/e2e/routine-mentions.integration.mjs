@@ -100,6 +100,19 @@ try {
   await page.mouse.move(drag.end.x, drag.end.y, { steps: 8 });
   await page.mouse.up();
   assert.equal(await adminTextarea.evaluate(element => element.value.slice(element.selectionStart, element.selectionEnd)), `🙂 ${exerciseName}`);
+  // Capture clipboard payload and whether the component suppresses native paste.
+  await adminTextarea.evaluate(element => {
+    const diagnostics: unknown[] = [];
+    (window as any).__routineClipboardDiagnostics = diagnostics;
+    for (const type of ["copy", "paste"]) window.addEventListener(type, event => {
+      const clipboard = (event as ClipboardEvent).clipboardData;
+      const snapshot = { type, types: clipboard ? Array.from(clipboard.types) : [],
+        plain: clipboard?.getData("text/plain") ?? "", html: clipboard?.getData("text/html") ?? "",
+        custom: clipboard?.getData("application/x-cuevapp-routine-mentions") ?? "",
+        selectionStart: element.selectionStart, selectionEnd: element.selectionEnd, value: element.value };
+      queueMicrotask(() => diagnostics.push({ ...snapshot, defaultPrevented: event.defaultPrevented }));
+    });
+  });
   // Copy/paste must carry the linked UUID with the visible text, not only the name.
   await adminTextarea.press("Control+C");
   await adminTextarea.press("End");
@@ -121,6 +134,7 @@ try {
   await adminTextarea.press("Control+V");
   await expect(highlightedMention).toHaveCount(2);
   await expect(adminTextarea).toHaveValue(`Inicio\n🙂 ${exerciseName}\nFin\nInicio\n🙂 ${exerciseName}\nFin`);
+  console.log("ROUTINE_CLIPBOARD_DIAGNOSTICS", JSON.stringify(await page.evaluate(() => (window as any).__routineClipboardDiagnostics)));
   // Restore one occurrence so the remaining assertions use a single mention.
   await adminTextarea.fill(`🙂 @${exerciseName}`);
   await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:exerciseName, exact:true})).toBeVisible();
