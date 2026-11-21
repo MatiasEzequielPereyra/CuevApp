@@ -73,7 +73,21 @@ select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')-
 select is(jsonb_array_length(public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')->'entries'),2,
  'history returns both quick and detailed entries for this UUID');
 
-select throws_ok($$select public.cueva_workout_record(
+-- A lost response can be retried after the administrator publishes a newer
+-- snapshot. The existing operation must replay instead of creating a duplicate.
+reset role;
+insert into public.cueva_routine_publications(id,student_id,draft_revision,content,published_by,plan) values
+ ('c7600000-0000-4000-8000-000000000004','c7300000-0000-4000-8000-000000000001',3,'Nueva rutina','c7100000-0000-4000-8000-000000000001',
+  '{"version":2,"days":[{"id":"c7700000-0000-4000-8000-000000000003","name":"Día","blocks":[{"id":"c7800000-0000-4000-8000-000000000003","name":"Bloque","rounds":3,"exercises":[{"id":"c7900000-0000-4000-8000-000000000004","exercise_id":"c7500000-0000-4000-8000-000000000001","name":"Press banca","note":"","mode":"weight","reps":"8","weight_kg":60}]}]}]}'::jsonb);
+set local role authenticated;
+select is((public.cueva_workout_record(
+ 'c8100000-0000-4000-8000-000000000001','c7600000-0000-4000-8000-000000000002',
+ 'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000002',
+ 'quick',72.5,'[]'::jsonb)->'entry'->>'id'),
+ 'c8100000-0000-4000-8000-000000000001',
+ 'an exact retry replays after a newer publication is committed');
+
+select throws_ok($select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000003','c7600000-0000-4000-8000-000000000002',
  'c7500000-0000-4000-8000-000000000002','c7900000-0000-4000-8000-000000000003',
  'quick',20,'[]'::jsonb)$$,'22023',null,'time-based exercises reject kilogram entries');
