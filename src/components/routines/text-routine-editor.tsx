@@ -163,7 +163,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     };
   }, [range]);
 
-  function updateRange(next: SearchRange) {
+  const updateRange = useCallback((next: SearchRange) => {
     // Invalidate immediately, before effect cleanup can observe the old request.
     request.current++;
     setResults([]);
@@ -172,7 +172,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     setError("");
     setCreateError("");
     setRange(next);
-  }
+  }, []);
 
   useLayoutEffect(() => {
     const input = textarea.current;
