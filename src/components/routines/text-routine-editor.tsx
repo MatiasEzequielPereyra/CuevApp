@@ -217,7 +217,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     }
     html += escapeClipboardHtml(codePointSlice(selectedText, cursor, Array.from(selectedText).length)).replace(/\n/g, "<br>");
     event.clipboardData.setData("text/plain", selectedText);
-    event.clipboardData.setData("text/html", "<div>" + html + "</div>");
+    try { event.clipboardData.setData("text/html", "<div>" + html + "</div>"); } catch { /* Plain text remains available. */ }
     try {
       event.clipboardData.setData("application/x-cuevapp-routine-mentions", JSON.stringify({
         version: 1, text: selectedText, mentions: copied,
