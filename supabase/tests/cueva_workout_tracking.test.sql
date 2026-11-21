@@ -110,7 +110,7 @@ set local role authenticated;
 select is((public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000001','c7600000-0000-4000-8000-000000000002',
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000002',
- 'quick',72.5,'[]'::jsonb)->'entry'->>'id'),
+ 'quick','weight',72.5,null,'[]'::jsonb)->'entry'->>'id'),
  'c8100000-0000-4000-8000-000000000001',
  'an exact retry replays after a newer publication is committed');
 
@@ -157,11 +157,11 @@ select is((select tracking_mode from public.cueva_student_mentioned_exercises_wi
 select throws_ok($time_text$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000009','c7600000-0000-4000-8000-000000000003',
  'c7500000-0000-4000-8000-000000000004',null,
- 'quick',45,'[]'::jsonb)$time_text$,'22023',null,'time-based text mentions reject kilogram entries');
+ 'quick','weight',45,null,'[]'::jsonb)$time_text$,'22023',null,'time-based text mentions reject kilogram entries');
 select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000008','c7600000-0000-4000-8000-000000000004',
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000004',
- 'quick',45,'[]'::jsonb)$$,'42501',null,'a student cannot write another students workout');
+ 'quick','weight',45,null,'[]'::jsonb)$$,'42501',null,'a student cannot write another students workout');
 select is(public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')->>'last_weight_kg',null,
  'history is isolated by authenticated student');
 select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000003')->>'last_weight_kg')::numeric,45,
