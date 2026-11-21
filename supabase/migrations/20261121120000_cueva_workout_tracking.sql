@@ -225,7 +225,7 @@ revoke all on function public.cueva_workout_record(uuid,uuid,uuid,uuid,text,nume
 grant execute on function public.cueva_workout_record(uuid,uuid,uuid,uuid,text,numeric,jsonb)
   to authenticated;
 
-create function cueva_private.workout_history(p_exercise_id uuid)
+create function cueva_private.workout_history(p_exercise_id uuid, p_limit integer default 30, p_offset integer default 0)
 returns jsonb
 language plpgsql
 security definer
@@ -235,9 +235,10 @@ declare
   v_student uuid;
   v_last numeric;
   v_entries jsonb;
+  v_has_more boolean;
 begin
-  if p_exercise_id is null then
-    raise exception 'Ejercicio inválido' using errcode = '22023';
+  if p_exercise_id is null or p_limit not between 1 and 50 or p_offset not between 0 and 100000 then
+    raise exception 'Consulta de historial inválida' using errcode = '22023';
   end if;
   select s.id into v_student
   from public.cueva_students s
@@ -255,6 +256,13 @@ begin
   where e.student_id = v_student and e.exercise_id = p_exercise_id
   order by e.performed_at desc, e.created_at desc, e.id desc
   limit 1;
+
+  select exists (
+    select 1 from public.cueva_workout_entries e
+    where e.student_id = v_student and e.exercise_id = p_exercise_id
+    order by e.performed_at desc, e.created_at desc, e.id desc
+    offset (p_offset + p_limit) limit 1
+  ) into v_has_more;
 
   select coalesce(jsonb_agg(row_data.entry_json order by row_data.performed_at desc), '[]'::jsonb)
   into v_entries
@@ -274,28 +282,28 @@ begin
     from public.cueva_workout_entries e
     where e.student_id = v_student and e.exercise_id = p_exercise_id
     order by e.performed_at desc, e.created_at desc, e.id desc
-    limit 30
+    limit p_limit offset p_offset
   ) row_data;
 
-  return jsonb_build_object('last_weight_kg', v_last, 'entries', v_entries);
+  return jsonb_build_object('last_weight_kg', v_last, 'entries', v_entries, 'has_more', v_has_more);
 end;
 $$;
 
-revoke all on function cueva_private.workout_history(uuid)
+revoke all on function cueva_private.workout_history(uuid,integer,integer)
   from public, anon, authenticated, service_role;
-grant execute on function cueva_private.workout_history(uuid) to authenticated;
+grant execute on function cueva_private.workout_history(uuid,integer,integer) to authenticated;
 
-create function public.cueva_workout_history(p_exercise_id uuid)
+create function public.cueva_workout_history(p_exercise_id uuid, p_limit integer default 30, p_offset integer default 0)
 returns jsonb
 language sql
 security invoker
 set search_path = ''
 as $$
-  select cueva_private.workout_history(p_exercise_id)
-$$;
+  select cueva_private.workout_history(p_exercise_id,p_limit,p_offset)
+$;
 
-revoke all on function public.cueva_workout_history(uuid)
+revoke all on function public.cueva_workout_history(uuid,integer,integer)
   from public, anon, authenticated, service_role;
-grant execute on function public.cueva_workout_history(uuid) to authenticated;
+grant execute on function public.cueva_workout_history(uuid,integer,integer) to authenticated;
 
 commit;
