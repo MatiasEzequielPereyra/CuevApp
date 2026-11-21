@@ -1,17 +1,24 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
-type WorkoutSet = { reps: string; weight: string };
-type HistorySet = { set_number: number; reps: number; weight_kg: number };
+type WorkoutSet = { reps: string; weight: string; duration: string };
+type HistorySet = { set_number: number; reps: number | null; weight_kg: number | null; duration_seconds: number | null };
 type HistoryEntry = {
   id: string;
   performed_at: string;
   mode: "quick" | "sets";
+  tracking_mode: "weight" | "time";
   weight_kg: number | null;
+  duration_seconds: number | null;
   sets: HistorySet[];
 };
-type WorkoutHistory = { last_weight_kg: number | null; entries: HistoryEntry[]; has_more: boolean };
+type WorkoutHistory = {
+  last_weight_kg: number | null;
+  last_duration_seconds: number | null;
+  entries: HistoryEntry[];
+  has_more: boolean;
+};
 
 function parseWeight(value: string): number | null {
   const normalized = value.trim().replace(",", ".");
@@ -20,17 +27,50 @@ function parseWeight(value: string): number | null {
   return Number.isFinite(weight) && weight >= 0 && weight <= 2000 ? weight : null;
 }
 
-export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, targetId }: {
+function parseDuration(value: string): number | null {
+  const normalized = value.trim();
+  if (!/^\d+$/.test(normalized)) return null;
+  const seconds = Number(normalized);
+  return Number.isSafeInteger(seconds) && seconds >= 1 && seconds <= 86400 ? seconds : null;
+}
+
+function formatDuration(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  if (!minutes) return `${seconds} s`;
+  if (!remainder) return `${minutes} min`;
+  return `${minutes} min ${remainder} s`;
+}
+
+function formatWeight(weight: number) {
+  return `${weight.toLocaleString("es-AR", { maximumFractionDigits: 2 })} kg`;
+}
+
+function entrySummary(entry: HistoryEntry) {
+  if (entry.mode === "quick") {
+    return entry.tracking_mode === "weight"
+      ? (entry.weight_kg === null ? "" : formatWeight(entry.weight_kg))
+      : (entry.duration_seconds === null ? "" : formatDuration(entry.duration_seconds));
+  }
+  if (entry.tracking_mode === "weight") {
+    return entry.sets.map(set => `${set.reps} rep. · ${set.weight_kg === null ? "—" : formatWeight(set.weight_kg)}`).join(" · ");
+  }
+  return entry.sets.map((set, index) => `Serie ${index + 1}: ${set.duration_seconds === null ? "—" : formatDuration(set.duration_seconds)}`).join(" · ");
+}
+
+export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, targetId, trackingMode }: {
   publicationId: string;
   exerciseId: string;
   exerciseName: string;
   targetId?: string;
+  trackingMode: "weight" | "time";
 }) {
   const id = useId();
   const [expanded, setExpanded] = useState(false);
   const [mode, setMode] = useState<"quick" | "sets">("quick");
   const [weight, setWeight] = useState("");
-  const [sets, setSets] = useState<WorkoutSet[]>([{ reps: "", weight: "" }]);
+  const [duration, setDuration] = useState("");
+  const [sets, setSets] = useState<WorkoutSet[]>([{ reps: "", weight: "", duration: "" }]);
   const [history, setHistory] = useState<WorkoutHistory | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -40,70 +80,88 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const busy = useRef(false);
   const operation = useRef<{ fingerprint: string; id: string } | null>(null);
 
-  async function loadHistory(loadMore = false) {
+  const loadHistory = useCallback(async (offset = 0) => {
     setLoadingHistory(true);
     try {
-      const offset = loadMore ? history?.entries.length ?? 0 : 0;
-      const response = await fetch("/api/entrenamientos?exercise_id=" + encodeURIComponent(exerciseId) + "&offset=" + offset, { cache: "no-store" });
+      const response = await fetch("/api/entrenamientos?exercise_id=" + encodeURIComponent(exerciseId)
+        + "&offset=" + offset + "&limit=30", { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "No pudimos cargar el historial.");
       const next = data.history as WorkoutHistory;
-      setHistory(current => loadMore && current
+      setHistory(current => offset > 0 && current
         ? { ...next, entries: [...current.entries, ...next.entries] }
         : next);
-      if (!loadMore && next.last_weight_kg !== null && next.last_weight_kg !== undefined) {
-        setWeight(String(next.last_weight_kg));
+      if (offset === 0) {
+        if (next.last_weight_kg !== null && next.last_weight_kg !== undefined) setWeight(String(next.last_weight_kg));
+        if (next.last_duration_seconds !== null && next.last_duration_seconds !== undefined) setDuration(String(next.last_duration_seconds));
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No pudimos cargar el historial.");
     } finally {
       setLoadingHistory(false);
     }
-  }
+  }, [exerciseId]);
 
-  async function toggleExpanded() {
-    const next = !expanded;
-    setExpanded(next);
-    setMessage("");
-    setError("");
-    if (next && !history) await loadHistory();
-  }
+  useEffect(() => { void loadHistory(0); }, [loadHistory]);
 
-  async function save(modeOverride?: "quick" | "sets", quickWeightOverride?: number) {
+  async function save(modeOverride?: "quick" | "sets", quickValueOverride?: number) {
     if (busy.current) return;
     busy.current = true;
     const selectedMode = modeOverride ?? mode;
     setSaving(true);
     setMessage("");
     setError("");
-    let payloadSets: { reps: number; weight_kg: number }[] = [];
+    let payloadSets: { reps: number; weight_kg: number }[] | { duration_seconds: number }[] = [];
     let quickWeight: number | null = null;
+    let quickDuration: number | null = null;
+
     if (selectedMode === "quick") {
-      quickWeight = quickWeightOverride ?? parseWeight(weight);
-      if (quickWeight === null) {
-        setError("Ingresá un peso entre 0 y 2000 kg, con hasta dos decimales.");
-        setSaving(false);
-        busy.current = false;
-        return;
+      if (trackingMode === "weight") {
+        quickWeight = quickValueOverride ?? parseWeight(weight);
+        if (quickWeight === null) {
+          setError("Ingresá un peso entre 0 y 2000 kg, con hasta dos decimales.");
+          setSaving(false);
+          busy.current = false;
+          return;
+        }
+      } else {
+        quickDuration = quickValueOverride ?? parseDuration(duration);
+        if (quickDuration === null) {
+          setError("Ingresá una duración entre 1 y 86400 segundos.");
+          setSaving(false);
+          busy.current = false;
+          return;
+        }
       }
-    } else {
-      payloadSets = sets.map(item => ({
-        reps: Number(item.reps),
-        weight_kg: parseWeight(item.weight) ?? Number.NaN,
-      }));
-      if (!payloadSets.length || payloadSets.some(item => !Number.isInteger(item.reps) || item.reps < 1 || item.reps > 1000 || !Number.isFinite(item.weight_kg))) {
+    } else if (trackingMode === "weight") {
+      const weightSets = sets.map(item => ({ reps: Number(item.reps), weight_kg: parseWeight(item.weight) ?? Number.NaN }));
+      if (!weightSets.length || weightSets.some(item => !Number.isInteger(item.reps)
+        || item.reps < 1 || item.reps > 1000 || !Number.isFinite(item.weight_kg))) {
         setError("Completá las repeticiones y el peso de cada serie.");
         setSaving(false);
         busy.current = false;
         return;
       }
+      payloadSets = weightSets;
+    } else {
+      const durationSets = sets.map(item => ({ duration_seconds: parseDuration(item.duration) ?? Number.NaN }));
+      if (!durationSets.length || durationSets.some(item => !Number.isFinite(item.duration_seconds))) {
+        setError("Completá la duración en segundos de cada serie.");
+        setSaving(false);
+        busy.current = false;
+        return;
+      }
+      payloadSets = durationSets;
     }
+
     const payload = {
       publication_id: publicationId,
       exercise_id: exerciseId,
       target_id: targetId ?? null,
       mode: selectedMode,
-      weight_kg: selectedMode === "quick" ? quickWeight : null,
+      tracking_mode: trackingMode,
+      weight_kg: quickWeight,
+      duration_seconds: quickDuration,
       sets: payloadSets,
     };
     const fingerprint = JSON.stringify(payload);
@@ -116,16 +174,13 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({
-          id: operationId,
-          ...payload,
-        }),
+        body: JSON.stringify({ id: operationId, ...payload }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "No pudimos guardar el registro.");
       operation.current = null;
-      setMessage("Entrenamiento guardado.");
-      await loadHistory();
+      setMessage("Resultado guardado.");
+      await loadHistory(0);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No pudimos guardar el registro.");
     } finally {
@@ -134,10 +189,18 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     }
   }
 
+  const latest = history?.entries.find(entry => entry.tracking_mode === trackingMode);
+  const summary = latest ? entrySummary(latest) : "";
+
   return (
-    <section className="student-workout" aria-label={"Registro de " + exerciseName}>
-      <button type="button" className="student-workout-toggle" aria-expanded={expanded} onClick={() => void toggleExpanded()}>
-        {expanded ? "Cerrar registro" : "Registrar peso"}
+    <section className="student-workout" aria-label={"Registro de " + exerciseName} data-tracking-mode={trackingMode}>
+      {summary && <p className="student-workout-summary"><strong>REALIZADO</strong><span>{summary}</span></p>}
+      <button type="button" className="student-workout-toggle" aria-expanded={expanded} onClick={() => {
+        setExpanded(value => !value);
+        setMessage("");
+        setError("");
+      }}>
+        {expanded ? "Cerrar registro" : trackingMode === "weight" ? "Registrar peso" : "Registrar duración"}
       </button>
       {expanded && (
         <div className="student-workout-panel">
@@ -147,12 +210,19 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
               {historyOpen ? "Ocultar historial" : "Ver historial"}
             </button>
           </header>
-          {loadingHistory && <p role="status">Consultando tu último registro…</p>}
-          {history?.last_weight_kg !== null && history?.last_weight_kg !== undefined && (
+          {loadingHistory && <p role="status">Consultando tus últimos registros…</p>}
+          {trackingMode === "weight" && history?.last_weight_kg !== null && history?.last_weight_kg !== undefined && (
             <p className="student-workout-last">
-              Último peso: <strong>{history.last_weight_kg} kg</strong>
+              Último peso: <strong>{formatWeight(history.last_weight_kg)}</strong>
               <button type="button" onClick={() => { setMode("quick"); setWeight(String(history.last_weight_kg)); }}>Usar</button>
               <button type="button" disabled={saving || loadingHistory} onClick={() => void save("quick", history.last_weight_kg ?? undefined)}>Guardar último peso</button>
+            </p>
+          )}
+          {trackingMode === "time" && history?.last_duration_seconds !== null && history?.last_duration_seconds !== undefined && (
+            <p className="student-workout-last">
+              Última duración: <strong>{formatDuration(history.last_duration_seconds)}</strong>
+              <button type="button" onClick={() => { setMode("quick"); setDuration(String(history.last_duration_seconds)); }}>Usar</button>
+              <button type="button" disabled={saving || loadingHistory} onClick={() => void save("quick", history.last_duration_seconds ?? undefined)}>Guardar última duración</button>
             </p>
           )}
           <div className="student-workout-modes" role="group" aria-label="Tipo de registro">
@@ -160,31 +230,47 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
             <button type="button" aria-pressed={mode === "sets"} onClick={() => setMode("sets")}>Por series</button>
           </div>
           {mode === "quick" ? (
-            <label htmlFor={id + "-weight"}>Peso utilizado (kg)
-              <input id={id + "-weight"} inputMode="decimal" value={weight} maxLength={10}
-                onChange={event => setWeight(event.target.value)} placeholder="Ej. 40" />
-            </label>
+            trackingMode === "weight" ? (
+              <label htmlFor={id + "-weight"}>Peso utilizado (kg)
+                <input id={id + "-weight"} inputMode="decimal" value={weight} maxLength={10}
+                  onChange={event => setWeight(event.target.value)} placeholder="Ej. 40" />
+              </label>
+            ) : (
+              <label htmlFor={id + "-duration"}>Duración (segundos)
+                <input id={id + "-duration"} inputMode="numeric" value={duration} maxLength={5}
+                  onChange={event => setDuration(event.target.value)} placeholder="Ej. 60" />
+              </label>
+            )
           ) : (
             <div className="student-workout-sets">
               {sets.map((item, index) => (
                 <div className="student-workout-set" key={index}>
                   <strong>Serie {index + 1}</strong>
-                  <label>Repeticiones
-                    <input inputMode="numeric" value={item.reps} maxLength={4}
-                      onChange={event => setSets(current => current.map((row, i) => i === index ? { ...row, reps: event.target.value } : row))} />
-                  </label>
-                  <label>Peso (kg)
-                    <input inputMode="decimal" value={item.weight} maxLength={10}
-                      onChange={event => setSets(current => current.map((row, i) => i === index ? { ...row, weight: event.target.value } : row))} />
-                  </label>
+                  {trackingMode === "weight" ? (
+                    <>
+                      <label>Repeticiones
+                        <input inputMode="numeric" value={item.reps} maxLength={4}
+                          onChange={event => setSets(current => current.map((row, i) => i === index ? { ...row, reps: event.target.value } : row))} />
+                      </label>
+                      <label>Peso (kg)
+                        <input inputMode="decimal" value={item.weight} maxLength={10}
+                          onChange={event => setSets(current => current.map((row, i) => i === index ? { ...row, weight: event.target.value } : row))} />
+                      </label>
+                    </>
+                  ) : (
+                    <label>Duración (segundos)
+                      <input inputMode="numeric" value={item.duration} maxLength={5}
+                        onChange={event => setSets(current => current.map((row, i) => i === index ? { ...row, duration: event.target.value } : row))} />
+                    </label>
+                  )}
                   {sets.length > 1 && <button type="button" onClick={() => setSets(current => current.filter((_, i) => i !== index))}>Quitar</button>}
                 </div>
               ))}
-              <button type="button" disabled={sets.length >= 30} onClick={() => setSets(current => [...current, { reps: "", weight: "" }])}>Agregar serie</button>
+              <button type="button" disabled={sets.length >= 30} onClick={() => setSets(current => [...current, { reps: "", weight: "", duration: "" }])}>Agregar serie</button>
             </div>
           )}
           <button type="button" className="student-workout-save" disabled={saving || loadingHistory} onClick={() => void save()}>
-            {saving ? "Guardando…" : "Guardar entrenamiento"}
+            {saving ? "Guardando…" : "Guardar resultado"}
           </button>
           {message && <p role="status">{message}</p>}
           {error && <p role="alert">{error}</p>}
@@ -196,14 +282,18 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
                   {history.entries.map(entry => (
                     <li key={entry.id}>
                       <time dateTime={entry.performed_at}>{new Date(entry.performed_at).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })}</time>
-                      {entry.mode === "quick" ? <strong>{entry.weight_kg} kg</strong> : (
-                        <ul>{entry.sets.map(set => <li key={set.set_number}>{set.reps} rep. · {set.weight_kg} kg</li>)}</ul>
-                      )}
+                      {entry.mode === "quick"
+                        ? <strong>{entry.tracking_mode === "weight"
+                          ? (entry.weight_kg === null ? "—" : formatWeight(entry.weight_kg))
+                          : (entry.duration_seconds === null ? "—" : formatDuration(entry.duration_seconds))}</strong>
+                        : <ul>{entry.sets.map(set => <li key={set.set_number}>{entry.tracking_mode === "weight"
+                          ? `${set.reps} rep. · ${set.weight_kg === null ? "—" : formatWeight(set.weight_kg)}`
+                          : (set.duration_seconds === null ? "—" : formatDuration(set.duration_seconds))}</li>)}</ul>}
                     </li>
                   ))}
                 </ol>
               )}
-              {history?.has_more && <button type="button" disabled={loadingHistory} onClick={() => void loadHistory(true)}>{loadingHistory ? "Cargando…" : "Cargar registros anteriores"}</button>}
+              {history?.has_more && <button type="button" disabled={loadingHistory} onClick={() => void loadHistory(history.entries.length)}>{loadingHistory ? "Cargando…" : "Cargar registros anteriores"}</button>}
             </div>
           )}
         </div>
