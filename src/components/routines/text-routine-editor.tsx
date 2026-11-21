@@ -293,7 +293,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       placeholder={"Escribí la rutina completa…\n\nPodés mencionar ejercicios con @ o escribir su nombre."} />
 
     </div>
-    {(previewPending || previewError || (preview && !playerOpen)) && previewPosition && typeof document !== "undefined" && createPortal(<div ref={previewPanel} className="routine-text-mention-preview" style={{ position: "fixed", left: previewPosition.left, top: previewPosition.top, width: previewPosition.width, maxHeight: "min(240px, calc(100dvh - 16px))", overflow: "auto", zIndex: 1001 }}>
+    {(previewPending || previewError || (preview && !playerOpen)) && previewPosition && typeof document !== "undefined" && createPortal(<div ref={previewPanel} className="routine-text-mention-preview" role="dialog" aria-label={preview ? "Ejercicio: " + preview.name : "Cargando ejercicio"} style={{ position: "fixed", left: previewPosition.left, top: previewPosition.top, width: previewPosition.width, maxHeight: "min(240px, calc(100dvh - 16px))", overflow: "auto", zIndex: 1001 }}>
       {previewPending && <p role="status">Cargando ejercicio…</p>}
       {previewError && <p role="alert">{previewError}</p>}
       {preview && !playerOpen && <>
