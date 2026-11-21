@@ -422,7 +422,7 @@ test("texto libre vincula menciones por UUID y publica la instantánea visible p
   await expect(textarea).toHaveValue("Sentadilla");
   await textarea.press("End");
   await textarea.press("Enter");
-  await textarea.type("Remo");
+  await textarea.type("@Remo");
   const directSuggestion = page.getByRole("listbox", { name: "Ejercicios sugeridos" }).getByRole("option", { name: "Remo", exact: true });
   await expect(directSuggestion).toBeVisible();
   await directSuggestion.click();
