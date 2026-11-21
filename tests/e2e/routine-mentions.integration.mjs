@@ -187,6 +187,7 @@ try {
   // action; closing it does not reopen a preview through restored focus/hover.
   await db.query("update public.cueva_exercises set video_url='https://www.youtube.com/watch?v=dQw4w9WgXcQ' where id=$1", [exerciseId]);
   await pupil.reload();
+  await expect(logger.getByText("REALIZADO")).toBeVisible();
   await mention.click();
   await expect(preview.getByRole("button", {name:"Ver video"})).toBeVisible();
   const videoApi = url => url.pathname === "/api/ejercicios/video" && url.searchParams.get("id") === exerciseId && url.searchParams.get("player") === "1";
