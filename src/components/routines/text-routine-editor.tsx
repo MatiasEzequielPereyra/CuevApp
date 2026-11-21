@@ -96,6 +96,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   const [suggestionPosition, setSuggestionPosition] = useState<{ left: number; top: number; width: number } | null>(null);
   const [previewPosition, setPreviewPosition] = useState<{ left: number; top: number; width: number } | null>(null);
   const [creatingExercise, setCreatingExercise] = useState(false);
+  const [creationTrackingMode, setCreationTrackingMode] = useState<"weight" | "time">("weight");
   const [createError, setCreateError] = useState("");
 
   useEffect(() => {
@@ -194,7 +195,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
         cache: "no-store",
         body: JSON.stringify({
           id: crypto.randomUUID(), name, active: true, revision: 0,
-          description: "", video_url: null, video_path: null, tracking_mode: "weight",
+          description: "", video_url: null, video_path: null, tracking_mode: creationTrackingMode,
         }),
       });
       const data = await response.json();
@@ -309,7 +310,15 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     {range && suggestionPosition && typeof document !== "undefined" && createPortal(<div className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos" style={{ position: "fixed", left: suggestionPosition.left, top: suggestionPosition.top, width: suggestionPosition.width, maxHeight: "min(240px, calc(100dvh - 16px))", zIndex: 1000 }}>
       {pending && <p role="status">Buscando ejercicios…</p>}
       {createError && <p role="alert">{createError}</p>}
-      {!pending && !error && results.length === 0 && range.query.trim() && <button type="button" disabled={disabled || creatingExercise} onMouseDown={event => event.preventDefault()} onClick={() => void createExerciseFromMention()}>{creatingExercise ? "Creando ejercicio…" : `Crear “${range.query.trim()}” en Ejercicios`}</button>}
+      {!pending && !error && results.length === 0 && range.query.trim() && <>
+        <label className="routine-mention-create-mode">Registro
+          <select value={creationTrackingMode} disabled={disabled || creatingExercise} onChange={event => setCreationTrackingMode(event.target.value as "weight" | "time")}>
+            <option value="weight">Peso (kg)</option>
+            <option value="time">Tiempo (sin kg)</option>
+          </select>
+        </label>
+        <button type="button" disabled={disabled || creatingExercise} onMouseDown={event => event.preventDefault()} onClick={() => void createExerciseFromMention()}>{creatingExercise ? "Creando ejercicio…" : `Crear “${range.query.trim()}” en Ejercicios`}</button>
+      </>}
       {error && <><p role="alert">{error}</p><button type="button" disabled={disabled || pending} onClick={retrySearch}>Reintentar búsqueda</button></>}
       {!pending && !error && results.length === 0 && <p>No encontramos ejercicios activos con ese nombre.</p>}
       {results.map((exercise, index) => <button type="button" role="option" aria-selected={active === index} key={exercise.id} disabled={disabled || pending}
