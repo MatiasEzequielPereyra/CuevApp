@@ -327,7 +327,7 @@ create function cueva_private.exercise_write(
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $exwrite$
 declare
   e public.cueva_exercises;
   normalized text;
@@ -344,13 +344,13 @@ begin
   then
     raise exception 'Datos inválidos' using errcode = '22023';
   end if;
-  if p_video_url is not null and p_video_url !~ '^https://((www\\.)?youtube\\.com/(watch\\?v=|shorts/|embed/)|youtu\\.be/)[A-Za-z0-9_-]{11}
- then
+  if p_video_url is not null
+    and substring(p_video_url from '^https://((www[.])?youtube[.]com/(watch[?]v=|shorts/|embed/)|youtu[.]be/)[A-Za-z0-9_-]{11}') is distinct from p_video_url
+  then
     raise exception 'Video inválido' using errcode = '22023';
   end if;
   if p_video_path is not null and (
-    p_video_path !~ ('^'||p_id::text||'/[0-9a-f-]{36}\\.(mp4|mov|webm)
-)
+    substring(p_video_path from ('^'||p_id::text||'/[0-9a-f-]{36}[.](mp4|mov|webm)')) is distinct from p_video_path
     or not exists (
       select 1 from storage.objects
       where bucket_id='cueva-exercise-videos' and name=p_video_path
@@ -386,7 +386,7 @@ begin
   end if;
   return to_jsonb(e);
 end;
-$;
+$exwrite$;
 
 revoke all on function cueva_private.exercise_write(uuid,text,boolean,integer,text,text,text,text)
   from public,anon,authenticated,service_role;
@@ -414,7 +414,7 @@ grant execute on function public.cueva_exercise_write(uuid,text,boolean,integer,
 create function cueva_private.student_mentioned_exercises_with_tracking_mode()
 returns table(id uuid, name text, description text, tracking_mode text)
 language sql stable security definer set search_path = ''
-as $
+as $mentions_private$
   select distinct e.id, e.name, e.description, e.tracking_mode
   from public.cueva_routine_text_publications document
   join public.cueva_routine_publications publication on publication.id = document.publication_id
@@ -423,7 +423,7 @@ as $
   where document.format = 'text'
     and cueva_private.routine_owner(document.student_id)
     and publication.draft_revision = cueva_private.routine_latest(document.student_id)
-$;
+$mentions_private$;
 revoke all on function cueva_private.student_mentioned_exercises_with_tracking_mode()
   from public,anon,authenticated,service_role;
 grant execute on function cueva_private.student_mentioned_exercises_with_tracking_mode()
