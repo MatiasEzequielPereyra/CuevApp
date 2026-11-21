@@ -59,8 +59,8 @@ try {
   await adminTextarea.fill(exerciseName);
   await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"})).toHaveCount(0);
   await adminTextarea.fill(`🙂 @${exerciseName}`);
-  await expect(page.getByRole("option", {name:exerciseName})).toBeVisible();
-  await page.getByRole("option", {name:exerciseName}).click();
+  await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:exerciseName})).toBeVisible();
+  await page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:exerciseName}).click();
   await expect(page.getByRole("listbox", { name: "Ejercicios sugeridos" })).toHaveCount(0);
   const highlightedMention = editor.locator(".routine-text-mention-highlight");
   await expect(highlightedMention).toHaveText(exerciseName);
@@ -108,8 +108,8 @@ try {
   // Multi-line arbitrary selections must preserve every linked exercise UUID on paste.
   await adminTextarea.fill("Inicio\n🙂 @");
   await adminTextarea.pressSequentially(exerciseName);
-  await expect(page.getByRole("option", {name:exerciseName})).toBeVisible();
-  await page.getByRole("option", {name:exerciseName}).click();
+  await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:exerciseName})).toBeVisible();
+  await page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:exerciseName}).click();
   await adminTextarea.press("End");
   await adminTextarea.press("Enter");
   await adminTextarea.pressSequentially("Fin");
@@ -123,8 +123,8 @@ try {
   await expect(adminTextarea).toHaveValue(`Inicio\n🙂 ${exerciseName}\nFin\nInicio\n🙂 ${exerciseName}\nFin`);
   // Restore one occurrence so the remaining assertions use a single mention.
   await adminTextarea.fill(`🙂 @${exerciseName}`);
-  await expect(page.getByRole("option", {name:exerciseName})).toBeVisible();
-  await page.getByRole("option", {name:exerciseName}).click();
+  await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:exerciseName})).toBeVisible();
+  await page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:exerciseName}).click();
   await expect(highlightedMention).toHaveCount(1);
   // Use a real browser pointer click at the visible mention text. This exercises
   // the textarea's native caret placement and React click handler together.
