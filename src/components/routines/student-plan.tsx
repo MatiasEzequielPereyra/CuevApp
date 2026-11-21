@@ -151,7 +151,7 @@ export function StudentPlan({ plan, publicationId, videoIds, videosAvailable = t
                       <ExerciseDetails exercise={exercise} />
                       <span className="my-routine-video-label"><VideoIcon /> Video</span>
                     </button>
-                    {(!("mode" in exercise) || exercise.mode === "weight") && <StudentWorkoutLogger publicationId={publicationId} exerciseId={exercise.exercise_id} targetId={exercise.id} exerciseName={exercise.name} />}
+                    <StudentWorkoutLogger publicationId={publicationId} exerciseId={exercise.exercise_id} targetId={exercise.id} exerciseName={exercise.name} trackingMode={"mode" in exercise ? exercise.mode : "weight"} />
                     {videoNotice === exercise.id && (
                       <span id={`video-notice-${exercise.id}`} className="my-routine-video-notice" role="status">
                         <span>{videosAvailable ? "No se cuenta con video para este ejercicio." : "No pudimos comprobar si hay un video disponible. Intentá nuevamente más tarde."}</span>
