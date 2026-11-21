@@ -103,3 +103,57 @@ export async function POST(req: Request) {
   }
   return reply({ result: data });
 }
+
+
+export async function PATCH(req: Request) {
+  const cfg = productConfig();
+  if (!cfg) return reply({ message: "Acceso no disponible." }, 404);
+  if (req.headers.get("origin") !== cfg.origin) return reply({ message: "Solicitud no permitida." }, 403);
+  const { client, status } = await studentClient();
+  if (!client) return reply({ message: "Acceso restringido." }, status);
+  const p = await readRoutineJson(req, 12000);
+  if (!p || typeof p.entry_id !== "string" || !uuid.test(p.entry_id)
+    || !Number.isSafeInteger(p.revision) || p.revision < 1 || p.revision > 2147483646
+    || !["quick", "sets"].includes(p.mode)
+    || !["weight", "time"].includes(p.tracking_mode)
+    || !Array.isArray(p.sets) || p.sets.length > 30) {
+    return reply({ message: "Revisá los datos del registro que querés editar." }, 400);
+  }
+  const trackingMode = p.tracking_mode as "weight" | "time";
+  if (p.mode === "quick") {
+    if (p.sets.length !== 0
+      || (trackingMode === "weight" && (!validWeight(p.weight_kg) || p.duration_seconds !== null && p.duration_seconds !== undefined))
+      || (trackingMode === "time" && (!validDuration(p.duration_seconds) || p.weight_kg !== null && p.weight_kg !== undefined))) {
+      return reply({ message: "Revisá el peso o la duración del registro." }, 400);
+    }
+  } else {
+    const invalidSet = p.sets.some((set: unknown) => {
+      if (!set || typeof set !== "object") return true;
+      const row = set as { reps?: unknown; weight_kg?: unknown; duration_seconds?: unknown };
+      return trackingMode === "weight"
+        ? !Number.isInteger(row.reps) || (row.reps as number) < 1 || (row.reps as number) > 1000 || !validWeight(row.weight_kg)
+        : !validDuration(row.duration_seconds);
+    });
+    if (p.weight_kg !== null && p.weight_kg !== undefined
+      || p.duration_seconds !== null && p.duration_seconds !== undefined
+      || p.sets.length < 1 || invalidSet) {
+      return reply({ message: "Revisá los valores de cada serie." }, 400);
+    }
+  }
+  const { data, error } = await client.rpc("cueva_workout_update", {
+    p_id: p.entry_id,
+    p_revision: p.revision,
+    p_mode: p.mode,
+    p_tracking_mode: trackingMode,
+    p_weight_kg: trackingMode === "weight" && p.mode === "quick" ? p.weight_kg : null,
+    p_duration_seconds: trackingMode === "time" && p.mode === "quick" ? p.duration_seconds : null,
+    p_sets: p.sets,
+  });
+  if (error) {
+    if (error.code === "42501") return reply({ message: "No tenés permiso para editar este registro." }, 403);
+    if (error.code === "40001") return reply({ message: "El registro cambió desde que abriste el historial. Actualizalo e intentá nuevamente." }, 409);
+    if (error.code === "22023" || error.code === "23514") return reply({ message: "Revisá el peso, la duración y las series." }, 400);
+    return reply({ message: "No pudimos actualizar el registro." }, 503);
+  }
+  return reply({ result: data });
+}
