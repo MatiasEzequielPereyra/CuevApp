@@ -11,7 +11,7 @@ import "./mi-rutina.css";
 
 export const dynamic = "force-dynamic";
 
-type MentionedExercise = { id: string; name: string; description: string | null; videoAvailability: "available" | "unavailable" | "unknown" };
+type MentionedExercise = { id: string; name: string; description: string | null; tracking_mode: "weight" | "time"; videoAvailability: "available" | "unavailable" | "unknown" };
 type RoutineMention = { exercise_id: string; start: number; end: number; text: string };
 
 function renderRoutineText(text: string, mentions: RoutineMention[], exercisesById: Map<string, MentionedExercise>, publicationId: string) {
@@ -22,7 +22,7 @@ function renderRoutineText(text: string, mentions: RoutineMention[], exercisesBy
     const exercise = exercisesById.get(mention.exercise_id);
     if (!exercise || mention.start < cursor || mention.end > points.length || points.slice(mention.start, mention.end).join("") !== mention.text) return;
     if (mention.start > cursor) parts.push(points.slice(cursor, mention.start).join(""));
-    parts.push(<ExerciseMention key={`${mention.exercise_id}:${mention.start}:${index}`} exerciseId={exercise.id} name={exercise.name} description={exercise.description} videoAvailability={exercise.videoAvailability} text={mention.text} publicationId={publicationId} />);
+    parts.push(<ExerciseMention key={`${mention.exercise_id}:${mention.start}:${index}`} exerciseId={exercise.id} name={exercise.name} description={exercise.description} videoAvailability={exercise.videoAvailability} text={mention.text} publicationId={publicationId} trackingMode={exercise.tracking_mode ?? "weight"} />);
     cursor = mention.end;
   });
   if (cursor < points.length) parts.push(points.slice(cursor).join(""));
@@ -87,7 +87,7 @@ export default async function MyRoutine() {
         client.rpc("cueva_student_assigned_exercises"),
         client.from("cueva_routine_text_publications")
           .select("format,text_content,mentions,block_content").eq("publication_id", publication.id).maybeSingle(),
-        client.rpc("cueva_student_mentioned_exercises"),
+        client.rpc("cueva_student_mentioned_exercises_with_tracking_mode"),
       ])
     : [null, null, null, null];
 
