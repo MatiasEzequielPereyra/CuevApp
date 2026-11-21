@@ -243,6 +243,14 @@ try {
 
     const pupil = await learnerContext.newPage();
     await pupil.goto(`${origin}/mi-rutina`);
+    const weightedRow = pupil.locator(".my-routine-exercise-item").filter({ hasText: "Press militar" });
+    const timedRow = pupil.locator(".my-routine-exercise-item").filter({ hasText: "Plancha" });
+    await expect(weightedRow.getByRole("button", { name: "Registrar peso" })).toHaveCount(1);
+    await expect(timedRow.getByRole("button", { name: "Registrar peso" })).toHaveCount(0);
+    await weightedRow.getByRole("button", { name: "Registrar peso" }).click();
+    await weightedRow.getByLabel("Peso utilizado (kg)").fill("32.5");
+    await weightedRow.getByRole("button", { name: "Guardar entrenamiento" }).click();
+    await expect(weightedRow.getByRole("status").filter({ hasText: "Entrenamiento guardado." })).toBeVisible();
     await pupil.route("**/api/ejercicios/video?**", route => route.fulfill({ status: 503, json: { message: "Video temporalmente no disponible." } }), { times: 1 });
     await pupil.getByRole("button", { name: /Press militar/ }).click();
     const dialog = pupil.getByRole("dialog", { name: "Press militar" });
