@@ -129,6 +129,7 @@ try {
   await pupilContext.addCookies(learner.cookies);
   const pupil = await pupilContext.newPage();
   await pupil.goto(`${origin}/mi-rutina`);
+  await expect(pupil.getByRole("heading", {name:"Ejercicios mencionados"})).toHaveCount(0);
   const mention = pupil.locator(".my-routine-mention");
   await expect(mention).toHaveText(exerciseName);
   await expect(pupil.locator(".my-routine-notes")).toContainText(`🙂 ${exerciseName}`);
