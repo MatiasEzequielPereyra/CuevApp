@@ -21,9 +21,9 @@ create table public.cueva_workout_entries (
   created_at timestamptz not null default clock_timestamp(),
   constraint cueva_workout_quick_value_check check (
     (entry_mode = 'quick' and tracking_mode = 'weight'
-      and quick_weight_kg between 0 and 2000 and quick_duration_seconds is null)
+      and quick_weight_kg is not null and quick_weight_kg between 0 and 2000 and quick_duration_seconds is null)
     or (entry_mode = 'quick' and tracking_mode = 'time'
-      and quick_weight_kg is null and quick_duration_seconds between 1 and 86400)
+      and quick_weight_kg is null and quick_duration_seconds is not null and quick_duration_seconds between 1 and 86400)
     or (entry_mode = 'sets' and quick_weight_kg is null and quick_duration_seconds is null)
   )
 );
@@ -41,8 +41,8 @@ create table public.cueva_workout_sets (
   duration_seconds integer,
   primary key (entry_id, set_number),
   constraint cueva_workout_set_value_check check (
-    (weight_kg between 0 and 2000 and duration_seconds is null and reps between 1 and 1000)
-    or (weight_kg is null and duration_seconds between 1 and 86400 and reps is null)
+    (weight_kg is not null and weight_kg between 0 and 2000 and duration_seconds is null and reps between 1 and 1000)
+    or (weight_kg is null and duration_seconds is not null and duration_seconds between 1 and 86400 and reps is null)
   )
 );
 
