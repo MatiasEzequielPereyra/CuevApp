@@ -178,6 +178,12 @@ try {
     [studentId,exerciseId]
   )).rows[0].count).toBe(2);
   await expect(logger.getByText("REALIZADO")).toBeVisible();
+  await logger.getByRole("button", {name:"Ver historial"}).click();
+  await logger.getByRole("button", {name:"Editar"}).last().click();
+  await logger.locator(".student-workout-set").nth(1).getByLabel("Peso (kg)").fill("45");
+  await logger.getByRole("button", {name:"Guardar cambios"}).click();
+  await expect(logger.getByRole("status").filter({hasText:"Cambios guardados."})).toBeVisible();
+  await expect(logger.getByText(/45 kg/)).toBeVisible();
   await pupil.locator("h1").click();
   await expect(preview).toHaveCount(0);
   await expect(logger.getByText("REALIZADO")).toBeVisible();
