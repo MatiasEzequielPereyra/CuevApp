@@ -6,6 +6,7 @@ type WorkoutSet = { reps: string; weight: string; duration: string };
 type HistorySet = { set_number: number; reps: number | null; weight_kg: number | null; duration_seconds: number | null };
 type HistoryEntry = {
   id: string;
+  revision: number;
   performed_at: string;
   mode: "quick" | "sets";
   tracking_mode: "weight" | "time";
@@ -72,6 +73,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const [duration, setDuration] = useState("");
   const [sets, setSets] = useState<WorkoutSet[]>([{ reps: "", weight: "", duration: "" }]);
   const [history, setHistory] = useState<WorkoutHistory | null>(null);
+  const [editingEntry, setEditingEntry] = useState<HistoryEntry | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -155,31 +157,31 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     }
 
     const payload = {
-      publication_id: publicationId,
-      exercise_id: exerciseId,
-      target_id: targetId ?? null,
       mode: selectedMode,
       tracking_mode: trackingMode,
       weight_kg: quickWeight,
       duration_seconds: quickDuration,
       sets: payloadSets,
     };
-    const fingerprint = JSON.stringify(payload);
-    const operationId = operation.current?.fingerprint === fingerprint
+    const fingerprint = JSON.stringify({ publicationId, exerciseId, targetId, ...payload });
+    const operationId = editingEntry ? null : operation.current?.fingerprint === fingerprint
       ? operation.current.id
       : crypto.randomUUID();
-    operation.current = { fingerprint, id: operationId };
+    if (operationId) operation.current = { fingerprint, id: operationId };
     try {
       const response = await fetch("/api/entrenamientos", {
-        method: "POST",
+        method: editingEntry ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ id: operationId, ...payload }),
+        body: JSON.stringify(editingEntry
+          ? { entry_id: editingEntry.id, revision: editingEntry.revision, ...payload }
+          : { id: operationId, publication_id: publicationId, exercise_id: exerciseId, target_id: targetId ?? null, ...payload }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "No pudimos guardar el registro.");
       operation.current = null;
-      setMessage("Resultado guardado.");
+      setMessage(editingEntry ? "Cambios guardados." : "Resultado guardado.");
+      setEditingEntry(null);
       await loadHistory(0);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No pudimos guardar el registro.");
@@ -187,6 +189,29 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       setSaving(false);
       busy.current = false;
     }
+  }
+
+  function beginEdit(entry: HistoryEntry) {
+    if (entry.tracking_mode !== trackingMode) return;
+    setEditingEntry(entry);
+    setExpanded(true);
+    setMode(entry.mode);
+    if (entry.mode === "quick") {
+      setWeight(entry.weight_kg === null ? "" : String(entry.weight_kg));
+      setDuration(entry.duration_seconds === null ? "" : String(entry.duration_seconds));
+    } else if (entry.tracking_mode === "weight") {
+      setSets(entry.sets.map(set => ({ reps: set.reps === null ? "" : String(set.reps), weight: set.weight_kg === null ? "" : String(set.weight_kg), duration: "" })));
+    } else {
+      setSets(entry.sets.map(set => ({ reps: "", weight: "", duration: set.duration_seconds === null ? "" : String(set.duration_seconds) })));
+    }
+    setMessage("");
+    setError("");
+  }
+
+  function cancelEdit() {
+    setEditingEntry(null);
+    setMessage("");
+    setError("");
   }
 
   const latest = history?.entries.find(entry => entry.tracking_mode === trackingMode);
@@ -269,8 +294,9 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
               <button type="button" disabled={sets.length >= 30} onClick={() => setSets(current => [...current, { reps: "", weight: "", duration: "" }])}>Agregar serie</button>
             </div>
           )}
+          {editingEntry && <p className="student-workout-editing">Editando un registro anterior <button type="button" onClick={cancelEdit}>Cancelar edición</button></p>}
           <button type="button" className="student-workout-save" disabled={saving || loadingHistory} onClick={() => void save()}>
-            {saving ? "Guardando…" : "Guardar resultado"}
+            {saving ? "Guardando…" : editingEntry ? "Guardar cambios" : "Guardar resultado"}
           </button>
           {message && <p role="status">{message}</p>}
           {error && <p role="alert">{error}</p>}
@@ -289,6 +315,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
                         : <ul>{entry.sets.map(set => <li key={set.set_number}>{entry.tracking_mode === "weight"
                           ? `${set.reps} rep. · ${set.weight_kg === null ? "—" : formatWeight(set.weight_kg)}`
                           : (set.duration_seconds === null ? "—" : formatDuration(set.duration_seconds))}</li>)}</ul>}
+                      {entry.tracking_mode === trackingMode && <button type="button" onClick={() => beginEdit(entry)}>Editar</button> }
                     </li>
                   ))}
                 </ol>
