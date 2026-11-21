@@ -3,7 +3,7 @@
 import { createPortal } from "react-dom";
 import { ExerciseVideoDialog } from "@/components/routines/exercise-video-dialog";
 import { StudentWorkoutLogger } from "@/components/routines/student-workout-logger";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } from "react";
 
 type ExerciseMentionProps = {
   exerciseId: string;
@@ -13,11 +13,13 @@ type ExerciseMentionProps = {
   text: string;
   publicationId: string;
   trackingMode: "weight" | "time";
+  targetId?: string;
+  hue?: number;
 };
 
 type FloatingPosition = { left: number; top: number; width: number };
 
-export function ExerciseMention({ exerciseId, name, description, videoAvailability, text, publicationId, trackingMode }: ExerciseMentionProps) {
+export function ExerciseMention({ exerciseId, name, description, videoAvailability, text, publicationId, trackingMode, targetId, hue = 250 }: ExerciseMentionProps) {
   const [open, setOpen] = useState(false);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [position, setPosition] = useState<FloatingPosition | null>(null);
@@ -84,6 +86,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
         ref={trigger}
         type="button"
         className="my-routine-mention"
+        style={{ "--mention-hue": hue } as CSSProperties}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={panelId}
@@ -91,7 +94,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
       >
         {text}
       </button>
-      <StudentWorkoutLogger publicationId={publicationId} exerciseId={exerciseId} exerciseName={name} trackingMode={trackingMode} />
+      <StudentWorkoutLogger publicationId={publicationId} exerciseId={exerciseId} exerciseName={name} trackingMode={trackingMode} targetId={targetId} />
       {open && position && typeof document !== "undefined" && createPortal(
         <div ref={panel} id={panelId} className="my-routine-mention-preview" role="dialog"
           aria-label={`Ejercicio: ${name}`}
