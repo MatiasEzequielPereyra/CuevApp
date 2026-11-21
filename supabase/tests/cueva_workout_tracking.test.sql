@@ -45,7 +45,7 @@ values ('c7600000-0000-4000-8000-000000000003','c7300000-0000-4000-8000-00000000
 
 select ok(has_function_privilege('authenticated','public.cueva_workout_record(uuid,uuid,uuid,uuid,text,text,numeric,integer,jsonb)','EXECUTE'),
  'authenticated students can call the workout record RPC');
-select ok(not has_function_privilege('anon','public.cueva_workout_record(uuid,uuid,uuid,uuid,text,numeric,jsonb)','EXECUTE'),
+select ok(not has_function_privilege('anon','public.cueva_workout_record(uuid,uuid,uuid,uuid,text,text,numeric,integer,jsonb)','EXECUTE'),
  'anonymous users cannot call the workout record RPC');
 select ok(not has_table_privilege('authenticated','public.cueva_workout_entries','SELECT'),
  'students cannot bypass the owner-scoped history RPC');
@@ -64,7 +64,7 @@ select is((public.cueva_workout_record(
 select is((public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000001','c7600000-0000-4000-8000-000000000002',
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000002',
- 'quick',72.5,'[]'::jsonb)->'entry'->>'id'),
+ 'quick','weight',72.5,null,'[]'::jsonb)->'entry'->>'id'),
  'c8100000-0000-4000-8000-000000000001',
  'an exact retry is idempotent');
 select throws_ok($$select public.cueva_workout_record(
@@ -121,7 +121,7 @@ select throws_ok($$select public.cueva_workout_record(
 select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000004','c7600000-0000-4000-8000-000000000001',
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000001',
- 'quick',20,'[]'::jsonb)$$,'42501',null,'a superseded publication cannot receive a new entry');
+ 'quick','weight',20,null,'[]'::jsonb)$$,'42501',null,'a superseded publication cannot receive a new entry');
 select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000005','c7600000-0000-4000-8000-000000000004',
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000004',
@@ -139,10 +139,17 @@ select is((public.cueva_workout_record(
  'quick','weight',45,null,'[]'::jsonb)->'entry'->>'exercise_id'),
  'c7500000-0000-4000-8000-000000000003',
  'text-routine UUID mentions support student workout logging');
+select is((public.cueva_workout_record(
+ 'c8100000-0000-4000-8000-000000000013','c7600000-0000-4000-8000-000000000003',
+ 'c7500000-0000-4000-8000-000000000004',null,
+ 'quick','time',null,90,'[]'::jsonb)->'entry'->>'quick_duration_seconds')::integer,90,
+ 'time-based text mentions support duration logging in seconds');
+select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000004')->>'last_duration_seconds')::integer,90,
+ 'text time history is isolated by exercise UUID');
 select throws_ok($text_target$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000010','c7600000-0000-4000-8000-000000000003',
  'c7500000-0000-4000-8000-000000000003','c7900000-0000-4000-8000-000000000004',
- 'quick',45,'[]'::jsonb)$text_target$,'22023',null,
+ 'quick','weight',45,null,'[]'::jsonb)$text_target$,'22023',null,
  'text mentions cannot be attributed to arbitrary structured target ids');
 select is((select tracking_mode from public.cueva_student_mentioned_exercises_with_tracking_mode()
  where id='c7500000-0000-4000-8000-000000000004'),'time',
