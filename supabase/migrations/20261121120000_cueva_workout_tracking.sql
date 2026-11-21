@@ -19,6 +19,8 @@ create table public.cueva_workout_entries (
   quick_duration_seconds integer,
   performed_at timestamptz not null default clock_timestamp(),
   created_at timestamptz not null default clock_timestamp(),
+  updated_at timestamptz not null default clock_timestamp(),
+  revision integer not null default 1 check (revision between 1 and 2147483647),
   constraint cueva_workout_quick_value_check check (
     (entry_mode = 'quick' and tracking_mode = 'weight'
       and quick_weight_kg is not null and quick_weight_kg between 0 and 2000 and quick_duration_seconds is null)
@@ -343,6 +345,8 @@ begin
     select e.performed_at, jsonb_build_object(
       'id', e.id,
       'performed_at', e.performed_at,
+      'updated_at', e.updated_at,
+      'revision', e.revision,
       'mode', e.entry_mode,
       'tracking_mode', e.tracking_mode,
       'weight_kg', e.quick_weight_kg,
