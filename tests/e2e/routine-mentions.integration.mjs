@@ -52,11 +52,11 @@ try {
   await expect(highlightedMention).toHaveCSS("font-weight", "750");
   await expect(highlightedMention).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   const adminTextarea = editor.getByRole("textbox", {name:"Rutina en texto libre"});
-  await adminTextarea.evaluate(element => {
-    const position = element.value.indexOf(exerciseName) + Math.floor(exerciseName.length / 2);
+  await adminTextarea.evaluate((element, name) => {
+    const position = element.value.indexOf(name) + Math.floor(name.length / 2);
     element.setSelectionRange(position, position);
     element.dispatchEvent(new MouseEvent("click", {bubbles:true}));
-  });
+  }, exerciseName);
   const adminPreview = editor.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`});
   await expect(adminPreview).toBeVisible();
   await expect(adminPreview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
