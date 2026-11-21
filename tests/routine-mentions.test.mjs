@@ -1,4 +1,4 @@
-import { routineMentionsKey } from "../src/lib/routines/mentions.ts";
+import { getRoutineMentionHues, routineMentionsKey } from "../src/lib/routines/mentions.ts";
 import { resolveMentionVideoAvailability } from "../src/lib/routines/mention-video-availability.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -104,4 +104,22 @@ test("mention video availability distinguishes confirmed absence from lookup fai
   assert.equal(resolveMentionVideoAvailability(exercise, [], false), "unavailable");
   assert.equal(resolveMentionVideoAvailability(exercise, [], true), "unknown");
   assert.equal(resolveMentionVideoAvailability(exercise, null, false), "unknown");
+});
+
+
+test("distributes mention background hues across the color wheel without nearby repeats", () => {
+  const mentions = Array.from({ length: 8 }, (_, index) => ({
+    exercise_id: index % 2 === 0 ? exercise : otherExercise,
+    start: index * 20,
+    end: index * 20 + 10,
+    text: index % 2 === 0 ? "Sentadilla" : "Press de banca",
+  }));
+  const hues = getRoutineMentionHues(mentions);
+  const values = mentions.map(mention => hues.get(mention.exercise_id + ":" + mention.start + ":" + mention.end));
+  assert.equal(new Set(values).size, mentions.length);
+  for (let index = 1; index < values.length; index++) {
+    const delta = Math.abs(values[index] - values[index - 1]);
+    assert.ok(Math.min(delta, 360 - delta) >= 45, "Las menciones consecutivas deben tener tonos distinguibles.");
+  }
+  assert.deepEqual([...hues], [...getRoutineMentionHues(mentions)]);
 });
