@@ -243,6 +243,7 @@ try {
 
     const pupil = await learnerContext.newPage();
     await pupil.goto(`${origin}/mi-rutina`);
+    await expect(pupil.getByRole("heading", {name:"Descripciones de ejercicios"})).toHaveCount(0);
     const weightedRow = pupil.locator(".my-routine-exercise-item").filter({ hasText: "Press militar" });
     const timedRow = pupil.locator(".my-routine-exercise-item").filter({ hasText: "Plancha" });
     await expect(weightedRow.getByRole("button", { name: "Registrar peso" })).toHaveCount(1);
