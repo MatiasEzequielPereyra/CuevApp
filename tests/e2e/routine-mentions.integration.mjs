@@ -126,7 +126,7 @@ try {
   await adminTextarea.press("End");
   await adminTextarea.press("Enter");
   await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"})).toHaveCount(0);
-  await expect(adminTextarea).toHaveValue(`Inicio\\n🙂 ${exerciseName}\\n`);
+  await expect(adminTextarea).toHaveValue(`Inicio\n🙂 ${exerciseName}\n`);
   await adminTextarea.pressSequentially("Fin");
   await expect(highlightedMention).toHaveCount(1);
   await adminTextarea.press("Control+A");
