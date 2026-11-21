@@ -297,10 +297,14 @@
 
 .routine-text-mention-highlight {
   border-radius: 3px;
-  padding: 1px 2px;
+  /* Keep glyph metrics identical to the textarea so the native caret stays aligned. */
+  padding: 0;
   color: hsl(var(--mention-hue, 250) 55% 24%);
   background: hsl(var(--mention-hue, 250) 78% 86%);
-  font-weight: 750;
+  font-weight: 400;
+  -webkit-text-stroke: .45px currentColor;
+  text-shadow: .2px 0 currentColor, -.2px 0 currentColor;
+  box-shadow: 2px 0 0 hsl(var(--mention-hue, 250) 78% 86%), -2px 0 0 hsl(var(--mention-hue, 250) 78% 86%);
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }

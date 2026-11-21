@@ -49,7 +49,10 @@ try {
   await editor.getByRole("option", {name:exerciseName}).click();
   const highlightedMention = editor.locator(".routine-text-mention-highlight");
   await expect(highlightedMention).toHaveText(exerciseName);
-  await expect(highlightedMention).toHaveCSS("font-weight", "750");
+  // Highlight styling must not change inline text metrics: the textarea owns the native caret.
+  await expect(highlightedMention).toHaveCSS("font-weight", "400");
+  await expect(highlightedMention).toHaveCSS("padding-left", "0px");
+  await expect(highlightedMention).not.toHaveCSS("text-shadow", "none");
   await expect(highlightedMention).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   const adminTextarea = editor.getByRole("textbox", {name:"Rutina en texto libre"});
   const mentionClickPoint = await adminTextarea.evaluate((element, name) => {
