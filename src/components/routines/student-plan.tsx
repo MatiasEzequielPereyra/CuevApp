@@ -3,6 +3,7 @@
 import { useId, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import type { LegacyTarget, Plan, Target } from "@/lib/routines/types";
 import { parseVideoSource, type VideoSource } from "@/lib/routines/video-source";
+import { StudentWorkoutLogger } from "@/components/routines/student-workout-logger";
 
 type Playback = { state: "loading" } | { state: "ready"; source: VideoSource } | { state: "error"; message: string; url?: string };
 
@@ -25,7 +26,7 @@ function VideoIcon() {
   return <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M6 3.5v13l10-6.5Z" /></svg>;
 }
 
-export function StudentPlan({ plan, videoIds, videosAvailable = true }: { plan: Plan; videoIds: string[]; videosAvailable?: boolean }) {
+export function StudentPlan({ plan, publicationId, videoIds, videosAvailable = true }: { plan: Plan; publicationId: string; videoIds: string[]; videosAvailable?: boolean }) {
   const [selected, setSelected] = useState("");
   const [playing, setPlaying] = useState<{ name: string; id: string } | null>(null);
   const [videoNotice, setVideoNotice] = useState<string | null>(null);
@@ -150,6 +151,7 @@ export function StudentPlan({ plan, videoIds, videosAvailable = true }: { plan: 
                       <ExerciseDetails exercise={exercise} />
                       <span className="my-routine-video-label"><VideoIcon /> Video</span>
                     </button>
+                    {(!("mode" in exercise) || exercise.mode === "weight") && <StudentWorkoutLogger publicationId={publicationId} exerciseId={exercise.exercise_id} targetId={exercise.id} exerciseName={exercise.name} />}
                     {videoNotice === exercise.id && (
                       <span id={`video-notice-${exercise.id}`} className="my-routine-video-notice" role="status">
                         <span>{videosAvailable ? "No se cuenta con video para este ejercicio." : "No pudimos comprobar si hay un video disponible. Intentá nuevamente más tarde."}</span>
