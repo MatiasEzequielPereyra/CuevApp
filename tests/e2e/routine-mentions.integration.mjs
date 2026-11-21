@@ -47,7 +47,7 @@ try {
   await editor.getByRole("button", {name:"Texto libre"}).click();
   const adminTextarea = editor.getByRole("textbox", {name:"Rutina en texto libre"});
   await adminTextarea.fill(exerciseName);
-  await expect(editor.getByRole("listbox", {name:"Ejercicios sugeridos"})).toHaveCount(0);
+  await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"})).toHaveCount(0);
   await adminTextarea.fill(`🙂 @${exerciseName}`);
   await expect(editor.getByRole("option", {name:exerciseName})).toBeVisible();
   await editor.getByRole("option", {name:exerciseName}).click();
@@ -93,7 +93,7 @@ try {
   // Use a real browser pointer click at the visible mention text. This exercises
   // the textarea's native caret placement and React click handler together.
   await adminTextarea.click({position:mentionClickPoint});
-  const adminPreview = editor.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`});
+  const adminPreview = page.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`});
   await expect(adminPreview).toBeVisible();
   await expect(editor.getByRole("listbox", { name: "Ejercicios sugeridos" })).toHaveCount(0);
   await expect(adminPreview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
