@@ -24,9 +24,12 @@ function validWeight(value: unknown): value is number {
 export async function GET(req: Request) {
   const { client, status } = await studentClient();
   if (!client) return reply({ message: "Acceso restringido." }, status);
-  const exerciseId = new URL(req.url).searchParams.get("exercise_id") ?? "";
+  const params = new URL(req.url).searchParams;
+  const exerciseId = params.get("exercise_id") ?? "";
+  const offset = Number(params.get("offset") ?? 0);
   if (!uuid.test(exerciseId)) return reply({ message: "Ejercicio inválido." }, 400);
-  const { data, error } = await client.rpc("cueva_workout_history", { p_exercise_id: exerciseId });
+  if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000) return reply({ message: "Página de historial inválida." }, 400);
+  const { data, error } = await client.rpc("cueva_workout_history", { p_exercise_id: exerciseId, p_limit: 30, p_offset: offset });
   if (error) return reply({ message: "No pudimos cargar el historial del ejercicio." }, error.code === "42501" ? 403 : 503);
   return reply({ history: data });
 }
