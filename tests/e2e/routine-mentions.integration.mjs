@@ -50,7 +50,7 @@ try {
   await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"})).toHaveCount(0);
   await adminTextarea.fill(`🙂 @${exerciseName}`);
   await expect(page.getByRole("option", {name:exerciseName})).toBeVisible();
-  await editor.getByRole("option", {name:exerciseName}).click();
+  await page.getByRole("option", {name:exerciseName}).click();
   await expect(editor.getByRole("listbox", { name: "Ejercicios sugeridos" })).toHaveCount(0);
   const highlightedMention = editor.locator(".routine-text-mention-highlight");
   await expect(highlightedMention).toHaveText(exerciseName);
@@ -90,6 +90,16 @@ try {
   await page.mouse.move(drag.end.x, drag.end.y, { steps: 8 });
   await page.mouse.up();
   assert.equal(await adminTextarea.evaluate(element => element.value.slice(element.selectionStart, element.selectionEnd)), `🙂 ${exerciseName}`);
+  // Copy/paste must carry the linked UUID with the visible text, not only the name.
+  await adminTextarea.press("Control+C");
+  await adminTextarea.press("End");
+  await adminTextarea.press("Control+V");
+  await expect(highlightedMention).toHaveCount(2);
+  // Restore one occurrence so the remaining assertions use a single mention.
+  await adminTextarea.fill(`🙂 @${exerciseName}`);
+  await expect(page.getByRole("option", {name:exerciseName})).toBeVisible();
+  await page.getByRole("option", {name:exerciseName}).click();
+  await expect(highlightedMention).toHaveCount(1);
   // Use a real browser pointer click at the visible mention text. This exercises
   // the textarea's native caret placement and React click handler together.
   await adminTextarea.click({position:mentionClickPoint});
