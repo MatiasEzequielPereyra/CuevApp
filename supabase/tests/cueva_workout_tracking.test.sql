@@ -9,6 +9,12 @@ select ok(has_function_privilege('authenticated','public.cueva_student_mentioned
 select ok(not has_function_privilege('anon','public.cueva_student_mentioned_exercises_with_tracking_mode()','EXECUTE'),
  'anonymous users cannot read text mention tracking modes');
 
+select ok(to_regprocedure('public.cueva_workout_update(uuid,integer,text,text,numeric,integer,jsonb)') is not null,
+ 'workout update RPC supports optimistic record edits');
+select ok(has_function_privilege('authenticated','public.cueva_workout_update(uuid,integer,text,text,numeric,integer,jsonb)','EXECUTE'),
+ 'authenticated students can edit their own workout records');
+select ok(not has_function_privilege('anon','public.cueva_workout_update(uuid,integer,text,text,numeric,integer,jsonb)','EXECUTE'),
+ 'anonymous users cannot edit workout records');
 insert into auth.users(id,aud,role,email,created_at,updated_at) values
  ('c7100000-0000-4000-8000-000000000001','authenticated','authenticated','workout-a@example.test',now(),now()),
  ('c7100000-0000-4000-8000-000000000002','authenticated','authenticated','workout-b@example.test',now(),now());
@@ -71,6 +77,16 @@ select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000001','c7600000-0000-4000-8000-000000000002',
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000002',
  'quick','weight',73,null,'[]'::jsonb)$$,'22023',null,'an operation ID cannot be reused with a different weight');
+
+select is((public.cueva_workout_update(
+ 'c8100000-0000-4000-8000-000000000001',1,'quick','weight',74,null,'[]'::jsonb)->'entry'->>'revision')::integer,2,
+ 'students can edit their own prior workout result with revision increment');
+select is((public.cueva_workout_update(
+ 'c8100000-0000-4000-8000-000000000001',1,'quick','weight',74,null,'[]'::jsonb)->'entry'->>'quick_weight_kg')::numeric,74,
+ 'replaying the same update is idempotent');
+select throws_ok($stale_update$select public.cueva_workout_update(
+ 'c8100000-0000-4000-8000-000000000001',1,'quick','weight',80,null,'[]'::jsonb)$stale_update$,
+ '40001',null,'stale workout edits are rejected');
 
 select is(jsonb_array_length(public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000002','c7600000-0000-4000-8000-000000000002',
@@ -167,6 +183,9 @@ select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000008','c7600000-0000-4000-8000-000000000004',
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000004',
  'quick','weight',45,null,'[]'::jsonb)$$,'42501',null,'a student cannot write another students workout');
+select throws_ok($owner_update$select public.cueva_workout_update(
+ 'c8100000-0000-4000-8000-000000000001',2,'quick','weight',74,null,'[]'::jsonb)$owner_update$,
+ '42501',null,'student B cannot edit student A workout history');
 select is(public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')->>'last_weight_kg',null,
  'history is isolated by authenticated student');
 select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000003')->>'last_weight_kg')::numeric,45,
