@@ -122,10 +122,10 @@ select is((public.cueva_workout_record(
 select is((select tracking_mode from public.cueva_student_mentioned_exercises_with_tracking_mode()
  where id='c7500000-0000-4000-8000-000000000004'),'time',
  'text mentions expose the catalog time mode');
-select throws_ok($select public.cueva_workout_record(
+select throws_ok($time_text$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000009','c7600000-0000-4000-8000-000000000003',
  'c7500000-0000-4000-8000-000000000004',null,
- 'quick',45,'[]'::jsonb)$,'22023',null,'time-based text mentions reject kilogram entries');
+ 'quick',45,'[]'::jsonb)$time_text$,'22023',null,'time-based text mentions reject kilogram entries');
 select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000008','c7600000-0000-4000-8000-000000000004',
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000004',
