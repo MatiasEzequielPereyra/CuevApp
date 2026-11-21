@@ -51,6 +51,8 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   const [previewError, setPreviewError] = useState("");
   const [playerOpen, setPlayerOpen] = useState(false);
   const [suggestionPosition, setSuggestionPosition] = useState<{ left: number; top: number; width: number } | null>(null);
+  const [creatingExercise, setCreatingExercise] = useState(false);
+  const [createError, setCreateError] = useState("");
 
   useEffect(() => {
     if (!range) return;
@@ -94,10 +96,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
 
   useLayoutEffect(() => {
     const input = textarea.current;
-    if (!range || !input || typeof document === "undefined") {
-      setSuggestionPosition(null);
-      return;
-    }
+    if (!range || !input || typeof document === "undefined") return;
     const measure = () => {
       const style = window.getComputedStyle(input);
       const mirror = document.createElement("div");
@@ -112,8 +111,8 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       mirror.style.position = "fixed";
       mirror.style.visibility = "hidden";
       mirror.style.pointerEvents = "none";
-      mirror.style.left = input.getBoundingClientRect().left + "px";
-      mirror.style.top = input.getBoundingClientRect().top + "px";
+      mirror.style.left = input.getBoundingClientRect().left - input.scrollLeft + "px";
+      mirror.style.top = input.getBoundingClientRect().top - input.scrollTop + "px";
       mirror.style.width = input.clientWidth + "px";
       mirror.style.height = "auto";
       mirror.style.overflow = "hidden";
@@ -161,7 +160,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   function insert(exercise: Exercise) {
     const input = textarea.current;
     if (!input || !range || disabled || pending || error
-      || !results.some(result => result.id === exercise.id)) return;
+      || (!creatingExercise && !results.some(result => result.id === exercise.id))) return;
     const next = value.slice(0, range.start) + exercise.name + value.slice(range.end);
     const start = utf16OffsetToCodePoint(next, range.start);
     const endUtf16 = range.start + exercise.name.length;
@@ -171,6 +170,37 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     nextMentions.sort((a, b) => a.start - b.start);
     onChange(next, nextMentions); updateRange(null);
     requestAnimationFrame(() => { input.focus(); input.setSelectionRange(endUtf16, endUtf16); });
+  }
+
+  async function createExerciseFromMention() {
+    if (!range || disabled || pending || creatingExercise || !range.query.trim()) return;
+    const name = range.query.trim().slice(0, 120);
+    setCreatingExercise(true);
+    setCreateError("");
+    try {
+      const response = await fetch("/api/ejercicios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          id: crypto.randomUUID(), name, active: true, revision: 0,
+          description: "", video_url: null, video_path: null,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.exercise) {
+        if (response.status === 409) {
+          setCreateError(data.message || "Ya existe un ejercicio similar. Volvé a buscarlo en el catálogo.");
+          return;
+        }
+        throw new Error(data.message || "No se pudo crear el ejercicio.");
+      }
+      insert(data.exercise as Exercise);
+    } catch (cause) {
+      setCreateError(cause instanceof Error ? cause.message : "No se pudo crear el ejercicio.");
+    } finally {
+      setCreatingExercise(false);
+    }
   }
 
   async function openMentionAtCursor(input: HTMLTextAreaElement) {
@@ -232,6 +262,8 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     {playerOpen && preview && <ExerciseVideoDialog exerciseId={preview.id} exerciseName={preview.name} open onClose={() => { setPlayerOpen(false); setPreview(null); }} /> }
     {range && suggestionPosition && typeof document !== "undefined" && createPortal(<div className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos" style={{ position: "fixed", left: suggestionPosition.left, top: suggestionPosition.top, width: suggestionPosition.width, maxHeight: "min(240px, calc(100dvh - 16px))", zIndex: 1000 }}>
       {pending && <p role="status">Buscando ejercicios…</p>}
+      {createError && <p role="alert">{createError}</p>}
+      {!pending && !error && results.length === 0 && range.query.trim() && <button type="button" disabled={disabled || creatingExercise} onMouseDown={event => event.preventDefault()} onClick={() => void createExerciseFromMention()}>{creatingExercise ? "Creando ejercicio…" : `Crear “${range.query.trim()}” en Ejercicios`}</button>}
       {error && <><p role="alert">{error}</p><button type="button" disabled={disabled || pending} onClick={retrySearch}>Reintentar búsqueda</button></>}
       {!pending && !error && results.length === 0 && <p>No encontramos ejercicios activos con ese nombre.</p>}
       {results.map((exercise, index) => <button type="button" role="option" aria-selected={active === index} key={exercise.id} disabled={disabled || pending}
