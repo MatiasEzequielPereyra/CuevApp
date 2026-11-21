@@ -94,7 +94,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
       >
         {text}
       </button>
-      <StudentWorkoutLogger publicationId={publicationId} exerciseId={exerciseId} exerciseName={name} trackingMode={trackingMode} targetId={targetId} />
+      <StudentWorkoutLogger publicationId={publicationId} exerciseId={exerciseId} exerciseName={name} trackingMode={trackingMode} {...(targetId ? { targetId } : {})} />
       {open && position && typeof document !== "undefined" && createPortal(
         <div ref={panel} id={panelId} className="my-routine-mention-preview" role="dialog"
           aria-label={`Ejercicio: ${name}`}
