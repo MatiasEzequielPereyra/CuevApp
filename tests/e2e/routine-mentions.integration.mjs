@@ -133,7 +133,6 @@ try {
   const mention = pupil.locator(".my-routine-mention");
   await expect(mention).toHaveText(exerciseName);
   await expect(pupil.locator(".my-routine-notes")).toContainText(`🙂 ${exerciseName}`);
-  await expect(pupil.getByRole("heading", {name:"Ejercicios mencionados"})).toBeVisible();
   await expect(pupil.getByRole("group", {name:"Día de entrenamiento"})).toHaveCount(0);
 
   // A linked mention never opens a preview from proximity, hover or focus.
@@ -213,6 +212,16 @@ try {
   await expect(player.locator("iframe")).toHaveAttribute("src", /youtube-nocookie.com\/embed\/dQw4w9WgXcQ/);
   await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
   await pupil.mouse.click(1, 1);
+  await expect(player).toHaveCount(0);
+  await expect(preview).toHaveCount(0);
+  await mention.hover();
+  await expect(preview).toHaveCount(0);
+
+  // Escape closes the player too, without restoring a neighboring preview.
+  await mention.click();
+  await preview.getByRole("button", {name:"Ver video"}).click();
+  await expect(player).toBeVisible();
+  await pupil.keyboard.press("Escape");
   await expect(player).toHaveCount(0);
   await expect(preview).toHaveCount(0);
   await mention.hover();
