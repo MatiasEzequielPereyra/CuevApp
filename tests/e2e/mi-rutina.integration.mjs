@@ -111,9 +111,10 @@ async function layoutAndPlayback(browserType, learner) {
           const noVideoExercise = routine.getByRole("button", { name: /Sentadilla/ });
           await expect(noVideoExercise).toHaveCount(2);
           await noVideoExercise.first().click();
-          await expect(routine.getByText("No se cuenta con video para este ejercicio.", { exact: true })).toBeVisible();
-          await blocks.nth(0).locator(".my-routine-exercise-item").first().getByRole("button", { name: "Cerrar aviso" }).click();
-          await expect(routine.getByText("No se cuenta con video para este ejercicio.", { exact: true })).toHaveCount(0);
+          const noVideoPreview = page.getByRole("dialog", { name: "Ejercicio: Sentadilla" });
+          await expect(noVideoPreview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
+          await page.mouse.click(5, 5);
+          await expect(noVideoPreview).toHaveCount(0);
           await expect(routine.getByText("Descansá entre bloques.", { exact: false })).toBeVisible();
           assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
           await expect(page).toHaveTitle(/CUEVA/);
@@ -144,6 +145,17 @@ async function layoutAndPlayback(browserType, learner) {
           } else {
             await row.click();
           }
+          const exercisePreview = page.getByRole("dialog", { name: "Ejercicio: Press militar" });
+          await expect(exercisePreview).toBeVisible();
+          const playVideo = exercisePreview.getByRole("button", { name: "Ver video" });
+          if (width === 390) {
+            await playVideo.focus();
+            await page.keyboard.press("Enter");
+          } else if (width === 360) {
+            await playVideo.tap();
+          } else {
+            await playVideo.click();
+          }
           const dialog = page.getByRole("dialog", { name: "Press militar" });
           await expect(dialog.getByRole("button", { name: "Cerrar" })).toBeFocused();
           const player = dialog.locator("video");
@@ -154,7 +166,10 @@ async function layoutAndPlayback(browserType, learner) {
           await page.screenshot({ path: evidence("video") });
           if (width === 390) await page.keyboard.press("Escape"); else await dialog.getByRole("button", { name: "Cerrar" }).click();
           await expect(dialog).toHaveCount(0);
+          await expect(exercisePreview).toHaveCount(0);
           await expect(row).toBeFocused();
+          await row.hover();
+          await expect(page.getByRole("dialog", { name: "Ejercicio: Press militar" })).toHaveCount(0);
           await expect.poll(() => page.evaluate(() => scrollY)).toBe(y);
           await expect(day.getByRole("button", { name: "Empuje" })).toHaveAttribute("aria-pressed", "true");
           if (width === 390 && browserType.name() === "chromium") {
