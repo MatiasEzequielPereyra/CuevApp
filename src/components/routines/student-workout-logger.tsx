@@ -82,8 +82,8 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const busy = useRef(false);
   const operation = useRef<{ fingerprint: string; id: string } | null>(null);
 
-  const loadHistory = useCallback(async (offset = 0) => {
-    setLoadingHistory(true);
+  const loadHistory = useCallback(async (offset = 0, showLoading = true) => {
+    if (showLoading) setLoadingHistory(true);
     try {
       const response = await fetch("/api/entrenamientos?exercise_id=" + encodeURIComponent(exerciseId)
         + "&offset=" + offset + "&limit=30", { cache: "no-store" });
@@ -100,11 +100,11 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No pudimos cargar el historial.");
     } finally {
-      setLoadingHistory(false);
+      if (showLoading) setLoadingHistory(false);
     }
   }, [exerciseId]);
 
-  useEffect(() => { void loadHistory(0); }, [loadHistory]);
+  useEffect(() => { void loadHistory(0, false); }, [loadHistory]);
 
   async function save(modeOverride?: "quick" | "sets", quickValueOverride?: number) {
     if (busy.current) return;
