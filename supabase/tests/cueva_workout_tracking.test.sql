@@ -87,7 +87,7 @@ select is((public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000001',
  'an exact retry replays after a newer publication is committed');
 
-select throws_ok($select public.cueva_workout_record(
+select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000003','c7600000-0000-4000-8000-000000000004',
  'c7500000-0000-4000-8000-000000000002','c7900000-0000-4000-8000-000000000005',
  'quick',20,'[]'::jsonb)$$,'22023',null,'time-based exercises reject kilogram entries');
