@@ -82,7 +82,6 @@ declare
   v_sets jsonb := '[]'::jsonb;
 begin
   if p_id is null or p_publication_id is null or p_exercise_id is null
-    or p_revision >= 2147483647
     or p_mode is null or p_mode not in ('quick','sets')
     or p_tracking_mode is null or p_tracking_mode not in ('weight','time')
     or p_sets is null or jsonb_typeof(p_sets) is distinct from 'array'
@@ -310,7 +309,7 @@ declare
   v_duration numeric;
   v_sets jsonb := '[]'::jsonb;
 begin
-  if p_id is null or p_revision is null or p_revision < 1
+  if p_id is null or p_revision is null or p_revision < 1 or p_revision >= 2147483647
     or p_mode is null or p_mode not in ('quick','sets')
     or p_tracking_mode is null or p_tracking_mode not in ('weight','time')
     or p_sets is null or jsonb_typeof(p_sets) is distinct from 'array'
