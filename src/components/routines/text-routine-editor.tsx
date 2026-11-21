@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type { RoutineMention } from "@/lib/routines/mentions";
 import { getRoutineMentionHues, rebaseRoutineMentions, utf16OffsetToCodePoint } from "@/lib/routines/mentions";
@@ -243,10 +243,10 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   }
 
   useEffect(() => {
-    if (!preview && !previewPending && !previewError) return;
-    function dismiss(event?: KeyboardEvent | PointerEvent) {
-      if (event instanceof KeyboardEvent && event.key !== "Escape") return;
-      if (event instanceof PointerEvent && event.target instanceof Node
+    if (playerOpen || (!preview && !previewPending && !previewError)) return;
+    function dismiss(event: Event) {
+      if (event.type === "keydown" && (event as globalThis.KeyboardEvent).key !== "Escape") return;
+      if (event.type === "pointerdown" && event.target instanceof Node
         && (previewPanel.current?.contains(event.target) || textarea.current?.contains(event.target))) return;
       previewRequest.current++;
       setPreview(null);
@@ -260,7 +260,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       document.removeEventListener("pointerdown", dismiss);
       document.removeEventListener("keydown", dismiss);
     };
-  }, [preview, previewPending, previewError]);
+  }, [preview, previewPending, previewError, playerOpen]);
 
   function syncHighlightScroll() {
     if (textarea.current && highlight.current) {
@@ -269,7 +269,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     }
   }
 
-  function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+  function onKeyDown(event: ReactKeyboardEvent<HTMLTextAreaElement>) {
     if (!range) return;
     if (event.key === "Escape") { updateRange(null); return; }
     if (pending || error || !results.length) return;
