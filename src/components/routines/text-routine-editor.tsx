@@ -469,7 +469,11 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       previewRequest.current++;
       setPreview(null);
       setPreviewPosition(null);
-      textarea.current?.focus({ preventScroll: true });
+      const active = document.activeElement;
+      if (active === document.body || active === textarea.current
+        || (active instanceof HTMLElement && active.closest("dialog"))) {
+        textarea.current?.focus({ preventScroll: true });
+      }
     }} /> }
     {range && suggestionPosition && typeof document !== "undefined" && createPortal(<div ref={suggestionPanel} className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos" style={{ position: "fixed", left: suggestionPosition.left, top: suggestionPosition.top, width: suggestionPosition.width, maxHeight: "min(240px, calc(100dvh - 16px))", zIndex: 1000 }}>
       {pending && <p role="status">Buscando ejercicios…</p>}
