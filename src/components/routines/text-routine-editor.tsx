@@ -91,6 +91,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     setActive(0);
     setPending(!!next);
     setError("");
+    setCreateError("");
     setRange(next);
   }
 
@@ -157,10 +158,10 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     updateRange(searchRange(next, cursor));
   }
 
-  function insert(exercise: Exercise) {
+  function insert(exercise: Exercise, allowUnlisted = false) {
     const input = textarea.current;
     if (!input || !range || disabled || pending || error
-      || (!creatingExercise && !results.some(result => result.id === exercise.id))) return;
+      || (!allowUnlisted && !results.some(result => result.id === exercise.id))) return;
     const next = value.slice(0, range.start) + exercise.name + value.slice(range.end);
     const start = utf16OffsetToCodePoint(next, range.start);
     const endUtf16 = range.start + exercise.name.length;
@@ -195,7 +196,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
         }
         throw new Error(data.message || "No se pudo crear el ejercicio.");
       }
-      insert(data.exercise as Exercise);
+      insert(data.exercise as Exercise, true);
     } catch (cause) {
       setCreateError(cause instanceof Error ? cause.message : "No se pudo crear el ejercicio.");
     } finally {
