@@ -1,5 +1,13 @@
 begin;
 select no_plan();
+select ok(to_regprocedure('public.cueva_exercise_write(uuid,text,boolean,integer,text,text,text,text)') is not null,
+ 'exercise catalog writer supports weight/time tracking mode');
+select ok(to_regprocedure('public.cueva_student_mentioned_exercises_with_tracking_mode()') is not null,
+ 'student text mentions expose tracking mode');
+select ok(has_function_privilege('authenticated','public.cueva_student_mentioned_exercises_with_tracking_mode()','EXECUTE'),
+ 'authenticated students can read tracking mode for their own text mentions');
+select ok(not has_function_privilege('anon','public.cueva_student_mentioned_exercises_with_tracking_mode()','EXECUTE'),
+ 'anonymous users cannot read text mention tracking modes');
 
 insert into auth.users(id,aud,role,email,created_at,updated_at) values
  ('c7100000-0000-4000-8000-000000000001','authenticated','authenticated','workout-a@example.test',now(),now()),
