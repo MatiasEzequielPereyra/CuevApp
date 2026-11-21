@@ -259,7 +259,9 @@ try {
     await weightedRow.getByRole("button", { name: "Guardar resultado" }).click();
     await expect(weightedRow.getByRole("status").filter({ hasText: "Resultado guardado." })).toBeVisible();
     await pupil.route("**/api/ejercicios/video?**", route => route.fulfill({ status: 503, json: { message: "Video temporalmente no disponible." } }), { times: 1 });
-    await pupil.getByRole("button", { name: /Press militar/ }).click();
+    await weightedRow.locator(".my-routine-mention").click();
+    const exercisePreview = pupil.getByRole("dialog", { name: "Ejercicio: Press militar" });
+    await exercisePreview.getByRole("button", { name: "Ver video" }).click();
     const dialog = pupil.getByRole("dialog", { name: "Press militar" });
     await expect(dialog.getByRole("alert")).toHaveText("Video temporalmente no disponible.");
     await dialog.getByRole("button", { name: "Reintentar" }).click();
@@ -274,6 +276,8 @@ try {
     await expect(legacyPage.getByText("3 series", { exact: true })).toBeVisible();
     await expect(legacyPage.getByText("Nota anterior", { exact: true })).toBeVisible();
     await legacyPage.getByRole("button", { name: /Video de otra ficha/ }).click();
+    const legacyPreview = legacyPage.getByRole("dialog", { name: "Ejercicio: Video de otra ficha" });
+    await legacyPreview.getByRole("button", { name: "Ver video" }).click();
     await expect(legacyPage.getByRole("dialog").locator("iframe")).toHaveAttribute("src", /youtube-nocookie\.com\/embed\/ABCDEFGHIJK/);
     await expect(legacyPage.getByRole("link", { name: "Abrir en YouTube" })).toHaveAttribute("href", youtube);
 
