@@ -21,15 +21,25 @@ function validWeight(value: unknown): value is number {
     && value >= 0 && value <= 2000 && Math.abs(value * 100 - Math.round(value * 100)) < 1e-8;
 }
 
+function validDuration(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 1 && value <= 86400;
+}
+
 export async function GET(req: Request) {
   const { client, status } = await studentClient();
   if (!client) return reply({ message: "Acceso restringido." }, status);
   const params = new URL(req.url).searchParams;
   const exerciseId = params.get("exercise_id") ?? "";
   const offset = Number(params.get("offset") ?? 0);
+  const limit = Number(params.get("limit") ?? 30);
   if (!uuid.test(exerciseId)) return reply({ message: "Ejercicio inválido." }, 400);
-  if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000) return reply({ message: "Página de historial inválida." }, 400);
-  const { data, error } = await client.rpc("cueva_workout_history", { p_exercise_id: exerciseId, p_limit: 30, p_offset: offset });
+  if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000
+    || !Number.isSafeInteger(limit) || limit < 1 || limit > 50) {
+    return reply({ message: "Página de historial inválida." }, 400);
+  }
+  const { data, error } = await client.rpc("cueva_workout_history", {
+    p_exercise_id: exerciseId, p_limit: limit, p_offset: offset,
+  });
   if (error) return reply({ message: "No pudimos cargar el historial del ejercicio." }, error.code === "42501" ? 403 : 503);
   return reply({ history: data });
 }
@@ -46,18 +56,34 @@ export async function POST(req: Request) {
     || typeof p.exercise_id !== "string" || !uuid.test(p.exercise_id)
     || !(p.target_id === null || p.target_id === undefined || (typeof p.target_id === "string" && uuid.test(p.target_id)))
     || !["quick", "sets"].includes(p.mode)
+    || !["weight", "time"].includes(p.tracking_mode)
     || !Array.isArray(p.sets) || p.sets.length > 30) {
     return reply({ message: "Revisá los datos del registro." }, 400);
   }
-  if (p.mode === "quick" && (!validWeight(p.weight_kg) || p.sets.length !== 0)) {
-    return reply({ message: "Ingresá un peso válido entre 0 y 2000 kg." }, 400);
-  }
-  if (p.mode === "sets" && (p.weight_kg !== null || p.sets.length < 1
-    || p.sets.some((set: unknown) => !set || typeof set !== "object"
-      || !Number.isInteger((set as { reps?: unknown }).reps)
-      || (set as { reps: number }).reps < 1 || (set as { reps: number }).reps > 1000
-      || !validWeight((set as { weight_kg?: unknown }).weight_kg)))) {
-    return reply({ message: "Cada serie debe tener repeticiones y un peso válido." }, 400);
+  const trackingMode = p.tracking_mode as "weight" | "time";
+  if (p.mode === "quick") {
+    if (p.sets.length !== 0
+      || (trackingMode === "weight" && (!validWeight(p.weight_kg) || p.duration_seconds !== null && p.duration_seconds !== undefined))
+      || (trackingMode === "time" && (!validDuration(p.duration_seconds) || p.weight_kg !== null && p.weight_kg !== undefined))) {
+      return reply({ message: trackingMode === "weight"
+        ? "Ingresá un peso válido entre 0 y 2000 kg."
+        : "Ingresá una duración válida entre 1 y 86400 segundos." }, 400);
+    }
+  } else {
+    const invalidSet = p.sets.some((set: unknown) => {
+      if (!set || typeof set !== "object") return true;
+      const row = set as { reps?: unknown; weight_kg?: unknown; duration_seconds?: unknown };
+      return trackingMode === "weight"
+        ? !Number.isInteger(row.reps) || (row.reps as number) < 1 || (row.reps as number) > 1000 || !validWeight(row.weight_kg)
+        : !validDuration(row.duration_seconds);
+    });
+    if (p.weight_kg !== null && p.weight_kg !== undefined
+      || p.duration_seconds !== null && p.duration_seconds !== undefined
+      || p.sets.length < 1 || invalidSet) {
+      return reply({ message: trackingMode === "weight"
+        ? "Cada serie debe tener repeticiones y un peso válido."
+        : "Cada serie debe tener una duración válida en segundos." }, 400);
+    }
   }
   const { data, error } = await client.rpc("cueva_workout_record", {
     p_id: p.id,
@@ -65,12 +91,14 @@ export async function POST(req: Request) {
     p_exercise_id: p.exercise_id,
     p_target_id: p.target_id ?? null,
     p_mode: p.mode,
-    p_weight_kg: p.mode === "quick" ? p.weight_kg : null,
+    p_tracking_mode: trackingMode,
+    p_weight_kg: trackingMode === "weight" && p.mode === "quick" ? p.weight_kg : null,
+    p_duration_seconds: trackingMode === "time" && p.mode === "quick" ? p.duration_seconds : null,
     p_sets: p.sets,
   });
   if (error) {
     if (error.code === "42501") return reply({ message: "La rutina cambió o no tenés permiso para registrar este ejercicio." }, 403);
-    if (error.code === "22023" || error.code === "23514") return reply({ message: "Revisá el peso, las series y el ejercicio seleccionado." }, 400);
+    if (error.code === "22023" || error.code === "23514") return reply({ message: "Revisá el peso, la duración, las series y el ejercicio seleccionado." }, 400);
     return reply({ message: "No pudimos guardar el entrenamiento. Podés reintentar sin perder los datos." }, 503);
   }
   return reply({ result: data });
