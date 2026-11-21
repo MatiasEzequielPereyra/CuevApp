@@ -33,8 +33,8 @@ function searchRange(value: string, cursor: number): SearchRange {
   const before = value.slice(0, cursor);
   const at = before.match(/(?:^|\s)@([^@\n]*)$/);
   if (!at) return null;
-  const query = at[1] ?? "";
-  return { start: cursor - query.length - 1, end: cursor, query: query.trim() };
+  const rawQuery = at[1] ?? "";
+  return { start: cursor - rawQuery.length - 1, end: cursor, query: rawQuery.trim() };
 }
 
 export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
