@@ -262,7 +262,6 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     }
     if (!pastedMentions.length) return;
 
-    event.preventDefault();
     const selectionStart = input.selectionStart;
     const selectionEnd = input.selectionEnd;
     const pasteStart = utf16OffsetToCodePoint(value, selectionStart);
@@ -274,7 +273,10 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     const inserted = pastedMentions.map(mention => ({
       ...mention, start: mention.start + pasteStart, end: mention.end + pasteStart,
     }));
-    const nextMentions = validateRoutineMentions(next, [...preserved, ...inserted].sort((a, b) => a.start - b.start));
+    let nextMentions: RoutineMention[];
+    try { nextMentions = validateRoutineMentions(next, [...preserved, ...inserted].sort((a, b) => a.start - b.start)); }
+    catch { return; }
+    event.preventDefault();
     input.setRangeText(plain, selectionStart, selectionEnd, "end");
     onChange(next, nextMentions);
     updateRange(null);
