@@ -209,7 +209,6 @@ try {
   // Selecting a linked exercise asks for confirmation before opening its player;
   // the exercise autocomplete remains reserved for typing @.
   await adminTextarea.click({position:mentionClickPoint});
-  const adminPreview = page.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`});
   await expect(adminPreview).toBeVisible();
   const adminPlayer = page.getByRole("dialog", {name:exerciseName});
   await expect(adminPlayer).toHaveCount(0);
