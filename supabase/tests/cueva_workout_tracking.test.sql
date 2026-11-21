@@ -68,7 +68,7 @@ select is(jsonb_array_length(public.cueva_workout_record(
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000002',
  'sets',null,'[{"reps":10,"weight_kg":70},{"reps":8,"weight_kg":75}]'::jsonb)->'sets'),2,
  'detailed entry stores distinct weights and reps per set');
-select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')->>'last_weight_kg')::numeric,75,
+select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')->>'last_weight_kg')::numeric,75::numeric,
  'last suggestion uses the final set of the most recent workout');
 select is(jsonb_array_length(public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')->'entries'),2,
  'history returns both quick and detailed entries for this UUID');
