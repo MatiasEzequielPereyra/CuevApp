@@ -78,7 +78,7 @@ select is(jsonb_array_length(public.cueva_workout_history('c7500000-0000-4000-80
 reset role;
 insert into public.cueva_routine_publications(id,student_id,draft_revision,content,published_by,plan) values
  ('c7600000-0000-4000-8000-000000000004','c7300000-0000-4000-8000-000000000001',3,'Nueva rutina','c7100000-0000-4000-8000-000000000001',
-  '{"version":2,"days":[{"id":"c7700000-0000-4000-8000-000000000003","name":"Día","blocks":[{"id":"c7800000-0000-4000-8000-000000000003","name":"Bloque","rounds":3,"exercises":[{"id":"c7900000-0000-4000-8000-000000000004","exercise_id":"c7500000-0000-4000-8000-000000000001","name":"Press banca","note":"","mode":"weight","reps":"8","weight_kg":60}]}]}]}'::jsonb);
+  '{"version":2,"days":[{"id":"c7700000-0000-4000-8000-000000000003","name":"Día","blocks":[{"id":"c7800000-0000-4000-8000-000000000003","name":"Bloque","rounds":3,"exercises":[{"id":"c7900000-0000-4000-8000-000000000004","exercise_id":"c7500000-0000-4000-8000-000000000001","name":"Press banca","note":"","mode":"weight","reps":"8","weight_kg":60},{"id":"c7900000-0000-4000-8000-000000000005","exercise_id":"c7500000-0000-4000-8000-000000000002","name":"Plancha","note":"","mode":"time","duration":60,"unit":"seconds"}]}]}]}'::jsonb);
 set local role authenticated;
 select is((public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000001','c7600000-0000-4000-8000-000000000002',
@@ -88,8 +88,8 @@ select is((public.cueva_workout_record(
  'an exact retry replays after a newer publication is committed');
 
 select throws_ok($select public.cueva_workout_record(
- 'c8100000-0000-4000-8000-000000000003','c7600000-0000-4000-8000-000000000002',
- 'c7500000-0000-4000-8000-000000000002','c7900000-0000-4000-8000-000000000003',
+ 'c8100000-0000-4000-8000-000000000003','c7600000-0000-4000-8000-000000000004',
+ 'c7500000-0000-4000-8000-000000000002','c7900000-0000-4000-8000-000000000005',
  'quick',20,'[]'::jsonb)$$,'22023',null,'time-based exercises reject kilogram entries');
 select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000004','c7600000-0000-4000-8000-000000000001',
