@@ -149,7 +149,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
             <p className="student-workout-last">
               Último peso: <strong>{history.last_weight_kg} kg</strong>
               <button type="button" onClick={() => { setMode("quick"); setWeight(String(history.last_weight_kg)); }}>Usar</button>
-              <button type="button" disabled={saving || loadingHistory} onClick={() => void save("quick", history.last_weight_kg)}>Guardar último peso</button>
+              <button type="button" disabled={saving || loadingHistory} onClick={() => void save("quick", history.last_weight_kg ?? undefined)}>Guardar último peso</button>
             </p>
           )}
           <div className="student-workout-modes" role="group" aria-label="Tipo de registro">
