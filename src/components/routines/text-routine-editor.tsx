@@ -194,7 +194,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
         cache: "no-store",
         body: JSON.stringify({
           id: crypto.randomUUID(), name, active: true, revision: 0,
-          description: "", video_url: null, video_path: null,
+          description: "", video_url: null, video_path: null, tracking_mode: "weight",
         }),
       });
       const data = await response.json();
