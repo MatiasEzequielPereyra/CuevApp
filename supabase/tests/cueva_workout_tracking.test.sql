@@ -43,7 +43,7 @@ values ('c7600000-0000-4000-8000-000000000003','c7300000-0000-4000-8000-00000000
  '[{"exercise_id":"c7500000-0000-4000-8000-000000000003","start":0,"end":4,"text":"Remo"},{"exercise_id":"c7500000-0000-4000-8000-000000000004","start":5,"end":11,"text":"Cardio"}]'::jsonb,
  'c7100000-0000-4000-8000-000000000001');
 
-select ok(has_function_privilege('authenticated','public.cueva_workout_record(uuid,uuid,uuid,uuid,text,numeric,jsonb)','EXECUTE'),
+select ok(has_function_privilege('authenticated','public.cueva_workout_record(uuid,uuid,uuid,uuid,text,text,numeric,integer,jsonb)','EXECUTE'),
  'authenticated students can call the workout record RPC');
 select ok(not has_function_privilege('anon','public.cueva_workout_record(uuid,uuid,uuid,uuid,text,numeric,jsonb)','EXECUTE'),
  'anonymous users cannot call the workout record RPC');
@@ -59,7 +59,7 @@ set local role authenticated;
 select is((public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000001','c7600000-0000-4000-8000-000000000002',
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000002',
- 'quick',72.5,'[]'::jsonb)->'entry'->>'quick_weight_kg')::numeric,72.5,
+ 'quick','weight',72.5,null,'[]'::jsonb)->'entry'->>'quick_weight_kg')::numeric,72.5,
  'quick weight is stored against the exercise UUID and current publication');
 select is((public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000001','c7600000-0000-4000-8000-000000000002',
@@ -70,13 +70,25 @@ select is((public.cueva_workout_record(
 select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000001','c7600000-0000-4000-8000-000000000002',
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000002',
- 'quick',73,'[]'::jsonb)$$,'22023',null,'an operation ID cannot be reused with a different weight');
+ 'quick','weight',73,null,'[]'::jsonb)$$,'22023',null,'an operation ID cannot be reused with a different weight');
 
 select is(jsonb_array_length(public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000002','c7600000-0000-4000-8000-000000000002',
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000002',
- 'sets',null,'[{"reps":10,"weight_kg":70},{"reps":8,"weight_kg":75}]'::jsonb)->'sets'),2,
+ 'sets','weight',null,null,'[{"reps":10,"weight_kg":70},{"reps":8,"weight_kg":75}]'::jsonb)->'sets'),2,
  'detailed entry stores distinct weights and reps per set');
+select is((public.cueva_workout_record(
+ 'c8100000-0000-4000-8000-000000000011','c7600000-0000-4000-8000-000000000002',
+ 'c7500000-0000-4000-8000-000000000002','c7900000-0000-4000-8000-000000000003',
+ 'quick','time',null,60,'[]'::jsonb)->'entry'->>'quick_duration_seconds')::integer,60,
+ 'time-based block exercises store duration in seconds without kilograms');
+select is(jsonb_array_length(public.cueva_workout_record(
+ 'c8100000-0000-4000-8000-000000000012','c7600000-0000-4000-8000-000000000002',
+ 'c7500000-0000-4000-8000-000000000002','c7900000-0000-4000-8000-000000000003',
+ 'sets','time',null,null,'[{"duration_seconds":60},{"duration_seconds":45}]'::jsonb)->'sets'),2,
+ 'timed exercises support different durations per set');
+select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000002')->>'last_duration_seconds')::integer,45,
+ 'last timed suggestion uses the final set duration');
 select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')->>'last_weight_kg')::numeric,75::numeric,
  'last suggestion uses the final set of the most recent workout');
 select is(jsonb_array_length(public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')->'entries'),2,
@@ -105,7 +117,7 @@ select is((public.cueva_workout_record(
 select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000003','c7600000-0000-4000-8000-000000000004',
  'c7500000-0000-4000-8000-000000000002','c7900000-0000-4000-8000-000000000005',
- 'quick',20,'[]'::jsonb)$$,'22023',null,'time-based exercises reject kilogram entries');
+ 'quick','weight',20,null,'[]'::jsonb)$$,'22023',null,'time-based exercises reject kilogram entries');
 select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000004','c7600000-0000-4000-8000-000000000001',
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000001',
@@ -113,18 +125,18 @@ select throws_ok($$select public.cueva_workout_record(
 select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000005','c7600000-0000-4000-8000-000000000004',
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000004',
- 'quick',2000.01,'[]'::jsonb)$$,'22023',null,'weights above 2000 kg are rejected');
+ 'quick','weight',2000.01,null,'[]'::jsonb)$$,'22023',null,'weights above 2000 kg are rejected');
 select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000006','c7600000-0000-4000-8000-000000000004',
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000004',
- 'sets',null,'[{"reps":0,"weight_kg":70}]'::jsonb)$$,'22023',null,'invalid set repetitions are rejected');
+ 'sets','weight',null,null,'[{"reps":0,"weight_kg":70}]'::jsonb)$$,'22023',null,'invalid set repetitions are rejected');
 
 select set_config('request.jwt.claim.sub','c7100000-0000-4000-8000-000000000002',true);
 select set_config('request.jwt.claims',jsonb_build_object('sub','c7100000-0000-4000-8000-000000000002','role','authenticated','session_id','c7200000-0000-4000-8000-000000000002')::text,true);
 select is((public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000007','c7600000-0000-4000-8000-000000000003',
  'c7500000-0000-4000-8000-000000000003',null,
- 'quick',45,'[]'::jsonb)->'entry'->>'exercise_id'),
+ 'quick','weight',45,null,'[]'::jsonb)->'entry'->>'exercise_id'),
  'c7500000-0000-4000-8000-000000000003',
  'text-routine UUID mentions support student workout logging');
 select throws_ok($text_target$select public.cueva_workout_record(
