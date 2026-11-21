@@ -118,7 +118,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   onChange: (value: string, mentions: RoutineMention[]) => void;
 }) {
   const textarea = useRef<HTMLTextAreaElement>(null), highlight = useRef<HTMLDivElement>(null), request = useRef(0);
-  const previewPanel = useRef<HTMLDivElement>(null), previewRequest = useRef(0);
+  const previewPanel = useRef<HTMLDivElement>(null), suggestionPanel = useRef<HTMLDivElement>(null), previewRequest = useRef(0);
   const [range, setRange] = useState<SearchRange>(null);
   const [results, setResults] = useState<Exercise[]>([]);
   const [pending, setPending] = useState(false), [error, setError] = useState("");
@@ -368,6 +368,17 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   }
 
   useEffect(() => {
+    if (!range) return;
+    function closeSuggestions(event: PointerEvent) {
+      if (event.target instanceof Node
+        && !textarea.current?.contains(event.target)
+        && !suggestionPanel.current?.contains(event.target)) updateRange(null);
+    }
+    document.addEventListener("pointerdown", closeSuggestions);
+    return () => document.removeEventListener("pointerdown", closeSuggestions);
+  }, [range]);
+
+  useEffect(() => {
     if (playerOpen || (!preview && !previewPending && !previewError)) return;
     function dismiss(event: Event) {
       if (event.type === "keydown" && (event as globalThis.KeyboardEvent).key !== "Escape") return;
@@ -434,7 +445,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       </>}
     </div>, document.body)}
     {playerOpen && preview && <ExerciseVideoDialog exerciseId={preview.id} exerciseName={preview.name} open onClose={() => { setPlayerOpen(false); previewRequest.current++; setPreview(null); setPreviewPosition(null); }} /> }
-    {range && suggestionPosition && typeof document !== "undefined" && createPortal(<div className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos" style={{ position: "fixed", left: suggestionPosition.left, top: suggestionPosition.top, width: suggestionPosition.width, maxHeight: "min(240px, calc(100dvh - 16px))", zIndex: 1000 }}>
+    {range && suggestionPosition && typeof document !== "undefined" && createPortal(<div ref={suggestionPanel} className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos" style={{ position: "fixed", left: suggestionPosition.left, top: suggestionPosition.top, width: suggestionPosition.width, maxHeight: "min(240px, calc(100dvh - 16px))", zIndex: 1000 }}>
       {pending && <p role="status">Buscando ejercicios…</p>}
       {createError && <p role="alert">{createError}</p>}
       {!pending && !error && results.length === 0 && range.query.trim() && <>
