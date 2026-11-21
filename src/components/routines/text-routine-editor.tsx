@@ -448,7 +448,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     {range && suggestionPosition && typeof document !== "undefined" && createPortal(<div ref={suggestionPanel} className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos" style={{ position: "fixed", left: suggestionPosition.left, top: suggestionPosition.top, width: suggestionPosition.width, maxHeight: "min(240px, calc(100dvh - 16px))", zIndex: 1000 }}>
       {pending && <p role="status">Buscando ejercicios…</p>}
       {createError && <p role="alert">{createError}</p>}
-      {!pending && !error && results.length === 0 && range.query.trim() && <>
+      {!pending && !error && range.query.trim() && !results.some(exercise => exercise.name.trim().toLocaleLowerCase() === range.query.trim().toLocaleLowerCase()) && <>
         <label className="routine-mention-create-mode">Registro
           <select value={creationTrackingMode} disabled={disabled || creatingExercise} onChange={event => setCreationTrackingMode(event.target.value as "weight" | "time")}>
             <option value="weight">Peso (kg)</option>
