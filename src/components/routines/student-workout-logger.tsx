@@ -104,10 +104,10 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       sets: payloadSets,
     };
     const fingerprint = JSON.stringify(payload);
-    if (operation.current?.fingerprint !== fingerprint) {
-      operation.current = { fingerprint, id: crypto.randomUUID() };
-    }
-    const operationId = operation.current.id;
+    const operationId = operation.current?.fingerprint === fingerprint
+      ? operation.current.id
+      : crypto.randomUUID();
+    operation.current = { fingerprint, id: operationId };
     try {
       const response = await fetch("/api/entrenamientos", {
         method: "POST",
