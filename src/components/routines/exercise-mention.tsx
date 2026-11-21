@@ -91,6 +91,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
       >
         {text}
       </button>
+      <StudentWorkoutLogger publicationId={publicationId} exerciseId={exerciseId} exerciseName={name} trackingMode={trackingMode} />
       {open && position && typeof document !== "undefined" && createPortal(
         <div ref={panel} id={panelId} className="my-routine-mention-preview" role="dialog"
           aria-label={`Ejercicio: ${name}`}
@@ -98,7 +99,6 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
             maxHeight: "min(260px, calc(100dvh - 16px))", overflow: "auto", zIndex: 1001 }}>
           <strong>{name}</strong>
           {description && <span>{description}</span>}
-          {trackingMode === "weight" && <StudentWorkoutLogger publicationId={publicationId} exerciseId={exerciseId} exerciseName={name} />}
           {videoAvailability === "available"
             ? <button type="button" className="my-routine-mention-play" onClick={() => { setOpen(false); setPlayerOpen(true); }}>Ver video</button>
             : videoAvailability === "unavailable"
