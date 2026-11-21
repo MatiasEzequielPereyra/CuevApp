@@ -19,10 +19,10 @@ insert into public.cueva_students(id,first_name,last_name,email,joined_on) value
 insert into public.cueva_student_invitations(student_id,email,user_id,state,lease,requested_by) values
  ('c7300000-0000-4000-8000-000000000001','workout-a@example.test','c7100000-0000-4000-8000-000000000001','sent','c7400000-0000-4000-8000-000000000001','c7100000-0000-4000-8000-000000000001'),
  ('c7300000-0000-4000-8000-000000000002','workout-b@example.test','c7100000-0000-4000-8000-000000000002','sent','c7400000-0000-4000-8000-000000000002','c7100000-0000-4000-8000-000000000002');
-insert into public.cueva_exercises(id,name,revision,updated_by,description,active) values
- ('c7500000-0000-4000-8000-000000000001','Press banca',1,'c7100000-0000-4000-8000-000000000001','',true),
- ('c7500000-0000-4000-8000-000000000002','Plancha',1,'c7100000-0000-4000-8000-000000000001','',true),
- ('c7500000-0000-4000-8000-000000000003','Remo',1,'c7100000-0000-4000-8000-000000000001','',true),
+insert into public.cueva_exercises(id,name,revision,updated_by,description,active,tracking_mode) values
+ ('c7500000-0000-4000-8000-000000000001','Press banca',1,'c7100000-0000-4000-8000-000000000001','',true,'weight'),
+ ('c7500000-0000-4000-8000-000000000002','Plancha',1,'c7100000-0000-4000-8000-000000000001','',true,'weight'),
+ ('c7500000-0000-4000-8000-000000000003','Remo',1,'c7100000-0000-4000-8000-000000000001','',true,'weight'),
  ('c7500000-0000-4000-8000-000000000004','Cardio',1,'c7100000-0000-4000-8000-000000000001','',true,'time');
 insert into public.cueva_routine_publications(id,student_id,draft_revision,content,published_by,plan) values
  ('c7600000-0000-4000-8000-000000000001','c7300000-0000-4000-8000-000000000001',1,'Rutina vieja','c7100000-0000-4000-8000-000000000001',
