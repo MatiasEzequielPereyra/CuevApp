@@ -136,6 +136,7 @@ try {
 
   // A linked mention never opens a preview from proximity, hover or focus.
   const preview = pupil.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`});
+  const logger = pupil.locator(".my-routine-mention-wrap .student-workout").first();
   await mention.hover();
   await expect(preview).toHaveCount(0);
   await mention.focus();
@@ -148,24 +149,24 @@ try {
   await expect(preview.getByText(exerciseName, {exact:true})).toBeVisible();
   await expect(preview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
   await expect(preview.getByRole("link")).toHaveCount(0);
-  await preview.getByRole("button", {name:"Registrar peso"}).click();
-  await preview.getByLabel("Peso utilizado (kg)").fill("37.5");
-  await preview.getByRole("button", {name:"Guardar entrenamiento"}).click();
-  await expect(preview.getByRole("status").filter({hasText:"Entrenamiento guardado."})).toBeVisible();
+  await logger.getByRole("button", {name:"Registrar peso"}).click();
+  await logger.getByLabel("Peso utilizado (kg)").fill("37.5");
+  await logger.getByRole("button", {name:"Guardar resultado"}).click();
+  await expect(logger.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
   await expect.poll(async () => (await db.query(
     "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
     [studentId,exerciseId]
   )).rows[0].count).toBe(1);
-  await preview.getByRole("button", {name:"Guardar último peso"}).click();
+  await logger.getByRole("button", {name:"Guardar último peso"}).click();
   await expect.poll(async () => (await db.query(
     "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
     [studentId,exerciseId]
   )).rows[0].count).toBe(2);
-  await preview.getByRole("button", {name:"Por series"}).click();
-  const setRows = preview.locator(".student-workout-set");
+  await logger.getByRole("button", {name:"Por series"}).click();
+  const setRows = logger.locator(".student-workout-set");
   await setRows.nth(0).getByLabel("Repeticiones").fill("10");
   await setRows.nth(0).getByLabel("Peso (kg)").fill("40");
-  await preview.getByRole("button", {name:"Agregar serie"}).click();
+  await logger.getByRole("button", {name:"Agregar serie"}).click();
   await setRows.nth(1).getByLabel("Repeticiones").fill("8");
   await setRows.nth(1).getByLabel("Peso (kg)").fill("42.5");
   await preview.getByRole("button", {name:"Guardar entrenamiento"}).click();
