@@ -126,8 +126,8 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       document.body.append(mirror);
       const caret = marker.getBoundingClientRect();
       mirror.remove();
-      const left = Math.max(8, Math.min(caret.left, window.innerWidth - 320));
       const width = Math.min(360, window.innerWidth - 16);
+      const left = Math.max(8, Math.min(caret.left, window.innerWidth - width - 8));
       const below = window.innerHeight - caret.bottom;
       const top = below >= 250 || caret.top < 250
         ? Math.min(caret.bottom + 4, window.innerHeight - 248)
