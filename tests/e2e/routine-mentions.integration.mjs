@@ -46,6 +46,16 @@ try {
   const editor = page.getByRole("region", {name:"Editor de rutina"});
   await editor.getByRole("button", {name:"Texto libre"}).click();
   const adminTextarea = editor.getByRole("textbox", {name:"Rutina en texto libre"});
+  const inlineExerciseName = `${exerciseName} temporal 007`;
+  await adminTextarea.fill(`@${inlineExerciseName}`);
+  await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"})).toBeVisible();
+  await page.getByLabel("Registro").selectOption("time");
+  await page.getByRole("button", {name: new RegExp(`Crear .* en Ejercicios`)}).click();
+  await expect.poll(async () => (await db.query(
+    "select tracking_mode from public.cueva_exercises where name=$1",
+    [inlineExerciseName]
+  )).rows[0]?.tracking_mode).toBe("time");
+  await adminTextarea.fill("");
   await adminTextarea.fill(exerciseName);
   await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"})).toHaveCount(0);
   await adminTextarea.fill(`🙂 @${exerciseName}`);
