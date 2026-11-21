@@ -51,7 +51,7 @@ try {
   await adminTextarea.fill(`🙂 @${exerciseName}`);
   await expect(page.getByRole("option", {name:exerciseName})).toBeVisible();
   await page.getByRole("option", {name:exerciseName}).click();
-  await expect(editor.getByRole("listbox", { name: "Ejercicios sugeridos" })).toHaveCount(0);
+  await expect(page.getByRole("listbox", { name: "Ejercicios sugeridos" })).toHaveCount(0);
   const highlightedMention = editor.locator(".routine-text-mention-highlight");
   await expect(highlightedMention).toHaveText(exerciseName);
   // Highlight styling must not change inline text metrics: the textarea owns the native caret.
@@ -105,7 +105,7 @@ try {
   await adminTextarea.click({position:mentionClickPoint});
   const adminPreview = page.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`});
   await expect(adminPreview).toBeVisible();
-  await expect(editor.getByRole("listbox", { name: "Ejercicios sugeridos" })).toHaveCount(0);
+  await expect(page.getByRole("listbox", { name: "Ejercicios sugeridos" })).toHaveCount(0);
   await expect(adminPreview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
   await adminPreview.getByRole("button", {name:"Cerrar"}).click();
   await expect(editor.getByText("Borrador guardado", {exact:true})).toBeVisible();
