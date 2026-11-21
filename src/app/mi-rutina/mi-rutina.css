@@ -365,3 +365,153 @@
   font: inherit;
   cursor: pointer;
 }
+
+
+.student-workout {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 0 12px 10px 42px;
+}
+.student-workout-toggle,
+.student-workout-panel button {
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  background: var(--dash-panel-alt);
+  color: var(--dash-text);
+  font: inherit;
+  font-size: .875rem;
+  cursor: pointer;
+}
+.student-workout-toggle {
+  justify-self: start;
+  color: var(--dash-accent);
+  font-weight: 650;
+}
+.student-workout-panel {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--dash-border);
+  border-radius: 10px;
+  background: var(--dash-panel-alt);
+}
+.student-workout-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.student-workout-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.student-workout-modes button[aria-pressed="true"] {
+  border-color: var(--dash-accent);
+  background: var(--dash-accent-soft);
+  color: var(--dash-accent);
+  font-weight: 700;
+}
+.student-workout-panel label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  color: var(--dash-text);
+  font-size: .875rem;
+  font-weight: 600;
+}
+.student-workout-panel input {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  background: var(--dash-bg);
+  color: var(--dash-text);
+  font: inherit;
+}
+.student-workout-last {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  color: var(--dash-muted);
+  font-size: .875rem;
+}
+.student-workout-sets {
+  display: grid;
+  gap: 8px;
+}
+.student-workout-set {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+}
+.student-workout-set > strong {
+  grid-column: 1 / -1;
+}
+.student-workout-set > button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+.student-workout-panel .student-workout-save {
+  min-height: 42px;
+  border-color: var(--dash-accent);
+  background: var(--dash-accent);
+  color: white;
+  font-weight: 700;
+}
+.student-workout-history {
+  display: grid;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--dash-border);
+}
+.student-workout-history h4,
+.student-workout-history p {
+  margin: 0;
+}
+.student-workout-history ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-inline-start: 20px;
+}
+.student-workout-history li {
+  display: grid;
+  gap: 3px;
+  font-size: .875rem;
+}
+.student-workout-history time {
+  color: var(--dash-muted);
+}
+.student-workout-history ul {
+  margin: 0;
+  padding-inline-start: 18px;
+}
+.my-routine-mention-preview .student-workout {
+  padding: 0;
+}
+@media (max-width: 480px) {
+  .student-workout {
+    padding-inline-start: 12px;
+  }
+  .student-workout-set {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .student-workout-set > strong,
+  .student-workout-set > button {
+    grid-column: auto;
+  }
+}
