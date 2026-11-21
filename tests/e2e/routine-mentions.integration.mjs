@@ -107,7 +107,7 @@ try {
   await adminTextarea.press("Control+V");
   await expect(highlightedMention).toHaveCount(2);
   // Multi-line arbitrary selections must preserve every linked exercise UUID on paste.
-  await adminTextarea.fill(`Inicio\\n🙂 @${exerciseName}\\nFin`);
+  await adminTextarea.fill(`Inicio\n🙂 @${exerciseName}\nFin`);
   await expect(page.getByRole("option", {name:exerciseName})).toBeVisible();
   await page.getByRole("option", {name:exerciseName}).click();
   await expect(highlightedMention).toHaveCount(1);
@@ -117,7 +117,7 @@ try {
   await adminTextarea.press("Enter");
   await adminTextarea.press("Control+V");
   await expect(highlightedMention).toHaveCount(2);
-  await expect(adminTextarea).toHaveValue(`Inicio\\n🙂 ${exerciseName}\\nFin\\nInicio\\n🙂 ${exerciseName}\\nFin`);
+  await expect(adminTextarea).toHaveValue(`Inicio\n🙂 ${exerciseName}\nFin\nInicio\n🙂 ${exerciseName}\nFin`);
   // Restore one occurrence so the remaining assertions use a single mention.
   await adminTextarea.fill(`🙂 @${exerciseName}`);
   await expect(page.getByRole("option", {name:exerciseName})).toBeVisible();
