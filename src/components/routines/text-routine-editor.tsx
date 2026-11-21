@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import type { RoutineMention } from "@/lib/routines/mentions";
 import { getRoutineMentionHues, rebaseRoutineMentions, utf16OffsetToCodePoint } from "@/lib/routines/mentions";
 import type { Exercise } from "@/lib/routines/types";
@@ -51,7 +52,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   const [preview, setPreview] = useState<Exercise | null>(null);
   const [previewPending, setPreviewPending] = useState(false);
   const [previewError, setPreviewError] = useState("");
-  const [playerOpen, setPlayerOpen] = useState(false);
+  const [playerOpen, setPlayerOpen] = useState(false);\n  const [suggestionPosition, setSuggestionPosition] = useState<{ left: number; top: number; width: number } | null>(null);
 
   useEffect(() => {
     if (!range) return;
@@ -93,7 +94,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     setRange(next);
   }
 
-  function retrySearch() {
+  useLayoutEffect(() => {\n    const input = textarea.current;\n    if (!range || !input || typeof document === "undefined") { setSuggestionPosition(null); return; }\n    const measure = () => {\n      const style = window.getComputedStyle(input);\n      const mirror = document.createElement("div");\n      const marker = document.createElement("span");\n      const copied = ["font", "fontFamily", "fontSize", "fontWeight", "fontStyle", "letterSpacing", "lineHeight", "textTransform", "textIndent", "paddingTop", "paddingRight", "paddingBottom", "paddingLeft", "borderTopWidth", "borderRightWidth", "borderBottomWidth", "borderLeftWidth", "boxSizing", "whiteSpace", "overflowWrap", "wordBreak" ];\n      mirror.style.position = "fixed"; mirror.style.visibility = "hidden"; mirror.style.pointerEvents = "none";\n      mirror.style.left = `${input.getBoundingClientRect().left}px`; mirror.style.top = `${input.getBoundingClientRect().top}px`;\n      mirror.style.width = `${input.clientWidth}px`; mirror.style.height = "auto"; mirror.style.overflow = "hidden";\n      for (const key of copied) mirror.style.setProperty(key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), style.getPropertyValue(key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)));\n      mirror.style.whiteSpace = "pre-wrap"; mirror.style.overflowWrap = "break-word";\n      const before = input.value.slice(0, input.selectionStart);\n      mirror.textContent = before; marker.textContent = "\\u200b"; mirror.append(marker); document.body.append(mirror);\n      const rect = marker.getBoundingClientRect(); mirror.remove();\n      const inputRect = input.getBoundingClientRect();\n      const left = Math.max(8, Math.min(rect.left, window.innerWidth - 320));\n      const width = Math.min(360, window.innerWidth - 16);\n      const below = window.innerHeight - rect.bottom;\n      const top = below >= 250 || rect.top < 250 ? Math.min(rect.bottom + 4, window.innerHeight - 248) : Math.max(8, rect.top - 244);\n      setSuggestionPosition({ left, top, width });\n    };\n    measure();\n    window.addEventListener("resize", measure);\n    window.addEventListener("scroll", measure, true);\n    return () => { window.removeEventListener("resize", measure); window.removeEventListener("scroll", measure, true); };\n  }, [range, value]);\n\n  function retrySearch() {
     if (!range || disabled) return;
     request.current++;
     setResults([]);
@@ -174,17 +175,17 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       placeholder={"Escribí la rutina completa…\n\nPodés mencionar ejercicios con @ o escribir su nombre."} />
       {previewPending && <div className="routine-text-mention-preview" role="status">Cargando ejercicio…</div>}
       {previewError && <div className="routine-text-mention-preview" role="alert">{previewError}</div>}
-      {preview && <div className="routine-text-mention-preview" role="dialog" aria-label={"Ejercicio: " + preview.name}>
+      {preview && !playerOpen && <div className="routine-text-mention-preview" role="dialog" aria-label={"Ejercicio: " + preview.name}>
         <strong>{preview.name}</strong>
         {preview.description && <p>{preview.description}</p>}
         {preview.video_url || preview.video_path
-          ? <button type="button" onClick={() => setPlayerOpen(true)}>Ver video</button>
+          ? <button type="button" onClick={() => { updateRange(null); setPlayerOpen(true); }}>Ver video</button>
           : <span role="status">Aún no se encuentra con video disponible</span>}
         <button type="button" className="routine-text-mention-close" onClick={() => setPreview(null)}>Cerrar</button>
       </div>}
     </div>
-    {playerOpen && preview && <ExerciseVideoDialog exerciseId={preview.id} exerciseName={preview.name} open onClose={() => setPlayerOpen(false)} /> }
-    {range && <div className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos">
+    {playerOpen && preview && <ExerciseVideoDialog exerciseId={preview.id} exerciseName={preview.name} open onClose={() => { setPlayerOpen(false); setPreview(null); }} /> }
+    {range && suggestionPosition && typeof document !== "undefined" && createPortal(<div className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos" style={{ position: "fixed", left: suggestionPosition.left, top: suggestionPosition.top, width: suggestionPosition.width, maxHeight: "min(240px, calc(100dvh - 16px))", zIndex: 1000 }}>
       {pending && <p role="status">Buscando ejercicios…</p>}
       {error && <><p role="alert">{error}</p><button type="button" disabled={disabled || pending} onClick={retrySearch}>Reintentar búsqueda</button></>}
       {!pending && !error && results.length === 0 && <p>No encontramos ejercicios activos con ese nombre.</p>}
