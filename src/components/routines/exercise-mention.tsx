@@ -43,7 +43,6 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
       className="my-routine-mention-wrap"
       ref={root}
       data-exercise-id={exerciseId}
-      onMouseEnter={() => setOpen(true)}
       onMouseLeave={event => {
         if (!root.current?.contains(event.relatedTarget as Node | null)) setOpen(false);
       }}
@@ -58,7 +57,6 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={panelId}
-        onFocus={() => setOpen(true)}
         onClick={() => setOpen(true)}
       >
         {text}
