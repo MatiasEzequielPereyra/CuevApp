@@ -49,7 +49,7 @@ try {
   await adminTextarea.fill(exerciseName);
   await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"})).toHaveCount(0);
   await adminTextarea.fill(`🙂 @${exerciseName}`);
-  await expect(editor.getByRole("option", {name:exerciseName})).toBeVisible();
+  await expect(page.getByRole("option", {name:exerciseName})).toBeVisible();
   await editor.getByRole("option", {name:exerciseName}).click();
   await expect(editor.getByRole("listbox", { name: "Ejercicios sugeridos" })).toHaveCount(0);
   const highlightedMention = editor.locator(".routine-text-mention-highlight");
