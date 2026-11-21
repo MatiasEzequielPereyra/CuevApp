@@ -172,7 +172,8 @@ begin
     ) into v_text_mention;
   end if;
 
-  if not (v_plan_target or v_text_mention)
+  if (p_target_id is null and not v_text_mention)
+    or (p_target_id is not null and not v_plan_target)
     or not exists (select 1 from public.cueva_exercises e where e.id = p_exercise_id)
   then
     raise exception 'El ejercicio no admite registro de peso en esta rutina' using errcode = '22023';
