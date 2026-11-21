@@ -183,7 +183,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
         <strong>{preview.name}</strong>
         {preview.description && <p>{preview.description}</p>}
         {preview.video_url || preview.video_path
-          ? <button type="button" onClick={() => { setPreview(null); setPlayerOpen(true); }}>Ver video</button>
+          ? <button type="button" onClick={() => setPlayerOpen(true)}>Ver video</button>
           : <span role="status">Aún no se encuentra con video disponible</span>}
         <button type="button" className="routine-text-mention-close" onClick={() => setPreview(null)}>Cerrar</button>
       </div>}
