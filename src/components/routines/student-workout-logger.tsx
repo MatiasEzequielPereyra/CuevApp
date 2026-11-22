@@ -73,7 +73,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const [duration, setDuration] = useState("");
   const [sets, setSets] = useState<WorkoutSet[]>([{ reps: "", weight: "", duration: "" }]);
   const [history, setHistory] = useState<WorkoutHistory | null>(null);
-  const [summaryEntry, setSummaryEntry] = useState<HistoryEntry | null>(null);
+  const [summaryState, setSummaryState] = useState<{ exerciseId: string; entry: HistoryEntry | null }>({ exerciseId, entry: null });
   const [editingEntry, setEditingEntry] = useState<HistoryEntry | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -94,7 +94,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       setHistory(current => offset > 0 && current
         ? { ...next, entries: [...current.entries, ...next.entries] }
         : next);
-      if (offset === 0) setSummaryEntry(next.entries[0] ?? null);
+      if (offset === 0) setSummaryState({ exerciseId, entry: next.entries[0] ?? null });
       if (offset === 0) {
         if (next.last_weight_kg !== null && next.last_weight_kg !== undefined) setWeight(String(next.last_weight_kg));
         if (next.last_duration_seconds !== null && next.last_duration_seconds !== undefined) setDuration(String(next.last_duration_seconds));
@@ -110,7 +110,6 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   // eagerly downloading the full editable history for every exercise.
   useEffect(() => {
     let cancelled = false;
-    setSummaryEntry(null);
     void (async () => {
       try {
         const response = await fetch("/api/entrenamientos?exercise_id=" + encodeURIComponent(exerciseId)
@@ -119,7 +118,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
         const data = await response.json();
         if (cancelled) return;
         const next = data.history as WorkoutHistory;
-        setSummaryEntry(next.entries?.[0] ?? null);
+        setSummaryState({ exerciseId, entry: next.entries?.[0] ?? null });
         if (next.last_weight_kg !== null && next.last_weight_kg !== undefined) setWeight(String(next.last_weight_kg));
         if (next.last_duration_seconds !== null && next.last_duration_seconds !== undefined) setDuration(String(next.last_duration_seconds));
       } catch {
@@ -237,6 +236,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     setError("");
   }
 
+  const summaryEntry = summaryState.exerciseId === exerciseId ? summaryState.entry : null;
   const summary = summaryEntry?.tracking_mode === trackingMode ? entrySummary(summaryEntry) : "";
 
   return (
