@@ -69,10 +69,15 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const id = useId();
   const [expanded, setExpanded] = useState(false);
   const [mode, setMode] = useState<"quick" | "sets">("quick");
-  const [weight, setWeight] = useState("");
-  const [duration, setDuration] = useState("");
+  const [weightState, setWeightState] = useState({ exerciseId, value: "" });
+  const [durationState, setDurationState] = useState({ exerciseId, value: "" });
+  const weight = weightState.exerciseId === exerciseId ? weightState.value : "";
+  const duration = durationState.exerciseId === exerciseId ? durationState.value : "";
+  const setWeight = (value: string) => setWeightState({ exerciseId, value });
+  const setDuration = (value: string) => setDurationState({ exerciseId, value });
   const [sets, setSets] = useState<WorkoutSet[]>([{ reps: "", weight: "", duration: "" }]);
-  const [history, setHistory] = useState<WorkoutHistory | null>(null);
+  const [historyState, setHistoryState] = useState<{ exerciseId: string; history: WorkoutHistory | null }>({ exerciseId, history: null });
+  const history = historyState.exerciseId === exerciseId ? historyState.history : null;
   const [summaryState, setSummaryState] = useState<{ exerciseId: string; entry: HistoryEntry | null }>({ exerciseId, entry: null });
   const [editingEntry, setEditingEntry] = useState<HistoryEntry | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -91,9 +96,12 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "No pudimos cargar el historial.");
       const next = data.history as WorkoutHistory;
-      setHistory(current => offset > 0 && current
-        ? { ...next, entries: [...current.entries, ...next.entries] }
-        : next);
+      setHistoryState(current => ({
+        exerciseId,
+        history: offset > 0 && current.exerciseId === exerciseId && current.history
+          ? { ...next, entries: [...current.history.entries, ...next.entries] }
+          : next,
+      }));
       if (offset === 0) setSummaryState({ exerciseId, entry: next.entries[0] ?? null });
       if (offset === 0) {
         if (next.last_weight_kg !== null && next.last_weight_kg !== undefined) setWeight(String(next.last_weight_kg));
