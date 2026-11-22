@@ -541,7 +541,7 @@ for (const interaction of ["teclado", "toque"] as const) {
       await expect(editor.getByText("0 menciones vinculadas")).toBeVisible();
       await expect(previous).toHaveCount(0);
       release();
-      const current = editor.getByRole("option", { name: "Sentadilla", exact: true });
+      const current = page.getByRole("listbox", { name: "Ejercicios sugeridos" }).getByRole("option", { name: "Sentadilla", exact: true });
       await expect(current).toBeVisible();
       if (interaction === "teclado") {
         await textarea.focus();
