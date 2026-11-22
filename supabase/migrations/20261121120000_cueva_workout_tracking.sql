@@ -594,7 +594,8 @@ begin
     raise exception 'Video inválido' using errcode = '22023';
   end if;
   if p_video_path is not null and (
-    p_video_path !~ ('^'||p_id::text||'/[0-9a-f-]{36}[.](mp4|mov|webm)
+    p_video_path !~ ('^'||p_id::text||'/[0-9a-f-]{36}[.](mp4|mov|webm)')
+    or length(p_video_path) <> length(p_id::text) + 42
     or not exists (
       select 1 from storage.objects
       where bucket_id='cueva-exercise-videos' and name=p_video_path
