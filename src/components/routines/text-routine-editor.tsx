@@ -131,6 +131,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   onChange: (value: string, mentions: RoutineMention[]) => void;
 }) {
   const textarea = useRef<HTMLTextAreaElement>(null), highlight = useRef<HTMLDivElement>(null), request = useRef(0);
+  const pendingCaret = useRef<number | null>(null);
   const previewPanel = useRef<HTMLDivElement>(null), suggestionPanel = useRef<HTMLDivElement>(null), previewRequest = useRef(0);
   const [range, setRange] = useState<SearchRange>(null);
   const [results, setResults] = useState<Exercise[]>([]);
@@ -145,6 +146,15 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   const [creatingExercise, setCreatingExercise] = useState(false);
   const [creationTrackingMode, setCreationTrackingMode] = useState<"weight" | "time">("weight");
   const [createError, setCreateError] = useState("");
+
+  useLayoutEffect(() => {
+    const input = textarea.current;
+    const position = pendingCaret.current;
+    if (!input || position === null) return;
+    pendingCaret.current = null;
+    input.focus({ preventScroll: true });
+    input.setSelectionRange(position, position);
+  }, [value]);
 
   useEffect(() => {
     if (!range) return;
@@ -319,8 +329,12 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     const nextMentions = rebaseRoutineMentions(value, next, mentions).filter(m => !(m.start < end && m.end > start));
     nextMentions.push({ exercise_id: exercise.id, start, end, text: exercise.name });
     nextMentions.sort((a, b) => a.start - b.start);
-    onChange(next, nextMentions); updateRange(null);
-    requestAnimationFrame(() => { input.focus(); input.setSelectionRange(endUtf16, endUtf16); });
+    // Restore the native caret only after React has committed the controlled
+    // textarea value. A frame-based restore can target the previous value and
+    // cause the next Enter/typing event to overwrite the adjacent text.
+    pendingCaret.current = endUtf16;
+    onChange(next, nextMentions);
+    updateRange(null);
   }
 
   async function createExerciseFromMention() {
