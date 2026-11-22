@@ -73,8 +73,8 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const [durationState, setDurationState] = useState({ exerciseId, value: "" });
   const weight = weightState.exerciseId === exerciseId ? weightState.value : "";
   const duration = durationState.exerciseId === exerciseId ? durationState.value : "";
-  const setWeight = (value: string) => setWeightState({ exerciseId, value });
-  const setDuration = (value: string) => setDurationState({ exerciseId, value });
+  const setWeight = useCallback((value: string) => setWeightState({ exerciseId, value }), [exerciseId]);
+  const setDuration = useCallback((value: string) => setDurationState({ exerciseId, value }), [exerciseId]);
   const [sets, setSets] = useState<WorkoutSet[]>([{ reps: "", weight: "", duration: "" }]);
   const [historyState, setHistoryState] = useState<{ exerciseId: string; history: WorkoutHistory | null }>({ exerciseId, history: null });
   const history = historyState.exerciseId === exerciseId ? historyState.history : null;
@@ -112,7 +112,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     } finally {
       if (showLoading) setLoadingHistory(false);
     }
-  }, [exerciseId]);
+  }, [exerciseId, setDuration, setWeight]);
 
   // Keep the visible "REALIZADO" state in sync on first render/reload without
   // eagerly downloading the full editable history for every exercise.
@@ -134,7 +134,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       }
     })();
     return () => { cancelled = true; };
-  }, [exerciseId]);
+  }, [exerciseId, setDuration, setWeight]);
 
   async function save(modeOverride?: "quick" | "sets", quickValueOverride?: number) {
     if (busy.current) return;
