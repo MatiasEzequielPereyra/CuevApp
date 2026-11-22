@@ -70,9 +70,9 @@ export function routineEditorFixture() {
         }
         case "/cueva_routine_text_publications": return publicationReadError ? { body: { message: "Synthetic text read failure" }, status: 503 } : { body: asRow(publicationText) };
         case "/rpc/cueva_my_routine_video_ids": return { body: [] };
-        case "/rpc/cueva_student_mentioned_exercises": return { body: publicationText?.format === "text" ? (publicationText.mentions ?? []).flatMap(mention => {
+        case "/rpc/cueva_student_mentioned_exercises_with_tracking_mode": return { body: publicationText?.format === "text" ? (publicationText.mentions ?? []).flatMap(mention => {
           const exercise = exercises.find(item => item.id === mention.exercise_id);
-          return exercise ? [{ id: exercise.id, name: exercise.name, description: exercise.description }] : [];
+          return exercise ? [{ id: exercise.id, name: exercise.name, description: exercise.description, tracking_mode: "weight" }] : [];
         }) : [] };
         case "/cueva_exercises": {
           const filter = url.searchParams.get("name") ?? "";
