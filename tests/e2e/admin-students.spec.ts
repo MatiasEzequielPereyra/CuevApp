@@ -481,7 +481,7 @@ test("una falla del documento publicado no muestra el formato anterior", async (
   await editor.getByRole("button", { name: "Texto libre" }).click();
   const text = editor.getByRole("textbox", { name: "Rutina en texto libre" });
   await text.fill("🙂 @Sentadilla");
-  await editor.getByRole("option", { name: "Sentadilla" }).click();
+  await page.getByRole("listbox", { name: "Ejercicios sugeridos" }).getByRole("option", { name: "Sentadilla", exact: true }).click();
   await expect(text).toHaveValue("🙂 Sentadilla");
   await expect.poll(() => routines.operations).toEqual(["draft"]);
   await editor.getByRole("button", { name: "Publicar rutina" }).click();
