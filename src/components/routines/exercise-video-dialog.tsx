@@ -13,6 +13,7 @@ export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }:
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const request = useRef<AbortController | null>(null);
+  const closing = useRef(false);
   const titleId = useId();
   const [playback, setPlayback] = useState<Playback>({ state: "loading" });
   const [retry, setRetry] = useState(0);
@@ -65,7 +66,11 @@ export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }:
   }
 
   function close() {
+    if (closing.current) return;
+    closing.current = true;
     request.current?.abort();
+    const element = dialog.current;
+    if (element?.open) element.close();
     onClose();
   }
 
@@ -86,7 +91,7 @@ export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }:
           <a href={playback.source.url} target="_blank" rel="noopener noreferrer">Abrir en YouTube</a></>;
 
   return (
-    <dialog ref={dialog} className="my-routine-dialog" aria-labelledby={titleId} onClick={event => { if (event.target === event.currentTarget) close(); }} onCancel={event => { event.preventDefault(); close(); }} onClose={() => { if (open) close(); }}>
+    <dialog ref={dialog} className="my-routine-dialog" aria-labelledby={titleId} onClick={event => { if (event.target === event.currentTarget) close(); }} onCancel={event => { event.preventDefault(); close(); }} onClose={() => { if (open && !closing.current) close(); }}>
       <header>
         <h2 id={titleId}>{exerciseName}</h2>
         <button type="button" onClick={close}>Cerrar</button>
