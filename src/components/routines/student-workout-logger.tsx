@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 type WorkoutSet = { reps: string; weight: string; duration: string };
 type HistorySet = { set_number: number; reps: number | null; weight_kg: number | null; duration_seconds: number | null };
@@ -73,6 +73,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const [duration, setDuration] = useState("");
   const [sets, setSets] = useState<WorkoutSet[]>([{ reps: "", weight: "", duration: "" }]);
   const [history, setHistory] = useState<WorkoutHistory | null>(null);
+  const [summaryEntry, setSummaryEntry] = useState<HistoryEntry | null>(null);
   const [editingEntry, setEditingEntry] = useState<HistoryEntry | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -93,6 +94,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       setHistory(current => offset > 0 && current
         ? { ...next, entries: [...current.entries, ...next.entries] }
         : next);
+      if (offset === 0) setSummaryEntry(next.entries[0] ?? null);
       if (offset === 0) {
         if (next.last_weight_kg !== null && next.last_weight_kg !== undefined) setWeight(String(next.last_weight_kg));
         if (next.last_duration_seconds !== null && next.last_duration_seconds !== undefined) setDuration(String(next.last_duration_seconds));
@@ -102,6 +104,29 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     } finally {
       if (showLoading) setLoadingHistory(false);
     }
+  }, [exerciseId]);
+
+  // Keep the visible "REALIZADO" state in sync on first render/reload without
+  // eagerly downloading the full editable history for every exercise.
+  useEffect(() => {
+    let cancelled = false;
+    setSummaryEntry(null);
+    void (async () => {
+      try {
+        const response = await fetch("/api/entrenamientos?exercise_id=" + encodeURIComponent(exerciseId)
+          + "&offset=0&limit=1", { cache: "no-store" });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (cancelled) return;
+        const next = data.history as WorkoutHistory;
+        setSummaryEntry(next.entries?.[0] ?? null);
+        if (next.last_weight_kg !== null && next.last_weight_kg !== undefined) setWeight(String(next.last_weight_kg));
+        if (next.last_duration_seconds !== null && next.last_duration_seconds !== undefined) setDuration(String(next.last_duration_seconds));
+      } catch {
+        // The logger and full history remain available if the summary request fails.
+      }
+    })();
+    return () => { cancelled = true; };
   }, [exerciseId]);
 
   async function save(modeOverride?: "quick" | "sets", quickValueOverride?: number) {
@@ -212,8 +237,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     setError("");
   }
 
-  const latest = history?.entries.find(entry => entry.tracking_mode === trackingMode);
-  const summary = latest ? entrySummary(latest) : "";
+  const summary = summaryEntry?.tracking_mode === trackingMode ? entrySummary(summaryEntry) : "";
 
   return (
     <section className="student-workout" aria-label={"Registro de " + exerciseName} data-tracking-mode={trackingMode}>
