@@ -215,6 +215,7 @@ try {
     await checked(admin.client.rpc("cueva_exercise_write", {
       p_id: exercise.id, p_name: `${exercise.name} ${suffix}`, p_active: true, p_revision: 0, p_description: "",
       p_video_path: exercise === press ? path : null, p_video_url: [other, old].includes(exercise) ? youtube : null,
+      p_tracking_mode: "weight",
     }));
   }
   const previous = await publish(admin.client, students[0], 0, "Publicación histórica",
