@@ -523,7 +523,7 @@ for (const interaction of ["teclado", "toque"] as const) {
       await editor.getByRole("button", { name: "Texto libre" }).click();
       const textarea = editor.getByRole("textbox", { name: "Rutina en texto libre" });
       await textarea.fill("@press");
-      const previous = editor.getByRole("option", { name: "Press militar", exact: true });
+      const previous = page.getByRole("listbox", { name: "Ejercicios sugeridos" }).getByRole("option", { name: "Press militar", exact: true });
       await expect(previous).toBeVisible();
       await previous.scrollIntoViewIfNeeded();
       const bounds = await previous.boundingBox();
