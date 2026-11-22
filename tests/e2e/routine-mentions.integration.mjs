@@ -232,7 +232,7 @@ try {
   await adminTextarea.click({position:mentionClickPoint});
   await expect(adminPreview).toBeVisible();
   const adminPlayer = page.getByRole("dialog", {name:exerciseName});
-  await expect(adminPlayer).toHaveCount(0);
+  await expect(page.locator("dialog.my-routine-dialog").filter({has: page.getByRole("heading", {name: exerciseName, exact: true})})).toHaveCount(0);
   await adminPreview.getByRole("button", {name:"Ver video"}).click();
   await expect(adminPlayer).toBeVisible();
   await adminPlayer.getByRole("button", {name:"Cerrar"}).click();
