@@ -1,6 +1,6 @@
 # CUEVA-007 — Registro e historial de entrenamiento
 
-Estado: implementación en curso sobre `feature/cueva-007-workout-tracking`.
+Estado: implementada en `feature/cueva-007-workout-tracking`; revisión integral y validación final pendientes.
 Base verificada: `main` en `425e23aa3e5d28a1d2ba08c41084e5bba021f297` (PR #87 integrado).
 Este encargo no autoriza merge, despliegue ni aplicación de migraciones a Supabase alojado.
 
@@ -64,7 +64,7 @@ La rama ya contiene una primera implementación de los siguientes componentes:
 - Reproductor: cierre por botón, Escape y click fuera. La preview de menciones no se abre por hover/foco y no se reactiva al restaurar el foco tras cerrar el reproductor.
 - Pruebas pgTAP y Playwright ampliadas para permisos, aislamiento, idempotencia, modo tiempo, paginación, selección de texto y registro desde menciones.
 
-**Estado de validación:** pendiente. Las primeras ejecuciones de CI detectaron defectos en las pruebas/typing, que se corrigieron en commits posteriores. La aceptación requiere que los workflows del HEAD más reciente terminen en verde; no se aplicó ninguna migración alojada y no se hizo merge.
+**Estado de validación:** los workflows del HEAD `f7548239e8ba8bee8288de5df28b4de01f8160ce` terminaron en PASS en las ejecuciones revisadas. La revisión integral posterior identificó mejoras pendientes de rendimiento, accesibilidad del panel y cobertura táctil específica para menciones de texto. La aceptación requiere validar nuevamente el HEAD que incorpore esas mejoras; no se aplicó ninguna migración alojada y no se hizo merge.
 
 
 ## Requisitos adicionales incorporados — 2026-11-21
@@ -106,3 +106,11 @@ La rama ya contiene una primera implementación de los siguientes componentes:
 - Mover el cursor del nombre al panel emergente permite usar todos sus controles sin que desaparezca; en táctil, el panel no depende de hover.
 - Se puede registrar peso/series e inspeccionar historial desde el propio ejercicio en ambos formatos de rutina, sin una sección redundante.
 - Pruebas E2E deben verificar el trayecto del puntero hacia el panel, el toque en móvil, el click exterior, Escape y que el reproductor no reabra el panel al cerrarse.
+
+
+## Revisión integral — 2026-11-23
+
+- La carga inicial de resultados se agrupa en solicitudes por lotes para evitar una petición HTTP por cada aparición de ejercicio. El endpoint conserva la consulta individual y la paginación del historial.
+- El panel contextual recibe foco al abrirse y conserva el cierre por Escape y por interacción exterior.
+- Pendiente de evidencia E2E: interacción táctil completa con menciones de texto libre, comparación visual automatizada de colores Admin/Alumno y medición de rutinas extensas.
+- El PR #88 permanece Draft. No autoriza merge, deploy ni migraciones en Supabase hosted.

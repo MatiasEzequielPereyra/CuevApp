@@ -29,7 +29,22 @@ export async function GET(req: Request) {
   const { client, status } = await studentClient();
   if (!client) return reply({ message: "Acceso restringido." }, status);
   const params = new URL(req.url).searchParams;
-  const exerciseId = params.get("exercise_id") ?? "";
+  const exerciseIds = [...new Set(params.getAll("exercise_id").flatMap(value => value.split(",")).filter(Boolean))];
+  if (exerciseIds.length > 1) {
+    if (exerciseIds.length > 100 || exerciseIds.some(id => !uuid.test(id))) {
+      return reply({ message: "Lista de ejercicios inválida." }, 400);
+    }
+    const results = await Promise.all(exerciseIds.map(async exerciseId => {
+      const { data, error } = await client.rpc("cueva_workout_history", {
+        p_exercise_id: exerciseId, p_limit: 1, p_offset: 0,
+      });
+      return { exerciseId, data, error };
+    }));
+    const failed = results.find(result => result.error);
+    if (failed) return reply({ message: "No pudimos cargar los últimos registros." }, failed.error?.code === "42501" ? 403 : 503);
+    return reply({ histories: Object.fromEntries(results.map(result => [result.exerciseId, result.data])) });
+  }
+  const exerciseId = exerciseIds[0] ?? "";
   const offset = Number(params.get("offset") ?? 0);
   const limit = Number(params.get("limit") ?? 30);
   if (!uuid.test(exerciseId)) return reply({ message: "Ejercicio inválido." }, 400);

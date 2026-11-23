@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { requestWorkoutSummary } from "@/lib/routines/workout-summary-batch";
 
 type WorkoutSet = { reps: string; weight: string; duration: string };
 type HistorySet = { set_number: number; reps: number | null; weight_kg: number | null; duration_seconds: number | null };
@@ -120,12 +121,8 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     let cancelled = false;
     void (async () => {
       try {
-        const response = await fetch("/api/entrenamientos?exercise_id=" + encodeURIComponent(exerciseId)
-          + "&offset=0&limit=1", { cache: "no-store" });
-        if (!response.ok) return;
-        const data = await response.json();
+        const next = await requestWorkoutSummary(exerciseId);
         if (cancelled) return;
-        const next = data.history as WorkoutHistory;
         setSummaryState({ exerciseId, entry: next.entries?.[0] ?? null });
         if (next.last_weight_kg !== null && next.last_weight_kg !== undefined) setWeight(String(next.last_weight_kg));
         if (next.last_duration_seconds !== null && next.last_duration_seconds !== undefined) setDuration(String(next.last_duration_seconds));

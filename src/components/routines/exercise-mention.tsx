@@ -48,6 +48,10 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
   }
 
   useEffect(() => {
+    if (open) panel.current?.focus({ preventScroll: true });
+  }, [open]);
+
+  useEffect(() => {
     if (!open) return;
     function onPointerDown(event: PointerEvent) {
       if (event.target instanceof Node
@@ -97,7 +101,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
       <StudentWorkoutLogger publicationId={publicationId} exerciseId={exerciseId} exerciseName={name} trackingMode={trackingMode} {...(targetId ? { targetId } : {})} />
       {open && position && typeof document !== "undefined" && createPortal(
         <div ref={panel} id={panelId} className="my-routine-mention-preview" role="dialog"
-          aria-label={`Ejercicio: ${name}`}
+          tabIndex={-1} aria-label={`Ejercicio: ${name}`}
           style={{ position: "fixed", left: position.left, top: position.top, width: position.width,
             maxHeight: "min(260px, calc(100dvh - 16px))", overflow: "auto", zIndex: 1001 }}>
           <strong>{name}</strong>
