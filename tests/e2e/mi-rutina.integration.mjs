@@ -260,6 +260,22 @@ try {
     // This scenario deliberately blocks the PWA service worker so Playwright's
     // route interception can deterministically simulate the first video failure.
     const videoContext = await studentContext(browser, learner, { serviceWorkers: "block" });
+    let videoFailureIntercepts = 0;
+    await videoContext.route("**/api/ejercicios/video**", async route => {
+      const url = new URL(route.request().url());
+      if (url.pathname === "/api/ejercicios/video" &&
+          url.searchParams.get("id") === press.id &&
+          videoFailureIntercepts === 0) {
+        videoFailureIntercepts += 1;
+        await route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: JSON.stringify({ message: "Video temporalmente no disponible." }),
+        });
+        return;
+      }
+      await route.continue();
+    });
     const pupil = await videoContext.newPage();
     await pupil.goto(`${origin}/mi-rutina`);
     await expect(pupil.getByRole("heading", {name:"Descripciones de ejercicios"})).toHaveCount(0);
@@ -278,11 +294,6 @@ try {
     await weightedRow.getByLabel("Peso utilizado (kg)").fill("32.5");
     await weightedRow.getByRole("button", { name: "Guardar resultado" }).click();
     await expect(weightedRow.getByRole("status").filter({ hasText: "Resultado guardado." })).toBeVisible();
-    await pupil.route("**/api/ejercicios/video*", route => route.fulfill({
-      status: 503,
-      contentType: "application/json",
-      body: JSON.stringify({ message: "Video temporalmente no disponible." }),
-    }), { times: 1 });
     await weightedRow.locator(".my-routine-mention").click();
     const exercisePreview = pupil.getByRole("dialog", { name: "Ejercicio: Press militar" });
     const unavailableVideoResponse = pupil.waitForResponse(response => {
@@ -294,7 +305,16 @@ try {
     assert.equal(interceptedVideoResponse.status(), 503, "El primer intento debe recibir el 503 simulado.");
     const dialog = pupil.getByRole("dialog", { name: "Press militar" });
     await expect(dialog.getByRole("alert")).toHaveText("Video temporalmente no disponible.");
+    assert.equal(videoFailureIntercepts, 1, "La ruta debe interceptar exactamente el primer intento.");
+    const retryVideoResponse = pupil.waitForResponse(response => {
+      const url = new URL(response.url());
+      return url.pathname === "/api/ejercicios/video" &&
+        url.searchParams.get("id") === press.id &&
+        response.status() === 200;
+    });
     await dialog.getByRole("button", { name: "Reintentar" }).click();
+    const successfulRetry = await retryVideoResponse;
+    assert.equal(successfulRetry.status(), 200, "El reintento debe recuperar el video.");
     await expect(dialog.locator("video")).toBeVisible();
     await pupil.keyboard.press("Escape");
 
