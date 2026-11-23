@@ -102,7 +102,7 @@ async function layoutAndPlayback(browserType, learner) {
           const blocks = routine.locator(".my-routine-block");
           for (const [index, entries] of emBlocks.entries()) {
             const rows = blocks.nth(index).getByRole("listitem");
-            await expect(rows.locator("strong")).toHaveText(entries.map(exercise => exercises[exercise].name));
+            await expect(rows.locator(".my-routine-mention")).toHaveText(entries.map(exercise => exercises[exercise].name));
             await expect(blocks.nth(index).getByText(`${index + 2} vueltas`, { exact: true })).toHaveCount(1);
           }
           await expect(routine.getByText("45 segundos", { exact: true }).first()).toBeVisible();
