@@ -275,10 +275,20 @@ try {
     await weightedRow.getByLabel("Peso utilizado (kg)").fill("32.5");
     await weightedRow.getByRole("button", { name: "Guardar resultado" }).click();
     await expect(weightedRow.getByRole("status").filter({ hasText: "Resultado guardado." })).toBeVisible();
-    await pupil.route("**/api/ejercicios/video?**", route => route.fulfill({ status: 503, json: { message: "Video temporalmente no disponible." } }), { times: 1 });
+    await pupil.route(/\\/api\\/ejercicios\\/video\\?/, route => route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ message: "Video temporalmente no disponible." }),
+    }), { times: 1 });
     await weightedRow.locator(".my-routine-mention").click();
     const exercisePreview = pupil.getByRole("dialog", { name: "Ejercicio: Press militar" });
+    const unavailableVideoResponse = pupil.waitForResponse(response => {
+      const url = new URL(response.url());
+      return url.pathname === "/api/ejercicios/video" && url.searchParams.get("id") === press.id && response.status() === 503;
+    });
     await exercisePreview.getByRole("button", { name: "Ver video" }).click();
+    const interceptedVideoResponse = await unavailableVideoResponse;
+    assert.equal(interceptedVideoResponse.status(), 503, "El primer intento debe recibir el 503 simulado.");
     const dialog = pupil.getByRole("dialog", { name: "Press militar" });
     await expect(dialog.getByRole("alert")).toHaveText("Video temporalmente no disponible.");
     await dialog.getByRole("button", { name: "Reintentar" }).click();
