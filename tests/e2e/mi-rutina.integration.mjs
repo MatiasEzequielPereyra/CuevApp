@@ -257,7 +257,10 @@ try {
     assert.equal((await guest.request.get(videoUrl(press))).status(), 403);
     await guest.close();
 
-    const pupil = await learnerContext.newPage();
+    // This scenario deliberately blocks the PWA service worker so Playwright's
+    // route interception can deterministically simulate the first video failure.
+    const videoContext = await studentContext(browser, learner, { serviceWorkers: "block" });
+    const pupil = await videoContext.newPage();
     await pupil.goto(`${origin}/mi-rutina`);
     await expect(pupil.getByRole("heading", {name:"Descripciones de ejercicios"})).toHaveCount(0);
     const weightedRow = pupil.locator(".my-routine-exercise-item").filter({ hasText: "Press militar" });
