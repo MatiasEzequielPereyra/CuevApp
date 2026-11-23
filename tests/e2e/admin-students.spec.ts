@@ -508,12 +508,16 @@ for (const interaction of ["teclado", "toque"] as const) {
     const held = new Promise<void>(resolve => { release = resolve; });
     let waiting = false;
     let intercepted = false;
+    let sentRequests = 0;
     await page.route("**/api/ejercicios?*", async route => {
       const query = new URL(route.request().url()).searchParams.get("q")?.toLowerCase();
-      if (query === "sent" && !intercepted) {
-        intercepted = true;
-        waiting = true;
-        await held;
+      if (query === "sent") {
+        sentRequests += 1;
+        if (!intercepted) {
+          intercepted = true;
+          waiting = true;
+          await held;
+        }
       }
       await route.continue().catch(() => {}); // A new query may abort this held response.
     });
@@ -540,7 +544,11 @@ for (const interaction of ["teclado", "toque"] as const) {
         // the outside tap closes the pending panel, so reopen the query afterward.
         await page.touchscreen.tap(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height / 2);
         await expect(textarea).toHaveValue("@sent");
+        // Force a genuine input transition: filling the identical value does not
+        // emit another input event, so it cannot reopen the dismissed suggestions.
+        await textarea.fill("@sentx");
         await textarea.fill("@sent");
+        await expect.poll(() => sentRequests).toBe(2);
       }
       await expect(editor.getByText("0 menciones vinculadas")).toBeVisible();
       await expect(previous).toHaveCount(0);
