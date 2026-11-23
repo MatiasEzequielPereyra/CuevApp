@@ -275,7 +275,7 @@ try {
     await weightedRow.getByLabel("Peso utilizado (kg)").fill("32.5");
     await weightedRow.getByRole("button", { name: "Guardar resultado" }).click();
     await expect(weightedRow.getByRole("status").filter({ hasText: "Resultado guardado." })).toBeVisible();
-    await pupil.route(/\\/api\\/ejercicios\\/video\\?/, route => route.fulfill({
+    await pupil.route("**/api/ejercicios/video*", route => route.fulfill({
       status: 503,
       contentType: "application/json",
       body: JSON.stringify({ message: "Video temporalmente no disponible." }),
