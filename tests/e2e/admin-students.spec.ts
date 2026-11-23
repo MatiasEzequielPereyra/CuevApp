@@ -276,7 +276,8 @@ for (const width of [360, 390, 1440]) {
         await expect(rounds).toHaveValue("3");
         if (index === 0) {
           await expect(squat).not.toBeChecked();
-          await squat.check();
+          await squat.locator("xpath=..").click();
+          await expect(squat).toBeChecked();
           await expect(squatWeight).toHaveValue("");
           await squatWeight.fill("42,5");
           await picker.getByRole("searchbox", { name: "Buscar ejercicio" }).fill("Press militar");
