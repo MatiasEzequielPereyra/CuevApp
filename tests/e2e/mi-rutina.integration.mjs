@@ -270,7 +270,7 @@ try {
     await timedLogger.getByLabel("Duración (segundos)").fill("75");
     await timedLogger.getByRole("button", { name: "Guardar resultado" }).click();
     await expect(timedLogger.getByRole("status").filter({ hasText: "Resultado guardado." })).toBeVisible();
-    await expect(timedLogger.getByText("1 min 15 s")).toBeVisible();
+    await expect(timedLogger.locator(".student-workout-summary > span")).toHaveText("1 min 15 s");
     await weightedRow.getByRole("button", { name: "Registrar peso" }).click();
     await weightedRow.getByLabel("Peso utilizado (kg)").fill("32.5");
     await weightedRow.getByRole("button", { name: "Guardar resultado" }).click();
