@@ -126,7 +126,7 @@ export default async function MyRoutine() {
           )}
         </StudentPageHeading>
 
-        {result.error || (publication && (textDocument?.error || !textDocument?.data)) ? (
+        {result.error || (publication && textDocument?.error) ? (
           <section className="my-routine-panel">
             <h2>No pudimos cargar tu rutina</h2>
             <p>Intentá nuevamente en unos instantes.</p>
