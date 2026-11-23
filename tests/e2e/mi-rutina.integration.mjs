@@ -260,23 +260,25 @@ try {
     // This scenario deliberately blocks the PWA service worker so Playwright's
     // route interception can deterministically simulate the first video failure.
     const videoContext = await studentContext(browser, learner, { serviceWorkers: "block" });
-    let videoFailureIntercepts = 0;
-    await videoContext.route("**/api/ejercicios/video**", async route => {
-      const url = new URL(route.request().url());
-      if (url.pathname === "/api/ejercicios/video" &&
-          url.searchParams.get("id") === press.id &&
-          videoFailureIntercepts === 0) {
-        videoFailureIntercepts += 1;
-        await route.fulfill({
-          status: 503,
-          contentType: "application/json",
-          body: JSON.stringify({ message: "Video temporalmente no disponible." }),
-        });
-        return;
-      }
-      await route.continue();
-    });
     const pupil = await videoContext.newPage();
+    await pupil.addInitScript(({ exerciseId }) => {
+      const originalFetch = window.fetch.bind(window);
+      Object.defineProperty(window, "__cuevaVideoFailureIntercepts", { value: 0, writable: true });
+      window.fetch = async (input, init) => {
+        const requestUrl = typeof input === "string" || input instanceof URL ? input.toString() : input.url;
+        const url = new URL(requestUrl, window.location.href);
+        if (url.pathname === "/api/ejercicios/video" &&
+            url.searchParams.get("id") === exerciseId &&
+            window.__cuevaVideoFailureIntercepts === 0) {
+          window.__cuevaVideoFailureIntercepts += 1;
+          return new Response(JSON.stringify({ message: "Video temporalmente no disponible." }), {
+            status: 503,
+            headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+          });
+        }
+        return originalFetch(input, init);
+      };
+    }, { exerciseId: press.id });
     await pupil.goto(`${origin}/mi-rutina`);
     await expect(pupil.getByRole("heading", {name:"Descripciones de ejercicios"})).toHaveCount(0);
     const weightedRow = pupil.locator(".my-routine-exercise-item").filter({ hasText: "Press militar" });
@@ -296,16 +298,11 @@ try {
     await expect(weightedRow.getByRole("status").filter({ hasText: "Resultado guardado." })).toBeVisible();
     await weightedRow.locator(".my-routine-mention").click();
     const exercisePreview = pupil.getByRole("dialog", { name: "Ejercicio: Press militar" });
-    const unavailableVideoResponse = pupil.waitForResponse(response => {
-      const url = new URL(response.url());
-      return url.pathname === "/api/ejercicios/video" && url.searchParams.get("id") === press.id && response.status() === 503;
-    });
     await exercisePreview.getByRole("button", { name: "Ver video" }).click();
-    const interceptedVideoResponse = await unavailableVideoResponse;
-    assert.equal(interceptedVideoResponse.status(), 503, "El primer intento debe recibir el 503 simulado.");
     const dialog = pupil.getByRole("dialog", { name: "Press militar" });
     await expect(dialog.getByRole("alert")).toHaveText("Video temporalmente no disponible.");
-    assert.equal(videoFailureIntercepts, 1, "La ruta debe interceptar exactamente el primer intento.");
+    assert.equal(await pupil.evaluate(() => window.__cuevaVideoFailureIntercepts), 1,
+      "El primer fetch del video debe recibir exactamente un 503 simulado.");
     const retryVideoResponse = pupil.waitForResponse(response => {
       const url = new URL(response.url());
       return url.pathname === "/api/ejercicios/video" &&
