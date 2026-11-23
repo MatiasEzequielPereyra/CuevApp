@@ -535,8 +535,12 @@ for (const interaction of ["teclado", "toque"] as const) {
         await expect(textarea).toHaveValue("@sent\n");
         await textarea.fill("@sent");
       } else {
+        // The previous option is intentionally removed as soon as the new query
+        // starts. Tapping its former coordinates must not insert that stale item;
+        // the outside tap closes the pending panel, so reopen the query afterward.
         await page.touchscreen.tap(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height / 2);
         await expect(textarea).toHaveValue("@sent");
+        await textarea.fill("@sent");
       }
       await expect(editor.getByText("0 menciones vinculadas")).toBeVisible();
       await expect(previous).toHaveCount(0);
