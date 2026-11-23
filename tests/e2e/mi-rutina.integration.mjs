@@ -257,19 +257,29 @@ try {
     assert.equal((await guest.request.get(videoUrl(press))).status(), 403);
     await guest.close();
 
-    // This scenario deliberately blocks the PWA service worker so Playwright's
-    // route interception can deterministically simulate the first video failure.
+    // Block the PWA service worker and keep the fetch-level 503 active until
+    // the user explicitly retries. This also covers React Strict Mode effect remounts.
     const videoContext = await studentContext(browser, learner, { serviceWorkers: "block" });
     const pupil = await videoContext.newPage();
     await pupil.addInitScript(({ exerciseId }) => {
       const originalFetch = window.fetch.bind(window);
-      Object.defineProperty(window, "__cuevaVideoFailureIntercepts", { value: 0, writable: true });
+      Object.defineProperties(window, {
+        __cuevaVideoFailureIntercepts: { value: 0, writable: true },
+        __cuevaVideoRetryEnabled: { value: false, writable: true },
+      });
+      document.addEventListener("click", event => {
+        const target = event.target;
+        const button = target instanceof Element ? target.closest("button") : null;
+        if (button?.textContent?.trim() === "Reintentar") {
+          window.__cuevaVideoRetryEnabled = true;
+        }
+      }, true);
       window.fetch = async (input, init) => {
         const requestUrl = typeof input === "string" || input instanceof URL ? input.toString() : input.url;
         const url = new URL(requestUrl, window.location.href);
         if (url.pathname === "/api/ejercicios/video" &&
             url.searchParams.get("id") === exerciseId &&
-            window.__cuevaVideoFailureIntercepts === 0) {
+            !window.__cuevaVideoRetryEnabled) {
           window.__cuevaVideoFailureIntercepts += 1;
           return new Response(JSON.stringify({ message: "Video temporalmente no disponible." }), {
             status: 503,
@@ -301,8 +311,8 @@ try {
     await exercisePreview.getByRole("button", { name: "Ver video" }).click();
     const dialog = pupil.getByRole("dialog", { name: "Press militar" });
     await expect(dialog.getByRole("alert")).toHaveText("Video temporalmente no disponible.");
-    assert.equal(await pupil.evaluate(() => window.__cuevaVideoFailureIntercepts), 1,
-      "El primer fetch del video debe recibir exactamente un 503 simulado.");
+    assert.ok(await pupil.evaluate(() => window.__cuevaVideoFailureIntercepts) >= 1,
+      "El fetch del video debe recibir un 503 simulado hasta el reintento explícito.");
     const retryVideoResponse = pupil.waitForResponse(response => {
       const url = new URL(response.url());
       return url.pathname === "/api/ejercicios/video" &&
