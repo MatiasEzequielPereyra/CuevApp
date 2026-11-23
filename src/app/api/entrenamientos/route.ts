@@ -30,8 +30,8 @@ export async function GET(req: Request) {
   if (!client) return reply({ message: "Acceso restringido." }, status);
   const params = new URL(req.url).searchParams;
   const exerciseIds = [...new Set(params.getAll("exercise_id").flatMap(value => value.split(",")).filter(Boolean))];
-  if (exerciseIds.length > 1) {
-    if (exerciseIds.length > 100 || exerciseIds.some(id => !uuid.test(id))) {
+  if (params.get("summary") === "1") {
+    if (exerciseIds.length < 1 || exerciseIds.length > 100 || exerciseIds.some(id => !uuid.test(id))) {
       return reply({ message: "Lista de ejercicios inválida." }, 400);
     }
     const results = await Promise.all(exerciseIds.map(async exerciseId => {

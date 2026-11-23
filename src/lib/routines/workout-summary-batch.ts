@@ -29,6 +29,7 @@ function flush() {
   pending.clear();
   if (!batch.length) return;
   const params = new URLSearchParams();
+  params.set("summary", "1");
   for (const [exerciseId] of batch) params.append("exercise_id", exerciseId);
   void fetch("/api/entrenamientos?" + params.toString(), { cache: "no-store" })
     .then(async response => {
