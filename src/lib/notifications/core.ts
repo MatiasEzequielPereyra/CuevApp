@@ -91,6 +91,8 @@ export function buildReminderPlan(
   parseIsoDate(period.periodMonth);
   const balanceCents = parseBalanceCents(period.balanceCents);
   if (!Number.isFinite(now.getTime())) throw new TypeError("Instante inválido");
+  // Validate configuration even when this period will not produce reminders.
+  buenosAiresDateTimeToUtc(period.dueOn, sendTime);
   if (!period.studentActive || balanceCents === 0n || period.dueOn <= buenosAiresDate(now)) return [];
 
   return REMINDER_DAYS.map(reminderDays => {

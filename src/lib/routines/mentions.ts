@@ -101,3 +101,42 @@ export function rebaseRoutineMentions(
 export function routineMentionsKey(mentions: RoutineMention[] = []): string {
   return JSON.stringify(mentions.map(({exercise_id,start,end,text}) => [exercise_id,start,end,text]));
 }
+
+
+/** Assigns deterministic but well-spread hues in reading order for a routine. */
+export function getRoutineMentionHues(
+  mentions: Pick<RoutineMention, "exercise_id" | "start" | "end" | "text">[],
+): Map<string, number> {
+  const ordered = [...mentions].sort((a, b) => a.start - b.start || a.end - b.end);
+  const assigned: number[] = [];
+  const result = new Map<string, number>();
+
+  for (const mention of ordered) {
+    const seed = mention.exercise_id + ":" + mention.text;
+    let hash = 2166136261;
+    for (let index = 0; index < seed.length; index++) {
+      hash = Math.imul(hash ^ seed.charCodeAt(index), 16777619);
+    }
+    const baseHue = (hash >>> 0) % 360;
+    let chosenHue = baseHue;
+    let bestDistance = -1;
+
+    // Maximize distance from every already assigned hue. Ties are resolved
+    // from the mention's deterministic base hue, preserving stable colors.
+    for (let offset = 0; offset < 360; offset++) {
+      const candidate = (baseHue + offset) % 360;
+      const distance = assigned.length === 0 ? 180 : Math.min(...assigned.map(existing => {
+        const delta = Math.abs(candidate - existing);
+        return Math.min(delta, 360 - delta);
+      }));
+      if (distance > bestDistance) {
+        bestDistance = distance;
+        chosenHue = candidate;
+      }
+    }
+
+    assigned.push(chosenHue);
+    result.set(mention.exercise_id + ":" + mention.start + ":" + mention.end, chosenHue);
+  }
+  return result;
+}

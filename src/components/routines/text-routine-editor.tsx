@@ -1,11 +1,32 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { RoutineMention } from "@/lib/routines/mentions";
-import { rebaseRoutineMentions, utf16OffsetToCodePoint } from "@/lib/routines/mentions";
+import { getRoutineMentionHues, rebaseRoutineMentions, utf16OffsetToCodePoint } from "@/lib/routines/mentions";
 import type { Exercise } from "@/lib/routines/types";
+import { ExerciseVideoDialog } from "@/components/routines/exercise-video-dialog";
+import type { CSSProperties } from "react";
 
 type SearchRange = { start: number; end: number; query: string } | null;
+
+function renderMentionHighlights(value: string, mentions: RoutineMention[]): ReactNode[] {
+  const points = Array.from(value);
+  const parts: ReactNode[] = [];
+  let cursor = 0;
+  const orderedMentions = [...mentions].sort((a, b) => a.start - b.start);
+  const hues = getRoutineMentionHues(orderedMentions);
+  orderedMentions.forEach((mention, index) => {
+    if (mention.start < cursor || mention.start < 0 || mention.end > points.length
+      || points.slice(mention.start, mention.end).join("") !== mention.text) return;
+    if (mention.start > cursor) parts.push(points.slice(cursor, mention.start).join(""));
+    parts.push(<strong className="routine-text-mention-highlight" style={{ "--mention-hue": hues.get(mention.exercise_id + ":" + mention.start + ":" + mention.end) ?? 250 } as CSSProperties} key={`mention-${mention.exercise_id}-${mention.start}-${index}`}>{mention.text}</strong>);
+    cursor = mention.end;
+  });
+  if (cursor < points.length) parts.push(points.slice(cursor).join(""));
+  // Preserve a visible final line when the source ends with a newline.
+  if (value.endsWith("\n")) parts.push("\u200b");
+  return parts;
+}
 
 function searchRange(value: string, cursor: number): SearchRange {
   const before = value.slice(0, cursor);
@@ -22,11 +43,15 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   value: string; mentions: RoutineMention[]; disabled: boolean;
   onChange: (value: string, mentions: RoutineMention[]) => void;
 }) {
-  const textarea = useRef<HTMLTextAreaElement>(null), request = useRef(0);
+  const textarea = useRef<HTMLTextAreaElement>(null), highlight = useRef<HTMLDivElement>(null), request = useRef(0);
   const [range, setRange] = useState<SearchRange>(null);
   const [results, setResults] = useState<Exercise[]>([]);
   const [pending, setPending] = useState(false), [error, setError] = useState("");
   const [active, setActive] = useState(0);
+  const [preview, setPreview] = useState<Exercise | null>(null);
+  const [previewPending, setPreviewPending] = useState(false);
+  const [previewError, setPreviewError] = useState("");
+  const [playerOpen, setPlayerOpen] = useState(false);
 
   useEffect(() => {
     if (!range) return;
@@ -98,6 +123,29 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     requestAnimationFrame(() => { input.focus(); input.setSelectionRange(endUtf16, endUtf16); });
   }
 
+  async function openMentionAtCursor(input: HTMLTextAreaElement) {
+    if (input.selectionStart !== input.selectionEnd) return;
+    const cursor = utf16OffsetToCodePoint(value, input.selectionStart);
+    const mention = mentions.find(item => cursor >= item.start && cursor <= item.end);
+    if (!mention) { setPreview(null); return; }
+    setPreview(null); setPreviewError(""); setPreviewPending(true);
+    try {
+      const params = new URLSearchParams({ q: mention.text });
+      const response = await fetch("/api/ejercicios?" + params, { cache: "no-store" });
+      const data = await response.json();
+      const exercise = Array.isArray(data.exercises) ? data.exercises.find((item: Exercise) => item.id === mention.exercise_id) : null;
+      if (!response.ok || !exercise) throw new Error(data.message || "No pudimos cargar los datos del ejercicio.");
+      setPreview(exercise);
+    } catch (cause) { setPreviewError(cause instanceof Error ? cause.message : "No pudimos cargar los datos del ejercicio."); }
+    finally { setPreviewPending(false); }
+  }
+  function syncHighlightScroll() {
+    if (textarea.current && highlight.current) {
+      highlight.current.scrollTop = textarea.current.scrollTop;
+      highlight.current.scrollLeft = textarea.current.scrollLeft;
+    }
+  }
+
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (!range) return;
     if (event.key === "Escape") { updateRange(null); return; }
@@ -109,16 +157,33 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
 
   return <div className="routine-text-editor">
     <label htmlFor="routine-free-text">Rutina en texto libre</label>
-    <textarea ref={textarea} id="routine-free-text" rows={16} maxLength={40000} value={value} disabled={disabled}
+    <div className="routine-text-input">
+      <div ref={highlight} className="routine-text-highlight-layer" aria-hidden="true">
+        {renderMentionHighlights(value, mentions)}
+      </div>
+      <textarea ref={textarea} id="routine-free-text" rows={16} maxLength={40000} value={value} disabled={disabled}
       aria-autocomplete="list" aria-controls="routine-mention-options"
+      onScroll={syncHighlightScroll}
       onChange={event => handleChange(event.target.value, event.target.selectionStart)}
-      onClick={event => updateRange(searchRange(value, event.currentTarget.selectionStart))}
+      onClick={event => { updateRange(searchRange(value, event.currentTarget.selectionStart)); void openMentionAtCursor(event.currentTarget); }}
       onKeyUp={event => {
         if (["ArrowDown", "ArrowUp", "Enter", "Escape"].includes(event.key)) return;
         updateRange(searchRange(value, event.currentTarget.selectionStart));
       }}
       onKeyDown={onKeyDown}
       placeholder={"Escribí la rutina completa…\n\nPodés mencionar ejercicios con @ o escribir su nombre."} />
+      {previewPending && <div className="routine-text-mention-preview" role="status">Cargando ejercicio…</div>}
+      {previewError && <div className="routine-text-mention-preview" role="alert">{previewError}</div>}
+      {preview && <div className="routine-text-mention-preview" role="dialog" aria-label={"Ejercicio: " + preview.name}>
+        <strong>{preview.name}</strong>
+        {preview.description && <p>{preview.description}</p>}
+        {preview.video_url || preview.video_path
+          ? <button type="button" onClick={() => setPlayerOpen(true)}>Ver video</button>
+          : <span role="status">Aún no se encuentra con video disponible</span>}
+        <button type="button" className="routine-text-mention-close" onClick={() => setPreview(null)}>Cerrar</button>
+      </div>}
+    </div>
+    {playerOpen && preview && <ExerciseVideoDialog exerciseId={preview.id} exerciseName={preview.name} open onClose={() => setPlayerOpen(false)} /> }
     {range && <div className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos">
       {pending && <p role="status">Buscando ejercicios…</p>}
       {error && <><p role="alert">{error}</p><button type="button" disabled={disabled || pending} onClick={retrySearch}>Reintentar búsqueda</button></>}

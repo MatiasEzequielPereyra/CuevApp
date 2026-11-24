@@ -48,3 +48,25 @@ Conservar la función de negocio desligada mediante `CUEVA_SELF_REGISTRATION_ENA
 SKILLS_SELECTED: `cueva-feature-development`, `cueva-supabase-security`, `cueva-architecture`, `supabase:supabase`.  
 SKILLS_APPLIED: lectura de código/migraciones reales, revisión read-only del proyecto Supabase conectado, diseño de gate de sesión/UUID, tests de permisos y flujos negativos, rama aislada.  
 SKILL_SOURCES: `.agents/skills/cueva-feature-development/SKILL.md`, `.agents/skills/cueva-supabase-security/SKILL.md`, `.agents/skills/cueva-architecture/SKILL.md`, `skills://plugins/supabase/supabase/skill.md`, `AGENTS.md`.
+
+
+## Actualización de integración — 2026-11-24 — REVIEW
+
+Base incorporada: `425e23aa3e5d28a1d2ba08c41084e5bba021f297`.
+Candidato recibido: `1526fc71886cb5a21b073ae9c5166ef695e6682b`.
+Único conflicto en `package.json`: la lista de pruebas conserva tanto
+`test:self-registration` como `test:routines:video-source` de main. Sin cambios
+en Auth, gates, invitaciones, perfil, SQL ni configuración operativa.
+`CUEVA_SELF_REGISTRATION_ENABLED` sigue opt-in y apagado por defecto.
+
+Verificación local nueva sobre el árbol combinado: registro 14/14, contraseñas
+11/11, correo 6/6 y video-source 6/6; navegador Chromium 51/51
+(self-registration, student-portal, access-form y access-preview); lint, tipos y
+build aprobados. Documentos, fuentes y seguridad se ejecutan antes del commit.
+CI del HEAD final se registra en el PR; las corridas del candidato anterior no
+certifican esta actualización. Sin registro público, correo, flags ni SQL alojados.
+
+SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`,
+`cueva-supabase-security`, `resolving-merge-conflicts`, `supabase:supabase`.
+SKILL_SOURCES: `.agents/skills/cueva-feature-development/SKILL.md`,
+`.agents/skills/cueva-supabase-security/SKILL.md` y guías correspondientes del host.

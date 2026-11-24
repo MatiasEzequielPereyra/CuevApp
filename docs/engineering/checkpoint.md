@@ -1,5 +1,16 @@
 # Checkpoint CUEVA
 
+## Estado vigente — 2026-11-20 · CUEVA-006E
+
+- CUEVA-006D / PR #67 está integrado en main y permanece cerrado.
+- CUEVA-006E está implementada en `feature/cueva-006e-exercise-mention-preview`; PR #82 abierto contra `main`, no Draft y mergeable en la última lectura. No está mergeado ni desplegado a producción.
+- HEAD de código validado por los cinco workflows asociados al PR: `9807876c0ccf1bbf9ad5c6bcbee5c60213b417a0`. Base `main`: `e9dffe16de5ae76eb01eb24b4de490dd3e33b806`. La reconciliación documental en curso cambia el HEAD; los checks del nuevo commit deben confirmarse antes de integración.
+- CI del PR #82: Verify foundation #1313, routine mentions E2E #25, isolated checks #15, Supabase local migrations #679 y Membership SQL #342; todos SUCCESS sobre el HEAD indicado. Ver [PR #82](https://github.com/MatiasEzequielPereyra/CuevApp/pull/82).
+- El Preview Vercel del PR fue reportado Ready; no equivale a publicación de producción.
+- La sincronización conserva PR #80 (instalación PWA) y PR #81 (fixtures de notificaciones con fechas relativas). Las migraciones de 006E se probaron localmente; no se aplicaron a Supabase hosted.
+- CUEVA-003B Vencimientos y CUEVA-006D permanecen cerradas. CUEVA-005 no se reabre.
+- Ver [cierre técnico CUEVA-006E](CUEVA-006E-closure.md) para alcance, migraciones, pruebas y límites.
+
 ## PR #67 — Correcciones P2 — REVIEW — 2026-11-19
 
 [Entrega vigente](pr67-corrections-20261119.md) sobre main
