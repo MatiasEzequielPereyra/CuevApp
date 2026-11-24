@@ -31,6 +31,7 @@ export function productConfig() {
   const expectedOwner = process.env.CUEVA_FIRST_ADMIN_EMAIL?.trim().toLowerCase();
   const ownerTest = process.env.CUEVA_DEFAULT_MAIL_OWNER_TEST === "1" && !!expectedOwner && expectedOwner.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(expectedOwner);
   const customMailReady = process.env.CUEVA_EMAIL_TEMPLATE_READY === "1";
+  const selfRegistrationEnabled = process.env.CUEVA_SELF_REGISTRATION_ENABLED === "1" && (local || (customMailReady && !ownerTest));
   if (!local && (process.env.CUEVA_PRODUCT_AUTH_ENABLED !== "1" || (!customMailReady && !ownerTest))) return null;
   const { CUEVA_SUPABASE_URL: url, CUEVA_PUBLISHABLE_KEY: key, CUEVA_SERVICE_KEY: serviceKey, CUEVA_PRODUCT_ORIGIN: origin, CUEVA_AUTH_URL: auth, CUEVA_REST_URL: rest } = process.env;
   if (!url || !key || !serviceKey || !origin || (local && (!auth || !rest))) return null;
@@ -51,7 +52,7 @@ export function productConfig() {
       if (!gateway && !split) return null;
     }
   } catch { return null; }
-  return { url, key, serviceKey, origin, auth, rest, local, ownerTest, expectedOwner, ownerOnly: ownerTest && !customMailReady };
+  return { url, key, serviceKey, origin, auth, rest, local, ownerTest, expectedOwner, ownerOnly: ownerTest && !customMailReady, selfRegistrationEnabled };
 }
 
 export function localFetch(cfg: NonNullable<ReturnType<typeof productConfig>>) {

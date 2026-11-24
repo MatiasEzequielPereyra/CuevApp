@@ -14,7 +14,7 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit",
     "test:docs": "node --test tests/documents.test.mjs tests/prune-merged-branches.test.mjs",
-    "test": "npm run test:fixtures && npm run test:docs && npm run test:student-email-change && npm run test:account-password-change && npm run test:notifications:core && npm run test:notifications:dispatcher && npm run test:notifications:worker && npm run test:notifications:inbox && npm run test:notifications:schedule && npm run test:notifications:brevo && npm run test:notifications:webpush && npm run test:notifications:push-subscription && npm run test:notifications:push-route && npm run test:notifications:worker-endpoint && npm run test:routines:model && npm run test:routines:mentions && npm run test:routines:video-source && npm run test:routines:api && node --test tests/due-date-preview.test.mjs tests/billing-api.test.mjs tests/payments-money.test.mjs tests/reconciliation-transport.test.mjs && npm run test:receipts && playwright test",
+    "test": "npm run test:fixtures && npm run test:docs && npm run test:self-registration && npm run test:student-email-change && npm run test:account-password-change && npm run test:notifications:core && npm run test:notifications:dispatcher && npm run test:notifications:worker && npm run test:notifications:inbox && npm run test:notifications:schedule && npm run test:notifications:brevo && npm run test:notifications:webpush && npm run test:notifications:push-subscription && npm run test:notifications:push-route && npm run test:notifications:worker-endpoint && npm run test:routines:model && npm run test:routines:mentions && npm run test:routines:video-source && npm run test:routines:api && node --test tests/due-date-preview.test.mjs tests/billing-api.test.mjs tests/payments-money.test.mjs tests/reconciliation-transport.test.mjs && npm run test:receipts && playwright test",
     "test:routines:model": "node --experimental-strip-types --test experiments/cueva-006c-local/model.test.mjs",
     "test:e2e": "playwright test",
     "verify": "npm run lint && npm run typecheck && npm run build && npm test",
@@ -39,6 +39,7 @@
     "verify:dependencies": "node scripts/verify-dependencies.mjs",
     "test:account-password-change": "node --test tests/account-password-change-route.test.mjs tests/admin-student-recovery-route.test.mjs",
     "test:student-email-change": "node --test tests/student-email-change-route.test.mjs",
+    "test:self-registration": "node --test tests/self-registration-route.test.mjs tests/self-registration-confirmation.test.mjs tests/self-registration-service.test.mjs",
     "test:fixtures": "node --experimental-strip-types tests/e2e/fixture-lifecycle.integration.mjs"
   },
   "dependencies": {
