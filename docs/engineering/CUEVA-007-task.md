@@ -1,6 +1,6 @@
 # CUEVA-007 — Registro e historial de entrenamiento
 
-Estado: implementada en `feature/cueva-007-workout-tracking`; revisión integral y validación final pendientes.
+Estado: implementación funcional y validaciones automatizadas revisadas en `feature/cueva-007-workout-tracking`; PR #88 continúa en Draft hasta aprobación.
 Base verificada: `main` en `425e23aa3e5d28a1d2ba08c41084e5bba021f297` (PR #87 integrado).
 Este encargo no autoriza merge, despliegue ni aplicación de migraciones a Supabase alojado.
 
@@ -110,7 +110,24 @@ La rama ya contiene una primera implementación de los siguientes componentes:
 
 ## Revisión integral — 2026-11-23
 
-- La carga inicial de resultados se agrupa en solicitudes por lotes para evitar una petición HTTP por cada aparición de ejercicio. El endpoint conserva la consulta individual y la paginación del historial.
+### Validaciones verificadas en el HEAD `01641c8c9f9fd1394b9eed2538524e84229d7424`
+
+- Migraciones Supabase: escenarios fresh, upgrade y hosted-compatible completados correctamente en CI.
+- Verify foundation: existe una ejecución exitosa para este SHA, incluyendo `npm run verify`, `npm run verify:security`, auditorías de dependencias y controles de vulnerabilidades. Una ejecución PR separada fue cancelada durante la instalación/preparación y no se toma como PASS.
+- SQL de membresías, unit tests de menciones, E2E autenticado de menciones y checks aislados CUEVA-006E: completados correctamente.
+- E2E táctil: el flujo de menciones en viewport móvil verifica apertura de preview, acceso al reproductor y cierre por toque exterior.
+- Colores: E2E compara el valor CSS `--mention-hue` de la misma publicación entre Admin y Alumno.
+- Batching: E2E comprueba una única solicitud HTTP de resumen inicial y el conjunto de UUID únicos de la rutina.
 - El panel contextual recibe foco al abrirse y conserva el cierre por Escape y por interacción exterior.
-- Pendiente de evidencia E2E: interacción táctil completa con menciones de texto libre, comparación visual automatizada de colores Admin/Alumno y medición de rutinas extensas.
-- El PR #88 permanece Draft. No autoriza merge, deploy ni migraciones en Supabase hosted.
+
+### Optimizaciones y límites pendientes
+
+- El batching reduce solicitudes HTTP, pero el endpoint todavía ejecuta una llamada `cueva_workout_history` por UUID. Una RPC agregada set-based queda como optimización posterior; no bloquea la funcionalidad validada.
+- No se ha realizado un benchmark cuantitativo de rutinas extensas. La cobertura actual verifica el agrupamiento de solicitudes, no un objetivo de latencia o carga.
+- La validación descrita corresponde a los workflows y ejecuciones inspeccionados; no sustituye una revisión manual en dispositivos físicos ni autoriza integración.
+
+### Estado de entrega
+
+- PR #88 continúa abierta en Draft; no se ha mergeado ni desplegado.
+- No se aplicaron migraciones a Supabase hosted.
+- CUEVA-003B, CUEVA-005, CUEVA-006D y CUEVA-006E permanecen fuera del alcance y como baselines cerrados.
