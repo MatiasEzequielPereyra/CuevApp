@@ -147,10 +147,12 @@ select is(jsonb_array_length(public.cueva_workout_history('c7500000-0000-4000-80
  'history offset returns the next record');
 select is((public.cueva_workout_history_batch(array['c7500000-0000-4000-8000-000000000001'::uuid,'c7500000-0000-4000-8000-000000000002'::uuid,'c7500000-0000-4000-8000-000000000003'::uuid,'c7500000-0000-4000-8000-000000000001'::uuid])->'c7500000-0000-4000-8000-000000000001'->>'last_weight_kg')::numeric,75::numeric,'batch summary returns the latest weight for its UUID');
 select is((public.cueva_workout_history_batch(array['c7500000-0000-4000-8000-000000000002'::uuid])->'c7500000-0000-4000-8000-000000000002'->>'last_duration_seconds')::integer,45,'batch summary returns the latest time-based set duration');
+select is(jsonb_array_length(public.cueva_workout_history_batch(array['c7500000-0000-4000-8000-000000000001'::uuid,'c7500000-0000-4000-8000-000000000002'::uuid])->'c7500000-0000-4000-8000-000000000001'->'entries'),1,'batch summary returns one latest entry even when multiple tracking modes exist');
 select is(jsonb_object_length(public.cueva_workout_history_batch(array['c7500000-0000-4000-8000-000000000001'::uuid,'c7500000-0000-4000-8000-000000000001'::uuid])),1,'batch summaries deduplicate repeated exercise UUIDs');
 select is(jsonb_array_length(public.cueva_workout_history_batch(array['c7500000-0000-4000-8000-000000000003'::uuid])->'c7500000-0000-4000-8000-000000000003'->'entries'),0,'batch summary returns empty history when no records exist');
 select throws_ok($batch_too_many$select public.cueva_workout_history_batch(array(select gen_random_uuid() from generate_series(1,101)))$batch_too_many$,'22023',null,'batch summary rejects more than 100 UUIDs');
 select throws_ok($batch_null$select public.cueva_workout_history_batch(array['c7500000-0000-4000-8000-000000000001'::uuid,null])$batch_null$,'22023',null,'batch summary rejects null UUIDs');
+select throws_ok($batch_empty$select public.cueva_workout_history_batch('{}'::uuid[])$batch_empty$,'22023',null,'batch summary rejects an empty UUID array');
 
 -- A lost response can be retried after the administrator publishes a newer
 -- snapshot. The existing operation must replay instead of creating a duplicate.
