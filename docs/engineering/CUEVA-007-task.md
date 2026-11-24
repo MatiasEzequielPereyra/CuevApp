@@ -131,3 +131,19 @@ La rama ya contiene una primera implementación de los siguientes componentes:
 - PR #88 continúa abierta en Draft; no se ha mergeado ni desplegado.
 - No se aplicaron migraciones a Supabase hosted.
 - CUEVA-003B, CUEVA-005, CUEVA-006D y CUEVA-006E permanecen fuera del alcance y como baselines cerrados.
+
+## Revalidación del HEAD documental — 2026-11-23
+
+HEAD validado: `d5c803212f9eb629d08078eba755bde0bad7293b`.
+
+Los cinco workflows asociados a este SHA finalizaron con conclusión `success`:
+
+- Verify foundation — run `45304481523`.
+- Supabase local migrations — run `45304481478`; jobs fresh, upgrade y hosted-compatible: success.
+- Membership SQL — run `45304481479`.
+- CUEVA-006E isolated checks — run `45304481556`.
+- CUEVA-006E routine mentions E2E — run `45304481538`.
+
+Los jobs relevantes inspeccionados finalizaron correctamente. Esta evidencia actualiza la validación previa del HEAD funcional `01641c8c9f9fd1394b9eed2538524e84229d7424` y confirma que el commit documental también pasó los workflows PR-triggered revisados.
+
+La RPC agregada set-based y el benchmark cuantitativo continúan como optimizaciones no bloqueantes. PR #88 permanece abierta en Draft; no se hizo merge, deploy ni aplicación de migraciones a Supabase hosted.
