@@ -19,18 +19,19 @@ const history = index => ({ last_weight_kg: index, last_duration_seconds: null, 
 
 function endpoint() {
   const rpcIds = [];
+  const rpcCalls = [];
   const client = {
     auth: { getUser: async () => ({ data: { user: { id: "synthetic-student" } }, error: null }) },
     from: () => ({ select: () => ({ maybeSingle: async () => ({ data: { role: "alumno" }, error: null }) }) }),
     rpc: async (name, args) => {
-      assert.equal(name, "cueva_workout_history");
-      assert.equal(args.p_limit, 1);
-      assert.equal(args.p_offset, 0);
-      rpcIds.push(args.p_exercise_id);
-      return { data: history(Number(args.p_exercise_id.slice(-12))), error: null };
+      assert.equal(name, "cueva_workout_history_batch");
+      assert.ok(Array.isArray(args.p_exercise_ids));
+      rpcCalls.push(args.p_exercise_ids);
+      rpcIds.push(...args.p_exercise_ids);
+      return { data: Object.fromEntries(args.p_exercise_ids.map(id => [id, history(Number(id.slice(-12)))])), error: null };
     },
   };
-  return { rpcIds, ...load("src/app/api/entrenamientos/route.ts", {
+  return { rpcIds, rpcCalls, ...load("src/app/api/entrenamientos/route.ts", {
     "next/server": { NextResponse: { json: (data, options) => Response.json(data, options) } },
     "@/lib/product-auth/server": { productConfig: () => ({}), userClient: async () => client },
     "@/lib/routines/request": {},
@@ -56,6 +57,8 @@ for (const count of [100, 101, 300]) {
       assert.deepEqual(sizes, count === 100 ? [100] : count === 101 ? [100, 1] : [100, 100, 100]);
       assert.equal(handler.rpcIds.length, count);
       assert.equal(new Set(handler.rpcIds).size, count);
+      assert.equal(handler.rpcCalls.length, Math.ceil(count / 100));
+      assert.ok(handler.rpcCalls.every(batch => batch.length <= 100));
     } finally { globalThis.fetch = originalFetch; }
   });
 }
@@ -84,4 +87,5 @@ test("the API itself still rejects more than 100 UUIDs", async () => {
   const response = await handler.GET(new Request("https://cueva.example/api/entrenamientos?" + params));
   assert.equal(response.status, 400);
   assert.equal(handler.rpcIds.length, 0);
+  assert.equal(handler.rpcCalls.length, 0);
 });
