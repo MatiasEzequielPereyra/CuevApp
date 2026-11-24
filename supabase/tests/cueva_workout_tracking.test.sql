@@ -178,6 +178,9 @@ where student_id='c7300000-0000-4000-8000-000000000001' and exercise_id='c750000
 set local role authenticated;
 select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')->'entries'->0->>'id'),'c8100000-0000-4000-8000-000000000015',
  'history order is stable by created_at and id when performed_at ties');
+select is((public.cueva_workout_history_batch(array['c7500000-0000-4000-8000-000000000001'::uuid])->'c7500000-0000-4000-8000-000000000001'->'entries'->0->>'id'),
+ 'c8100000-0000-4000-8000-000000000015',
+ 'batch history order is stable by created_at and id when performed_at ties');
 
 select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000003','c7600000-0000-4000-8000-000000000004',
