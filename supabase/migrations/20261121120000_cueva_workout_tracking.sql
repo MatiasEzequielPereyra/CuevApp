@@ -785,6 +785,7 @@ grant execute on function public.cueva_student_mentioned_exercises_with_tracking
 
 commit;
 )
+    or length(p_video_path) <> length(p_id::text) + 42
     or not exists (
       select 1 from storage.objects
       where bucket_id='cueva-exercise-videos' and name=p_video_path
