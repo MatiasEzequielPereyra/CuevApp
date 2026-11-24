@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseVideoSource } from "../src/lib/routines/video-source.ts";
+import { youtubeUrl } from "../src/lib/routines/video.ts";
 
 const id = "dQw4w9WgXcQ";
 
@@ -49,4 +50,21 @@ test("rejects null, arrays, unknown kinds and malformed objects", () => {
   for (const value of [null, [], "video", {}, { kind: "vimeo", url: "https://vimeo.com" }]) {
     assert.equal(parseVideoSource(value), null);
   }
+});
+
+
+test("YouTube catalog URLs match the database allowlist with or without www", () => {
+  for (const url of [
+    `https://youtube.com/watch?v=${id}`,
+    `https://www.youtube.com/watch?v=${id}`,
+    `https://youtube.com/shorts/${id}`,
+    `https://www.youtube.com/embed/${id}`,
+    `https://youtu.be/${id}`,
+  ]) assert.equal(youtubeUrl(url), url);
+  for (const url of [
+    `https://youtube.com/watch?v=${id}&feature=share`,
+    `https://youtube.com/watch?v=${id}#fragment`,
+    `http://youtube.com/watch?v=${id}`,
+    `https://youtube.com.evil.example/watch?v=${id}`,
+  ]) assert.equal(youtubeUrl(url), null);
 });
