@@ -142,6 +142,7 @@ try {
   await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:exerciseName, exact:true})).toBeVisible();
   await page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:exerciseName, exact:true}).click();
   await expect(highlightedMention).toHaveCount(1);
+  const adminMentionHue = await highlightedMention.evaluate(element => getComputedStyle(element).getPropertyValue("--mention-hue").trim());
   // Use a real browser pointer click at the visible mention text. This exercises
   // the textarea's native caret placement and React click handler together.
   await adminTextarea.click({position:mentionClickPoint});
@@ -161,6 +162,7 @@ try {
   await expect(pupil.getByRole("heading", {name:"Ejercicios mencionados"})).toHaveCount(0);
   const mention = pupil.locator(".my-routine-mention");
   await expect(mention).toHaveText(exerciseName);
+  await expect.poll(() => mention.evaluate(element => getComputedStyle(element).getPropertyValue("--mention-hue").trim())).toBe(adminMentionHue);
   await expect(pupil.locator(".my-routine-notes")).toContainText(`🙂 ${exerciseName}`);
   await expect(pupil.getByRole("group", {name:"Día de entrenamiento"})).toHaveCount(0);
 
