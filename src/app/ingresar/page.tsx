@@ -13,7 +13,9 @@ export const metadata: Metadata = {
 };
 
 export default function SignInPage() {
-  const enabled = process.env.VERCEL_ENV === "production" && !!productConfig();
+  const cfg = productConfig();
+  const enabled = process.env.VERCEL_ENV === "production" && !!cfg;
+  const canRegister = enabled && cfg?.selfRegistrationEnabled;
   return (
     <div className={styles.page}>
       <a className="skip-link" href="#contenido">Saltar al contenido</a>
@@ -38,7 +40,9 @@ export default function SignInPage() {
             <h3>¿Olvidaste tu contraseña?</h3>
             <p>Contactá al gimnasio para recibir ayuda con tu acceso. La recuperación por correo para alumnos todavía no está habilitada.</p>
           </div>
-          <p className={styles.invitation}>¿Es tu primera vez? El gimnasio te indicará cómo acceder a tu cuenta.</p>
+          <p className={styles.invitation}>{canRegister
+            ? <>¿Todavía no tenés una cuenta? <Link href="/registrarse">Registrarse</Link></>
+            : "¿Es tu primera vez? El gimnasio te indicará cómo acceder a tu cuenta."}</p>
         </section>
       </main>
       <footer className={styles.footer}><span>HECHA PARA EL GIMNASIO.</span><span>CUEVA · Un lugar para avanzar</span></footer>
