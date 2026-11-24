@@ -70,12 +70,22 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const id = useId();
   const [expanded, setExpanded] = useState(false);
   const [mode, setMode] = useState<"quick" | "sets">("quick");
-  const [weightState, setWeightState] = useState({ exerciseId, value: "" });
-  const [durationState, setDurationState] = useState({ exerciseId, value: "" });
+  const [weightState, setWeightState] = useState({ exerciseId, value: "", dirty: false });
+  const [durationState, setDurationState] = useState({ exerciseId, value: "", dirty: false });
   const weight = weightState.exerciseId === exerciseId ? weightState.value : "";
   const duration = durationState.exerciseId === exerciseId ? durationState.value : "";
-  const setWeight = useCallback((value: string) => setWeightState({ exerciseId, value }), [exerciseId]);
-  const setDuration = useCallback((value: string) => setDurationState({ exerciseId, value }), [exerciseId]);
+  const setWeight = useCallback((value: string) => setWeightState({ exerciseId, value, dirty: true }), [exerciseId]);
+  const setDuration = useCallback((value: string) => setDurationState({ exerciseId, value, dirty: true }), [exerciseId]);
+  const seedInputs = useCallback((next: WorkoutHistory) => {
+    // Server suggestions initialize untouched fields; explicit typing, clearing,
+    // "Usar" and editing history own the draft, including after a save.
+    if (next.last_weight_kg != null) setWeightState(current =>
+      current.exerciseId === exerciseId && current.dirty ? current
+        : { exerciseId, value: String(next.last_weight_kg), dirty: false });
+    if (next.last_duration_seconds != null) setDurationState(current =>
+      current.exerciseId === exerciseId && current.dirty ? current
+        : { exerciseId, value: String(next.last_duration_seconds), dirty: false });
+  }, [exerciseId]);
   const [sets, setSets] = useState<WorkoutSet[]>([{ reps: "", weight: "", duration: "" }]);
   const [historyState, setHistoryState] = useState<{ exerciseId: string; history: WorkoutHistory | null }>({ exerciseId, history: null });
   const history = historyState.exerciseId === exerciseId ? historyState.history : null;
@@ -88,13 +98,17 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const [error, setError] = useState("");
   const busy = useRef(false);
   const operation = useRef<{ fingerprint: string; id: string } | null>(null);
+  const readVersion = useRef(0);
+  const advanceReadVersion = useCallback(() => ++readVersion.current, []);
 
   const loadHistory = useCallback(async (offset = 0, showLoading = true) => {
+    const version = advanceReadVersion();
     if (showLoading) setLoadingHistory(true);
     try {
       const response = await fetch("/api/entrenamientos?exercise_id=" + encodeURIComponent(exerciseId)
         + "&offset=" + offset + "&limit=30", { cache: "no-store" });
       const data = await response.json();
+      if (version !== readVersion.current) return;
       if (!response.ok) throw new Error(data.message || "No pudimos cargar el historial.");
       const next = data.history as WorkoutHistory;
       setHistoryState(current => ({
@@ -104,34 +118,31 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
           : next,
       }));
       if (offset === 0) setSummaryState({ exerciseId, entry: next.entries[0] ?? null });
-      if (offset === 0) {
-        if (next.last_weight_kg !== null && next.last_weight_kg !== undefined) setWeight(String(next.last_weight_kg));
-        if (next.last_duration_seconds !== null && next.last_duration_seconds !== undefined) setDuration(String(next.last_duration_seconds));
-      }
+      if (offset === 0) seedInputs(next);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No pudimos cargar el historial.");
+      if (version === readVersion.current) setError(cause instanceof Error ? cause.message : "No pudimos cargar el historial.");
     } finally {
-      if (showLoading) setLoadingHistory(false);
+      if (showLoading && version === readVersion.current) setLoadingHistory(false);
     }
-  }, [exerciseId, setDuration, setWeight]);
+  }, [exerciseId, seedInputs, advanceReadVersion]);
 
   // Keep the visible "REALIZADO" state in sync on first render/reload without
   // eagerly downloading the full editable history for every exercise.
   useEffect(() => {
     let cancelled = false;
+    const version = readVersion.current;
     void (async () => {
       try {
         const next = await requestWorkoutSummary(exerciseId);
-        if (cancelled) return;
+        if (cancelled || version !== readVersion.current) return;
         setSummaryState({ exerciseId, entry: next.entries?.[0] ?? null });
-        if (next.last_weight_kg !== null && next.last_weight_kg !== undefined) setWeight(String(next.last_weight_kg));
-        if (next.last_duration_seconds !== null && next.last_duration_seconds !== undefined) setDuration(String(next.last_duration_seconds));
+        seedInputs(next);
       } catch {
         // The logger and full history remain available if the summary request fails.
       }
     })();
-    return () => { cancelled = true; };
-  }, [exerciseId, setDuration, setWeight]);
+    return () => { cancelled = true; advanceReadVersion(); };
+  }, [exerciseId, publicationId, seedInputs, advanceReadVersion]);
 
   async function save(modeOverride?: "quick" | "sets", quickValueOverride?: number) {
     if (busy.current) return;
@@ -195,6 +206,8 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       ? operation.current.id
       : crypto.randomUUID();
     if (operationId) operation.current = { fingerprint, id: operationId };
+    // A read started before this write cannot replace the refreshed result.
+    const version = advanceReadVersion();
     try {
       const response = await fetch("/api/entrenamientos", {
         method: editingEntry ? "PATCH" : "POST",
@@ -205,6 +218,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
           : { id: operationId, publication_id: publicationId, exercise_id: exerciseId, target_id: targetId ?? null, ...payload }),
       });
       const data = await response.json();
+      if (version !== readVersion.current) return;
       if (!response.ok) throw new Error(data.message || "No pudimos guardar el registro.");
       operation.current = null;
       setMessage(editingEntry ? "Cambios guardados." : "Resultado guardado.");

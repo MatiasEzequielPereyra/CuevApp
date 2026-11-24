@@ -1,5 +1,16 @@
 # Checkpoint CUEVA
 
+## PR #88 — Correcciones de auditoría — REVIEW — 2026-11-24
+
+[Correcciones y secuencia operativa](CUEVA-007-task.md): se conserva la entrada
+editable frente a respuestas tardías y se divide el batch respetando máximo100.
+Base main `425e23aa3e5d28a1d2ba08c41084e5bba021f297`, candidato anterior
+`368709119d14e7bc01aeb1a0e8a53fed45f7f81b`. Navegador real con respuestas
+sintéticas 8/8; batch/GET5/5; API3/3; menciones12/12. HEAD final/CI en el PR.
+Sin merge, despliegue ni SQL alojado. La publicación requiere comprobar/aplicar
+el esquema de entrenamiento bajo autorización operativa separada.
+Los estados históricos inferiores no certifican el nuevo HEAD.
+
 ## Estado vigente — 2026-11-20 · CUEVA-006E
 
 - CUEVA-006D / PR #67 está integrado en main y permanece cerrado.

@@ -147,3 +147,70 @@ Los cinco workflows asociados a este SHA finalizaron con conclusión `success`:
 Los jobs relevantes inspeccionados finalizaron correctamente. Esta evidencia actualiza la validación previa del HEAD funcional `01641c8c9f9fd1394b9eed2538524e84229d7424` y confirma que el commit documental también pasó los workflows PR-triggered revisados.
 
 La RPC agregada set-based y el benchmark cuantitativo continúan como optimizaciones no bloqueantes. PR #88 permanece abierta en Draft; no se hizo merge, deploy ni aplicación de migraciones a Supabase hosted.
+
+
+## Correcciones de auditoría — 2026-11-24 — REVIEW
+
+Base main: `425e23aa3e5d28a1d2ba08c41084e5bba021f297`, ya incluida en el
+candidato recibido `368709119d14e7bc01aeb1a0e8a53fed45f7f81b`. No hay conflicto
+ni necesidad de reescribir los commits anteriores de #88.
+
+- GET retenido reproducido en el componente real: escribir 80 y liberar una
+  respuesta con último valor 50 dejaba el campo en 50. Peso y duración ahora
+  distinguen sugerencias de campos editados: las respuestas solo inicializan
+  valores intactos. Escribir, vaciar, usar una sugerencia o editar historial
+  conserva el control del borrador incluso tras guardar.
+- Las lecturas llevan una versión. Una consulta completa más reciente, una
+  escritura o el cambio de identidad de ejercicio/publicación invalida las
+  respuestas anteriores. Un resumen previo al guardado no sustituye al resultado
+  actualizado ni escribe sobre sus campos. Los errores obsoletos también se ignoran.
+- El batch conserva deduplicación por UUID y divide las solicitudes en grupos
+  de hasta 100. El endpoint conserva su validación de máximo 100; una rutina con
+  300 UUIDs genera tres solicitudes. El fallo de un grupo no rechaza los otros.
+  No se agrega una RPC ni se altera API, permisos o datos.
+
+Pruebas nuevas: `tests/e2e/workout-logger.spec.ts` usa Next y el componente real
+con respuestas sintéticas retenidas en Chromium. Ocho escenarios: resumen e
+historial tardíos, resumen anterior liberado después de guardar, y edición
+mientras el historial posterior al guardado sigue pendiente, para peso y tiempo.
+Se demostró RED 80→50 antes del arreglo y GREEN 8/8 después.
+`tests/workout-summary-batch.test.mjs` ejecuta el batch y el cuerpo real del GET
+con Auth/RPC sintéticos: 100/101/300, error de un grupo/reintento y rechazo directo
+de más de 100 en API. Antes 3 fallos; después 5/5. Se integra en
+`test:routines:api`. No se atribuye este ensayo sintético a Auth/RLS alojados.
+
+Verificación local nueva: navegador 8/8, batch 5/5, API rutinas 3/3, menciones
+12/12; lint, tipos y build aprobados. Documentos, fuentes, manifiesto, seguridad
+y diff se verifican antes de la entrega. La CI del HEAD final queda registrada
+en #88. Los resultados históricos de este documento corresponden solo a sus
+SHAs; el rerun receipt-storage del candidato previo fue informado SUCCESS por
+el Orchestrator y no se reutiliza como prueba del nuevo HEAD.
+
+### Secuencia de publicación pendiente (no ejecutada)
+
+1. Auditar y aprobar el HEAD exacto. Confirmar main y que el esquema previo
+   coincide con sus migraciones, incluidas dependencias de 006E; no deducirlo
+   únicamente del número de entradas del historial. El Orchestrator reportó
+   33 migraciones alojadas, sin tablas de entrenamiento ni RPC de registro personal.
+2. Con autorización operativa separada, preflight/backup y aplicación controlada
+   de `20261121120000_cueva_workout_tracking.sql`, SHA256 de bytes Git:
+   `c1e5b00f4309fac22f06f5741429d596af37b282e758f6584124920f4148aa3d`.
+   Verificar `tracking_mode`, tablas, RPC, RLS/grants y ausencia de cambios en
+   objetivos publicados. Esta corrección no modifica esa migración ni ninguna
+   histórica. No aplicar migraciones del #83 como dependencia del #88.
+3. Publicar la aplicación solo después de verificar el esquema requerido.
+   Comprobar registro/historial con alumnos sintéticos autorizados y aislamiento.
+   La matriz CI fresh/upgrade/hosted-compatible es evidencia local, no aplicación
+   alojada ni autorización de escritura.
+4. Rollback conservador: retirar el código de la funcionalidad si falla la prueba;
+   conservar entradas/historial y el esquema aditivo. No borrar datos ni revertir
+   SQL destructivamente. Registrar cualquier operación posterior por separado.
+
+Sin merge, deploy, SQL, flags ni envíos alojados. No se reinició Docker ni se
+intervino en contenedores de otros proyectos. La fixture retira solo su proceso
+y directorio temporal; la entrega no deja un servidor de laboratorio activo.
+
+SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`,
+`vercel:react-best-practices` (actualizaciones funcionales, efectos y respuestas
+obsoletas; revisión del diff React). SKILL_SOURCES:
+`.agents/skills/cueva-feature-development/SKILL.md` y guía React del host.

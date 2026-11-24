@@ -28,6 +28,14 @@ function flush() {
   const batch = [...pending.entries()];
   pending.clear();
   if (!batch.length) return;
+  // The authenticated endpoint deliberately accepts at most 100 UUIDs. A
+  // valid routine can contain 300 mentions; each chunk settles independently.
+  for (let offset = 0; offset < batch.length; offset += 100) {
+    sendBatch(batch.slice(offset, offset + 100));
+  }
+}
+
+function sendBatch(batch: [string, PendingRequest][]) {
   const params = new URLSearchParams();
   params.set("summary", "1");
   for (const [exerciseId] of batch) params.append("exercise_id", exerciseId);
