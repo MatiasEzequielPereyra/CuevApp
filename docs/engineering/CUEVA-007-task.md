@@ -214,3 +214,34 @@ SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`,
 `vercel:react-best-practices` (actualizaciones funcionales, efectos y respuestas
 obsoletas; revisión del diff React). SKILL_SOURCES:
 `.agents/skills/cueva-feature-development/SKILL.md` y guía React del host.
+
+## Revalidación posterior a correcciones de video — 2026-11-24
+
+HEAD funcional validado: `368709119d14e7bc01aeb1a0e8a53fed45f7f81b`.
+
+Correcciones cubiertas por este candidato:
+
+- La validación SQL de rutas de video acepta MP4, MOV y WebM, con UUID canónico y extensión permitida.
+- La validación SQL de YouTube queda alineada con TypeScript: admite `youtube.com` con o sin `www`, además de `youtu.be`, y rechaza parámetros adicionales o fragmentos.
+- Se agregaron casos SQL y unitarios para formatos/extensiones y variantes de URL válidas e inválidas.
+
+### GitHub Actions del HEAD exacto
+
+Los jobs pertinentes consultados finalizaron con `success`:
+
+- Verify foundation — run `45388302691`, job `verify`.
+- Supabase local migrations — run `45388302825`: fresh, upgrade y hosted-compatible.
+- CUEVA-006E isolated checks — run `45388302680`, job Routine mentions unit tests.
+- CUEVA-006E routine mentions E2E — run `45388302679`, job Authenticated routine mentions E2E.
+- Membership SQL — run `45388302735`, job específico `membership-sql`.
+
+**Salvedad:** el workflow agregado Membership SQL reportó conclusión `failure`, aunque el job `membership-sql` inspeccionado terminó `success`. No se inspeccionó `receipt-storage`, que permanece fuera del alcance; por tanto no se atribuye el fallo agregado a CUEVA-007 ni se afirma que el workflow completo haya pasado.
+
+Esta evidencia confirma los jobs relevantes del SHA indicado; no se extrapola a otros commits ni reemplaza pruebas en dispositivos físicos o validaciones alojadas.
+
+### Estado de entrega actualizado
+
+- Las correcciones de validación de video/YouTube y sus jobs pertinentes están aprobados por CI en el HEAD indicado.
+- La limpieza automática de videos huérfanos continúa como mejora pendiente; no se incorpora borrado automático sin política de retención y protección frente a asociaciones concurrentes.
+- PR #88 permanece abierta en Draft. No se hizo merge, deploy ni aplicación de migraciones a Supabase hosted.
+- CUEVA-003B, CUEVA-005, CUEVA-006D y CUEVA-006E continúan como baselines cerrados y fuera del alcance de cambios.
