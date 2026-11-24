@@ -72,6 +72,12 @@ begin
   latest_modes as (
     select exercise_id,tracking_mode,last_weight_kg,last_duration_seconds from ranked_modes where mode_rank=1
   ),
+  mode_summaries as (
+    select exercise_id,
+      max(last_weight_kg) filter(where tracking_mode='weight') as last_weight_kg,
+      max(last_duration_seconds) filter(where tracking_mode='time') as last_duration_seconds
+    from latest_modes group by exercise_id
+  ),
   latest_entries as (
     select e.exercise_id,e.entry_count,jsonb_build_object(
       'id',e.id,'performed_at',e.performed_at,'updated_at',e.updated_at,'revision',e.revision,
@@ -84,13 +90,12 @@ begin
     from ranked_entries e where e.entry_rank=1
   ),
   assembled as (
-    select r.exercise_id,
-      max(m.last_weight_kg) filter(where m.tracking_mode='weight') as last_weight_kg,
-      max(m.last_duration_seconds) filter(where m.tracking_mode='time') as last_duration_seconds,
+    select r.exercise_id,m.last_weight_kg,m.last_duration_seconds,
       coalesce(jsonb_agg(e.entry_json) filter(where e.entry_json is not null),'[]'::jsonb) as entries,
       coalesce(bool_or(e.entry_count>1),false) as has_more
-    from requested r left join latest_modes m on m.exercise_id=r.exercise_id
-      left join latest_entries e on e.exercise_id=r.exercise_id group by r.exercise_id
+    from requested r left join mode_summaries m on m.exercise_id=r.exercise_id
+      left join latest_entries e on e.exercise_id=r.exercise_id
+    group by r.exercise_id,m.last_weight_kg,m.last_duration_seconds
   )
   select coalesce(jsonb_object_agg(exercise_id::text,jsonb_build_object(
     'last_weight_kg',last_weight_kg,'last_duration_seconds',last_duration_seconds,'entries',entries,'has_more',has_more
