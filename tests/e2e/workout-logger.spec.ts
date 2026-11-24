@@ -105,4 +105,3 @@ for (const mode of ["weight", "time"] as const) {
     });
   }
 }
-
