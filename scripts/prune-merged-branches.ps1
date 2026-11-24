@@ -61,10 +61,20 @@ function Get-GitHubObject {
     return ($output | Out-String | ConvertFrom-Json)
 }
 
+# Una URL literal también está sujeta a insteadOf/pushInsteadOf. Rechazar
+# reescrituras antes de auditar refs: gh y Git deben apuntar al mismo repo.
+$rewrites = & git config --get-regexp '^url\..*\.(insteadOf|pushInsteadOf)$' 2>&1
+if ($LASTEXITCODE -notin @(0, 1) -or $rewrites) {
+    throw 'No se admiten reescrituras de URL Git para esta operación.'
+}
 # No aceptar otro remoto ni opciones de push heredadas de su configuración.
 $origin = & git remote get-url origin 2>&1
 if ($LASTEXITCODE -ne 0 -or ($origin | Out-String).Trim() -cne $PushUrl) {
     throw 'Origen inesperado: se requiere el repositorio HTTPS exacto de CUEVA.'
+}
+$pushOrigin = & git remote get-url --push origin 2>&1
+if ($LASTEXITCODE -ne 0 -or ($pushOrigin | Out-String).Trim() -cne $PushUrl) {
+    throw 'Destino de push inesperado: se requiere CUEVA, sin forks ni pushurl alternativo.'
 }
 
 $null = Get-GitHubObject -ApiPath "repos/$Repository/git/ref/heads/main"
@@ -108,7 +118,7 @@ foreach ($candidate in $Candidates) {
     # Lease explícito independiente de origin/*; URL fija, refspec exacto y
     # sin hooks locales ni submódulos que puedan realizar operaciones extra.
     $targetRef = "refs/heads/$($candidate.Name)"
-    $deleteResult = & git -c core.hooksPath=NUL push --porcelain --no-verify --recurse-submodules=no --force-with-lease="${targetRef}:$($candidate.Sha)" $PushUrl ":$targetRef" 2>&1
+    $deleteResult = & git -c core.hooksPath=NUL push --porcelain --no-verify --no-follow-tags --recurse-submodules=no --force-with-lease="${targetRef}:$($candidate.Sha)" $PushUrl ":$targetRef" 2>&1
     if ($LASTEXITCODE -ne 0) {
         $skipped += 1
         Write-Warning ("NO BORRADA {0}: {1}" -f $candidate.Name, ($deleteResult | Out-String))

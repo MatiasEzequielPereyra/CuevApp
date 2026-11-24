@@ -8,5 +8,5 @@ test("branch cleanup uses a server-side lease and rejects a concurrent push, off
   });
   assert.ifError(result.error);
   assert.equal(result.status, 0, result.stdout + result.stderr);
-  assert.equal((result.stdout.match(/PASS /g) ?? []).length, 9, result.stdout);
+  assert.equal((result.stdout.match(/PASS /g) ?? []).length, 11, result.stdout);
 });
