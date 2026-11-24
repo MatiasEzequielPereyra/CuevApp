@@ -37,6 +37,9 @@ select ok(has_function_privilege('authenticated','public.cueva_workout_update(uu
  'authenticated students can edit their own workout records');
 select ok(not has_function_privilege('anon','public.cueva_workout_update(uuid,integer,text,text,numeric,integer,jsonb)','EXECUTE'),
  'anonymous users cannot edit workout records');
+select ok(to_regprocedure('public.cueva_workout_history_batch(uuid[])') is not null,'workout summary batch RPC is installed');
+select ok(has_function_privilege('authenticated','public.cueva_workout_history_batch(uuid[])','EXECUTE'),'authenticated students can call the summary batch RPC');
+select ok(not has_function_privilege('anon','public.cueva_workout_history_batch(uuid[])','EXECUTE'),'anonymous users cannot call the summary batch RPC');
 insert into auth.users(id,aud,role,email,created_at,updated_at) values
  ('c7100000-0000-4000-8000-000000000001','authenticated','authenticated','workout-a@example.test',now(),now()),
  ('c7100000-0000-4000-8000-000000000002','authenticated','authenticated','workout-b@example.test',now(),now());
@@ -142,6 +145,12 @@ select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000001',1
  'history indicates when older records remain');
 select is(jsonb_array_length(public.cueva_workout_history('c7500000-0000-4000-8000-000000000001',1,1)->'entries'),1,
  'history offset returns the next record');
+select is((public.cueva_workout_history_batch(array['c7500000-0000-4000-8000-000000000001'::uuid,'c7500000-0000-4000-8000-000000000002'::uuid,'c7500000-0000-4000-8000-000000000003'::uuid,'c7500000-0000-4000-8000-000000000001'::uuid])->'c7500000-0000-4000-8000-000000000001'->>'last_weight_kg')::numeric,75::numeric,'batch summary returns the latest weight for its UUID');
+select is((public.cueva_workout_history_batch(array['c7500000-0000-4000-8000-000000000002'::uuid])->'c7500000-0000-4000-8000-000000000002'->>'last_duration_seconds')::integer,45,'batch summary returns the latest time-based set duration');
+select is(jsonb_object_length(public.cueva_workout_history_batch(array['c7500000-0000-4000-8000-000000000001'::uuid,'c7500000-0000-4000-8000-000000000001'::uuid])),1,'batch summaries deduplicate repeated exercise UUIDs');
+select is(jsonb_array_length(public.cueva_workout_history_batch(array['c7500000-0000-4000-8000-000000000003'::uuid])->'c7500000-0000-4000-8000-000000000003'->'entries'),0,'batch summary returns empty history when no records exist');
+select throws_ok($batch_too_many$select public.cueva_workout_history_batch(array(select gen_random_uuid() from generate_series(1,101)))$batch_too_many$,'22023',null,'batch summary rejects more than 100 UUIDs');
+select throws_ok($batch_null$select public.cueva_workout_history_batch(array['c7500000-0000-4000-8000-000000000001'::uuid,null])$batch_null$,'22023',null,'batch summary rejects null UUIDs');
 
 -- A lost response can be retried after the administrator publishes a newer
 -- snapshot. The existing operation must replay instead of creating a duplicate.
@@ -161,6 +170,12 @@ select is((public.cueva_workout_record(
  'quick','weight',68,null,'[]'::jsonb)->'entry'->>'id'),
  'c8100000-0000-4000-8000-000000000015',
  'an exact retry replays after a newer publication is committed');
+reset role;
+update public.cueva_workout_entries set performed_at=timestamptz '2026-01-01 12:00:00+00',created_at=timestamptz '2026-01-01 12:00:00+00'
+where student_id='c7300000-0000-4000-8000-000000000001' and exercise_id='c7500000-0000-4000-8000-000000000001';
+set local role authenticated;
+select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')->'entries'->0->>'id'),'c8100000-0000-4000-8000-000000000015',
+ 'history order is stable by created_at and id when performed_at ties');
 
 select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000003','c7600000-0000-4000-8000-000000000004',
@@ -217,6 +232,8 @@ select is(public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')->
  'history is isolated by authenticated student');
 select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000003')->>'last_weight_kg')::numeric,45::numeric,
  'text exercise history is keyed by UUID for its owner');
+select is((public.cueva_workout_history_batch(array['c7500000-0000-4000-8000-000000000001'::uuid])->'c7500000-0000-4000-8000-000000000001'->>'last_weight_kg'),null,'batch history does not expose another students workout');
+select is(jsonb_array_length(public.cueva_workout_history_batch(array['c7500000-0000-4000-8000-000000000001'::uuid])->'c7500000-0000-4000-8000-000000000001'->'entries'),0,'batch history returns empty results for another students exercise');
 
 reset role;
 set local role anon;
