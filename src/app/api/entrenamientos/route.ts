@@ -34,15 +34,9 @@ export async function GET(req: Request) {
     if (exerciseIds.length < 1 || exerciseIds.length > 100 || exerciseIds.some(id => !uuid.test(id))) {
       return reply({ message: "Lista de ejercicios inválida." }, 400);
     }
-    const results = await Promise.all(exerciseIds.map(async exerciseId => {
-      const { data, error } = await client.rpc("cueva_workout_history", {
-        p_exercise_id: exerciseId, p_limit: 1, p_offset: 0,
-      });
-      return { exerciseId, data, error };
-    }));
-    const failed = results.find(result => result.error);
-    if (failed) return reply({ message: "No pudimos cargar los últimos registros." }, failed.error?.code === "42501" ? 403 : 503);
-    return reply({ histories: Object.fromEntries(results.map(result => [result.exerciseId, result.data])) });
+    const { data, error } = await client.rpc("cueva_workout_history_batch", { p_exercise_ids: exerciseIds });
+    if (error) return reply({ message: "No pudimos cargar los últimos registros." }, error.code === "42501" ? 403 : 503);
+    return reply({ histories: data });
   }
   const exerciseId = exerciseIds[0] ?? "";
   const offset = Number(params.get("offset") ?? 0);
