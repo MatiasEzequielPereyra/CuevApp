@@ -281,6 +281,30 @@ try {
   await mention.hover();
   await expect(preview).toHaveCount(0);
   await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
+  // Touch coverage for the published free-text mention: opening, interacting
+  // inside the floating panel, and dismissing it with an outside tap.
+  const touchContext = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await touchContext.addCookies(learner.cookies);
+  const touchPage = await touchContext.newPage();
+  await touchPage.goto(`${origin}/mi-rutina`);
+  const touchMention = touchPage.locator(".my-routine-mention").filter({ hasText: exerciseName }).first();
+  const touchPreview = touchPage.getByRole("dialog", { name: `Ejercicio: ${exerciseName}` });
+  await touchMention.tap();
+  await expect(touchPreview).toBeVisible();
+  await expect(touchPreview.getByRole("button", { name: "Ver video" })).toBeVisible();
+  // Tapping an action inside the panel must not be treated as an outside tap.
+  await touchPreview.getByRole("button", { name: "Ver video" }).tap();
+  const touchPlayer = touchPage.getByRole("dialog", { name: exerciseName });
+  await expect(touchPlayer).toBeVisible();
+  await touchPage.touchscreen.tap(5, 5);
+  await expect(touchPlayer).toHaveCount(0);
+  await expect(touchPreview).toHaveCount(0);
+  // The mention remains usable after dismissal; a second outside tap closes preview.
+  await touchMention.tap();
+  await expect(touchPreview).toBeVisible();
+  await touchPage.touchscreen.tap(5, 5);
+  await expect(touchPreview).toHaveCount(0);
+  await touchContext.close();
   console.log("PASS: authenticated text mention preview, no-video state, inline video playback, keyboard dismissal and no navigation.");
 } finally {
   await browser?.close();
