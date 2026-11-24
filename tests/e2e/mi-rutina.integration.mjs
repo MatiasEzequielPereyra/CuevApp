@@ -289,7 +289,21 @@ try {
         return originalFetch(input, init);
       };
     }, { exerciseId: press.id });
+    const summaryBatchRequests = [];
+    await pupil.route("**/api/entrenamientos*", async route => {
+      const url = new URL(route.request().url());
+      if (url.searchParams.get("summary") === "1") {
+        summaryBatchRequests.push(url.searchParams.getAll("exercise_id"));
+      }
+      await route.continue();
+    });
     await pupil.goto(`${origin}/mi-rutina`);
+    await expect.poll(() => summaryBatchRequests.length).toBe(1);
+    assert.deepEqual(
+      [...new Set(summaryBatchRequests[0])].sort(),
+      exercises.slice(0, 6).map(exercise => exercise.id).sort(),
+      "La rutina extensa debe agrupar en una sola solicitud HTTP los seis UUID únicos, sin duplicar ejercicios repetidos."
+    );
     await expect(pupil.getByRole("heading", {name:"Descripciones de ejercicios"})).toHaveCount(0);
     const weightedRow = pupil.locator(".my-routine-exercise-item").filter({ hasText: "Press militar" });
     const timedRow = pupil.locator(".my-routine-exercise-item").filter({ hasText: "Plancha" });
