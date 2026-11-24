@@ -58,8 +58,10 @@ test("el contenido identifica período, vencimiento y saldo pendiente", () => {
 });
 
 test("rechaza fechas, horarios y saldos inválidos", () => {
-  assert.throws(() => buildReminderPlan({ ...period, dueOn: "2026-02-30" }, "12:00", new Date()));
-  assert.throws(() => buildReminderPlan(period, "25:00", new Date()));
-  assert.throws(() => buildReminderPlan({ ...period, balanceCents: -1 }, "12:00", new Date()));
-  assert.throws(() => buildReminderPlan({ ...period, balanceCents: "7.500" }, "12:00", new Date()));
+  // Fecha anterior al vencimiento: el test valida errores independientemente del reloj del CI.
+  const beforeDue = new Date("2026-11-15T15:00:00.000Z");
+  assert.throws(() => buildReminderPlan({ ...period, dueOn: "2026-02-30" }, "12:00", beforeDue));
+  assert.throws(() => buildReminderPlan(period, "25:00", beforeDue));
+  assert.throws(() => buildReminderPlan({ ...period, balanceCents: -1 }, "12:00", beforeDue));
+  assert.throws(() => buildReminderPlan({ ...period, balanceCents: "7.500" }, "12:00", beforeDue));
 });

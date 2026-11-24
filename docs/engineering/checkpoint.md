@@ -1,6 +1,21 @@
 # Checkpoint CUEVA
 
-## Estado vigente reconciliado — 2026-11-19 (prevalece sobre REVIEW históricos)
+## Estado reconciliado — 2026-11-24
+
+Main verificado `425e23aa3e5d28a1d2ba08c41084e5bba021f297` incluye #82 y
+#84–#87: CUEVA-006E ya integrada; los fallos y estados abiertos de noviembre
+19/20 se conservan abajo como historia. Vencimientos, CUEVA-006D y CUEVA-005
+mantienen sus baselines. PR pendientes: #75 documentación y borrado seguro,
+#83 registro personal apagado por defecto y #88 entrenamiento en Draft.
+
+[Reconciliación y entrega del 24/11](REPO-STATUS-2026-11-24.md): procedencia,
+límites, ramas y prueba de lease. Sin borrados de ramas ni cambios alojados.
+Producción READY en main y 33 migraciones son resultados informados por el
+Orchestrator el 24/11, no verificaciones remotas nuevas de este ejecutor.
+La activación del registro, SQL de entrenamiento, Cron, entrega Push y offline
+no se dan por realizados. Esta sección prevalece sobre las fotos inferiores.
+
+## Foto histórica reconciliada — 2026-11-19
 
 El [inventario verificado de GitHub, Supabase, Vercel y 33 ramas](REPO-STATUS-2026-11-19.md)
 registra `main` en `aa7cd36041412aa1b14a4d2b0f6145728084cb5d`, CI
@@ -23,6 +38,17 @@ los SHAs, referencias, riesgos y acciones pendientes.
 **Los informes inferiores se conservan como evidencia histórica a su fecha.**
 En particular, el estado REVIEW de PR #67 y la frase «RPC pendiente» del
 17/11 quedaron superados por las verificaciones del 19/11.
+
+## Foto histórica — 2026-11-20 · CUEVA-006E
+
+- CUEVA-006D / PR #67 está integrado en main y permanece cerrado.
+- CUEVA-006E está implementada en `feature/cueva-006e-exercise-mention-preview`; PR #82 abierto contra `main`, no Draft y mergeable en la última lectura. No está mergeado ni desplegado a producción.
+- HEAD de código validado por los cinco workflows asociados al PR: `9807876c0ccf1bbf9ad5c6bcbee5c60213b417a0`. Base `main`: `e9dffe16de5ae76eb01eb24b4de490dd3e33b806`. La reconciliación documental en curso cambia el HEAD; los checks del nuevo commit deben confirmarse antes de integración.
+- CI del PR #82: Verify foundation #1313, routine mentions E2E #25, isolated checks #15, Supabase local migrations #679 y Membership SQL #342; todos SUCCESS sobre el HEAD indicado. Ver [PR #82](https://github.com/MatiasEzequielPereyra/CuevApp/pull/82).
+- El Preview Vercel del PR fue reportado Ready; no equivale a publicación de producción.
+- La sincronización conserva PR #80 (instalación PWA) y PR #81 (fixtures de notificaciones con fechas relativas). Las migraciones de 006E se probaron localmente; no se aplicaron a Supabase hosted.
+- CUEVA-003B Vencimientos y CUEVA-006D permanecen cerradas. CUEVA-005 no se reabre.
+- Ver [cierre técnico CUEVA-006E](CUEVA-006E-closure.md) para alcance, migraciones, pruebas y límites.
 
 ## PR #67 — Correcciones P2 — REVIEW — 2026-11-19
 

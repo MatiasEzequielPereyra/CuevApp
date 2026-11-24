@@ -1,10 +1,11 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
   Muestra o borra solo las ramas CUEVA documentadas como HEAD exactos de PRs fusionados.
 .DESCRIPTION
   Por defecto no borra nada. Revalida el SHA remoto y el PR MERGED inmediatamente
-  antes de cada eliminación. Omite ramas cambiadas, protegidas o ya inexistentes.
+  antes de cada eliminación. El servidor compara el SHA al borrar mediante lease
+  explícito. Omite ramas cambiadas, protegidas, de forks o ya inexistentes.
   GitHub CLI (gh) debe estar autenticado con acceso al repositorio.
   Origen: docs/engineering/REPO-STATUS-2026-11-19.md.
 .EXAMPLE
@@ -17,6 +18,7 @@ param([switch]$Apply)
 
 $ErrorActionPreference = 'Stop'
 $Repository = 'MatiasEzequielPereyra/CuevApp'
+$PushUrl = "https://github.com/$Repository.git"
 
 $Candidates = @(
     @{ Name = 'codex/cueva-005-notification-fixes'; Sha = '7ade92558364a9fcd6d75c44c81d2446d5769355'; Pr = 65 }
@@ -59,6 +61,12 @@ function Get-GitHubObject {
     return ($output | Out-String | ConvertFrom-Json)
 }
 
+# No aceptar otro remoto ni opciones de push heredadas de su configuración.
+$origin = & git remote get-url origin 2>&1
+if ($LASTEXITCODE -ne 0 -or ($origin | Out-String).Trim() -cne $PushUrl) {
+    throw 'Origen inesperado: se requiere el repositorio HTTPS exacto de CUEVA.'
+}
+
 $null = Get-GitHubObject -ApiPath "repos/$Repository/git/ref/heads/main"
 $ok = 0
 $deleted = 0
@@ -77,6 +85,9 @@ foreach ($candidate in $Candidates) {
         if ([string]::IsNullOrWhiteSpace([string]$pr.merged_at) -or $pr.state -ne 'closed') {
             throw ("PR #{0} ya no acredita MERGED" -f $candidate.Pr)
         }
+        if ($pr.head.repo.full_name -cne $Repository -or $pr.base.repo.full_name -cne $Repository -or $pr.base.ref -cne 'main') {
+            throw 'El PR debe provenir del mismo repositorio y estar integrado en main; no se admiten forks.'
+        }
         if ($pr.head.ref -ne $candidate.Name -or $pr.head.sha -ne $candidate.Sha) {
             throw ("El HEAD del PR #{0} no coincide con la rama remota" -f $candidate.Pr)
         }
@@ -92,7 +103,12 @@ foreach ($candidate in $Candidates) {
         continue
     }
 
-    $deleteResult = & gh api --method DELETE "repos/$Repository/git/refs/heads/$($candidate.Name)" 2>&1
+    # Compare-and-delete atómico en receive-pack. No hacer DELETE REST: otra
+    # escritura podría avanzar la rama entre el GET anterior y el borrado.
+    # Lease explícito independiente de origin/*; URL fija, refspec exacto y
+    # sin hooks locales ni submódulos que puedan realizar operaciones extra.
+    $targetRef = "refs/heads/$($candidate.Name)"
+    $deleteResult = & git -c core.hooksPath=NUL push --porcelain --no-verify --recurse-submodules=no --force-with-lease="${targetRef}:$($candidate.Sha)" $PushUrl ":$targetRef" 2>&1
     if ($LASTEXITCODE -ne 0) {
         $skipped += 1
         Write-Warning ("NO BORRADA {0}: {1}" -f $candidate.Name, ($deleteResult | Out-String))

@@ -1,6 +1,30 @@
 # Backlog de CUEVA
 
-## Estado vigente reconciliado — 2026-11-19
+## Estado reconciliado — 2026-11-24
+
+Main verificado `425e23aa3e5d28a1d2ba08c41084e5bba021f297` incluye #82 y
+#84–#87: CUEVA-006E ya integrada; los fallos y estados abiertos de noviembre
+19/20 se conservan abajo como historia. Vencimientos, CUEVA-006D y CUEVA-005
+mantienen sus baselines. PR pendientes: #75 documentación y borrado seguro,
+#83 registro personal apagado por defecto y #88 entrenamiento en Draft.
+
+[Reconciliación y entrega del 24/11](REPO-STATUS-2026-11-24.md): procedencia,
+límites, ramas y prueba de lease. Sin borrados de ramas ni cambios alojados.
+Producción READY en main y 33 migraciones son resultados informados por el
+Orchestrator el 24/11, no verificaciones remotas nuevas de este ejecutor.
+La activación del registro, SQL de entrenamiento, Cron, entrega Push y offline
+no se dan por realizados. Esta sección prevalece sobre las fotos inferiores.
+
+## Foto histórica — 2026-11-20
+
+- **CUEVA-006D:** PR #67 integrado en `main`; cerrado. Ver [encargo y handoff](CUEVA-006D-task.md).
+- **CUEVA-006E:** implementación terminada y PR #82 abierto contra `main`, en `feature/cueva-006e-exercise-mention-preview`. Los cinco workflows asociados al PR pasaron en HEAD `9807876c0ccf1bbf9ad5c6bcbee5c60213b417a0`; la reconciliación documental genera un nuevo HEAD cuyos checks deben confirmarse antes de integrar. No se ha mergeado ni desplegado a producción. Ver [PR #82](https://github.com/MatiasEzequielPereyra/CuevApp/pull/82) y [cierre técnico](CUEVA-006E-closure.md).
+- **CUEVA-PWA-INSTALL-001:** instalación guiada Android/iOS integrada en main mediante PR #80. La lectura offline de rutinas sigue siendo un alcance distinto y pendiente.
+- CUEVA-003B Vencimientos y CUEVA-006D permanecen cerradas. No reabrir ni alterar esos baselines.
+
+Esta sección supersede los estados anteriores de tracks que contradigan los incrementos y PR indicados; las secciones inferiores se conservan como historial.
+
+## Foto histórica reconciliada — 2026-11-19
 
 - Fuente principal: [foto operativa y auditoría de ramas](REPO-STATUS-2026-11-19.md), sobre `main` `aa7cd3604141`.
 - Integrados y desplegados en Vercel: portal del alumno, cuentas/cambio de contraseñas y correo, Mi Membresía, alumnos, pagos, comprobantes, vencimientos, editor de rutinas con bloques y texto libre con menciones. El último deployment de producción figura READY, sin atribuirle recorridos autenticados no comprobados.

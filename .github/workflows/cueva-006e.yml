@@ -1,0 +1,59 @@
+name: CUEVA-006E isolated checks
+
+on:
+  push:
+    branches:
+      - feature/cueva-006e-exercise-mention-preview
+    paths:
+      - "src/app/mi-rutina/page.tsx"
+      - "src/app/mi-rutina/mi-rutina.css"
+      - "src/components/routines/exercise-mention.tsx"
+      - "src/components/routines/exercise-video-dialog.tsx"
+      - "src/components/routines/student-plan.tsx"
+      - "src/lib/routines/mention-video-availability.ts"
+      - "src/lib/routines/video-source.ts"
+      - "src/lib/routines/mentions.ts"
+      - "supabase/migrations/20261119130000_cueva_mention_video_availability.sql"
+      - "supabase/migrations/20261120150000_cueva_mentioned_exercise_video_access.sql"
+      - "tests/routine-mentions.test.mjs"
+      - "tests/routine-video-source.test.mjs"
+      - "tests/e2e/routine-mentions.integration.mjs"
+      - "tests/e2e/mi-rutina.integration.mjs"
+      - ".github/workflows/cueva-006e.yml"
+  pull_request:
+    paths:
+      - "src/app/mi-rutina/page.tsx"
+      - "src/app/mi-rutina/mi-rutina.css"
+      - "src/components/routines/exercise-mention.tsx"
+      - "src/components/routines/exercise-video-dialog.tsx"
+      - "src/components/routines/student-plan.tsx"
+      - "src/lib/routines/mention-video-availability.ts"
+      - "src/lib/routines/video-source.ts"
+      - "src/lib/routines/mentions.ts"
+      - "supabase/migrations/20261119130000_cueva_mention_video_availability.sql"
+      - "supabase/migrations/20261120150000_cueva_mentioned_exercise_video_access.sql"
+      - "tests/routine-mentions.test.mjs"
+      - "tests/routine-video-source.test.mjs"
+      - "tests/e2e/routine-mentions.integration.mjs"
+      - "tests/e2e/mi-rutina.integration.mjs"
+      - ".github/workflows/cueva-006e.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  mentions:
+    name: Routine mentions unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          cache: npm
+      - run: npm ci
+      - name: Test routine mention validation and video availability
+        run: |
+          npm run test:routines:mentions
+          npm run test:routines:video-source

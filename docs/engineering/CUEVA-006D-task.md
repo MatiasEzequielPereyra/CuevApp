@@ -1,6 +1,7 @@
 # CUEVA-006D — Rutinas en texto libre con menciones de ejercicios
 
-Estado actual: correcciones P2 en REVIEW; ver [entrega vigente](pr67-corrections-20261119.md). Las validaciones de HEAD anteriores documentadas abajo son históricas.
+**Estado actual: MERGED.** PR #67 integrado en main el 2026-11-19. Los handoffs de Draft, revisión y autorización pendientes que aparecen en el historial inferior son registros históricos y no describen el estado vigente.
+
 Fecha de decisión: 2026-11-16.
 
 ## Decisión de producto CONFIRMED

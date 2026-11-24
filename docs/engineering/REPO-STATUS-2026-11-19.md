@@ -1,7 +1,7 @@
 # Estado operativo y auditoría de ramas — 19 de noviembre de 2026
 
 > **Fotografía verificable (GitHub, Supabase y Vercel); no es una orden de borrar ramas.** 
-> Esta sección actual prevalece sobre los estados REVIEW/draft/NOT_RUN históricos del checkpoint y backlog, sin eliminar su evidencia.
+> Foto histórica al 19/11. Para el estado posterior consultar la [reconciliación del 24/11](REPO-STATUS-2026-11-24.md); no aplicar esta foto como autoridad vigente.
 > La ejecución de limpieza de refs está **PENDIENTE**: el conector GitHub de esta sesión no expone borrar ramas.
 
 ## Fuentes de verdad y release

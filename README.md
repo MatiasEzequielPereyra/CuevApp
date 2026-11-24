@@ -2,13 +2,21 @@
 
 Fundación de la aplicación del gimnasio. CUEVA-001A fue aceptada e integrada en el PR #1. La página está publicada en [cueva-gym.vercel.app](https://cueva-gym.vercel.app). Ver el checkpoint para la evidencia y el siguiente encargo.
 
-## Estado actual del producto — 19/11/2026
+## Estado del repositorio — 24/11/2026
 
-Ver el [estado real de GitHub, Vercel, Supabase, ramas y pendientes](docs/engineering/REPO-STATUS-2026-11-19.md). Es la referencia vigente, por encima de los hitos históricos de documentación.
+La [reconciliación del 24/11](docs/engineering/REPO-STATUS-2026-11-24.md)
+prevalece sobre las fotos históricas. Main verificado:
+`425e23aa3e5d28a1d2ba08c41084e5bba021f297`. CUEVA-006E (#82) y los
+ajustes de menciones (#84–#87) ya están integrados. El portal conserva cuentas,
+correo, alumnos, cuotas, pagos, vencimientos, comprobantes, rutinas y videos.
 
-El `main` integra autenticación por correo e invitaciones administrativas, gestión de alumnos, cuotas y pagos parciales, vencimientos, comprobantes, rutinas por días/bloques y texto libre con referencias a ejercicios, videos y portal del alumno. El acceso usa correo obligatorio y contraseña elegida por el alumno; DNI opcional solamente en su ficha administrativa.
-
-Al 19/11, GitHub `main` sirve la versión `aa7cd3604141` en Vercel Production (READY); Supabase Hosted registra **33 migraciones**, incluida la RPC de ejercicios asignados, los documentos de rutinas y sincronización de correo. **Aún no está activado el cron de recordatorios ni verificada la entrega Push final**, y faltan el registro de entrenamiento y la consulta de rutina offline. La rama CUEVA-006E está en desarrollo y no está integrada.
+Quedan abiertos #75 (documentación/limpieza segura), #83 (registro personal,
+apagado por defecto) y #88 (entrenamiento). Código integrado, configuración,
+SQL aplicado y aceptación alojada son estados distintos. Producción READY y
+33 migraciones fueron reportados por el Orchestrator el 24/11; este ejecutor
+no repitió consultas alojadas. Cron, entrega Push y offline no se declaran
+operativos. La [foto del 19/11](docs/engineering/REPO-STATUS-2026-11-19.md)
+se conserva como evidencia histórica, sin autoridad sobre el estado actual.
 
 ## Orden de lectura
 
