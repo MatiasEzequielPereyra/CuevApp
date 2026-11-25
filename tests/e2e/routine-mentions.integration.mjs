@@ -198,8 +198,11 @@ try {
   await expect(preview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
   await expect(preview.getByRole("link")).toHaveCount(0);
   const rowBeforePanel = await logger.boundingBox();
-  await logger.getByRole("button", {name:"Registrar peso"}).click();
+  const loggerTrigger = logger.getByRole("button", {name:"Registrar peso"});
+  const panelControlId = await loggerTrigger.getAttribute("aria-controls");
+  await loggerTrigger.click();
   await expect(loggerPanel).toBeVisible();
+  expect(await loggerPanel.getAttribute("id")).toBe(panelControlId);
   await expect(loggerPanel).toHaveCSS("position", "fixed");
   const panelBox = await loggerPanel.boundingBox();
   const viewport = pupil.viewportSize();
