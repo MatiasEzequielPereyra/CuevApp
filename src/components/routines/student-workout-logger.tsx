@@ -471,14 +471,8 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
                 <ol>
                   {history.entries.map(entry => (
                     <li key={entry.id}>
-                      <time dateTime={entry.performed_at}>{new Date(entry.performed_at).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })}</time>
-                      {entry.mode === "quick"
-                        ? <strong>{entry.tracking_mode === "weight"
-                          ? (entry.weight_kg === null ? "—" : formatWeight(entry.weight_kg))
-                          : (entry.duration_seconds === null ? "—" : formatDuration(entry.duration_seconds))}</strong>
-                        : <ul>{entry.sets.map(set => <li key={set.set_number}>{entry.tracking_mode === "weight"
-                          ? `${set.reps} rep. · ${set.weight_kg === null ? "—" : formatWeight(set.weight_kg)}`
-                          : (set.duration_seconds === null ? "—" : formatDuration(set.duration_seconds))}</li>)}</ul>}
+                      <time dateTime={entry.performed_at}>{new Date(entry.performed_at).toLocaleDateString("es-AR", { dateStyle: "short" })}</time>
+                      <strong className="student-workout-history-value">{entrySummary(entry) || "—"}</strong>
                       <div className="student-workout-history-actions">
                         {entry.tracking_mode === trackingMode && <>
                           <button type="button" disabled={saving} onClick={() => useHistoryEntry(entry)}>Usar</button>
