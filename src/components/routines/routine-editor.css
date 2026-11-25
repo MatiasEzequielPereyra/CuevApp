@@ -299,12 +299,10 @@
   border-radius: 3px;
   /* Keep glyph metrics identical to the textarea so the native caret stays aligned. */
   padding: 0;
-  color: hsl(var(--mention-hue, 250) 55% 24%);
-  background: hsl(var(--mention-hue, 250) 78% 86%);
+  color: hsl(var(--mention-hue, 250) 38% 30%);
+  background: hsl(var(--mention-hue, 250) 42% 92%);
   font-weight: 400;
-  -webkit-text-stroke: .45px currentColor;
-  text-shadow: .2px 0 currentColor, -.2px 0 currentColor;
-  box-shadow: 2px 0 0 hsl(var(--mention-hue, 250) 78% 86%), -2px 0 0 hsl(var(--mention-hue, 250) 78% 86%);
+  box-shadow: 2px 0 0 hsl(var(--mention-hue, 250) 42% 92%), -2px 0 0 hsl(var(--mention-hue, 250) 42% 92%);
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
@@ -351,8 +349,16 @@
   padding: 8px;
   border: 1px solid var(--dash-border);
   border-radius: 10px;
-  background: var(--dash-panel);
-  box-shadow: 0 8px 24px rgb(0 0 0 / .12);
+  background: var(--dash-panel, var(--surface, #ededeb));
+  background-color: var(--dash-panel, var(--surface, #ededeb));
+  border-color: var(--dash-border, var(--line, #c9c9c6));
+  color: var(--dash-text, var(--text, #181819));
+  background-image: none;
+  opacity: 1;
+  isolation: isolate;
+  backdrop-filter: none;
+  z-index: 2147483000 !important;
+  box-shadow: 0 12px 32px rgb(0 0 0 / .24);
 }
 .routine-mention-suggestions button {
   width: 100%;
@@ -373,7 +379,14 @@
 
 .routine-text-mention-preview {
   position: fixed;
-  z-index: 1001;
+  z-index: 2147483000 !important;
+  isolation: isolate;
+  opacity: 1;
+  background-color: var(--dash-panel, var(--surface, #ededeb));
+  background-image: none;
+  border-color: var(--dash-border, var(--line, #c9c9c6));
+  color: var(--dash-text, var(--text, #181819));
+  backdrop-filter: none;
   display: grid;
   gap: 8px;
   width: min(320px, calc(100vw - 16px));
@@ -382,8 +395,8 @@
   padding: 12px;
   border: 1px solid var(--dash-border);
   border-radius: 12px;
-  background: var(--dash-panel);
-  color: var(--dash-text);
+  background: var(--dash-panel, var(--surface, #ededeb));
+  color: var(--dash-text, var(--text, #181819));
   box-shadow: 0 8px 28px rgb(0 0 0 / .2);
 }
 .routine-text-mention-preview p { margin: 0; }

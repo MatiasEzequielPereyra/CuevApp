@@ -261,14 +261,14 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   return (
     <section className="student-workout" aria-label={"Registro de " + exerciseName} data-tracking-mode={trackingMode}>
       {summary && <p className="student-workout-summary"><strong>REALIZADO</strong><span>{summary}</span></p>}
-      <button type="button" className="student-workout-toggle" aria-expanded={expanded} onClick={() => {
+      <button type="button" className="student-workout-toggle" aria-label={expanded ? (trackingMode === "weight" ? "Cerrar registro de peso" : "Cerrar registro de duración") : (trackingMode === "weight" ? "Registrar peso" : "Registrar duración")} aria-expanded={expanded} onClick={() => {
         const nextExpanded = !expanded;
         setExpanded(nextExpanded);
         setMessage("");
         setError("");
         if (nextExpanded && !history && !loadingHistory) void loadHistory(0);
       }}>
-        {expanded ? "Cerrar registro" : trackingMode === "weight" ? "Registrar peso" : "Registrar duración"}
+        {expanded ? "Cerrar" : "Cargar"}
       </button>
       {expanded && (
         <div className="student-workout-panel">

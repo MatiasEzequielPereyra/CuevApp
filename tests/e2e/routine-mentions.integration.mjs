@@ -52,6 +52,10 @@ try {
   const inlineExerciseName = `${exerciseName} temporal 007`;
   await adminTextarea.fill(`@${inlineExerciseName}`);
   await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"})).toBeVisible();
+  const suggestions = page.getByRole("listbox", {name:"Ejercicios sugeridos"});
+  await expect(suggestions).toHaveCSS("opacity", "1");
+  await expect(suggestions).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(suggestions).toHaveCSS("z-index", "2147483000");
   await page.getByLabel("Registro").selectOption("time");
   await page.getByRole("button", {name: new RegExp(`Crear .* en Ejercicios`)}).click();
   await expect.poll(async () => (await db.query(
@@ -70,7 +74,8 @@ try {
   // Highlight styling must not change inline text metrics: the textarea owns the native caret.
   await expect(highlightedMention).toHaveCSS("font-weight", "400");
   await expect(highlightedMention).toHaveCSS("padding-left", "0px");
-  await expect(highlightedMention).not.toHaveCSS("text-shadow", "none");
+  const mentionBoxShadow = await highlightedMention.evaluate(element => getComputedStyle(element).boxShadow);
+  assert.notEqual(mentionBoxShadow, "none", "linked mention must retain its visual highlight");
   await expect(highlightedMention).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   const mentionClickPoint = await adminTextarea.evaluate((element, name) => {
     const start = element.value.indexOf(name);
@@ -171,7 +176,7 @@ try {
 
   // A linked mention never opens a preview from proximity, hover or focus.
   const preview = pupil.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`});
-  const logger = pupil.locator(".my-routine-mention-wrap .student-workout").first();
+  const logger = pupil.locator(".student-workout-row .student-workout").first();
   await mention.hover();
   await expect(preview).toHaveCount(0);
   await mention.focus();
@@ -182,6 +187,9 @@ try {
   // expose workout logging even when no video is available.
   await mention.click();
   await expect(preview.getByText(exerciseName, {exact:true})).toBeVisible();
+  await expect(preview).toHaveCSS("opacity", "1");
+  await expect(preview).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(preview).toHaveCSS("z-index", "2147483000");
   await preview.hover(); // moving from the mention to the panel must not dismiss it.
   await expect(preview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
   await expect(preview.getByRole("link")).toHaveCount(0);

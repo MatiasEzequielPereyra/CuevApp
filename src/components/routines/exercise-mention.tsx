@@ -15,11 +15,12 @@ type ExerciseMentionProps = {
   trackingMode: "weight" | "time";
   targetId?: string;
   hue?: number;
+  showWorkoutLogger?: boolean;
 };
 
 type FloatingPosition = { left: number; top: number; width: number };
 
-export function ExerciseMention({ exerciseId, name, description, videoAvailability, text, publicationId, trackingMode, targetId, hue = 250 }: ExerciseMentionProps) {
+export function ExerciseMention({ exerciseId, name, description, videoAvailability, text, publicationId, trackingMode, targetId, hue = 250, showWorkoutLogger = true }: ExerciseMentionProps) {
   const [open, setOpen] = useState(false);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [position, setPosition] = useState<FloatingPosition | null>(null);
@@ -98,12 +99,12 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
       >
         {text}
       </button>
-      <StudentWorkoutLogger publicationId={publicationId} exerciseId={exerciseId} exerciseName={name} trackingMode={trackingMode} {...(targetId ? { targetId } : {})} />
+      {showWorkoutLogger && <StudentWorkoutLogger publicationId={publicationId} exerciseId={exerciseId} exerciseName={name} trackingMode={trackingMode} {...(targetId ? { targetId } : {})} />}
       {open && position && typeof document !== "undefined" && createPortal(
         <div ref={panel} id={panelId} className="my-routine-mention-preview" role="dialog"
           tabIndex={-1} aria-label={`Ejercicio: ${name}`}
           style={{ position: "fixed", left: position.left, top: position.top, width: position.width,
-            maxHeight: "min(260px, calc(100dvh - 16px))", overflow: "auto", zIndex: 1001 }}>
+            maxHeight: "min(260px, calc(100dvh - 16px))", overflow: "auto", zIndex: 10000 }}>
           <strong>{name}</strong>
           {description && <span>{description}</span>}
           {videoAvailability === "available"
