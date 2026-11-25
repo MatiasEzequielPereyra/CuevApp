@@ -343,10 +343,10 @@
 }
 .routine-mention-suggestions {
   display: grid;
-  gap: 4px;
-  max-height: 240px;
+  gap: 3px;
+  max-height: 220px;
   overflow: auto;
-  padding: 8px;
+  padding: 6px;
   border: 1px solid var(--dash-border);
   border-radius: 10px;
   background: var(--dash-panel, var(--surface, #ededeb));
@@ -358,11 +358,17 @@
   isolation: isolate;
   backdrop-filter: none;
   z-index: 2147483000 !important;
-  box-shadow: 0 12px 32px rgb(0 0 0 / .24);
+  box-shadow: 0 8px 22px rgb(0 0 0 / .16);
 }
 .routine-mention-suggestions button {
   width: 100%;
-  min-height: 42px;
+  min-height: 36px;
+  padding: 6px 9px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: inherit;
+  font: inherit;
+  font-size: .875rem;
   text-align: start;
   background: transparent;
 }
@@ -388,11 +394,11 @@
   color: var(--dash-text, var(--text, #181819));
   backdrop-filter: none;
   display: grid;
-  gap: 8px;
+  gap: 7px;
   width: min(320px, calc(100vw - 16px));
-  max-height: min(240px, calc(100dvh - 16px));
+  max-height: min(220px, calc(100dvh - 16px));
   overflow: auto;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid var(--dash-border);
   border-radius: 12px;
   background: var(--dash-panel, var(--surface, #ededeb));
