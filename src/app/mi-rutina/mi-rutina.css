@@ -579,9 +579,10 @@
   vertical-align: middle;
 }
 .student-workout-row .student-workout {
-  display: inline-grid;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 5px;
   margin: 0;
   padding: 0;
 }
