@@ -194,14 +194,16 @@ select throws_ok($stale_delete$select public.cueva_workout_delete(
 select is((public.cueva_workout_delete(
  'c8100000-0000-4000-8000-000000000002',1)->>'deleted')::boolean,true,
  'students can delete their own history entry with its current revision');
+reset role;
 select is((select count(*)::integer from public.cueva_workout_entries
  where id='c8100000-0000-4000-8000-000000000002'),0,
  'deleting a history entry removes its parent record');
 select is((select count(*)::integer from public.cueva_workout_sets
  where entry_id='c8100000-0000-4000-8000-000000000002'),0,
  'deleting a history entry cascades to its workout sets');
+set local role authenticated;
 
-select throws_ok($$select public.cueva_workout_record(
+select throws_ok($select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000003','c7600000-0000-4000-8000-000000000004',
  'c7500000-0000-4000-8000-000000000002','c7900000-0000-4000-8000-000000000005',
  'quick','weight',20,null,'[]'::jsonb)$$,'22023',null,'time-based exercises reject kilogram entries');
