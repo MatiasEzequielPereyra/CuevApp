@@ -284,7 +284,7 @@ try {
   await pupil.locator("h1").click();
   await expect(preview).toHaveCount(0);
   await expect(logger.getByText("REALIZADO")).toBeVisible();
-  await logger.getByRole("button", {name:"Cerrar registro de peso"}).click();
+  // The outside click above dismisses the floating panel; its trigger is already closed.
   await expect(loggerPanel).toHaveCount(0);
   await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
 
