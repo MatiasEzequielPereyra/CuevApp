@@ -263,7 +263,7 @@ try {
   await loggerPanel.locator(".student-workout-set").nth(1).getByLabel("Peso (kg)").fill("45");
   await loggerPanel.getByRole("button", {name:"Guardar cambios"}).click();
   await expect(loggerPanel.getByRole("status").filter({hasText:"Cambios guardados."})).toBeVisible();
-  await expect(logger.locator(".student-workout-summary")).toContainText("45 kg");
+  await expect(setsHistoryEntry).toContainText("45 kg");
   const visibleHistoryRows = loggerPanel.locator(".student-workout-history > ol > li");
   await expect(visibleHistoryRows).toHaveCount(3);
   for (let index = 0; index < 3; index++) {
