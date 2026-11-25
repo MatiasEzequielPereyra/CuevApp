@@ -85,7 +85,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     const left = Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12));
     const below = window.innerHeight - rect.bottom - 12;
     const above = rect.top - 12;
-    const placeBelow = below >= Math.min(300, above) || below >= above;
+    const placeBelow = below >= 280 || below >= above;
     const maxHeight = Math.max(160, Math.min(520, placeBelow ? below : above));
     const top = placeBelow ? rect.bottom + 8 : Math.max(12, rect.top - maxHeight - 8);
     setPanelPosition({ left, top, width, maxHeight });
@@ -277,6 +277,10 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   }
 
   useEffect(() => {
+    if (expanded && !history && !loadingHistory) void loadHistory(0);
+  }, [expanded, exerciseId, history, loadingHistory, loadHistory]);
+
+  useEffect(() => {
     if (!expanded) { setPanelPosition(null); return; }
     positionPanel();
     function onPointerDown(event: PointerEvent) {
@@ -313,7 +317,6 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
         setExpanded(nextExpanded);
         setMessage("");
         setError("");
-        if (nextExpanded && !history && !loadingHistory) void loadHistory(0);
       }}>
         {expanded ? <><span aria-hidden="true">×</span><span>Cerrar</span></> : <><span aria-hidden="true">{trackingMode === "weight" ? "⚖" : "◷"}</span><span>{trackingMode === "weight" ? "kg" : "seg"}</span></>}
       </button>
