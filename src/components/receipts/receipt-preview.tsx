@@ -47,7 +47,7 @@ export function ReceiptPreview({ id }: { id: string }) {
       objectUrl.current = url;
       setPreview({ url, type });
     } catch {
-      if (!controller.signal.aborted) setError("No pudimos abrir el comprobante. Intent� nuevamente.");
+      if (!controller.signal.aborted) setError("No pudimos abrir el comprobante. Intentá nuevamente.");
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
@@ -74,7 +74,7 @@ export function ReceiptPreview({ id }: { id: string }) {
         <h2 id={titleId}>Vista previa del comprobante</h2>
         <form method="dialog"><button type="submit" className="receipts-control">Cerrar</button></form>
       </header>
-      {loading && <p role="status">Cargando comprobante.</p>}
+      {loading && <p role="status">Cargando comprobante…</p>}
       {error && <div className="receipt-preview-error">
         <p role="alert">{error}</p>
         <button type="button" className="receipts-control" onClick={() => void load()}>Reintentar</button>
@@ -86,7 +86,7 @@ export function ReceiptPreview({ id }: { id: string }) {
         </div>
         // The authorized file is a short-lived local Blob URL.
         // eslint-disable-next-line @next/next/no-img-element
-        : <img src={preview.url} alt="Comprobante de pago" onError={() => setError("No pudimos mostrar la imagen. Intent� nuevamente.")} />)}
+        : <img src={preview.url} alt="Comprobante de pago" onError={() => setError("No pudimos mostrar la imagen. Intentá nuevamente.")} />)}
     </dialog>
   </>;
 }

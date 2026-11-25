@@ -22,7 +22,7 @@ export default async function ReceiptQueue({ searchParams }: { searchParams: Pro
   const client = await studentAdmin();
   if (!client) return <main className="shell"><h1>Acceso restringido</h1><Link href="/cuenta">Mi cuenta</Link></main>;
   const { data: { user } } = await client.auth.getUser();
-  if (!user) return <main className="shell"><h1>Ingres� para continuar</h1><Link href="/ingresar">Ingresar</Link></main>;
+  if (!user) return <main className="shell"><h1>Ingresá para continuar</h1><Link href="/ingresar">Ingresar</Link></main>;
 
   const params = await searchParams;
   const resolved = params.estado === "resueltos";
@@ -43,9 +43,9 @@ export default async function ReceiptQueue({ searchParams }: { searchParams: Pro
           Volver a Pagos y cuotas
         </Link>
         <div className="receipts-heading">
-          <span className="receipts-kicker">ADMINISTRACI�N DE PAGOS</span>
+          <span className="receipts-kicker">ADMINISTRACIÓN DE PAGOS</span>
           <h1>Comprobantes de pago</h1>
-          <p>Consult� los comprobantes enviados por los alumnos y revis� cada presentaci�n.</p>
+          <p>Consultá los comprobantes enviados por los alumnos y revisá cada presentación.</p>
         </div>
         <nav className="receipts-tabs" aria-label="Estado de comprobantes">
           <Link className="receipts-tab" href="/pagos/comprobantes" aria-current={!resolved ? "page" : undefined}>Pendientes</Link>
@@ -57,13 +57,13 @@ export default async function ReceiptQueue({ searchParams }: { searchParams: Pro
         <p>No pudimos cargar los comprobantes.</p>
         <Link className="receipts-control" href={pageLink(offset)}>Reintentar</Link>
       </section> : <>
-        {!rows.length && <section className="receipts-message"><p>{resolved ? "Todav�a no hay comprobantes resueltos." : "No hay comprobantes pendientes."}</p></section>}
+        {!rows.length && <section className="receipts-message"><p>{resolved ? "Todavía no hay comprobantes resueltos." : "No hay comprobantes pendientes."}</p></section>}
         {rows.length > 0 && <div className="receipts-list">
           {rows.slice(0, pageSize).map(row => <article key={row.id} className="receipts-card">
             <div className="receipts-card-header">
               <div className="receipts-card-identity">
                 <h2>{row.student.first_name} {row.student.last_name}</h2>
-                <p>Per�odo {row.period.month.slice(0, 7)}</p>
+                <p>Período {row.period.month.slice(0, 7)}</p>
               </div>
               <span className="receipts-status" data-state={row.state}>{receiptState[row.state]}</span>
             </div>
@@ -84,9 +84,9 @@ export default async function ReceiptQueue({ searchParams }: { searchParams: Pro
             </div>
           </article>)}
         </div>}
-        {(offset > 0 || rows.length > pageSize) && <nav className="receipts-pagination" aria-label="P�ginas de comprobantes">
-          {offset > 0 && <Link className="receipts-control" href={pageLink(Math.max(0, offset - pageSize))}>P�gina anterior</Link>}
-          {rows.length > pageSize && <Link className="receipts-control" href={pageLink(offset + pageSize)}>P�gina siguiente</Link>}
+        {(offset > 0 || rows.length > pageSize) && <nav className="receipts-pagination" aria-label="Páginas de comprobantes">
+          {offset > 0 && <Link className="receipts-control" href={pageLink(Math.max(0, offset - pageSize))}>Página anterior</Link>}
+          {rows.length > pageSize && <Link className="receipts-control" href={pageLink(offset + pageSize)}>Página siguiente</Link>}
         </nav>}
       </>}
     </div>
