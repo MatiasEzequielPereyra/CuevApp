@@ -1,6 +1,7 @@
 import { StudentPlan } from "@/components/routines/student-plan";
 import { ExerciseMention } from "@/components/routines/exercise-mention";
 import { StudentWorkoutRowLogger } from "@/components/routines/student-workout-row-logger";
+import { StudentWorkoutExerciseSummary } from "@/components/routines/student-workout-exercise-summary";
 import { resolveMentionVideoAvailability } from "@/lib/routines/mention-video-availability";
 import type { ReactNode } from "react";
 import type { Plan } from "@/lib/routines/types";
@@ -38,12 +39,15 @@ function renderRoutineText(text: string, mentions: RoutineMention[], exercisesBy
         || points.slice(mention.start, mention.end).join("") !== mention.text) return;
       if (mention.start > cursor) content.push(points.slice(cursor, mention.start).join(""));
       content.push(
-        <ExerciseMention key={`${mention.exercise_id}:${mention.start}:${index}`}
-          exerciseId={exercise.id} name={exercise.name} description={exercise.description}
-          videoAvailability={exercise.videoAvailability} text={mention.text}
-          publicationId={publicationId} trackingMode={exercise.tracking_mode}
-          hue={hues.get(`${mention.exercise_id}:${mention.start}:${mention.end}`) ?? 250}
-          showWorkoutLogger={false} />
+        <span className="my-routine-exercise-with-summary" key={`${mention.exercise_id}:${mention.start}:${index}`}>
+          <ExerciseMention
+            exerciseId={exercise.id} name={exercise.name} description={exercise.description}
+            videoAvailability={exercise.videoAvailability} text={mention.text}
+            publicationId={publicationId} trackingMode={exercise.tracking_mode}
+            hue={hues.get(`${mention.exercise_id}:${mention.start}:${mention.end}`) ?? 250}
+            showWorkoutLogger={false} />
+          <StudentWorkoutExerciseSummary exerciseId={exercise.id} exerciseName={exercise.name} />
+        </span>
       );
       lineExercises.push(exercise);
       cursor = mention.end;
