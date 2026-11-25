@@ -1,5 +1,6 @@
 import { StudentPlan } from "@/components/routines/student-plan";
 import { ExerciseMention } from "@/components/routines/exercise-mention";
+import { StudentWorkoutRowLogger } from "@/components/routines/student-workout-row-logger";
 import { resolveMentionVideoAvailability } from "@/lib/routines/mention-video-availability";
 import type { ReactNode } from "react";
 import type { Plan } from "@/lib/routines/types";
@@ -17,18 +18,47 @@ type RoutineMention = { exercise_id: string; start: number; end: number; text: s
 
 function renderRoutineText(text: string, mentions: RoutineMention[], exercisesById: Map<string, MentionedExercise>, publicationId: string) {
   const points = Array.from(text);
-  const parts: ReactNode[] = [];
-  const hues = getRoutineMentionHues(mentions);
-  let cursor = 0;
-  [...mentions].sort((a, b) => a.start - b.start).forEach((mention, index) => {
-    const exercise = exercisesById.get(mention.exercise_id);
-    if (!exercise || mention.start < cursor || mention.end > points.length || points.slice(mention.start, mention.end).join("") !== mention.text) return;
-    if (mention.start > cursor) parts.push(points.slice(cursor, mention.start).join(""));
-    parts.push(<ExerciseMention key={`${mention.exercise_id}:${mention.start}:${index}`} exerciseId={exercise.id} name={exercise.name} description={exercise.description} videoAvailability={exercise.videoAvailability} text={mention.text} publicationId={publicationId} trackingMode={exercise.tracking_mode ?? "weight"} hue={hues.get(`${mention.exercise_id}:${mention.start}:${mention.end}`) ?? 250} />);
-    cursor = mention.end;
+  const ordered = [...mentions].sort((a, b) => a.start - b.start);
+  const hues = getRoutineMentionHues(ordered);
+  const lines: ReactNode[] = [];
+  let lineStart = 0;
+
+  text.split("\n").forEach((line, lineIndex) => {
+    const lineEnd = lineStart + Array.from(line).length;
+    const lineMentions = ordered.filter(mention =>
+      mention.start >= lineStart && mention.end <= lineEnd
+    );
+    const content: ReactNode[] = [];
+    let cursor = lineStart;
+    const lineExercises: MentionedExercise[] = [];
+
+    lineMentions.forEach((mention, index) => {
+      const exercise = exercisesById.get(mention.exercise_id);
+      if (!exercise || mention.start < cursor
+        || points.slice(mention.start, mention.end).join("") !== mention.text) return;
+      if (mention.start > cursor) content.push(points.slice(cursor, mention.start).join(""));
+      content.push(
+        <ExerciseMention key={`${mention.exercise_id}:${mention.start}:${index}`}
+          exerciseId={exercise.id} name={exercise.name} description={exercise.description}
+          videoAvailability={exercise.videoAvailability} text={mention.text}
+          publicationId={publicationId} trackingMode={exercise.tracking_mode}
+          hue={hues.get(`${mention.exercise_id}:${mention.start}:${mention.end}`) ?? 250}
+          showWorkoutLogger={false} />
+      );
+      lineExercises.push(exercise);
+      cursor = mention.end;
+    });
+
+    if (cursor < lineEnd) content.push(points.slice(cursor, lineEnd).join(""));
+    lines.push(
+      <div className="my-routine-text-line" key={`line-${lineIndex}`}>
+        <span>{content.length ? content : "\u00a0"}</span>
+        {lineExercises.length > 0 && <StudentWorkoutRowLogger exercises={lineExercises} publicationId={publicationId} />}
+      </div>
+    );
+    lineStart = lineEnd + 1;
   });
-  if (cursor < points.length) parts.push(points.slice(cursor).join(""));
-  return parts;
+  return lines;
 }
 
 type AssignedExercise = {
