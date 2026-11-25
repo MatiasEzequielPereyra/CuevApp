@@ -301,7 +301,7 @@
   padding: 0;
   color: hsl(var(--mention-hue, 250) 38% 30%);
   background: hsl(var(--mention-hue, 250) 42% 92%);
-  font-weight: 550;
+  font-weight: 400;
   box-shadow: 2px 0 0 hsl(var(--mention-hue, 250) 42% 92%), -2px 0 0 hsl(var(--mention-hue, 250) 42% 92%);
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
@@ -355,6 +355,7 @@
   opacity: 1;
   isolation: isolate;
   backdrop-filter: none;
+  z-index: 2147483000 !important;
   box-shadow: 0 12px 32px rgb(0 0 0 / .24);
 }
 .routine-mention-suggestions button {
@@ -376,7 +377,7 @@
 
 .routine-text-mention-preview {
   position: fixed;
-  z-index: 10000;
+  z-index: 2147483000 !important;
   isolation: isolate;
   opacity: 1;
   background-color: var(--dash-panel);
