@@ -318,7 +318,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   return (
     <section className="student-workout" aria-label={"Registro de " + exerciseName} data-tracking-mode={trackingMode}>
       {summary && <p className="student-workout-summary"><strong>REALIZADO</strong><span>{summary}</span></p>}
-      <button ref={trigger} type="button" className="student-workout-toggle" aria-label={expanded ? (trackingMode === "weight" ? "Cerrar registro de peso" : "Cerrar registro de duración") : (trackingMode === "weight" ? "Registrar peso" : "Registrar duración")} aria-expanded={expanded} onClick={() => {
+      <button ref={trigger} type="button" className="student-workout-toggle" aria-haspopup="dialog" aria-controls={id + "-panel"} aria-label={expanded ? (trackingMode === "weight" ? "Cerrar registro de peso" : "Cerrar registro de duración") : (trackingMode === "weight" ? "Registrar peso" : "Registrar duración")} aria-expanded={expanded} onClick={() => {
         const nextExpanded = !expanded;
         if (nextExpanded) positionPanel();
         setExpanded(nextExpanded);
@@ -328,7 +328,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
         {expanded ? <><span aria-hidden="true">×</span><span>Cerrar</span></> : <><span aria-hidden="true">{trackingMode === "weight" ? "⚖" : "◷"}</span><span>{trackingMode === "weight" ? "kg" : "seg"}</span></>}
       </button>
       {expanded && panelPosition && typeof document !== "undefined" && createPortal(
-        <div ref={panel} className="student-workout-panel student-workout-floating-panel" role="dialog" aria-label={"Registro de " + exerciseName}
+        <div ref={panel} id={id + "-panel"} className="student-workout-panel student-workout-floating-panel" role="dialog" aria-label={"Registro de " + exerciseName}
           style={{ position: "fixed", left: panelPosition.left, top: panelPosition.top, width: panelPosition.width, maxHeight: panelPosition.maxHeight, overflow: "auto", zIndex: 2147483000 }}>
           <header>
             <strong>{exerciseName}</strong>
