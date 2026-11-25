@@ -4,6 +4,7 @@ import { AdminShell } from "@/components/dashboard/admin-dashboard";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { ThemePicker } from "@/components/theme/theme-picker";
 import { ReceiptReview } from "@/components/receipts/receipt-review";
+import { ReceiptPreview } from "@/components/receipts/receipt-preview";
 import { studentAdmin } from "@/lib/students/server";
 import { buenosAiresDate } from "@/lib/students/date";
 import { receiptState, type Receipt } from "@/lib/receipts/contracts";
@@ -21,7 +22,7 @@ export default async function ReceiptQueue({ searchParams }: { searchParams: Pro
   const client = await studentAdmin();
   if (!client) return <main className="shell"><h1>Acceso restringido</h1><Link href="/cuenta">Mi cuenta</Link></main>;
   const { data: { user } } = await client.auth.getUser();
-  if (!user) return <main className="shell"><h1>Ingresá para continuar</h1><Link href="/ingresar">Ingresar</Link></main>;
+  if (!user) return <main className="shell"><h1>Ingres� para continuar</h1><Link href="/ingresar">Ingresar</Link></main>;
 
   const params = await searchParams;
   const resolved = params.estado === "resueltos";
@@ -42,9 +43,9 @@ export default async function ReceiptQueue({ searchParams }: { searchParams: Pro
           Volver a Pagos y cuotas
         </Link>
         <div className="receipts-heading">
-          <span className="receipts-kicker">ADMINISTRACIÓN DE PAGOS</span>
+          <span className="receipts-kicker">ADMINISTRACI�N DE PAGOS</span>
           <h1>Comprobantes de pago</h1>
-          <p>Consultá los comprobantes enviados por los alumnos y revisá cada presentación.</p>
+          <p>Consult� los comprobantes enviados por los alumnos y revis� cada presentaci�n.</p>
         </div>
         <nav className="receipts-tabs" aria-label="Estado de comprobantes">
           <Link className="receipts-tab" href="/pagos/comprobantes" aria-current={!resolved ? "page" : undefined}>Pendientes</Link>
@@ -56,13 +57,13 @@ export default async function ReceiptQueue({ searchParams }: { searchParams: Pro
         <p>No pudimos cargar los comprobantes.</p>
         <Link className="receipts-control" href={pageLink(offset)}>Reintentar</Link>
       </section> : <>
-        {!rows.length && <section className="receipts-message"><p>{resolved ? "Todavía no hay comprobantes resueltos." : "No hay comprobantes pendientes."}</p></section>}
+        {!rows.length && <section className="receipts-message"><p>{resolved ? "Todav�a no hay comprobantes resueltos." : "No hay comprobantes pendientes."}</p></section>}
         {rows.length > 0 && <div className="receipts-list">
           {rows.slice(0, pageSize).map(row => <article key={row.id} className="receipts-card">
             <div className="receipts-card-header">
               <div className="receipts-card-identity">
                 <h2>{row.student.first_name} {row.student.last_name}</h2>
-                <p>Período {row.period.month.slice(0, 7)}</p>
+                <p>Per�odo {row.period.month.slice(0, 7)}</p>
               </div>
               <span className="receipts-status" data-state={row.state}>{receiptState[row.state]}</span>
             </div>
@@ -72,12 +73,7 @@ export default async function ReceiptQueue({ searchParams }: { searchParams: Pro
               {row.rejection_reason && <p>Motivo del rechazo: {row.rejection_reason}</p>}
             </div>
             <div className="receipts-card-actions">
-              <a className="receipts-action receipts-action-secondary" href={"/api/comprobantes?id=" + row.id}
-                target="_blank" rel="noopener noreferrer">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-3M13 3h8v8m0-8L10 14"/></svg>
-                Abrir comprobante
-                <span className="receipts-sr-only"> (se abre en una pestaña nueva)</span>
-              </a>
+              <ReceiptPreview id={row.id} />
               {row.state === "pending" && <details className="receipts-review">
                 <summary className="receipts-action receipts-action-primary">
                   Revisar comprobante
@@ -88,11 +84,12 @@ export default async function ReceiptQueue({ searchParams }: { searchParams: Pro
             </div>
           </article>)}
         </div>}
-        {(offset > 0 || rows.length > pageSize) && <nav className="receipts-pagination" aria-label="Páginas de comprobantes">
-          {offset > 0 && <Link className="receipts-control" href={pageLink(Math.max(0, offset - pageSize))}>Página anterior</Link>}
-          {rows.length > pageSize && <Link className="receipts-control" href={pageLink(offset + pageSize)}>Página siguiente</Link>}
+        {(offset > 0 || rows.length > pageSize) && <nav className="receipts-pagination" aria-label="P�ginas de comprobantes">
+          {offset > 0 && <Link className="receipts-control" href={pageLink(Math.max(0, offset - pageSize))}>P�gina anterior</Link>}
+          {rows.length > pageSize && <Link className="receipts-control" href={pageLink(offset + pageSize)}>P�gina siguiente</Link>}
         </nav>}
       </>}
     </div>
   </AdminShell>;
 }
+

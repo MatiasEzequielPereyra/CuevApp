@@ -1,4 +1,4 @@
-/* CUEVA · Bandeja administrativa de comprobantes */
+/* CUEVA � Bandeja administrativa de comprobantes */
 .receipts-page {
   width: min(100%, 1060px);
   display: grid;
@@ -171,3 +171,23 @@
   .receipts-page :is(.receipts-control, .receipts-action, .receipts-tab),
   .receipts-review > summary svg { transition: none; }
 }
+
+.receipt-preview {
+  width: min(960px, calc(100% - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 16px;
+  border: 1px solid var(--dash-border);
+  border-radius: 14px;
+  background: var(--dash-panel);
+  color: var(--dash-text);
+}
+
+.receipt-preview::backdrop { background: rgb(0 0 0 / 65%); }
+.receipt-preview-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.receipt-preview-header h2 { font-size: 18px; line-height: 1.3; }
+.receipt-preview-header form { flex: none; margin: 0; }
+.receipt-preview > img { display: block; max-width: 100%; max-height: calc(100dvh - 140px); object-fit: contain; margin: auto; }
+.receipt-preview-pdf { display: grid; gap: 12px; }
+.receipt-preview-pdf iframe { width: 100%; height: min(70dvh, 760px); border: 0; }
+.receipt-preview-error { display: grid; gap: 12px; justify-items: start; }
+
