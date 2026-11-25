@@ -128,7 +128,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     if (showLoading) setLoadingHistory(true);
     try {
       const response = await fetch("/api/entrenamientos?exercise_id=" + encodeURIComponent(exerciseId)
-        + "&offset=" + offset + "&limit=30", { cache: "no-store" });
+        + "&offset=" + offset + "&limit=3", { cache: "no-store" });
       const data = await response.json();
       if (version !== readVersion.current) return;
       if (!response.ok) throw new Error(data.message || "No pudimos cargar el historial.");
