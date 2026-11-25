@@ -217,14 +217,14 @@ try {
     [studentId,exerciseId]
   )).rows[0].count).toBe(2);
   await loggerPanel.getByRole("button", {name:"Por series"}).click();
-  const setRows = logger.locator(".student-workout-set");
+  const setRows = loggerPanel.locator(".student-workout-set");
   await setRows.nth(0).getByLabel("Repeticiones").fill("10");
   await setRows.nth(0).getByLabel("Peso (kg)").fill("40");
   await loggerPanel.getByRole("button", {name:"Agregar serie"}).click();
   await setRows.nth(1).getByLabel("Repeticiones").fill("8");
   await setRows.nth(1).getByLabel("Peso (kg)").fill("42.5");
   await loggerPanel.getByRole("button", {name:"Guardar resultado"}).click();
-  await expect(logger.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
+  await expect(loggerPanel.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
   await expect.poll(async () => (await db.query(
     "select count(*)::int as count from public.cueva_workout_sets s join public.cueva_workout_entries e on e.id=s.entry_id where e.student_id=$1 and e.exercise_id=$2",
     [studentId,exerciseId]
@@ -236,11 +236,11 @@ try {
   const setsHistoryEntry = loggerPanel.locator(".student-workout-history > ol > li").filter({hasText:"8 rep."});
   await expect(setsHistoryEntry).toHaveCount(1);
   await setsHistoryEntry.getByRole("button", {name:"Editar"}).click();
-  await expect(logger.locator(".student-workout-set")).toHaveCount(2);
+  await expect(loggerPanel.locator(".student-workout-set")).toHaveCount(2);
   await loggerPanel.locator(".student-workout-set").nth(1).getByLabel("Peso (kg)").fill("45");
   await loggerPanel.getByRole("button", {name:"Guardar cambios"}).click();
-  await expect(logger.getByRole("status").filter({hasText:"Cambios guardados."})).toBeVisible();
-  await expect(loggerPanel.getByText("45 kg", { exact: true })).toBeVisible();
+  await expect(loggerPanel.getByRole("status").filter({hasText:"Cambios guardados."})).toBeVisible();
+  await expect(logger.getByText("45 kg", { exact: true })).toBeVisible();
   await pupil.locator("h1").click();
   await expect(preview).toHaveCount(0);
   await expect(logger.getByText("REALIZADO")).toBeVisible();
