@@ -64,13 +64,14 @@ function entrySummary(entry: HistoryEntry) {
 type AvailableExercise = { id: string; name: string; tracking_mode: "weight" | "time" };
 type PanelPosition = { left: number; top: number; width: number; maxHeight: number };
 
-export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, targetId, trackingMode, availableExercises = [] }: {
+export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, targetId, trackingMode, availableExercises = [], onExerciseChange }: {
   publicationId: string;
   exerciseId: string;
   exerciseName: string;
   targetId?: string;
   trackingMode: "weight" | "time";
   availableExercises?: AvailableExercise[];
+  onExerciseChange?: (exercise: AvailableExercise) => void;
 }) {
   const id = useId();
   const trigger = useRef<HTMLButtonElement>(null);
@@ -330,7 +331,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
             <label className="student-workout-exercise-picker">Ejercicio
               <select value={exerciseId} onChange={event => {
                 const selected = availableExercises.find(item => item.id === event.target.value);
-                if (selected) window.dispatchEvent(new CustomEvent("cueva-workout-exercise-select", { detail: selected }));
+                if (selected) onExerciseChange?.(selected);
               }}>
                 {availableExercises.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
               </select>
@@ -426,6 +427,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
           )}
         </div>,
         document.body
-      )}\n    </section>
+      )}
+    </section>
   );
 }
