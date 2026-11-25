@@ -156,8 +156,8 @@
   padding: 0;
   border: 1px solid var(--dash-border);
   border-radius: 14px;
-  background: var(--dash-panel, var(--surface, #ededeb));
-  color: var(--dash-text, var(--text, #181819));
+  background: var(--dash-panel);
+  color: var(--dash-text);
 }
 
 .routine-picker-dialog::backdrop { background: rgb(0 0 0 / 60%); }
@@ -341,7 +341,7 @@
   -webkit-text-fill-color: var(--dash-muted);
   opacity: 1;
 }
- .routine-mention-suggestions {
+.routine-mention-suggestions {
   display: grid;
   gap: 4px;
   max-height: 240px;
@@ -395,8 +395,8 @@
   padding: 12px;
   border: 1px solid var(--dash-border);
   border-radius: 12px;
-  background: var(--dash-panel);
-  color: var(--dash-text);
+  background: var(--dash-panel, var(--surface, #ededeb));
+  color: var(--dash-text, var(--text, #181819));
   box-shadow: 0 8px 28px rgb(0 0 0 / .2);
 }
 .routine-text-mention-preview p { margin: 0; }
