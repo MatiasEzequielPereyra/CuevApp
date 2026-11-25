@@ -367,6 +367,61 @@ for (const width of [360, 390, 1440]) {
 }
 
 
+test("el autoguardado no mueve el control durante un clic", async ({ page }) => {
+  let releaseSave: (() => Promise<void>) | undefined;
+  let held = false;
+  await page.route("**/api/rutinas", async route => {
+    if (route.request().method() !== "POST") return route.continue();
+    const payload = route.request().postDataJSON();
+    const response = await route.fetch();
+    if (!held && payload.plan?.days?.[0]?.blocks?.length === 1) {
+      held = true;
+      releaseSave = () => route.fulfill({ response });
+      return;
+    }
+    await route.fulfill({ response });
+  });
+  await page.setViewportSize({ width: 1440, height: 790 });
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto(`${origin}/rutinas?alumno=${shortId}`);
+  const editor = page.getByRole("region", { name: "Editor de rutina" });
+  const addDay = editor.getByRole("button", { name: "+ Día", exact: true });
+  await addDay.press("Enter");
+  const name = editor.getByRole("textbox", { name: "Nombre del nuevo día" });
+  await name.fill("Empuje");
+  await name.press("Enter");
+  const addBlock = editor.getByRole("button", { name: "+ Bloque", exact: true });
+  await addBlock.press("Enter");
+  let picker = page.getByRole("dialog", { name: "Nuevo bloque" });
+  for (const exercise of ["Sentadilla", "Press militar"]) await picker.getByRole("checkbox", { name: exercise, exact: true }).check();
+  await picker.getByRole("button", { name: "Agregar 2 ejercicios", exact: true }).click();
+  await expect.poll(() => Boolean(releaseSave)).toBe(true);
+  await expect(editor.getByText("Guardando…", { exact: true })).toBeVisible();
+  // Keep the viewport at the top so scroll anchoring cannot compensate for
+  // controls moving when the save-actions row is removed above the builder.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(addDay).toBeInViewport();
+  const point = await addDay.boundingBox();
+  expect(point).not.toBeNull();
+  await page.mouse.move(point!.x + point!.width / 2, point!.y + point!.height / 2);
+  await page.mouse.down();
+  await releaseSave!();
+  await expect(editor.getByText("Borrador guardado", { exact: true })).toBeVisible();
+  // Native release at the original coordinates; a user's hand stays put.
+  await page.mouse.up();
+  await expect(name).toBeFocused();
+  await name.fill("Tirón");
+  await name.press("Enter");
+  await editor.getByRole("button", { name: "Empuje", exact: true }).click();
+  await addBlock.click();
+  picker = page.getByRole("dialog", { name: "Nuevo bloque" });
+  for (const exercise of ["Plancha", "Remo", "Peso muerto"]) await picker.getByRole("checkbox", { name: exercise, exact: true }).check();
+  await picker.getByRole("button", { name: "Agregar 3 ejercicios", exact: true }).click();
+  const block = editor.getByRole("region", { name: "Bloque 2", exact: true });
+  await expect(block.getByText("3 vueltas", { exact: true })).toBeVisible();
+  await expect(block.getByRole("listitem")).toHaveCount(3);
+});
+
 test("aplicar una plantilla confirma antes de reemplazar un borrador solo de texto", async ({ page }) => {
   await page.goto(`${origin}/rutinas?alumno=${shortId}`);
   const editor = page.getByRole("region", { name: "Editor de rutina" });

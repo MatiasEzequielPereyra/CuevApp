@@ -9,8 +9,12 @@ las dos migraciones pendientes](CUEVA-007-task.md). PostgreSQL aislado75/75;
 resultado del contrato real de main con GoTrue/PostgREST y CI final en el PR.
 Sin SQL alojado ni activaciones de este ejecutor. El Orchestrator informó34
 migraciones y registro público activo, operación ajena a esta corrección.
-El fallo WebKit anterior sigue bajo diagnóstico separado; no se declara resuelto
-por las corridas dirigidas que no lograron reproducirlo.
+WebKit Linux reprodujo la pérdida de clic cuando termina el autoguardado entre
+presionar y soltar el mouse: desaparecía la fila de acciones y desplazaba el
+control. La fila ahora permanece montada y conserva sus bloqueos. Regresión
+nativa RED antes / GREEN después; seis escenarios originales de cuatro bloques
+también PASS. Evidencia, límites y CI del HEAD final en el PR; no se relajan
+aserciones ni tiempos de espera.
 
 ## PR #88 — Correcciones de auditoría — REVIEW — 2026-11-24
 

@@ -191,10 +191,10 @@ export function NoteEditor({ id, initial, template = false, templates = [], publ
       </div>
     </>}
     {message && <p role={status === "error" || status === "conflict" ? "alert" : "status"}>{message}</p>}
-    {(status === "error" || status === "conflict" || unsaved) && <div className="routine-actions routine-save-actions">
+    <div className="routine-actions routine-save-actions">
       <button type="button" disabled={!unsaved || status === "saving" || status === "conflict" || publishing} onClick={() => void save()}>{status === "error" ? "Reintentar guardado" : "Guardar ahora"}</button>
       {(status === "error" || status === "conflict") && <button type="button" onClick={() => void compare()}>Comparar versión guardada</button>}
-    </div>}
+    </div>
     {remote && <section className="routine-conflict"><h3>Versión guardada en el servidor</h3>{template && <p>{remote.title}</p>}{(remote.format ?? "blocks") === "text"
         ? <pre>{remote.text_content}</pre>
         : <><PlanView plan={remote.plan}/><pre>{remote.content || "Sin observaciones"}</pre></>}<p>Tu borrador sigue arriba. Compará y combiná manualmente antes de elegir.</p><div className="routine-actions"><button type="button" onClick={() => { setSaved(remote); setRemote(null); setStatus(same(local, remote) ? "saved" : "dirty"); setMessage("Se guardará tu borrador sobre la revisión que acabás de comparar."); }}>Guardar mi borrador sobre esta revisión</button><button type="button" onClick={() => { if (!window.confirm("¿Descartar tu borrador local y usar la versión guardada?")) return; current.current = remote; setLocal(remote); setSaved(remote); setRemote(null); setStatus("clean"); setMessage(""); }}>Usar versión del servidor</button></div></section>}

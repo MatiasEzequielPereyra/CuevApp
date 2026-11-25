@@ -250,6 +250,40 @@ SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`,
 obsoletas; revisión del diff React). SKILL_SOURCES:
 `.agents/skills/cueva-feature-development/SKILL.md` y guía React del host.
 
+## Clic durante el autoguardado — 2026-11-25
+
+Diagnóstico separado de la compatibilidad SQL. En WebKit Linux se observaron
+clics perdidos en el recorrido de cuatro bloques. Una captura nativa mostró
+`pointerdown` sobre una casilla mientras aparecía «Guardando…» y `pointerup`
+sobre su etiqueta después de «Borrador guardado»: la fila de acciones desaparecía
+en ese intervalo y desplazaba los controles.
+
+La regresión versionada en `tests/e2e/admin-students.spec.ts` retiene una respuesta
+real del guardado en la fixture, presiona «+ Día», libera esa respuesta y suelta
+el mouse en las mismas coordenadas. Antes del cambio no se abría el campo del
+día; después recibe foco y permite continuar hasta el segundo bloque con tres
+ejercicios y «3 vueltas». No usa eventos sintéticos ni modifica el estado React.
+El caso reducido acredita la causa en ese flujo; no reconstruye cada evento de
+la traza original de CI.
+
+`NoteEditor` mantiene montada la fila de guardado. «Guardar ahora» permanece
+deshabilitado sin cambios o durante una operación; conserva conflictos,
+comparación y permisos existentes. No se agregan demoras ni reintentos.
+WebKit Linux: regresión y matriz original de cuatro bloques, **7/7 PASS**,
+con 360, 390 y 1440 px en claro/oscuro. Se conservan todas las aserciones del
+caso original. La ejecución previa del caso reducido fue RED. Resultados de
+Chromium, revisión y CI del HEAD exacto se entregan en el PR.
+
+Reproducción: ejecutar la prueba «el autoguardado no mueve el control durante un
+clic» y «rutina de cuatro bloques» del proyecto `students-webkit`. La validación
+Linux usó Playwright 1.64.1 oficial con conexión de pruebas sobre loopback al
+servidor de fixture local; ningún tráfico de aplicación fue a producción.
+Trazas de diagnóstico locales en `evidence/runs/pr88-webkit-linux/`.
+
+SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`, `diagnosing-bugs`,
+`vercel:react-best-practices`, `code-review`. SKILL_SOURCES:
+`.agents/skills/cueva-feature-development/SKILL.md` y guías del host.
+
 ## Revalidación posterior a correcciones de video — 2026-11-24
 
 HEAD funcional validado: `368709119d14e7bc01aeb1a0e8a53fed45f7f81b`.
