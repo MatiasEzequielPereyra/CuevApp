@@ -81,7 +81,7 @@ for (const mode of ["weight", "time"] as const) {
       const input = panel.getByLabel(mode === "weight" ? "Peso utilizado (kg)" : "Duración (segundos)", { exact: true });
       await input.fill("80");
       if (source === "summary-after-save" || source === "history-after-save") {
-        await logger.getByRole("button", { name: "Guardar resultado", exact: true }).click();
+        await panel.getByRole("button", { name: "Guardar resultado", exact: true }).click();
         await expect(logger.getByText("Resultado guardado.", { exact: true })).toBeVisible();
         expect(submitted?.[mode === "weight" ? "weight_kg" : "duration_seconds"]).toBe(80);
         if (source === "summary-after-save") {
