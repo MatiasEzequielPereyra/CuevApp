@@ -201,6 +201,12 @@ try {
   await logger.getByRole("button", {name:"Registrar peso"}).click();
   await expect(loggerPanel).toBeVisible();
   await expect(loggerPanel).toHaveCSS("position", "fixed");
+  const panelBox = await loggerPanel.boundingBox();
+  const viewport = pupil.viewportSize();
+  expect(panelBox.x).toBeGreaterThanOrEqual(0);
+  expect(panelBox.y).toBeGreaterThanOrEqual(0);
+  expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(viewport.width);
+  expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(viewport.height);
   const rowAfterPanel = await logger.boundingBox();
   expect(rowAfterPanel.height).toBe(rowBeforePanel.height);
   await loggerPanel.getByLabel("Peso utilizado (kg)").fill("37.5");
@@ -216,7 +222,9 @@ try {
     "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
     [studentId,exerciseId]
   )).rows[0].count).toBe(2);
+  const rowHeightBeforeSets = (await logger.boundingBox()).height;
   await loggerPanel.getByRole("button", {name:"Por series"}).click();
+  expect((await logger.boundingBox()).height).toBe(rowHeightBeforeSets);
   const setRows = loggerPanel.locator(".student-workout-set");
   await setRows.nth(0).getByLabel("Repeticiones").fill("10");
   await setRows.nth(0).getByLabel("Peso (kg)").fill("40");
