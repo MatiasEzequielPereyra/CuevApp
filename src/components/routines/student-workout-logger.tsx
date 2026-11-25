@@ -288,8 +288,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   }, [expanded, exerciseId, loadHistory]);
 
   useEffect(() => {
-    if (!expanded) { setPanelPosition(null); return; }
-    positionPanel();
+    if (!expanded) return;
     function onPointerDown(event: PointerEvent) {
       if (event.target instanceof Node
         && !trigger.current?.contains(event.target)
@@ -321,6 +320,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       {summary && <p className="student-workout-summary"><strong>REALIZADO</strong><span>{summary}</span></p>}
       <button ref={trigger} type="button" className="student-workout-toggle" aria-label={expanded ? (trackingMode === "weight" ? "Cerrar registro de peso" : "Cerrar registro de duración") : (trackingMode === "weight" ? "Registrar peso" : "Registrar duración")} aria-expanded={expanded} onClick={() => {
         const nextExpanded = !expanded;
+        if (nextExpanded) positionPanel();
         setExpanded(nextExpanded);
         setMessage("");
         setError("");
