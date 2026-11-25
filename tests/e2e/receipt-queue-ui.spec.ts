@@ -7,6 +7,11 @@ import { expect, test, type Page } from "@playwright/test";
 import ts from "typescript";
 
 const requireNode = createRequire(__filename);
+const previewModule = { exports: {} };
+const previewSource = ts.transpileModule(readFileSync("src/components/receipts/receipt-preview.tsx", "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 },
+}).outputText;
+new Function("require", "module", "exports", previewSource)(requireNode, previewModule, previewModule.exports);
 const source = ts.transpileModule(readFileSync("src/app/pagos/comprobantes/page.tsx", "utf8"), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
 }).outputText;
@@ -47,6 +52,7 @@ async function renderQueue(state: "pending" | "rejected", options: { offset?: nu
     if (id === "@/components/receipts/receipt-review") return {
       ReceiptReview: () => React.createElement("div", { className: "receipt-form" }, "Formulario de revisión"),
     };
+    if (id === "@/components/receipts/receipt-preview") return previewModule.exports;
     if (id === "@/lib/students/server") return { studentAdmin: async () => client };
     if (id === "@/lib/students/date") return { buenosAiresDate: () => "2026-11-19" };
     if (id === "@/lib/receipts/contracts") return {
@@ -86,7 +92,7 @@ for (const viewport of [360, 1440]) {
       await expect(page.getByRole("navigation", { name: "Estado de comprobantes" })
         .getByRole("link", { name: "Resueltos" })).not.toHaveAttribute("aria-current", "page");
 
-      const targets = page.locator(".receipts-back, .receipts-tab, .receipts-card-actions > a, .receipts-review > summary");
+      const targets = page.locator(".receipts-back, .receipts-tab, .receipts-card-actions > button, .receipts-review > summary");
       await expect(targets).toHaveCount(5);
       for (let i = 0; i < await targets.count(); i++) {
         const target = targets.nth(i);
@@ -94,9 +100,10 @@ for (const viewport of [360, 1440]) {
         const bounds = await target.boundingBox();
         expect(bounds?.height).toBeGreaterThanOrEqual(44);
       }
-      const open = page.getByRole("link", { name: /Abrir comprobante/ });
-      await expect(open).toHaveAttribute("target", "_blank");
-      await expect(open).toHaveAttribute("rel", /noopener/);
+      const open = page.getByRole("button", { name: "Ver comprobante", exact: true });
+      await expect(open).toHaveAttribute("aria-haspopup", "dialog");
+      await open.focus();
+      await expect(open).toBeFocused();
 
       const hoverTarget = page.getByRole("link", { name: "Resueltos" });
       const resting = await hoverTarget.evaluate(element => getComputedStyle(element).backgroundColor);
@@ -122,7 +129,7 @@ test("Resueltos no permite revisión y conserva botones de archivo y paginación
   await expect(page.getByRole("link", { name: "Resueltos" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByText("Motivo del rechazo: Fecha ilegible")).toBeVisible();
   await expect(page.getByText("Revisar comprobante")).toHaveCount(0);
-  await expect(page.getByRole("link", { name: /Abrir comprobante/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ver comprobante", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Página anterior" }))
     .toHaveAttribute("href", "/pagos/comprobantes?estado=resueltos&desde=0");
 });
@@ -136,3 +143,4 @@ test("el error de carga mantiene Reintentar como control visible y accesible", a
   await expect(retry).toHaveAttribute("href", "/pagos/comprobantes?estado=pendientes&desde=0");
   expect((await retry.boundingBox())?.height).toBeGreaterThanOrEqual(44);
 });
+
