@@ -268,7 +268,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
         setError("");
         if (nextExpanded && !history && !loadingHistory) void loadHistory(0);
       }}>
-        {expanded ? "Cerrar registro" : trackingMode === "weight" ? "Registrar peso" : "Registrar duración"}
+        {expanded ? "Cerrar" : "Cargar"}
       </button>
       {expanded && (
         <div className="student-workout-panel">
