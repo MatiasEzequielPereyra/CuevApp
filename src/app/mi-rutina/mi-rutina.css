@@ -293,7 +293,7 @@
   background: hsl(var(--mention-hue, 250) 42% 92%);
   color: hsl(var(--mention-hue, 250) 38% 30%);
   font: inherit;
-  font-weight: 550;
+  font-weight: 400;
   box-shadow: 2px 0 0 hsl(var(--mention-hue, 250) 42% 92%), -2px 0 0 hsl(var(--mention-hue, 250) 42% 92%);
   text-decoration: none;
   cursor: pointer;
@@ -613,7 +613,7 @@
   font: inherit;
 }
 .my-routine-mention-preview {
-  z-index: 10000 !important;
+  z-index: 2147483000 !important;
   isolation: isolate;
   opacity: 1;
   background-color: var(--dash-panel);
