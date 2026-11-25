@@ -40,10 +40,10 @@ export async function GET(req: Request) {
   }
   const exerciseId = exerciseIds[0] ?? "";
   const offset = Number(params.get("offset") ?? 0);
-  const limit = Number(params.get("limit") ?? 30);
+  const limit = Number(params.get("limit") ?? 3);
   if (!uuid.test(exerciseId)) return reply({ message: "Ejercicio inválido." }, 400);
   if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000
-    || !Number.isSafeInteger(limit) || limit < 1 || limit > 50) {
+    || !Number.isSafeInteger(limit) || limit < 1 || limit > 3) {
     return reply({ message: "Página de historial inválida." }, 400);
   }
   const { data, error } = await client.rpc("cueva_workout_history", {
