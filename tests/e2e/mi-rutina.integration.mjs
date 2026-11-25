@@ -249,6 +249,9 @@ try {
     const adminContext = await studentContext(browser, admin);
     const learnerContext = await studentContext(browser, learner);
     const otherContext = await studentContext(browser, second);
+    const foreignWorkoutResponse = await otherContext.request.get(`${origin}/api/entrenamientos?exercise_id=${press.id}`);
+    assert.equal(foreignWorkoutResponse.status(), 403,
+      "Un alumno no puede consultar el historial de un ejercicio que sólo pertenece a la rutina de otro alumno.");
     const videoUrl = exercise => `${origin}/api/ejercicios/video?id=${exercise.id}&player=1`;
     for (const [context, exercise] of [[learnerContext, other], [learnerContext, old], [otherContext, press]]) {
       assert.equal((await context.request.get(videoUrl(exercise))).status(), 403);
@@ -320,6 +323,29 @@ try {
     await weightedRow.getByLabel("Peso utilizado (kg)").fill("32.5");
     await weightedRow.getByRole("button", { name: "Guardar resultado" }).click();
     await expect(weightedRow.getByRole("status").filter({ hasText: "Resultado guardado." })).toBeVisible();
+
+    // Exercise the complete series -> history -> edit flow through the authenticated UI.
+    await weightedRow.getByRole("button", { name: "Por series", exact: true }).click();
+    await weightedRow.getByLabel("Repeticiones").fill("10");
+    await weightedRow.getByLabel("Peso (kg)").fill("30");
+    await weightedRow.getByRole("button", { name: "Agregar serie", exact: true }).click();
+    await expect(weightedRow.getByText("Serie 2", { exact: true })).toBeVisible();
+    await weightedRow.getByLabel("Repeticiones").nth(1).fill("8");
+    await weightedRow.getByLabel("Peso (kg)").nth(1).fill("32");
+    await weightedRow.getByRole("button", { name: "Guardar resultado", exact: true }).click();
+    await expect(weightedRow.getByRole("status").filter({ hasText: "Resultado guardado." })).toBeVisible();
+    await weightedRow.getByRole("button", { name: "Ver historial", exact: true }).click();
+    const workoutHistory = weightedRow.locator(".student-workout-history");
+    await expect(workoutHistory.getByRole("heading", { name: "Historial de este ejercicio" })).toBeVisible();
+    await expect(workoutHistory.locator("ol > li").first()).toContainText("10 rep.");
+    await expect(workoutHistory.locator("ol > li").first()).toContainText("32 kg");
+    await workoutHistory.getByRole("button", { name: "Editar", exact: true }).first().click();
+    await expect(weightedRow.getByText("Editando un registro anterior")).toBeVisible();
+    await weightedRow.getByLabel("Peso (kg)").nth(0).fill("33");
+    await weightedRow.getByRole("button", { name: "Guardar cambios", exact: true }).click();
+    await expect(weightedRow.getByRole("status").filter({ hasText: "Cambios guardados." })).toBeVisible();
+    await expect(workoutHistory.locator("ol > li").first()).toContainText("33 kg");
+
     await weightedRow.locator(".my-routine-mention").click();
     const exercisePreview = pupil.getByRole("dialog", { name: "Ejercicio: Press militar" });
     await exercisePreview.getByRole("button", { name: "Ver video" }).click();
