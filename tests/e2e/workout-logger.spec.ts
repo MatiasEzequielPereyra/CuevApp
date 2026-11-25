@@ -82,7 +82,7 @@ for (const mode of ["weight", "time"] as const) {
       await input.fill("80");
       if (source === "summary-after-save" || source === "history-after-save") {
         await panel.getByRole("button", { name: "Guardar resultado", exact: true }).click();
-        await expect(logger.getByText("Resultado guardado.", { exact: true })).toBeVisible();
+        await expect(panel.getByText("Resultado guardado.", { exact: true })).toBeVisible();
         expect(submitted?.[mode === "weight" ? "weight_kg" : "duration_seconds"]).toBe(80);
         if (source === "summary-after-save") {
           await expect(logger.locator(".student-workout-summary")).toContainText(mode === "weight" ? "80 kg" : "1 min 20 s");
