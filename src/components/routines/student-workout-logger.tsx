@@ -310,6 +310,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "No pudimos eliminar el registro.");
+      if (editingEntry?.id === entry.id) setEditingEntry(null);
       setMessage("Registro eliminado.");
       await loadHistory(0);
       window.dispatchEvent(new CustomEvent("cueva-workout-updated", { detail: { exerciseId } }));
