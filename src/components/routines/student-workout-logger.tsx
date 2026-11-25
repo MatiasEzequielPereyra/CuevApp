@@ -339,9 +339,17 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
           </header>
           {availableExercises.length > 1 && (
             <label className="student-workout-exercise-picker">Ejercicio
-              <select value={exerciseId} onChange={event => {
+              <select value={exerciseId} disabled={saving} onChange={event => {
                 const selected = availableExercises.find(item => item.id === event.target.value);
-                if (selected) onExerciseChange?.(selected);
+                if (!selected) return;
+                // Never carry one exercise's series draft or edit target into another UUID.
+                setMode("quick");
+                setSets([{ reps: "", weight: "", duration: "" }]);
+                setEditingEntry(null);
+                setHistoryOpen(false);
+                setMessage("");
+                setError("");
+                onExerciseChange?.(selected);
               }}>
                 {availableExercises.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
               </select>
