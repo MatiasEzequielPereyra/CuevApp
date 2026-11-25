@@ -41,6 +41,7 @@ try {
   await db.query("insert into public.cueva_students(id,first_name,last_name,email,joined_on) values($1,'Mention','Local',$2,current_date)", [studentId,learner.email]);
   await db.query("insert into public.cueva_student_invitations(student_id,email,user_id,state,lease,requested_by) values($1,$2,$3,'sent',$4,$5)", [studentId,learner.email,learner.id,randomUUID(),admin.id]);
   await db.query("insert into public.cueva_exercises(id,name,revision,active,updated_by) values($1,$2,1,true,$3)", [exerciseId,exerciseName,admin.id]);
+  await db.query("insert into public.cueva_exercises(id,name,revision,active,updated_by) values($1,$2,1,true,$3)", [secondExerciseId,secondExerciseName,admin.id]);
   browser = await chromium.launch();
   const context = await browser.newContext();
   await context.addCookies(admin.cookies);
@@ -50,6 +51,8 @@ try {
   await editor.getByRole("button", {name:"Texto libre"}).click();
   const adminTextarea = editor.getByRole("textbox", {name:"Rutina en texto libre"});
   const inlineExerciseName = `${exerciseName} temporal 007`;
+  const secondExerciseId = randomUUID();
+  const secondExerciseName = `Press de hombros ${randomUUID().slice(0,8)}`;
   const adminEditorBeforeSuggestions = await adminTextarea.boundingBox();
   await adminTextarea.fill(`@${inlineExerciseName}`);
   await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"})).toBeVisible();
@@ -364,6 +367,11 @@ try {
   await adminTextarea.pressSequentially(inlineExerciseName);
   await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:inlineExerciseName, exact:true})).toBeVisible();
   await page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:inlineExerciseName, exact:true}).click();
+  await adminTextarea.press("End");
+  await adminTextarea.pressSequentially(" @");
+  await adminTextarea.pressSequentially(secondExerciseName);
+  await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:secondExerciseName, exact:true})).toBeVisible();
+  await page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:secondExerciseName, exact:true}).click();
   await editor.getByRole("button", {name:"Publicar rutina"}).click();
   await expect(editor.getByText("Rutina publicada.", {exact:true})).toBeVisible();
   const {rows:[inlineExercise]} = await db.query("select id from public.cueva_exercises where name=$1", [inlineExerciseName]);
@@ -378,10 +386,19 @@ try {
   await expect(selectionPanel.getByLabel("Ejercicio")).toHaveValue(inlineExercise.id);
   await expect(selectionPanel.getByLabel("Duración (segundos)")).toBeVisible();
   await expect(selectionPanel.getByLabel("Peso utilizado (kg)")).toHaveCount(0);
+  await selectionPanel.getByLabel("Ejercicio").selectOption(secondExerciseId);
+  await expect(selectionPanel.getByLabel("Peso utilizado (kg)")).toBeVisible();
+  await selectionPanel.getByLabel("Peso utilizado (kg)").fill("22.5");
+  await selectionPanel.getByRole("button", {name:"Guardar resultado"}).click();
+  await expect(selectionPanel.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
+  const firstExerciseSummary = pupil.locator(".my-routine-exercise-with-summary").filter({hasText:exerciseName}).locator(".student-workout-exercise-summary").first();
+  const secondExerciseSummary = pupil.locator(".my-routine-exercise-with-summary").filter({hasText:secondExerciseName}).locator(".student-workout-exercise-summary").first();
+  await expect(firstExerciseSummary).toContainText("kg");
+  await expect(secondExerciseSummary).toContainText("22,5 kg");
   await selectionPanel.getByRole("button", {name:"Cerrar registro"}).click();
   await expect(selectionPanel).toHaveCount(0);
 
-  console.log("PASS: authenticated text mention preview, floating logger layout, UUID exercise selection, time tracking, inline video playback, keyboard dismissal and no navigation.");
+  console.log("PASS: authenticated text mention preview, per-exercise workout summaries, floating logger layout, history reuse/deletion and three-entry limit, UUID exercise selection, time tracking, inline video playback, keyboard dismissal and no navigation.");
 } finally {
   await browser?.close();
   // Immutable synthetic publications are removed with this disposable stack.
