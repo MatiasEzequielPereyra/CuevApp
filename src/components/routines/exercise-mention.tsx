@@ -104,7 +104,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
         <div ref={panel} id={panelId} className="my-routine-mention-preview" role="dialog"
           tabIndex={-1} aria-label={`Ejercicio: ${name}`}
           style={{ position: "fixed", left: position.left, top: position.top, width: position.width,
-            maxHeight: "min(260px, calc(100dvh - 16px))", overflow: "auto", zIndex: 1001 }}>
+            maxHeight: "min(260px, calc(100dvh - 16px))", overflow: "auto", zIndex: 10000 }}>
           <strong>{name}</strong>
           {description && <span>{description}</span>}
           {videoAvailability === "available"
