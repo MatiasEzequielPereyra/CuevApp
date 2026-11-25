@@ -421,9 +421,9 @@
   padding: 12px;
   border: 1px solid var(--workout-border);
   border-radius: 12px;
-  background: var(--dash-panel, var(--surface, #ededeb));
-  background-color: var(--dash-panel, var(--surface, #ededeb));
-  color: var(--dash-text, var(--text, #181819));
+  background: var(--workout-surface);
+  background-color: var(--workout-surface);
+  color: var(--workout-text);
   box-shadow: 0 10px 28px rgb(0 0 0 / .16);
   isolation: isolate;
   overscroll-behavior: contain;
