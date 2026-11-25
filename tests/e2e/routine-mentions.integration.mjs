@@ -52,6 +52,10 @@ try {
   const inlineExerciseName = `${exerciseName} temporal 007`;
   await adminTextarea.fill(`@${inlineExerciseName}`);
   await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"})).toBeVisible();
+  const suggestions = page.getByRole("listbox", {name:"Ejercicios sugeridos"});
+  await expect(suggestions).toHaveCSS("opacity", "1");
+  await expect(suggestions).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(suggestions).toHaveCSS("z-index", "2147483000");
   await page.getByLabel("Registro").selectOption("time");
   await page.getByRole("button", {name: new RegExp(`Crear .* en Ejercicios`)}).click();
   await expect.poll(async () => (await db.query(
@@ -182,6 +186,9 @@ try {
   // expose workout logging even when no video is available.
   await mention.click();
   await expect(preview.getByText(exerciseName, {exact:true})).toBeVisible();
+  await expect(preview).toHaveCSS("opacity", "1");
+  await expect(preview).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(preview).toHaveCSS("z-index", "2147483000");
   await preview.hover(); // moving from the mention to the panel must not dismiss it.
   await expect(preview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
   await expect(preview.getByRole("link")).toHaveCount(0);
