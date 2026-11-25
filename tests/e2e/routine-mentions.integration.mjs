@@ -1,3 +1,4 @@
+// CUEVA-007: floating panels, per-exercise summaries, and compact editable history.
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { chromium, expect } from "@playwright/test";
@@ -272,7 +273,7 @@ try {
   const reusableEntry = loggerPanel.locator(".student-workout-history > ol > li").filter({hasText:"8 rep."});
   await reusableEntry.getByRole("button", {name:"Usar"}).click();
   await expect(loggerPanel.getByLabel("Peso utilizado (kg)")).toHaveValue("45");
-  page.once("dialog", dialog => dialog.accept());
+  pupil.once("dialog", dialog => dialog.accept());
   await reusableEntry.getByRole("button", {name:"Eliminar"}).click();
   await expect.poll(async () => (await db.query(
     "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
