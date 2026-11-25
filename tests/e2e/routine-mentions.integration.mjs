@@ -252,6 +252,18 @@ try {
   await loggerPanel.getByRole("button", {name:"Guardar cambios"}).click();
   await expect(loggerPanel.getByRole("status").filter({hasText:"Cambios guardados."})).toBeVisible();
   await expect(logger.getByText("45 kg", { exact: true })).toBeVisible();
+  await expect(loggerPanel.locator(".student-workout-history > ol > li")).toHaveCount(3);
+  const reusableEntry = loggerPanel.locator(".student-workout-history > ol > li").filter({hasText:"8 rep."});
+  await reusableEntry.getByRole("button", {name:"Usar"}).click();
+  await expect(loggerPanel.getByLabel("Peso utilizado (kg)")).toHaveValue("45");
+  page.once("dialog", dialog => dialog.accept());
+  await reusableEntry.getByRole("button", {name:"Eliminar"}).click();
+  await expect.poll(async () => (await db.query(
+    "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
+    [studentId,exerciseId]
+  )).rows[0].count).toBe(2);
+  await expect(loggerPanel.locator(".student-workout-history > ol > li")).toHaveCount(2);
+  await expect(loggerPanel.getByRole("status").filter({hasText:"Registro eliminado."})).toBeVisible();
   await pupil.locator("h1").click();
   await expect(preview).toHaveCount(0);
   await expect(logger.getByText("REALIZADO")).toBeVisible();
