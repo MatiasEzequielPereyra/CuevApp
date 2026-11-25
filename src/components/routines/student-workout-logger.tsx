@@ -244,6 +244,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       if (!response.ok) throw new Error(data.message || "No pudimos guardar el registro.");
       operation.current = null;
       setMessage(editingEntry ? "Cambios guardados." : "Resultado guardado.");
+      window.dispatchEvent(new CustomEvent("cueva-workout-updated", { detail: { exerciseId } }));
       setEditingEntry(null);
       await loadHistory(0);
     } catch (cause) {
@@ -275,6 +276,49 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     setEditingEntry(null);
     setMessage("");
     setError("");
+  }
+
+  function useHistoryEntry(entry: HistoryEntry) {
+    setEditingEntry(null);
+    setMode("quick");
+    if (trackingMode === "weight") {
+      const value = entry.mode === "quick" ? entry.weight_kg : entry.sets.at(-1)?.weight_kg;
+      if (value === null || value === undefined) return;
+      setWeight(String(value));
+    } else {
+      const value = entry.mode === "quick" ? entry.duration_seconds : entry.sets.at(-1)?.duration_seconds;
+      if (value === null || value === undefined) return;
+      setDuration(String(value));
+    }
+    setMessage("Valor del historial listo para usar.");
+    setError("");
+  }
+
+  async function deleteHistoryEntry(entry: HistoryEntry) {
+    if (busy.current || saving) return;
+    if (!window.confirm("¿Eliminar este registro del historial?")) return;
+    busy.current = true;
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      const response = await fetch("/api/entrenamientos", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ entry_id: entry.id, revision: entry.revision }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "No pudimos eliminar el registro.");
+      setMessage("Registro eliminado.");
+      await loadHistory(0);
+      window.dispatchEvent(new CustomEvent("cueva-workout-updated", { detail: { exerciseId } }));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No pudimos eliminar el registro.");
+    } finally {
+      setSaving(false);
+      busy.current = false;
+    }
   }
 
   useEffect(() => {
@@ -435,12 +479,18 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
                         : <ul>{entry.sets.map(set => <li key={set.set_number}>{entry.tracking_mode === "weight"
                           ? `${set.reps} rep. · ${set.weight_kg === null ? "—" : formatWeight(set.weight_kg)}`
                           : (set.duration_seconds === null ? "—" : formatDuration(set.duration_seconds))}</li>)}</ul>}
-                      {entry.tracking_mode === trackingMode && <button type="button" onClick={() => beginEdit(entry)}>Editar</button> }
+                      <div className="student-workout-history-actions">
+                        {entry.tracking_mode === trackingMode && <>
+                          <button type="button" disabled={saving} onClick={() => useHistoryEntry(entry)}>Usar</button>
+                          <button type="button" disabled={saving} onClick={() => beginEdit(entry)}>Editar</button>
+                        </>}
+                        <button type="button" className="student-workout-history-delete" disabled={saving} onClick={() => void deleteHistoryEntry(entry)}>Eliminar</button>
+                      </div>
                     </li>
                   ))}
                 </ol>
               )}
-              {history?.has_more && <button type="button" disabled={loadingHistory} onClick={() => void loadHistory(history.entries.length)}>{loadingHistory ? "Cargando…" : "Cargar registros anteriores"}</button>}
+
             </div>
           )}
         </div>,
