@@ -37,6 +37,12 @@ select ok(has_function_privilege('authenticated','public.cueva_workout_update(uu
  'authenticated students can edit their own workout records');
 select ok(not has_function_privilege('anon','public.cueva_workout_update(uuid,integer,text,text,numeric,integer,jsonb)','EXECUTE'),
  'anonymous users cannot edit workout records');
+select ok(to_regprocedure('public.cueva_workout_delete(uuid,integer)') is not null,
+ 'workout history exposes a revision-checked delete RPC');
+select ok(has_function_privilege('authenticated','public.cueva_workout_delete(uuid,integer)','EXECUTE'),
+ 'authenticated students can delete their own workout records');
+select ok(not has_function_privilege('anon','public.cueva_workout_delete(uuid,integer)','EXECUTE'),
+ 'anonymous users cannot delete workout records');
 select ok(to_regprocedure('public.cueva_workout_history_batch(uuid[])') is not null,'workout summary batch RPC is installed');
 select ok(has_function_privilege('authenticated','public.cueva_workout_history_batch(uuid[])','EXECUTE'),'authenticated students can call the summary batch RPC');
 select ok(not has_function_privilege('anon','public.cueva_workout_history_batch(uuid[])','EXECUTE'),'anonymous users cannot call the summary batch RPC');
@@ -182,6 +188,18 @@ select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')-
 select is((public.cueva_workout_history_batch(array['c7500000-0000-4000-8000-000000000001'::uuid])->'c7500000-0000-4000-8000-000000000001'->'entries'->0->>'id'),
  'c8100000-0000-4000-8000-000000000015',
  'batch history order is stable by created_at and id when performed_at ties');
+select throws_ok($stale_delete$select public.cueva_workout_delete(
+ 'c8100000-0000-4000-8000-000000000002',2)$stale_delete$,
+ '40001',null,'stale history deletion is rejected');
+select is((public.cueva_workout_delete(
+ 'c8100000-0000-4000-8000-000000000002',1)->>'deleted')::boolean,true,
+ 'students can delete their own history entry with its current revision');
+select is((select count(*)::integer from public.cueva_workout_entries
+ where id='c8100000-0000-4000-8000-000000000002'),0,
+ 'deleting a history entry removes its parent record');
+select is((select count(*)::integer from public.cueva_workout_sets
+ where entry_id='c8100000-0000-4000-8000-000000000002'),0,
+ 'deleting a history entry cascades to its workout sets');
 
 select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000003','c7600000-0000-4000-8000-000000000004',
