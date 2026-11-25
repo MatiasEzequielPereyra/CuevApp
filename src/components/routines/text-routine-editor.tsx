@@ -69,14 +69,20 @@ function measureCaretRect(input: HTMLTextAreaElement): DOMRect {
 }
 
 function floatingPosition(caret: DOMRect, preferredWidth: number) {
-  const width = Math.min(preferredWidth, window.innerWidth - 16);
-  const left = Math.max(8, Math.min(caret.left, window.innerWidth - width - 8));
-  const below = window.innerHeight - caret.bottom;
-  const maxHeight = 240;
-  const top = below >= maxHeight + 8 || caret.top < maxHeight
-    ? Math.min(caret.bottom + 4, window.innerHeight - maxHeight - 8)
-    : Math.max(8, caret.top - maxHeight - 4);
-  return { left, top, width };
+  const gutter = 8;
+  const width = Math.min(preferredWidth, window.innerWidth - gutter * 2);
+  const left = Math.max(gutter, Math.min(caret.left, window.innerWidth - width - gutter));
+  const below = Math.max(0, window.innerHeight - caret.bottom - gutter);
+  const above = Math.max(0, caret.top - gutter);
+  // Keep the menu cascading from the native caret whenever possible. Only
+  // flip above it when the remaining viewport below would make it unusable.
+  const openBelow = below >= Math.min(150, above) || below >= above;
+  const available = openBelow ? below : above;
+  const maxHeight = Math.max(112, Math.min(220, available));
+  const top = openBelow
+    ? Math.min(caret.bottom + 6, window.innerHeight - maxHeight - gutter)
+    : Math.max(gutter, caret.top - maxHeight - 6);
+  return { left, top, width, maxHeight };
 }
 
 
@@ -469,7 +475,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       placeholder={"Escribí la rutina completa…\n\nPodés mencionar ejercicios con @ o escribir su nombre."} />
 
     </div>
-    {(previewPending || previewError || (preview && !playerOpen)) && previewPosition && typeof document !== "undefined" && createPortal(<div ref={previewPanel} className="routine-text-mention-preview" role="dialog" aria-label={preview ? "Ejercicio: " + preview.name : "Cargando ejercicio"} style={{ position: "fixed", left: previewPosition.left, top: previewPosition.top, width: previewPosition.width, maxHeight: "min(240px, calc(100dvh - 16px))", overflow: "auto", zIndex: 99990 }}>
+    {(previewPending || previewError || (preview && !playerOpen)) && previewPosition && typeof document !== "undefined" && createPortal(<div ref={previewPanel} className="routine-text-mention-preview" role="dialog" aria-label={preview ? "Ejercicio: " + preview.name : "Cargando ejercicio"} style={{ position: "fixed", left: previewPosition.left, top: previewPosition.top, width: previewPosition.width, maxHeight: previewPosition.maxHeight, overflow: "auto", zIndex: 2147483000 }}>
       {previewPending && <p role="status">Cargando ejercicio…</p>}
       {previewError && <p role="alert">{previewError}</p>}
       {preview && !playerOpen && <>
@@ -497,7 +503,7 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
         textarea.current?.focus({ preventScroll: true });
       }
     }} /> }
-    {range && suggestionPosition && typeof document !== "undefined" && createPortal(<div ref={suggestionPanel} className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos" style={{ position: "fixed", left: suggestionPosition.left, top: suggestionPosition.top, width: suggestionPosition.width, maxHeight: "min(240px, calc(100dvh - 16px))", zIndex: 1000 }}>
+    {range && suggestionPosition && typeof document !== "undefined" && createPortal(<div ref={suggestionPanel} className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos" style={{ position: "fixed", left: suggestionPosition.left, top: suggestionPosition.top, width: suggestionPosition.width, maxHeight: suggestionPosition.maxHeight, zIndex: 2147483000 }}>
       {pending && <p role="status">Buscando ejercicios…</p>}
       {createError && <p role="alert">{createError}</p>}
       {!pending && !error && range.query.trim() && !results.some(exercise => exercise.name.trim().toLocaleLowerCase() === range.query.trim().toLocaleLowerCase()) && <>
