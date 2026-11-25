@@ -252,6 +252,9 @@ select throws_ok($$select public.cueva_workout_record(
 select throws_ok($owner_update$select public.cueva_workout_update(
  'c8100000-0000-4000-8000-000000000001',2,'quick','weight',74,null,'[]'::jsonb)$owner_update$,
  '42501',null,'student B cannot edit student A workout history');
+select throws_ok($owner_delete$select public.cueva_workout_delete(
+ 'c8100000-0000-4000-8000-000000000001',2)$owner_delete$,
+ '42501',null,'student B cannot delete student A workout history');
 select is(public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')->>'last_weight_kg',null,
  'history is isolated by authenticated student');
 select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000003')->>'last_weight_kg')::numeric,45::numeric,
