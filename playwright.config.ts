@@ -10,7 +10,7 @@ export default defineConfig({
   use: { baseURL: "http://127.0.0.1:3000", trace: "retain-on-failure" },
   projects: [
     { name: "chromium", testIgnore: "**/admin-students.spec.ts", use: { ...devices["Desktop Chrome"] } },
-    { name: "webkit", testMatch: "**/admin-dashboard.spec.ts", use: { ...devices["Desktop Safari"] } },
+    { name: "webkit", testMatch: ["**/admin-dashboard.spec.ts", "**/receipts.spec.ts"], use: { ...devices["Desktop Safari"] } },
     // These suites each start a Next dev server in the same checkout. Keep them
     // in separate project phases so they cannot contend for the shared .next lock.
     { name: "students-chromium", dependencies: ["chromium"], testMatch: "**/admin-students.spec.ts", use: { ...devices["Desktop Chrome"] } },
@@ -34,3 +34,4 @@ export default defineConfig({
     },
   },
 });
+

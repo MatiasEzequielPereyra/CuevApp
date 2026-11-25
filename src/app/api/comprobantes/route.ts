@@ -98,7 +98,8 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
-  const id = new URL(req.url).searchParams.get("id");
+  const params = new URL(req.url).searchParams;
+  const id = params.get("id");
   if (!productConfig() || !id || !uuid.test(id)) return denied();
   const client = await userClient();
   const { data: { user }, error } = await client.auth.getUser();
@@ -108,7 +109,19 @@ export async function GET(req: Request) {
     const row = await client.from("cueva_payment_receipts").select("object_path,media_type").eq("id", id).maybeSingle();
     if (row.error || !row.data) return denied();
     const type = row.data.media_type as keyof typeof receiptExtensions;
+    if (!Object.hasOwn(receiptExtensions, type)) return failure("Formato de archivo no disponible.", 415);
     const fileName = `comprobante.${receiptExtensions[type]}`;
+    if (params.get("preview") === "1") {
+      const file = await (await receiptStorage(client)).from(receiptBucket).download(row.data.object_path);
+      if (file.error || !file.data) return failure("Archivo temporalmente no disponible.", 503);
+      if (file.data.size > maxReceiptBytes || file.data.type.split(";")[0] !== type) {
+        return failure("Formato de archivo no disponible.", 415);
+      }
+      return new NextResponse(file.data, { headers: {
+        ...headers, "Content-Type": type, "Content-Disposition": `inline; filename="${fileName}"`,
+        "X-Content-Type-Options": "nosniff",
+      } });
+    }
     const signed = await (await receiptStorage(client)).from(receiptBucket)
       .createSignedUrl(row.data.object_path, 60, { download: fileName });
     if (signed.error || !signed.data) return failure("Archivo temporalmente no disponible.", 503);
@@ -117,5 +130,6 @@ export async function GET(req: Request) {
     return failure("Archivo temporalmente no disponible.", 503);
   }
 }
+
 
 

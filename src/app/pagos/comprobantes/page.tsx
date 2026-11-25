@@ -4,6 +4,7 @@ import { AdminShell } from "@/components/dashboard/admin-dashboard";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { ThemePicker } from "@/components/theme/theme-picker";
 import { ReceiptReview } from "@/components/receipts/receipt-review";
+import { ReceiptPreview } from "@/components/receipts/receipt-preview";
 import { studentAdmin } from "@/lib/students/server";
 import { buenosAiresDate } from "@/lib/students/date";
 import { receiptState, type Receipt } from "@/lib/receipts/contracts";
@@ -72,12 +73,7 @@ export default async function ReceiptQueue({ searchParams }: { searchParams: Pro
               {row.rejection_reason && <p>Motivo del rechazo: {row.rejection_reason}</p>}
             </div>
             <div className="receipts-card-actions">
-              <a className="receipts-action receipts-action-secondary" href={"/api/comprobantes?id=" + row.id}
-                target="_blank" rel="noopener noreferrer">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-3M13 3h8v8m0-8L10 14"/></svg>
-                Abrir comprobante
-                <span className="receipts-sr-only"> (se abre en una pestaña nueva)</span>
-              </a>
+              <ReceiptPreview id={row.id} />
               {row.state === "pending" && <details className="receipts-review">
                 <summary className="receipts-action receipts-action-primary">
                   Revisar comprobante
@@ -96,3 +92,4 @@ export default async function ReceiptQueue({ searchParams }: { searchParams: Pro
     </div>
   </AdminShell>;
 }
+
