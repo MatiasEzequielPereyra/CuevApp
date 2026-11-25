@@ -1,4 +1,4 @@
-// CUEVA-007: floating panels, per-exercise summaries, and compact editable history.
+// CUEVA-007: floating panels, per-exercise summaries, and compact editable history (current contract).
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { chromium, expect } from "@playwright/test";
