@@ -14,6 +14,8 @@ const service = createClient(API_URL, CUEVA_SERVICE_KEY, { auth: { persistSessio
 const db = new pg.Client({ connectionString: DB_URL });
 const studentId = randomUUID(), exerciseId = randomUUID();
 const exerciseName = `Sentadilla emoji ${randomUUID().slice(0,8)}`;
+const secondExerciseId = randomUUID();
+const secondExerciseName = `Press de hombros ${randomUUID().slice(0,8)}`;
 const password = `CuevA-${randomUUID()}-9!`;
 async function checked(operation) {
   const { data, error } = await operation;
@@ -52,8 +54,6 @@ try {
   await editor.getByRole("button", {name:"Texto libre"}).click();
   const adminTextarea = editor.getByRole("textbox", {name:"Rutina en texto libre"});
   const inlineExerciseName = `${exerciseName} temporal 007`;
-  const secondExerciseId = randomUUID();
-  const secondExerciseName = `Press de hombros ${randomUUID().slice(0,8)}`;
   const adminEditorBeforeSuggestions = await adminTextarea.boundingBox();
   await adminTextarea.fill(`@${inlineExerciseName}`);
   await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"})).toBeVisible();
