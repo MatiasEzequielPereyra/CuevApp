@@ -171,7 +171,7 @@ try {
 
   // A linked mention never opens a preview from proximity, hover or focus.
   const preview = pupil.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`});
-  const logger = pupil.locator(".my-routine-mention-wrap .student-workout").first();
+  const logger = pupil.locator(".student-workout-row .student-workout").first();
   await mention.hover();
   await expect(preview).toHaveCount(0);
   await mention.focus();
