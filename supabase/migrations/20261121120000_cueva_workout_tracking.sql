@@ -657,6 +657,50 @@ revoke all on function public.cueva_exercise_write(uuid,text,boolean,integer,tex
 grant execute on function public.cueva_exercise_write(uuid,text,boolean,integer,text,text,text,text)
   to authenticated;
 
+-- Keep the deployed seven-field API usable before deployment and after an
+-- application rollback. Read tracking_mode under the SAME writer lock, so an
+-- old client cannot reset a time exercise or race a new client's CAS update.
+create function cueva_private.exercise_write(
+  p_id uuid, p_name text, p_active boolean, p_revision integer,
+  p_description text, p_video_url text, p_video_path text
+) returns jsonb
+language plpgsql security definer set search_path = ''
+as $legacy_exercise_write$
+declare
+  v_tracking_mode text;
+begin
+  if not cueva_private.routine_admin() then
+    raise exception 'Acceso restringido' using errcode = '42501';
+  end if;
+  perform pg_advisory_xact_lock(903004001);
+  select tracking_mode into v_tracking_mode from public.cueva_exercises
+    where id=p_id for update;
+  return cueva_private.exercise_write(
+    p_id,p_name,p_active,p_revision,p_description,p_video_url,p_video_path,
+    coalesce(v_tracking_mode,'weight')
+  );
+end;
+$legacy_exercise_write$;
+revoke all on function cueva_private.exercise_write(uuid,text,boolean,integer,text,text,text)
+  from public,anon,authenticated,service_role;
+grant execute on function cueva_private.exercise_write(uuid,text,boolean,integer,text,text,text)
+  to authenticated;
+
+create function public.cueva_exercise_write(
+  p_id uuid, p_name text, p_active boolean, p_revision integer,
+  p_description text, p_video_url text, p_video_path text
+) returns jsonb
+language sql security invoker set search_path = ''
+as $legacy_exercise_public$
+  select cueva_private.exercise_write(
+    p_id,p_name,p_active,p_revision,p_description,p_video_url,p_video_path
+  )
+$legacy_exercise_public$;
+revoke all on function public.cueva_exercise_write(uuid,text,boolean,integer,text,text,text)
+  from public,anon,authenticated,service_role;
+grant execute on function public.cueva_exercise_write(uuid,text,boolean,integer,text,text,text)
+  to authenticated;
+
 create function cueva_private.student_mentioned_exercises_with_tracking_mode()
 returns table(id uuid, name text, description text, tracking_mode text)
 language sql stable security definer set search_path = ''

@@ -186,25 +186,60 @@ en #88. Los resultados históricos de este documento corresponden solo a sus
 SHAs; el rerun receipt-storage del candidato previo fue informado SUCCESS por
 el Orchestrator y no se reutiliza como prueba del nuevo HEAD.
 
-### Secuencia de publicación pendiente (no ejecutada)
+### Secuencia de publicación corregida — 2026-11-25 (no ejecutada)
 
-1. Auditar y aprobar el HEAD exacto. Confirmar main y que el esquema previo
-   coincide con sus migraciones, incluidas dependencias de 006E; no deducirlo
-   únicamente del número de entradas del historial. El Orchestrator reportó
-   33 migraciones alojadas, sin tablas de entrenamiento ni RPC de registro personal.
-2. Con autorización operativa separada, preflight/backup y aplicación controlada
-   de `20261121120000_cueva_workout_tracking.sql`, SHA256 de bytes Git:
-   `c1e5b00f4309fac22f06f5741429d596af37b282e758f6584124920f4148aa3d`.
-   Verificar `tracking_mode`, tablas, RPC, RLS/grants y ausencia de cambios en
-   objetivos publicados. Esta corrección no modifica esa migración ni ninguna
-   histórica. No aplicar migraciones del #83 como dependencia del #88.
-3. Publicar la aplicación solo después de verificar el esquema requerido.
-   Comprobar registro/historial con alumnos sintéticos autorizados y aislamiento.
-   La matriz CI fresh/upgrade/hosted-compatible es evidencia local, no aplicación
-   alojada ni autorización de escritura.
-4. Rollback conservador: retirar el código de la funcionalidad si falla la prueba;
-   conservar entradas/historial y el esquema aditivo. No borrar datos ni revertir
-   SQL destructivamente. Registrar cualquier operación posterior por separado.
+El writer de siete argumentos del cliente publicado se conserva como wrapper
+autorizado. Bajo el mismo advisory lock transaccional del writer nuevo, lee el
+modo existente con lock de fila y delega al writer de ocho argumentos: una alta
+antigua usa `weight`; editar desde el cliente anterior conserva `time`/`weight`,
+la revisión CAS y la idempotencia. No basta un default fijo en la firma nueva:
+revertiría silenciosamente un ejercicio por tiempo. Los grants de ambas firmas
+siguen limitados a `authenticated` y el control efectivo a admin con sesión ready.
+
+1. Auditar el HEAD exacto incorporando main
+   `545374cb8017f8c894dfd605fb91935c61f86107`. Preservar los commits de batch.
+   El Orchestrator informó el25/11 **34 migraciones** y registro público activo;
+   esa activación fue ajena a este ejecutor. Workout sigue sin tablas alojadas.
+   Contrastar esquema/definiciones, no asumir igualdad de versiones de historial
+   alojado y Git ni repetir la migración de registro personal.
+2. Con autorización operativa separada y preflight/backup, aplicar en orden:
+   - `20261121120000_cueva_workout_tracking.sql`, SHA256 Git
+     `3ebbb8a8a3c60bbe6d4e24c50cfb7592abc59ddba9349db4872cafbbbd981d95`.
+   - `20261124170000_cueva_workout_history_batch.sql`, SHA256 Git
+     `f3c22164b78ffdc04c4fdb09ae970c3858a4757cbb2eaddd2957fa91646c8d9c`.
+   Esta corrección modifica únicamente la migración Workout aún pendiente;
+   ninguna migración ya aplicada se reescribe. Verificar ambas firmas públicas,
+   permisos, resolución en PostgREST y caché de esquema antes de continuar.
+3. Probar el contrato de siete campos del servidor anterior con el esquema ya
+   migrado, antes de publicar: alta y edición permitidas al admin, conservación
+   de modo, CAS/replay, carrera con el writer nuevo y denegación alumno/anon.
+   Luego publicar y aceptar registro/historial con identidades sintéticas
+   autorizadas. #83 no es dependencia SQL nueva de esta operación.
+4. Rollback de aplicación al cliente anterior, conservando tablas/resultados y
+   las dos firmas de RPC. Verificar otra vez el guardado desde ese cliente;
+   no borrar datos ni revertir SQL destructivamente. Solo proceder con evidencia
+   de la compatibilidad; un CI verde no autoriza por sí mismo SQL alojado.
+
+Prueba versionada: `tests/fixtures/exercise-route-e754727.txt` conserva los bytes
+reales del endpoint publicado, SHA256
+`e46334f8de6139236ad7c3fd06cad2b0bfc7d0c249aaf1498eef9cab4f5474a3`.
+`tests/e2e/exercise-legacy-contract.mjs` ejecuta ese POST con sus helpers reales,
+inyectando los clientes del laboratorio; GoTrue/PostgREST/RPC son reales. La
+matriz autenticada de menciones lo invoca con admin/alumno/anon: cliente anterior
+→ cliente nuevo → rollback, rechazo CAS y carrera entre firmas. La fixture es
+versionada; no depende de conservar un objeto Git de una rama que se limpie.
+
+Validación local nueva: PostgreSQL aislado con fronteras Auth/Storage sintéticas,
+**75/75 pgTAP**, incluidos ocho casos del contrato antiguo. No se presenta como
+prueba de Auth alojado. La integración del POST antiguo con GoTrue/PostgREST y
+la CI del HEAD final se registran en el PR; no se atribuye PASS antes de ejecutarse.
+Fuente del contrato RPC y caché:
+[PostgREST](https://docs.postgrest.org/en/stable/references/api/functions.html).
+
+SKILLS_SELECTED / SKILLS_APPLIED: `cueva-feature-development`,
+`cueva-supabase-security`, `supabase:supabase`, `resolving-merge-conflicts`.
+SKILL_SOURCES: `.agents/skills/cueva-feature-development/SKILL.md`,
+`.agents/skills/cueva-supabase-security/SKILL.md` y guías del host.
 
 Sin merge, deploy, SQL, flags ni envíos alojados. No se reinició Docker ni se
 intervino en contenedores de otros proyectos. La fixture retira solo su proceso

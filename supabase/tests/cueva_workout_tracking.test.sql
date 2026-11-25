@@ -247,5 +247,39 @@ select throws_ok($$select public.cueva_workout_history('c7500000-0000-4000-8000-
  'anonymous users cannot query workout history');
 reset role;
 
+-- The seven-field deployed/rollback API must coexist with the new contract.
+reset role;
+update public.cueva_profiles set role='admin'
+  where user_id='c7100000-0000-4000-8000-000000000001';
+select set_config('request.jwt.claim.sub','c7100000-0000-4000-8000-000000000001',true);
+select set_config('request.jwt.claims',jsonb_build_object('sub','c7100000-0000-4000-8000-000000000001','role','authenticated','session_id','c7200000-0000-4000-8000-000000000001')::text,true);
+set local role authenticated;
+select is(public.cueva_exercise_write('c7500000-0000-4000-8000-000000000099',
+  'Legacy compatibility',true,0,'',null,null)->>'tracking_mode','weight',
+  'old API creates weight exercises against migrated schema');
+select is(public.cueva_exercise_write('c7500000-0000-4000-8000-000000000099',
+  'Legacy compatibility',true,1,'',null,null,'time')->>'tracking_mode','time',
+  'new API can change the mode explicitly');
+select is(public.cueva_exercise_write('c7500000-0000-4000-8000-000000000099',
+  'Legacy compatibility',true,2,'Rollback edit',null,null)->>'tracking_mode','time',
+  'rollback API preserves an existing time mode');
+select is((public.cueva_exercise_write('c7500000-0000-4000-8000-000000000099',
+  'Legacy compatibility',true,2,'Rollback edit',null,null)->>'revision')::int,3,
+  'legacy replay is idempotent');
+select throws_ok($legacy_stale$select public.cueva_exercise_write(
+  'c7500000-0000-4000-8000-000000000099','Legacy compatibility',true,1,'Stale',null,null)
+  $legacy_stale$,'40001',null,'legacy writer preserves CAS conflict rejection');
+select set_config('request.jwt.claim.sub','c7100000-0000-4000-8000-000000000002',true);
+select set_config('request.jwt.claims',jsonb_build_object('sub','c7100000-0000-4000-8000-000000000002','role','authenticated','session_id','c7200000-0000-4000-8000-000000000002')::text,true);
+select throws_ok($legacy_student$select public.cueva_exercise_write(
+  'c7500000-0000-4000-8000-000000000099','Legacy compatibility',true,3,'Student',null,null)
+  $legacy_student$,'42501',null,'a student cannot use the legacy writer');
+reset role;
+select ok(not has_function_privilege('anon',
+  'public.cueva_exercise_write(uuid,text,boolean,integer,text,text,text)','EXECUTE'),
+  'anonymous cannot execute the public compatibility wrapper');
+select ok(not has_function_privilege('anon',
+  'cueva_private.exercise_write(uuid,text,boolean,integer,text,text,text)','EXECUTE'),
+  'anonymous cannot execute the private compatibility wrapper');
 select * from finish();
 rollback;

@@ -4,6 +4,7 @@ import { chromium, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import pg from "pg";
+import { verifyLegacyExerciseContract } from "./exercise-legacy-contract.mjs";
 
 const { API_URL, DB_URL, ANON_KEY, CUEVA_SERVICE_KEY } = process.env;
 const origin = process.env.CUEVA_PRODUCT_ORIGIN ?? "http://127.0.0.1:3000";
@@ -29,12 +30,14 @@ async function account(role) {
     setAll: items => { for (const {name,value} of items) cookies.set(name,value); },
   } });
   await checked(client.auth.signInWithPassword({email,password}));
-  return {id:user.id,email,cookies:[...cookies].map(([name,value]) => ({name,value,url:origin}))};
+  return {id:user.id,email,client,cookies:[...cookies].map(([name,value]) => ({name,value,url:origin}))};
 }
 await db.connect();
 let browser;
 try {
   const admin = await account("admin"), learner = await account("alumno");
+  await verifyLegacyExerciseContract({ adminClient: admin.client, studentClient: learner.client,
+    anonClient: createClient(API_URL, ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } }), origin });
   await db.query("insert into public.cueva_students(id,first_name,last_name,email,joined_on) values($1,'Mention','Local',$2,current_date)", [studentId,learner.email]);
   await db.query("insert into public.cueva_student_invitations(student_id,email,user_id,state,lease,requested_by) values($1,$2,$3,'sent',$4,$5)", [studentId,learner.email,learner.id,randomUUID(),admin.id]);
   await db.query("insert into public.cueva_exercises(id,name,revision,active,updated_by) values($1,$2,1,true,$3)", [exerciseId,exerciseName,admin.id]);

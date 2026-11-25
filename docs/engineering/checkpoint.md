@@ -1,5 +1,17 @@
 # Checkpoint CUEVA
 
+## PR #88 — Compatibilidad de catálogo — 2026-11-25
+
+Main incorporado `545374cb8017f8c894dfd605fb91935c61f86107`, incluidos #83/#75.
+Se conserva la RPC de siete campos para el servidor anterior y rollback, con
+modo existente bajo lock y CAS del writer nuevo. [Contrato, pruebas y orden de
+las dos migraciones pendientes](CUEVA-007-task.md). PostgreSQL aislado75/75;
+resultado del contrato real de main con GoTrue/PostgREST y CI final en el PR.
+Sin SQL alojado ni activaciones de este ejecutor. El Orchestrator informó34
+migraciones y registro público activo, operación ajena a esta corrección.
+El fallo WebKit anterior sigue bajo diagnóstico separado; no se declara resuelto
+por las corridas dirigidas que no lograron reproducirlo.
+
 ## PR #88 — Correcciones de auditoría — REVIEW — 2026-11-24
 
 [Correcciones y secuencia operativa](CUEVA-007-task.md): se conserva la entrada
@@ -10,8 +22,6 @@ sintéticas 8/8; batch/GET5/5; API3/3; menciones12/12. HEAD final/CI en el PR.
 Sin merge, despliegue ni SQL alojado. La publicación requiere comprobar/aplicar
 el esquema de entrenamiento bajo autorización operativa separada.
 Los estados históricos inferiores no certifican el nuevo HEAD.
-
-## Estado vigente — 2026-11-20 · CUEVA-006E
 
 ## Estado reconciliado — 2026-11-24
 
