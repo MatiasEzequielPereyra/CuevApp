@@ -50,12 +50,15 @@ try {
   await editor.getByRole("button", {name:"Texto libre"}).click();
   const adminTextarea = editor.getByRole("textbox", {name:"Rutina en texto libre"});
   const inlineExerciseName = `${exerciseName} temporal 007`;
+  const adminEditorBeforeSuggestions = await adminTextarea.boundingBox();
   await adminTextarea.fill(`@${inlineExerciseName}`);
   await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"})).toBeVisible();
   const suggestions = page.getByRole("listbox", {name:"Ejercicios sugeridos"});
   await expect(suggestions).toHaveCSS("opacity", "1");
   await expect(suggestions).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(suggestions).toHaveCSS("z-index", "2147483000");
+  await expect(suggestions).toHaveCSS("position", "fixed");
+  expect((await adminTextarea.boundingBox()).height).toBe(adminEditorBeforeSuggestions.height);
   await page.getByLabel("Registro").selectOption("time");
   await page.getByRole("button", {name: new RegExp(`Crear .* en Ejercicios`)}).click();
   await expect.poll(async () => (await db.query(
@@ -177,6 +180,7 @@ try {
   // A linked mention never opens a preview from proximity, hover or focus.
   const preview = pupil.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`});
   const logger = pupil.locator(".student-workout-row .student-workout").first();
+  const loggerPanel = pupil.locator(".student-workout-floating-panel");
   await mention.hover();
   await expect(preview).toHaveCount(0);
   await mention.focus();
@@ -193,48 +197,55 @@ try {
   await preview.hover(); // moving from the mention to the panel must not dismiss it.
   await expect(preview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
   await expect(preview.getByRole("link")).toHaveCount(0);
+  const rowBeforePanel = await logger.boundingBox();
   await logger.getByRole("button", {name:"Registrar peso"}).click();
-  await logger.getByLabel("Peso utilizado (kg)").fill("37.5");
-  await logger.getByRole("button", {name:"Guardar resultado"}).click();
-  await expect(logger.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
+  await expect(loggerPanel).toBeVisible();
+  await expect(loggerPanel).toHaveCSS("position", "fixed");
+  const rowAfterPanel = await logger.boundingBox();
+  expect(rowAfterPanel.height).toBe(rowBeforePanel.height);
+  await loggerPanel.getByLabel("Peso utilizado (kg)").fill("37.5");
+  await loggerPanel.getByRole("button", {name:"Guardar resultado"}).click();
+  await expect(loggerPanel.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
   await expect(logger.getByText("REALIZADO")).toBeVisible();
   await expect.poll(async () => (await db.query(
     "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
     [studentId,exerciseId]
   )).rows[0].count).toBe(1);
-  await logger.getByRole("button", {name:"Guardar último peso"}).click();
+  await loggerPanel.getByRole("button", {name:"Guardar último peso"}).click();
   await expect.poll(async () => (await db.query(
     "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
     [studentId,exerciseId]
   )).rows[0].count).toBe(2);
-  await logger.getByRole("button", {name:"Por series"}).click();
+  await loggerPanel.getByRole("button", {name:"Por series"}).click();
   const setRows = logger.locator(".student-workout-set");
   await setRows.nth(0).getByLabel("Repeticiones").fill("10");
   await setRows.nth(0).getByLabel("Peso (kg)").fill("40");
-  await logger.getByRole("button", {name:"Agregar serie"}).click();
+  await loggerPanel.getByRole("button", {name:"Agregar serie"}).click();
   await setRows.nth(1).getByLabel("Repeticiones").fill("8");
   await setRows.nth(1).getByLabel("Peso (kg)").fill("42.5");
-  await logger.getByRole("button", {name:"Guardar resultado"}).click();
+  await loggerPanel.getByRole("button", {name:"Guardar resultado"}).click();
   await expect(logger.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
   await expect.poll(async () => (await db.query(
     "select count(*)::int as count from public.cueva_workout_sets s join public.cueva_workout_entries e on e.id=s.entry_id where e.student_id=$1 and e.exercise_id=$2",
     [studentId,exerciseId]
   )).rows[0].count).toBe(2);
   await expect(logger.getByText("REALIZADO")).toBeVisible();
-  await logger.getByRole("button", {name:"Ver historial"}).click();
+  await loggerPanel.getByRole("button", {name:"Ver historial"}).click();
   // Select the multi-set entry by its recorded reps, not by history position:
   // the two earlier quick entries are also editable and appear in the same list.
-  const setsHistoryEntry = logger.locator(".student-workout-history > ol > li").filter({hasText:"8 rep."});
+  const setsHistoryEntry = loggerPanel.locator(".student-workout-history > ol > li").filter({hasText:"8 rep."});
   await expect(setsHistoryEntry).toHaveCount(1);
   await setsHistoryEntry.getByRole("button", {name:"Editar"}).click();
   await expect(logger.locator(".student-workout-set")).toHaveCount(2);
-  await logger.locator(".student-workout-set").nth(1).getByLabel("Peso (kg)").fill("45");
-  await logger.getByRole("button", {name:"Guardar cambios"}).click();
+  await loggerPanel.locator(".student-workout-set").nth(1).getByLabel("Peso (kg)").fill("45");
+  await loggerPanel.getByRole("button", {name:"Guardar cambios"}).click();
   await expect(logger.getByRole("status").filter({hasText:"Cambios guardados."})).toBeVisible();
-  await expect(logger.getByText("45 kg", { exact: true })).toBeVisible();
+  await expect(loggerPanel.getByText("45 kg", { exact: true })).toBeVisible();
   await pupil.locator("h1").click();
   await expect(preview).toHaveCount(0);
   await expect(logger.getByText("REALIZADO")).toBeVisible();
+  await logger.getByRole("button", {name:"Cerrar registro de peso"}).click();
+  await expect(loggerPanel).toHaveCount(0);
   await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
 
   // A linked exercise with a confirmed video opens the player from an explicit
