@@ -1,15 +1,30 @@
 "use client";
 
-import { useId, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useId, useState } from "react";
 import type { LegacyTarget, Plan, Target } from "@/lib/routines/types";
-import { parseVideoSource, type VideoSource } from "@/lib/routines/video-source";
+import { ExerciseMention } from "@/components/routines/exercise-mention";
 
-type Playback = { state: "loading" } | { state: "ready"; source: VideoSource } | { state: "error"; message: string; url?: string };
+type ExerciseMetadata = { id: string; name: string; description: string | null; has_video: boolean };
 
-function ExerciseDetails({ exercise }: { exercise: Target | LegacyTarget }) {
+function ExerciseDetails({ exercise, publicationId, description, videoAvailability }: {
+  exercise: Target | LegacyTarget;
+  publicationId: string;
+  description: string | null;
+  videoAvailability: "available" | "unavailable" | "unknown";
+}) {
+  const trackingMode = "mode" in exercise ? exercise.mode : "weight";
   return (
     <span className="my-routine-exercise-detail">
-      <strong>{exercise.name}</strong>
+      <ExerciseMention
+        exerciseId={exercise.exercise_id}
+        name={exercise.name}
+        description={description}
+        videoAvailability={videoAvailability}
+        text={exercise.name}
+        publicationId={publicationId}
+        trackingMode={trackingMode}
+        targetId={exercise.id}
+      />
       <span className="my-routine-targets">
         {"sets" in exercise && <span>{exercise.sets} {exercise.sets === 1 ? "serie" : "series"}</span>}
         {"reps" in exercise
@@ -21,105 +36,20 @@ function ExerciseDetails({ exercise }: { exercise: Target | LegacyTarget }) {
   );
 }
 
-function VideoIcon() {
-  return <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M6 3.5v13l10-6.5Z" /></svg>;
-}
-
-export function StudentPlan({ plan, videoIds, videosAvailable = true }: { plan: Plan; videoIds: string[]; videosAvailable?: boolean }) {
+export function StudentPlan({ plan, publicationId, videoIds, videosAvailable = true, exerciseMetadata }: {
+  plan: Plan;
+  publicationId: string;
+  videoIds: string[];
+  videosAvailable?: boolean;
+  exerciseMetadata: ExerciseMetadata[];
+}) {
   const [selected, setSelected] = useState("");
-  const [playing, setPlaying] = useState<{ name: string; id: string } | null>(null);
-  const [videoNotice, setVideoNotice] = useState<string | null>(null);
-  const [playback, setPlayback] = useState<Playback>({ state: "loading" });
-  const dialog = useRef<HTMLDialogElement>(null);
-  const dialogTitle = useId();
   const dayContent = useId();
-  const trigger = useRef<HTMLButtonElement>(null);
-  const request = useRef<AbortController>(null);
-  const position = useRef({ x: 0, y: 0 });
   const days = plan.version === 2 ? plan.days : [];
   const day = days.find(value => value.id === selected) ?? days[0];
   const blocks = plan.version === 1 ? plan.blocks : day?.blocks ?? [];
   const videos = new Set(videoIds);
-
-  async function loadVideo(id: string) {
-    const controller = new AbortController();
-    request.current?.abort();
-    request.current = controller;
-    setPlayback({ state: "loading" });
-    try {
-      const response = await fetch(`/api/ejercicios/video?id=${encodeURIComponent(id)}&player=1`, {
-        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(12000)]), cache: "no-store",
-      });
-      const data: unknown = await response.json();
-      if (controller.signal.aborted) return;
-      if (!response.ok) {
-        const message = typeof data === "object" && data !== null && "message" in data &&
-          typeof data.message === "string" && data.message.trim()
-          ? data.message
-          : "No pudimos cargar el video.";
-        setPlayback({ state: "error", message });
-        return;
-      }
-      const source = parseVideoSource(data);
-      if (!source) {
-        setPlayback({ state: "error", message: "El recurso de video no tiene un formato válido." });
-        return;
-      }
-      setPlayback({ state: "ready", source });
-    } catch {
-      if (!controller.signal.aborted) setPlayback({ state: "error", message: "No pudimos cargar el video. Intentá nuevamente." });
-    }
-  }
-
-  function openVideo(event: MouseEvent<HTMLButtonElement>, exercise: Target | LegacyTarget) {
-    if (!videosAvailable || !videos.has(exercise.exercise_id)) {
-      setVideoNotice(current => current === exercise.id ? null : exercise.id);
-      return;
-    }
-    setVideoNotice(null);
-    trigger.current = event.currentTarget;
-    position.current = { x: window.scrollX, y: window.scrollY };
-    setPlaying({ id: exercise.exercise_id, name: exercise.name });
-    dialog.current?.showModal();
-    void loadVideo(exercise.exercise_id);
-  }
-
-  function restoreReadingPosition() {
-    request.current?.abort();
-    setPlaying(null);
-    setPlayback({ state: "loading" });
-    // Native close queues this event after restoring focus. A subsequent
-    // navigation must keep its own focus and scroll position.
-    const active = document.activeElement;
-    if (!active || active === document.body || active === trigger.current || dialog.current?.contains(active)) {
-      trigger.current?.focus({ preventScroll: true });
-      window.scrollTo({ left: position.current.x, top: position.current.y, behavior: "instant" });
-    }
-  }
-
-  const youtube = playback.state === "ready" && playback.source.kind === "youtube" ? playback.source : null;
-  let media: ReactNode;
-  if (playback.state === "loading") media = <p role="status">Cargando video…</p>;
-  else if (playback.state === "error") media = (
-    <>
-      <p role="alert">{playback.message}</p>
-      {playing && <button type="button" onClick={() => void loadVideo(playing.id)}>Reintentar</button>}
-      {playback.url && <a href={playback.url} target="_blank" rel="noopener noreferrer">Abrir en YouTube</a>}
-    </>
-  );
-  else if (playback.source.kind === "storage") media = (
-    <video controls autoPlay playsInline preload="metadata" aria-label={playing?.name} src={playback.source.src}
-      onError={() => setPlayback({ state: "error", message: "No pudimos reproducir el video." })} />
-  );
-  else if (youtube) media = (
-    <>
-      <iframe title={`Video de ${playing?.name}`} src={`https://www.youtube-nocookie.com/embed/${youtube.id}?autoplay=1&playsinline=1`}
-        allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen
-        referrerPolicy="strict-origin-when-cross-origin"
-        onError={() => setPlayback({ state: "error", message: "No pudimos cargar el reproductor de YouTube.", url: youtube.url })} />
-      <a href={youtube.url} target="_blank" rel="noopener noreferrer">Abrir en YouTube</a>
-    </>
-  );
+  const metadata = new Map(exerciseMetadata.map(item => [item.id, item]));
 
   return (
     <>
@@ -143,33 +73,24 @@ export function StudentPlan({ plan, videoIds, videosAvailable = true }: { plan: 
             </header>
             {block.exercises.length > 0 ? (
               <ol role="list">
-                {block.exercises.map((exercise, exerciseIndex) => (
-                  <li key={exercise.id} className="my-routine-exercise-item">
-                    <button type="button" className="my-routine-exercise" aria-haspopup={videos.has(exercise.exercise_id) ? "dialog" : undefined} aria-expanded={videoNotice === exercise.id ? true : undefined} aria-describedby={videoNotice === exercise.id ? `video-notice-${exercise.id}` : undefined} onClick={event => openVideo(event, exercise)}>
-                      <span className="my-routine-exercise-order" aria-hidden="true">{exerciseIndex + 1}</span>
-                      <ExerciseDetails exercise={exercise} />
-                      <span className="my-routine-video-label"><VideoIcon /> Video</span>
-                    </button>
-                    {videoNotice === exercise.id && (
-                      <span id={`video-notice-${exercise.id}`} className="my-routine-video-notice" role="status">
-                        <span>{videosAvailable ? "No se cuenta con video para este ejercicio." : "No pudimos comprobar si hay un video disponible. Intentá nuevamente más tarde."}</span>
-                        <button type="button" aria-label="Cerrar aviso" onClick={() => setVideoNotice(null)}>×</button>
-                      </span>
-                    )}
-                  </li>
-                ))}
+                {block.exercises.map((exercise, exerciseIndex) => {
+                  const detail = metadata.get(exercise.exercise_id);
+                  const videoAvailability = !videosAvailable ? "unknown" : videos.has(exercise.exercise_id) ? "available" : "unavailable";
+                  return (
+                    <li key={exercise.id} className="my-routine-exercise-item">
+                      <div className="my-routine-exercise">
+                        <span className="my-routine-exercise-order" aria-hidden="true">{exerciseIndex + 1}</span>
+                        <ExerciseDetails exercise={exercise} publicationId={publicationId}
+                          description={detail?.description ?? null} videoAvailability={videoAvailability} />
+                      </div>
+                    </li>
+                  );
+                })}
               </ol>
             ) : <p className="my-routine-empty-block">Bloque sin ejercicios.</p>}
           </section>
         ))}
       </div>
-      <dialog ref={dialog} className="my-routine-dialog" aria-labelledby={dialogTitle} onClose={restoreReadingPosition}>
-        <header>
-          <h2 id={dialogTitle}>{playing?.name ?? "Video del ejercicio"}</h2>
-          <form method="dialog"><button type="submit">Cerrar</button></form>
-        </header>
-        {playing && media}
-      </dialog>
     </>
   );
 }

@@ -34,7 +34,7 @@
     "test:notifications:push-route": "node --experimental-strip-types --test tests/notifications-push-route-http.test.mjs",
     "test:routines:mentions": "node --experimental-strip-types --test tests/routine-mentions.test.mjs",
     "test:routines:video-source": "node --experimental-strip-types --test tests/routine-video-source.test.mjs",
-    "test:routines:api": "node --experimental-strip-types --test tests/routine-api.test.mjs",
+    "test:routines:api": "node --experimental-strip-types --test tests/routine-api.test.mjs && node --test tests/workout-summary-batch.test.mjs",
     "test:dependencies": "node --test tests/dependency-audit.test.mjs tests/dependency-audit-pr67.test.mjs",
     "verify:dependencies": "node scripts/verify-dependencies.mjs",
     "test:account-password-change": "node --test tests/account-password-change-route.test.mjs tests/admin-student-recovery-route.test.mjs",

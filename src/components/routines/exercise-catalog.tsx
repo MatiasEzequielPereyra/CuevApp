@@ -29,6 +29,7 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
   const [searchError, setSearchError] = useState("");
   const [name, setName] = useState(""), [description, setDescription] = useState(""), [video, setVideo] = useState("");
   const [active, setActive] = useState(true), [editing, setEditing] = useState<Exercise | null>(null), [message, setMessage] = useState("");
+  const [trackingMode, setTrackingMode] = useState<"weight" | "time">("weight");
   const [videoPath, setVideoPath] = useState<string | null>(null);
   const busy = useRef(false), newId = useRef<string | null>(null);
   const searchSequence = useRef(0);
@@ -73,10 +74,10 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
     if (busy.current) return;
     busy.current = true; setPending(true); setMessage(""); newId.current ??= crypto.randomUUID();
     try {
-      const r = await fetch("/api/ejercicios", { method: "POST", signal: AbortSignal.timeout(15000), headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editing?.id ?? newId.current, name, description, video_url: video || null, video_path: videoPath, active, revision: editing?.revision ?? 0 }) });
+      const r = await fetch("/api/ejercicios", { method: "POST", signal: AbortSignal.timeout(15000), headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editing?.id ?? newId.current, name, description, video_url: video || null, video_path: videoPath, active, revision: editing?.revision ?? 0, tracking_mode: trackingMode }) });
       const data = await r.json(); if (!mounted.current) return;
       if (!r.ok) { setMessage(data.message); return; }
-      const e: Exercise = data.exercise; setEditing(e); setName(e.name); setDescription(e.description); setVideo(e.video_url ?? ""); setVideoPath(e.video_path); setActive(e.active);
+      const e: Exercise = data.exercise; setEditing(e); setName(e.name); setDescription(e.description); setVideo(e.video_url ?? ""); setVideoPath(e.video_path); setActive(e.active); setTrackingMode(e.tracking_mode ?? "weight");
       setRows(previous => previous.some(row => row.id === e.id) ? previous.map(row => row.id === e.id ? e : row) : [...previous, e]); setMessage("Ejercicio guardado. Las rutinas conservan sus objetivos y nombres.");
       if (e.active && selectCurrent.current) setSelected(previous => {
         if (previous.some(item => item.id === e.id)) return previous.map(item => item.id === e.id ? e : item);
@@ -92,6 +93,7 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
     setVideo(exercise?.video_url ?? "");
     setVideoPath(exercise?.video_path ?? null);
     setActive(exercise?.active ?? true);
+    setTrackingMode(exercise?.tracking_mode ?? "weight");
     newId.current = null;
     setMessage("");
   }
@@ -99,7 +101,7 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
   function canDiscard() {
     const hasChanges = name !== (editing?.name ?? "") || description !== (editing?.description ?? "") ||
       video !== (editing?.video_url ?? "") || active !== (editing?.active ?? true) ||
-      videoPath !== (editing?.video_path ?? null);
+      videoPath !== (editing?.video_path ?? null) || trackingMode !== (editing?.tracking_mode ?? "weight");
     return !hasChanges || window.confirm("¿Descartar los cambios del ejercicio?");
   }
 
@@ -162,6 +164,13 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
     {!managing && !compactPicker && <h3>{editing ? "Editar ejercicio" : "Crear ejercicio"}</h3>}
     <label>Nombre del ejercicio<input required maxLength={120} ref={nameInput} value={name} disabled={pending} onChange={event => setName(event.target.value)} /></label>
     <label>Descripción del ejercicio<textarea maxLength={2000} value={description} disabled={pending} onChange={event => setDescription(event.target.value)} /></label>
+    {managing && <label>Registro en rutinas de texto
+      <select value={trackingMode} disabled={pending} onChange={event => setTrackingMode(event.target.value as "weight" | "time")}>
+        <option value="weight">Peso (kg)</option>
+        <option value="time">Duración o tiempo (sin kg)</option>
+      </select>
+    </label>}
+    {managing && <p>Este ajuste se aplica a menciones en rutinas de texto. En rutinas por bloques, el tipo de registro se define en cada objetivo.</p>}
     <label>
       Video de YouTube (opcional)
       <input type="url" maxLength={200} value={video} placeholder="https://www.youtube.com/watch?v=…" disabled={pending}
@@ -223,6 +232,7 @@ export function ExerciseCatalog({ onSelectMany, capacity = 30, videosOnly = fals
         const info = <>
           <strong>{exercise.name}</strong>
           {!exercise.active && <small id={statusId}>Inactivo</small>}
+          <small>{exercise.tracking_mode === "time" ? "Por tiempo" : "Peso (kg)"}</small>
           {exercise.description && <span id={descriptionId} className="exercise-description">{exercise.description}</span>}
         </>;
         return <li key={exercise.id}>

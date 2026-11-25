@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent as ReactClipboardEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import type { RoutineMention } from "@/lib/routines/mentions";
-import { getRoutineMentionHues, rebaseRoutineMentions, utf16OffsetToCodePoint } from "@/lib/routines/mentions";
+import { codePointSlice, getRoutineMentionHues, rebaseRoutineMentions, utf16OffsetToCodePoint, validateRoutineMentions } from "@/lib/routines/mentions";
 import type { Exercise } from "@/lib/routines/types";
 import { ExerciseVideoDialog } from "@/components/routines/exercise-video-dialog";
 import type { CSSProperties } from "react";
@@ -31,12 +32,98 @@ function renderMentionHighlights(value: string, mentions: RoutineMention[]): Rea
 function searchRange(value: string, cursor: number): SearchRange {
   const before = value.slice(0, cursor);
   const at = before.match(/(?:^|\s)@([^@\n]*)$/);
-  const atQuery = at?.[1];
-  if (atQuery !== undefined) return { start: cursor - atQuery.length - 1, end: cursor, query: atQuery.trim() };
-  const prefix = before.match(/(?:^|\s)([^\s@]+)$/);
-  const prefixQuery = prefix?.[1];
-  if (prefixQuery !== undefined && prefixQuery.length >= 2) return { start: cursor - prefixQuery.length, end: cursor, query: prefixQuery };
-  return null;
+  if (!at) return null;
+  const rawQuery = at[1] ?? "";
+  return { start: cursor - rawQuery.length - 1, end: cursor, query: rawQuery.trim() };
+}
+
+function measureCaretRect(input: HTMLTextAreaElement): DOMRect {
+  const style = window.getComputedStyle(input);
+  const mirror = document.createElement("div");
+  const marker = document.createElement("span");
+  const properties = [
+    "font", "font-family", "font-size", "font-weight", "font-style",
+    "letter-spacing", "line-height", "text-transform", "text-indent",
+    "padding-top", "padding-right", "padding-bottom", "padding-left",
+    "border-top-width", "border-right-width", "border-bottom-width",
+    "border-left-width", "box-sizing", "white-space", "overflow-wrap", "word-break",
+  ];
+  mirror.style.position = "fixed";
+  mirror.style.visibility = "hidden";
+  mirror.style.pointerEvents = "none";
+  mirror.style.left = input.getBoundingClientRect().left - input.scrollLeft + "px";
+  mirror.style.top = input.getBoundingClientRect().top - input.scrollTop + "px";
+  mirror.style.width = input.clientWidth + "px";
+  mirror.style.height = "auto";
+  mirror.style.overflow = "hidden";
+  for (const property of properties) mirror.style.setProperty(property, style.getPropertyValue(property));
+  mirror.style.whiteSpace = "pre-wrap";
+  mirror.style.overflowWrap = "break-word";
+  mirror.textContent = input.value.slice(0, input.selectionStart);
+  marker.textContent = "\u200b";
+  mirror.append(marker);
+  document.body.append(mirror);
+  const caret = marker.getBoundingClientRect();
+  mirror.remove();
+  return caret;
+}
+
+function floatingPosition(caret: DOMRect, preferredWidth: number) {
+  const width = Math.min(preferredWidth, window.innerWidth - 16);
+  const left = Math.max(8, Math.min(caret.left, window.innerWidth - width - 8));
+  const below = window.innerHeight - caret.bottom;
+  const maxHeight = 240;
+  const top = below >= maxHeight + 8 || caret.top < maxHeight
+    ? Math.min(caret.bottom + 4, window.innerHeight - maxHeight - 8)
+    : Math.max(8, caret.top - maxHeight - 4);
+  return { left, top, width };
+}
+
+
+function escapeClipboardHtml(value: string) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function readClipboardMentions(html: string, expectedText: string): RoutineMention[] {
+  const parsed = new DOMParser().parseFromString(html, "text/html");
+  let text = "";
+  const mentions: RoutineMention[] = [];
+  const blockTags = new Set(["DIV", "P", "LI", "PRE", "BLOCKQUOTE"]);
+  function visitChildren(parent: Node) {
+    const children = Array.from(parent.childNodes);
+    children.forEach((child, index) => {
+      const isBlock = child.nodeType === Node.ELEMENT_NODE
+        && blockTags.has((child as HTMLElement).tagName);
+      if (isBlock && text.length > 0 && !text.endsWith("\n")) text += "\n";
+      visit(child);
+      if (isBlock && index < children.length - 1 && !text.endsWith("\n")) text += "\n";
+    });
+  }
+  function visit(node: Node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      text += node.textContent ?? "";
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    const element = node as HTMLElement;
+    if (element.tagName === "BR") {
+      text += "\n";
+      return;
+    }
+    const start = Array.from(text).length;
+    visitChildren(element);
+    const end = Array.from(text).length;
+    const exerciseId = element.getAttribute("data-cuevapp-exercise-id");
+    if (exerciseId && end > start) {
+      mentions.push({ exercise_id: exerciseId, start, end, text: codePointSlice(text, start, end) });
+    }
+  }
+  visitChildren(parsed.body);
+  const normalizedText = text.replace(/\r\n?/g, "\n");
+  const normalizedExpected = expectedText.replace(/\r\n?/g, "\n");
+  if (normalizedText !== normalizedExpected || mentions.length === 0) return [];
+  try { return validateRoutineMentions(normalizedText, mentions); } catch { return []; }
 }
 
 export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
@@ -44,6 +131,8 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   onChange: (value: string, mentions: RoutineMention[]) => void;
 }) {
   const textarea = useRef<HTMLTextAreaElement>(null), highlight = useRef<HTMLDivElement>(null), request = useRef(0);
+  const pendingCaret = useRef<number | null>(null);
+  const previewPanel = useRef<HTMLDivElement>(null), suggestionPanel = useRef<HTMLDivElement>(null), previewRequest = useRef(0);
   const [range, setRange] = useState<SearchRange>(null);
   const [results, setResults] = useState<Exercise[]>([]);
   const [pending, setPending] = useState(false), [error, setError] = useState("");
@@ -52,6 +141,20 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   const [previewPending, setPreviewPending] = useState(false);
   const [previewError, setPreviewError] = useState("");
   const [playerOpen, setPlayerOpen] = useState(false);
+  const [suggestionPosition, setSuggestionPosition] = useState<{ left: number; top: number; width: number } | null>(null);
+  const [previewPosition, setPreviewPosition] = useState<{ left: number; top: number; width: number } | null>(null);
+  const [creatingExercise, setCreatingExercise] = useState(false);
+  const [creationTrackingMode, setCreationTrackingMode] = useState<"weight" | "time">("weight");
+  const [createError, setCreateError] = useState("");
+
+  useLayoutEffect(() => {
+    const input = textarea.current;
+    const position = pendingCaret.current;
+    if (!input || position === null) return;
+    pendingCaret.current = null;
+    input.focus({ preventScroll: true });
+    input.setSelectionRange(position, position);
+  }, [value]);
 
   useEffect(() => {
     if (!range) return;
@@ -83,15 +186,29 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     };
   }, [range]);
 
-  function updateRange(next: SearchRange) {
+  const updateRange = useCallback((next: SearchRange) => {
     // Invalidate immediately, before effect cleanup can observe the old request.
     request.current++;
     setResults([]);
     setActive(0);
     setPending(!!next);
     setError("");
+    setCreateError("");
     setRange(next);
-  }
+  }, []);
+
+  useLayoutEffect(() => {
+    const input = textarea.current;
+    if (!range || !input || typeof document === "undefined") return;
+    const measure = () => setSuggestionPosition(floatingPosition(measureCaretRect(input), 360));
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+    };
+  }, [range, value]);
 
   function retrySearch() {
     if (!range || disabled) return;
@@ -103,15 +220,108 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     setRange({ ...range });
   }
 
+  function copyMentionSelection(event: ReactClipboardEvent<HTMLTextAreaElement>) {
+    const input = event.currentTarget;
+    if (input.selectionStart === input.selectionEnd) return false;
+    const source = input.value;
+    const start = utf16OffsetToCodePoint(source, input.selectionStart);
+    const end = utf16OffsetToCodePoint(source, input.selectionEnd);
+    const selectedText = source.slice(input.selectionStart, input.selectionEnd);
+    const copied = mentions
+      .filter(mention => mention.start >= start && mention.end <= end)
+      .map(mention => ({ ...mention, start: mention.start - start, end: mention.end - start }));
+    if (!copied.length) return false;
+
+    let cursor = 0;
+    let html = "";
+    for (const mention of copied) {
+      html += escapeClipboardHtml(codePointSlice(selectedText, cursor, mention.start)).replace(/\n/g, "<br>");
+      html += '<span data-cuevapp-exercise-id="' + mention.exercise_id + '">' + escapeClipboardHtml(mention.text) + "</span>";
+      cursor = mention.end;
+    }
+    html += escapeClipboardHtml(codePointSlice(selectedText, cursor, Array.from(selectedText).length)).replace(/\n/g, "<br>");
+    event.clipboardData.setData("text/plain", selectedText);
+    try { event.clipboardData.setData("text/html", "<div>" + html + "</div>"); } catch { /* Plain text remains available. */ }
+    try {
+      event.clipboardData.setData("application/x-cuevapp-routine-mentions", JSON.stringify({
+        version: 1, text: selectedText, mentions: copied,
+      }));
+    } catch { /* HTML clipboard data remains as a cross-browser fallback. */ }
+    event.preventDefault();
+    return true;
+  }
+
+  function handleCopy(event: ReactClipboardEvent<HTMLTextAreaElement>) {
+    copyMentionSelection(event);
+  }
+
+  function handleCut(event: ReactClipboardEvent<HTMLTextAreaElement>) {
+    if (!copyMentionSelection(event)) return;
+    const input = event.currentTarget;
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const source = input.value;
+    const next = source.slice(0, start) + source.slice(end);
+    input.setRangeText("", start, end, "end");
+    onChange(next, rebaseRoutineMentions(source, next, mentions));
+    updateRange(null);
+  }
+
+  function handlePaste(event: ReactClipboardEvent<HTMLTextAreaElement>) {
+    const input = event.currentTarget;
+    const plain = event.clipboardData.getData("text/plain").replace(/\r\n?/g, "\n");
+    if (!plain) return;
+    let pastedMentions: RoutineMention[] = [];
+    const custom = event.clipboardData.getData("application/x-cuevapp-routine-mentions");
+    if (custom) {
+      try {
+        const payload = JSON.parse(custom) as { version?: number; text?: string; mentions?: unknown };
+        if (payload.version === 1 && payload.text === plain) {
+          pastedMentions = validateRoutineMentions(plain, payload.mentions);
+        }
+      } catch { pastedMentions = []; }
+    }
+    if (!pastedMentions.length) {
+      const html = event.clipboardData.getData("text/html");
+      if (html) pastedMentions = readClipboardMentions(html, plain);
+    }
+    if (!pastedMentions.length) return;
+
+    const selectionStart = input.selectionStart;
+    const selectionEnd = input.selectionEnd;
+    const source = input.value;
+    const pasteStart = utf16OffsetToCodePoint(source, selectionStart);
+    const pasteLength = Array.from(plain).length;
+    const pasteEnd = pasteStart + pasteLength;
+    const next = source.slice(0, selectionStart) + plain + source.slice(selectionEnd);
+    const preserved = rebaseRoutineMentions(source, next, mentions)
+      .filter(mention => mention.end <= pasteStart || mention.start >= pasteEnd);
+    const inserted = pastedMentions.map(mention => ({
+      ...mention, start: mention.start + pasteStart, end: mention.end + pasteStart,
+    }));
+    let nextMentions: RoutineMention[];
+    try { nextMentions = validateRoutineMentions(next, [...preserved, ...inserted].sort((a, b) => a.start - b.start)); }
+    catch { return; }
+    event.preventDefault();
+    input.setRangeText(plain, selectionStart, selectionEnd, "end");
+    onChange(next, nextMentions);
+    updateRange(null);
+    previewRequest.current++;
+    setPreview(null);
+    setPreviewError("");
+    setPreviewPending(false);
+    setPreviewPosition(null);
+  }
+
   function handleChange(next: string, cursor: number) {
     onChange(next, rebaseRoutineMentions(value, next, mentions));
     updateRange(searchRange(next, cursor));
   }
 
-  function insert(exercise: Exercise) {
+  function insert(exercise: Exercise, allowUnlisted = false) {
     const input = textarea.current;
     if (!input || !range || disabled || pending || error
-      || !results.some(result => result.id === exercise.id)) return;
+      || (!allowUnlisted && !results.some(result => result.id === exercise.id))) return;
     const next = value.slice(0, range.start) + exercise.name + value.slice(range.end);
     const start = utf16OffsetToCodePoint(next, range.start);
     const endUtf16 = range.start + exercise.name.length;
@@ -119,26 +329,104 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     const nextMentions = rebaseRoutineMentions(value, next, mentions).filter(m => !(m.start < end && m.end > start));
     nextMentions.push({ exercise_id: exercise.id, start, end, text: exercise.name });
     nextMentions.sort((a, b) => a.start - b.start);
-    onChange(next, nextMentions); updateRange(null);
-    requestAnimationFrame(() => { input.focus(); input.setSelectionRange(endUtf16, endUtf16); });
+    // Restore the native caret only after React has committed the controlled
+    // textarea value. A frame-based restore can target the previous value and
+    // cause the next Enter/typing event to overwrite the adjacent text.
+    pendingCaret.current = endUtf16;
+    onChange(next, nextMentions);
+    updateRange(null);
+  }
+
+  async function createExerciseFromMention() {
+    if (!range || disabled || pending || creatingExercise || !range.query.trim()) return;
+    const name = range.query.trim().slice(0, 120);
+    setCreatingExercise(true);
+    setCreateError("");
+    try {
+      const response = await fetch("/api/ejercicios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          id: crypto.randomUUID(), name, active: true, revision: 0,
+          description: "", video_url: null, video_path: null, tracking_mode: creationTrackingMode,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.exercise) {
+        if (response.status === 409) {
+          setCreateError(data.message || "Ya existe un ejercicio similar. Volvé a buscarlo en el catálogo.");
+          return;
+        }
+        throw new Error(data.message || "No se pudo crear el ejercicio.");
+      }
+      insert(data.exercise as Exercise, true);
+    } catch (cause) {
+      setCreateError(cause instanceof Error ? cause.message : "No se pudo crear el ejercicio.");
+    } finally {
+      setCreatingExercise(false);
+    }
   }
 
   async function openMentionAtCursor(input: HTMLTextAreaElement) {
-    if (input.selectionStart !== input.selectionEnd) return;
+    const sequence = ++previewRequest.current;
+    if (input.selectionStart !== input.selectionEnd) {
+      setPreview(null); setPreviewError(""); setPreviewPending(false); setPreviewPosition(null);
+      return;
+    }
     const cursor = utf16OffsetToCodePoint(value, input.selectionStart);
     const mention = mentions.find(item => cursor >= item.start && cursor <= item.end);
-    if (!mention) { setPreview(null); return; }
-    setPreview(null); setPreviewError(""); setPreviewPending(true);
+    if (!mention) {
+      setPreview(null); setPreviewError(""); setPreviewPending(false); setPreviewPosition(null);
+      return;
+    }
+    setPreview(null); setPreviewError(""); setPreviewPending(false);
+    setPreviewPosition(floatingPosition(measureCaretRect(input), 320));
     try {
       const params = new URLSearchParams({ q: mention.text });
       const response = await fetch("/api/ejercicios?" + params, { cache: "no-store" });
       const data = await response.json();
+      if (sequence !== previewRequest.current) return;
       const exercise = Array.isArray(data.exercises) ? data.exercises.find((item: Exercise) => item.id === mention.exercise_id) : null;
-      if (!response.ok || !exercise) throw new Error(data.message || "No pudimos cargar los datos del ejercicio.");
+      if (!response.ok || !exercise || (!exercise.video_url && !exercise.video_path)) return;
       setPreview(exercise);
-    } catch (cause) { setPreviewError(cause instanceof Error ? cause.message : "No pudimos cargar los datos del ejercicio."); }
-    finally { setPreviewPending(false); }
+      setPlayerOpen(false);
+    } catch {
+      // A failed lookup must not open the exercise autocomplete/preview overlay.
+    }
   }
+
+  useEffect(() => {
+    if (!range) return;
+    function closeSuggestions(event: PointerEvent) {
+      if (event.target instanceof Node
+        && !textarea.current?.contains(event.target)
+        && !suggestionPanel.current?.contains(event.target)) updateRange(null);
+    }
+    document.addEventListener("pointerdown", closeSuggestions);
+    return () => document.removeEventListener("pointerdown", closeSuggestions);
+  }, [range, updateRange]);
+
+  useEffect(() => {
+    if (playerOpen || (!preview && !previewPending && !previewError)) return;
+    function dismiss(event: Event) {
+      if (event.type === "keydown" && (event as globalThis.KeyboardEvent).key !== "Escape") return;
+      if (event.type === "pointerdown" && event.target instanceof Node
+        && (previewPanel.current?.contains(event.target) || textarea.current?.contains(event.target))) return;
+      previewRequest.current++;
+      setPreview(null);
+      setPreviewError("");
+      setPreviewPending(false);
+      setPreviewPosition(null);
+    }
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", dismiss);
+    return () => {
+      document.removeEventListener("pointerdown", dismiss);
+      document.removeEventListener("keydown", dismiss);
+    };
+  }, [preview, previewPending, previewError, playerOpen]);
+
   function syncHighlightScroll() {
     if (textarea.current && highlight.current) {
       highlight.current.scrollTop = textarea.current.scrollTop;
@@ -146,9 +434,17 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
     }
   }
 
-  function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+  function onKeyDown(event: ReactKeyboardEvent<HTMLTextAreaElement>) {
     if (!range) return;
     if (event.key === "Escape") { updateRange(null); return; }
+    // React state can briefly lag behind a programmatic insertion or caret move.
+    // Only consume navigation/Enter while the live textarea selection is still
+    // inside the exact @query represented by the currently rendered list.
+    const liveRange = searchRange(event.currentTarget.value, event.currentTarget.selectionStart);
+    if (!liveRange || liveRange.start !== range.start || liveRange.end !== range.end) {
+      updateRange(null);
+      return;
+    }
     if (pending || error || !results.length) return;
     if (event.key === "ArrowDown") { event.preventDefault(); setActive(index => Math.min(index + 1, results.length - 1)); }
     else if (event.key === "ArrowUp") { event.preventDefault(); setActive(index => Math.max(index - 1, 0)); }
@@ -161,36 +457,63 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
       <div ref={highlight} className="routine-text-highlight-layer" aria-hidden="true">
         {renderMentionHighlights(value, mentions)}
       </div>
-      <textarea ref={textarea} id="routine-free-text" rows={16} maxLength={40000} value={value} disabled={disabled}
+      <textarea ref={textarea} id="routine-free-text" rows={16} maxLength={40000} value={value} disabled={disabled || creatingExercise}
       aria-autocomplete="list" aria-controls="routine-mention-options"
       onScroll={syncHighlightScroll}
       onChange={event => handleChange(event.target.value, event.target.selectionStart)}
-      onClick={event => { updateRange(searchRange(value, event.currentTarget.selectionStart)); void openMentionAtCursor(event.currentTarget); }}
-      onKeyUp={event => {
-        if (["ArrowDown", "ArrowUp", "Enter", "Escape"].includes(event.key)) return;
-        updateRange(searchRange(value, event.currentTarget.selectionStart));
-      }}
+      onCopy={handleCopy}
+      onCut={handleCut}
+      onPaste={handlePaste}
+      onClick={event => { updateRange(null); void openMentionAtCursor(event.currentTarget); }}
       onKeyDown={onKeyDown}
       placeholder={"Escribí la rutina completa…\n\nPodés mencionar ejercicios con @ o escribir su nombre."} />
-      {previewPending && <div className="routine-text-mention-preview" role="status">Cargando ejercicio…</div>}
-      {previewError && <div className="routine-text-mention-preview" role="alert">{previewError}</div>}
-      {preview && <div className="routine-text-mention-preview" role="dialog" aria-label={"Ejercicio: " + preview.name}>
+
+    </div>
+    {(previewPending || previewError || (preview && !playerOpen)) && previewPosition && typeof document !== "undefined" && createPortal(<div ref={previewPanel} className="routine-text-mention-preview" role="dialog" aria-label={preview ? "Ejercicio: " + preview.name : "Cargando ejercicio"} style={{ position: "fixed", left: previewPosition.left, top: previewPosition.top, width: previewPosition.width, maxHeight: "min(240px, calc(100dvh - 16px))", overflow: "auto", zIndex: 1001 }}>
+      {previewPending && <p role="status">Cargando ejercicio…</p>}
+      {previewError && <p role="alert">{previewError}</p>}
+      {preview && !playerOpen && <>
         <strong>{preview.name}</strong>
         {preview.description && <p>{preview.description}</p>}
         {preview.video_url || preview.video_path
-          ? <button type="button" onClick={() => setPlayerOpen(true)}>Ver video</button>
+          ? <button type="button" onClick={() => {
+              // Keep the editor focused so the native dialog restores focus here.
+              textarea.current?.focus({ preventScroll: true });
+              updateRange(null);
+              setPlayerOpen(true);
+            }}>Ver video</button>
           : <span role="status">Aún no se encuentra con video disponible</span>}
-        <button type="button" className="routine-text-mention-close" onClick={() => setPreview(null)}>Cerrar</button>
-      </div>}
-    </div>
-    {playerOpen && preview && <ExerciseVideoDialog exerciseId={preview.id} exerciseName={preview.name} open onClose={() => setPlayerOpen(false)} /> }
-    {range && <div className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos">
+        <button type="button" className="routine-text-mention-close" onClick={() => { previewRequest.current++; setPreview(null); setPreviewPosition(null); }}>Cerrar</button>
+      </>}
+    </div>, document.body)}
+    {playerOpen && preview && <ExerciseVideoDialog exerciseId={preview.id} exerciseName={preview.name} open onClose={() => {
+      setPlayerOpen(false);
+      previewRequest.current++;
+      setPreview(null);
+      setPreviewPosition(null);
+      const active = document.activeElement;
+      if (active === document.body || active === textarea.current
+        || (active instanceof HTMLElement && active.closest("dialog"))) {
+        textarea.current?.focus({ preventScroll: true });
+      }
+    }} /> }
+    {range && suggestionPosition && typeof document !== "undefined" && createPortal(<div ref={suggestionPanel} className="routine-mention-suggestions" role="listbox" id="routine-mention-options" aria-label="Ejercicios sugeridos" style={{ position: "fixed", left: suggestionPosition.left, top: suggestionPosition.top, width: suggestionPosition.width, maxHeight: "min(240px, calc(100dvh - 16px))", zIndex: 1000 }}>
       {pending && <p role="status">Buscando ejercicios…</p>}
+      {createError && <p role="alert">{createError}</p>}
+      {!pending && !error && range.query.trim() && !results.some(exercise => exercise.name.trim().toLocaleLowerCase() === range.query.trim().toLocaleLowerCase()) && <>
+        <label className="routine-mention-create-mode">Registro
+          <select value={creationTrackingMode} disabled={disabled || creatingExercise} onChange={event => setCreationTrackingMode(event.target.value as "weight" | "time")}>
+            <option value="weight">Peso (kg)</option>
+            <option value="time">Tiempo (sin kg)</option>
+          </select>
+        </label>
+        <button type="button" disabled={disabled || creatingExercise} onMouseDown={event => event.preventDefault()} onClick={() => void createExerciseFromMention()}>{creatingExercise ? "Creando ejercicio…" : `Crear “${range.query.trim()}” en Ejercicios`}</button>
+      </>}
       {error && <><p role="alert">{error}</p><button type="button" disabled={disabled || pending} onClick={retrySearch}>Reintentar búsqueda</button></>}
       {!pending && !error && results.length === 0 && <p>No encontramos ejercicios activos con ese nombre.</p>}
       {results.map((exercise, index) => <button type="button" role="option" aria-selected={active === index} key={exercise.id} disabled={disabled || pending}
         onMouseDown={event => event.preventDefault()} onClick={() => insert(exercise)}>{exercise.name}</button>)}
-    </div>}
+    </div>, document.body)}
     <p>Las menciones quedan vinculadas al ejercicio aunque cambie su nombre. Solo se sugieren ejercicios activos.</p>
     <p className="routine-text-mention-count">{mentions.length} {mentions.length === 1 ? "mención vinculada" : "menciones vinculadas"}</p>
   </div>;

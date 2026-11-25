@@ -105,7 +105,11 @@ test("cerrar el video conserva el foco de Tab entre Empuje y Tirón", async ({ p
       const row = page.getByRole("button", { name: /Press militar/ });
       await row.focus();
       await row.press("Enter");
-      await expect(page.getByRole("dialog").getByRole("button", { name: "Cerrar" })).toBeFocused();
+      const preview = page.getByRole("dialog", { name: "Ejercicio: Press militar" });
+      await expect(preview).toBeVisible();
+      await preview.getByRole("button", { name: "Ver video" }).click();
+      const player = page.getByRole("dialog", { name: "Press militar" });
+      await expect(player.getByRole("button", { name: "Cerrar" })).toBeFocused();
       // Native close restores the trigger synchronously and queues its close
       // event. Move focus before that queued event to exercise the same race
       // without relying on the runner's speed or weakening the Tab assertion.

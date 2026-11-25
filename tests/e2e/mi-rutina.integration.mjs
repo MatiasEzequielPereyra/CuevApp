@@ -102,7 +102,7 @@ async function layoutAndPlayback(browserType, learner) {
           const blocks = routine.locator(".my-routine-block");
           for (const [index, entries] of emBlocks.entries()) {
             const rows = blocks.nth(index).getByRole("listitem");
-            await expect(rows.locator("strong")).toHaveText(entries.map(exercise => exercises[exercise].name));
+            await expect(rows.locator(".my-routine-mention")).toHaveText(entries.map(exercise => exercises[exercise].name));
             await expect(blocks.nth(index).getByText(`${index + 2} vueltas`, { exact: true })).toHaveCount(1);
           }
           await expect(routine.getByText("45 segundos", { exact: true }).first()).toBeVisible();
@@ -111,9 +111,10 @@ async function layoutAndPlayback(browserType, learner) {
           const noVideoExercise = routine.getByRole("button", { name: /Sentadilla/ });
           await expect(noVideoExercise).toHaveCount(2);
           await noVideoExercise.first().click();
-          await expect(routine.getByText("No se cuenta con video para este ejercicio.", { exact: true })).toBeVisible();
-          await blocks.nth(0).locator(".my-routine-exercise-item").first().getByRole("button", { name: "Cerrar aviso" }).click();
-          await expect(routine.getByText("No se cuenta con video para este ejercicio.", { exact: true })).toHaveCount(0);
+          const noVideoPreview = page.getByRole("dialog", { name: "Ejercicio: Sentadilla" });
+          await expect(noVideoPreview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
+          await page.mouse.click(5, 5);
+          await expect(noVideoPreview).toHaveCount(0);
           await expect(routine.getByText("Descansá entre bloques.", { exact: false })).toBeVisible();
           assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
           await expect(page).toHaveTitle(/CUEVA/);
@@ -144,6 +145,17 @@ async function layoutAndPlayback(browserType, learner) {
           } else {
             await row.click();
           }
+          const exercisePreview = page.getByRole("dialog", { name: "Ejercicio: Press militar" });
+          await expect(exercisePreview).toBeVisible();
+          const playVideo = exercisePreview.getByRole("button", { name: "Ver video" });
+          if (width === 390) {
+            await playVideo.focus();
+            await page.keyboard.press("Enter");
+          } else if (width === 360) {
+            await playVideo.tap();
+          } else {
+            await playVideo.click();
+          }
           const dialog = page.getByRole("dialog", { name: "Press militar" });
           await expect(dialog.getByRole("button", { name: "Cerrar" })).toBeFocused();
           const player = dialog.locator("video");
@@ -154,7 +166,10 @@ async function layoutAndPlayback(browserType, learner) {
           await page.screenshot({ path: evidence("video") });
           if (width === 390) await page.keyboard.press("Escape"); else await dialog.getByRole("button", { name: "Cerrar" }).click();
           await expect(dialog).toHaveCount(0);
+          await expect(exercisePreview).toHaveCount(0);
           await expect(row).toBeFocused();
+          await row.hover();
+          await expect(page.getByRole("dialog", { name: "Ejercicio: Press militar" })).toHaveCount(0);
           await expect.poll(() => page.evaluate(() => scrollY)).toBe(y);
           await expect(day.getByRole("button", { name: "Empuje" })).toHaveAttribute("aria-pressed", "true");
           if (width === 390 && browserType.name() === "chromium") {
@@ -200,6 +215,7 @@ try {
     await checked(admin.client.rpc("cueva_exercise_write", {
       p_id: exercise.id, p_name: `${exercise.name} ${suffix}`, p_active: true, p_revision: 0, p_description: "",
       p_video_path: exercise === press ? path : null, p_video_url: [other, old].includes(exercise) ? youtube : null,
+      p_tracking_mode: "weight",
     }));
   }
   const previous = await publish(admin.client, students[0], 0, "Publicación histórica",
@@ -241,13 +257,122 @@ try {
     assert.equal((await guest.request.get(videoUrl(press))).status(), 403);
     await guest.close();
 
-    const pupil = await learnerContext.newPage();
+    // Block the PWA service worker and keep the fetch-level 503 active until
+    // the user explicitly retries. This also covers React Strict Mode effect remounts.
+    const videoContext = await studentContext(browser, learner, { serviceWorkers: "block" });
+    const pupil = await videoContext.newPage();
+    await pupil.addInitScript(({ exerciseId }) => {
+      const originalFetch = window.fetch.bind(window);
+      Object.defineProperties(window, {
+        __cuevaVideoFailureIntercepts: { value: 0, writable: true },
+        __cuevaVideoRetryEnabled: { value: false, writable: true },
+      });
+      document.addEventListener("click", event => {
+        const target = event.target;
+        const button = target instanceof Element ? target.closest("button") : null;
+        if (button?.textContent?.trim() === "Reintentar") {
+          window.__cuevaVideoRetryEnabled = true;
+        }
+      }, true);
+      window.fetch = async (input, init) => {
+        const requestUrl = typeof input === "string" || input instanceof URL ? input.toString() : input.url;
+        const url = new URL(requestUrl, window.location.href);
+        if (url.pathname === "/api/ejercicios/video" &&
+            url.searchParams.get("id") === exerciseId &&
+            !window.__cuevaVideoRetryEnabled) {
+          window.__cuevaVideoFailureIntercepts += 1;
+          return new Response(JSON.stringify({ message: "Video temporalmente no disponible." }), {
+            status: 503,
+            headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+          });
+        }
+        return originalFetch(input, init);
+      };
+    }, { exerciseId: press.id });
+    const summaryBatchRequests = [];
+    await pupil.route("**/api/entrenamientos*", async route => {
+      const url = new URL(route.request().url());
+      if (url.searchParams.get("summary") === "1") {
+        summaryBatchRequests.push(url.searchParams.getAll("exercise_id"));
+      }
+      await route.continue();
+    });
     await pupil.goto(`${origin}/mi-rutina`);
-    await pupil.route("**/api/ejercicios/video?**", route => route.fulfill({ status: 503, json: { message: "Video temporalmente no disponible." } }), { times: 1 });
-    await pupil.getByRole("button", { name: /Press militar/ }).click();
+    await expect.poll(() => summaryBatchRequests.length).toBe(1);
+    assert.deepEqual(
+      [...new Set(summaryBatchRequests[0])].sort(),
+      exercises.slice(0, 6).map(exercise => exercise.id).sort(),
+      "La rutina extensa debe agrupar en una sola solicitud HTTP los seis UUID únicos, sin duplicar ejercicios repetidos."
+    );
+    await expect(pupil.getByRole("heading", {name:"Descripciones de ejercicios"})).toHaveCount(0);
+    const weightedRow = pupil.locator(".my-routine-exercise-item").filter({ hasText: "Press militar" });
+    const timedRow = pupil.locator(".my-routine-exercise-item").filter({ hasText: "Plancha" });
+    await expect(weightedRow.getByRole("button", { name: "Registrar peso" })).toHaveCount(1);
+    const timedLogger = timedRow.first();
+    await expect(timedLogger.getByRole("button", { name: "Registrar duración" })).toBeVisible();
+    await timedLogger.getByRole("button", { name: "Registrar duración" }).click();
+    await expect(timedLogger.getByLabel("Peso utilizado (kg)")).toHaveCount(0);
+    await timedLogger.getByLabel("Duración (segundos)").fill("75");
+    await timedLogger.getByRole("button", { name: "Guardar resultado" }).click();
+    await expect(timedLogger.getByRole("status").filter({ hasText: "Resultado guardado." })).toBeVisible();
+    await expect(timedLogger.locator(".student-workout-summary > span")).toHaveText("1 min 15 s");
+    await weightedRow.getByRole("button", { name: "Registrar peso" }).click();
+    await weightedRow.getByLabel("Peso utilizado (kg)").fill("32.5");
+    await weightedRow.getByRole("button", { name: "Guardar resultado" }).click();
+    await expect(weightedRow.getByRole("status").filter({ hasText: "Resultado guardado." })).toBeVisible();
+
+    // Exercise the complete series -> history -> edit flow through the authenticated UI.
+    await weightedRow.getByRole("button", { name: "Por series", exact: true }).click();
+    await weightedRow.getByLabel("Repeticiones").fill("10");
+    await weightedRow.getByLabel("Peso (kg)").fill("30");
+    await weightedRow.getByRole("button", { name: "Agregar serie", exact: true }).click();
+    await expect(weightedRow.getByText("Serie 2", { exact: true })).toBeVisible();
+    await weightedRow.getByLabel("Repeticiones").nth(1).fill("8");
+    await weightedRow.getByLabel("Peso (kg)").nth(1).fill("32");
+    await weightedRow.getByRole("button", { name: "Guardar resultado", exact: true }).click();
+    await expect(weightedRow.getByRole("status").filter({ hasText: "Resultado guardado." })).toBeVisible();
+    await weightedRow.getByRole("button", { name: "Ver historial", exact: true }).click();
+    const workoutHistory = weightedRow.locator(".student-workout-history");
+    await expect(workoutHistory.getByRole("heading", { name: "Historial de este ejercicio" })).toBeVisible();
+    await expect(workoutHistory.locator("ol > li").first()).toContainText("10 rep.");
+    await expect(workoutHistory.locator("ol > li").first()).toContainText("32 kg");
+    await workoutHistory.getByRole("button", { name: "Editar", exact: true }).first().click();
+    await expect(weightedRow.getByText("Editando un registro anterior")).toBeVisible();
+    await weightedRow.getByLabel("Peso (kg)").nth(0).fill("33");
+    await weightedRow.getByRole("button", { name: "Guardar cambios", exact: true }).click();
+    await expect(weightedRow.getByRole("status").filter({ hasText: "Cambios guardados." })).toBeVisible();
+    await expect(workoutHistory.locator("ol > li").first()).toContainText("33 kg");
+
+    // A valid foreign exercise UUID may return HTTP 200, but its history must remain empty.
+    // First prove the owner has records for this UUID, then verify another student sees none.
+    const ownerWorkoutResponse = await learnerContext.request.get(`${origin}/api/entrenamientos?exercise_id=${press.id}`);
+    assert.equal(ownerWorkoutResponse.status(), 200, "El alumno propietario debe poder consultar su historial.");
+    const ownerWorkoutPayload = await ownerWorkoutResponse.json();
+    assert.ok(ownerWorkoutPayload.history?.entries?.length > 0,
+      "La prueba debe partir de registros reales del alumno propietario.");
+    const foreignWorkoutResponse = await otherContext.request.get(`${origin}/api/entrenamientos?exercise_id=${press.id}`);
+    assert.equal(foreignWorkoutResponse.status(), 200,
+      "Una consulta válida por UUID puede responder correctamente sin revelar registros ajenos.");
+    const foreignWorkoutPayload = await foreignWorkoutResponse.json();
+    assert.deepEqual(foreignWorkoutPayload.history?.entries ?? [], [],
+      "El historial de otro alumno no debe exponer ninguna entrada del propietario.");
+
+    await weightedRow.locator(".my-routine-mention").click();
+    const exercisePreview = pupil.getByRole("dialog", { name: "Ejercicio: Press militar" });
+    await exercisePreview.getByRole("button", { name: "Ver video" }).click();
     const dialog = pupil.getByRole("dialog", { name: "Press militar" });
     await expect(dialog.getByRole("alert")).toHaveText("Video temporalmente no disponible.");
+    assert.ok(await pupil.evaluate(() => window.__cuevaVideoFailureIntercepts) >= 1,
+      "El fetch del video debe recibir un 503 simulado hasta el reintento explícito.");
+    const retryVideoResponse = pupil.waitForResponse(response => {
+      const url = new URL(response.url());
+      return url.pathname === "/api/ejercicios/video" &&
+        url.searchParams.get("id") === press.id &&
+        response.status() === 200;
+    });
     await dialog.getByRole("button", { name: "Reintentar" }).click();
+    const successfulRetry = await retryVideoResponse;
+    assert.equal(successfulRetry.status(), 200, "El reintento debe recuperar el video.");
     await expect(dialog.locator("video")).toBeVisible();
     await pupil.keyboard.press("Escape");
 
@@ -259,6 +384,8 @@ try {
     await expect(legacyPage.getByText("3 series", { exact: true })).toBeVisible();
     await expect(legacyPage.getByText("Nota anterior", { exact: true })).toBeVisible();
     await legacyPage.getByRole("button", { name: /Video de otra ficha/ }).click();
+    const legacyPreview = legacyPage.getByRole("dialog", { name: "Ejercicio: Video de otra ficha" });
+    await legacyPreview.getByRole("button", { name: "Ver video" }).click();
     await expect(legacyPage.getByRole("dialog").locator("iframe")).toHaveAttribute("src", /youtube-nocookie\.com\/embed\/ABCDEFGHIJK/);
     await expect(legacyPage.getByRole("link", { name: "Abrir en YouTube" })).toHaveAttribute("href", youtube);
 

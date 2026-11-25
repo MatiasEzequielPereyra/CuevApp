@@ -3,6 +3,7 @@ import { ExerciseMention } from "@/components/routines/exercise-mention";
 import { resolveMentionVideoAvailability } from "@/lib/routines/mention-video-availability";
 import type { ReactNode } from "react";
 import type { Plan } from "@/lib/routines/types";
+import { getRoutineMentionHues } from "@/lib/routines/mentions";
 import Link from "next/link";
 import { productConfig, userClient } from "@/lib/product-auth/server";
 import { StudentPageHeading, StudentShell } from "@/components/routines/student-shell";
@@ -11,18 +12,19 @@ import "./mi-rutina.css";
 
 export const dynamic = "force-dynamic";
 
-type MentionedExercise = { id: string; name: string; description: string | null; videoAvailability: "available" | "unavailable" | "unknown" };
+type MentionedExercise = { id: string; name: string; description: string | null; tracking_mode: "weight" | "time"; videoAvailability: "available" | "unavailable" | "unknown" };
 type RoutineMention = { exercise_id: string; start: number; end: number; text: string };
 
-function renderRoutineText(text: string, mentions: RoutineMention[], exercisesById: Map<string, MentionedExercise>) {
+function renderRoutineText(text: string, mentions: RoutineMention[], exercisesById: Map<string, MentionedExercise>, publicationId: string) {
   const points = Array.from(text);
   const parts: ReactNode[] = [];
+  const hues = getRoutineMentionHues(mentions);
   let cursor = 0;
   [...mentions].sort((a, b) => a.start - b.start).forEach((mention, index) => {
     const exercise = exercisesById.get(mention.exercise_id);
     if (!exercise || mention.start < cursor || mention.end > points.length || points.slice(mention.start, mention.end).join("") !== mention.text) return;
     if (mention.start > cursor) parts.push(points.slice(cursor, mention.start).join(""));
-    parts.push(<ExerciseMention key={`${mention.exercise_id}:${mention.start}:${index}`} exerciseId={exercise.id} name={exercise.name} description={exercise.description} videoAvailability={exercise.videoAvailability} text={mention.text} />);
+    parts.push(<ExerciseMention key={`${mention.exercise_id}:${mention.start}:${index}`} exerciseId={exercise.id} name={exercise.name} description={exercise.description} videoAvailability={exercise.videoAvailability} text={mention.text} publicationId={publicationId} trackingMode={exercise.tracking_mode ?? "weight"} hue={hues.get(`${mention.exercise_id}:${mention.start}:${mention.end}`) ?? 250} />);
     cursor = mention.end;
   });
   if (cursor < points.length) parts.push(points.slice(cursor).join(""));
@@ -87,7 +89,7 @@ export default async function MyRoutine() {
         client.rpc("cueva_student_assigned_exercises"),
         client.from("cueva_routine_text_publications")
           .select("format,text_content,mentions,block_content").eq("publication_id", publication.id).maybeSingle(),
-        client.rpc("cueva_student_mentioned_exercises"),
+        client.rpc("cueva_student_mentioned_exercises_with_tracking_mode"),
       ])
     : [null, null, null, null];
 
@@ -106,9 +108,6 @@ export default async function MyRoutine() {
     : [];
   const textMode = textDocument?.data?.format === "text";
   const mentionedExercisesById = new Map(mentionedExercises.map(exercise => [exercise.id, exercise]));
-  const describedExercises = textMode ? [] : assignedExercises.filter(
-    exercise => exercise.description?.trim()
-  );
 
   return (
     <StudentShell active="rutina">
@@ -127,7 +126,7 @@ export default async function MyRoutine() {
           )}
         </StudentPageHeading>
 
-        {result.error || (publication && (textDocument?.error || !textDocument?.data)) ? (
+        {result.error || (publication && textDocument?.error) ? (
           <section className="my-routine-panel">
             <h2>No pudimos cargar tu rutina</h2>
             <p>Intentá nuevamente en unos instantes.</p>
@@ -146,35 +145,23 @@ export default async function MyRoutine() {
               <StudentPlan
                 key={publication.published_at}
                 plan={plan}
+                publicationId={publication.id}
                 videoIds={videoIds}
                 videosAvailable={!videos?.error}
+                exerciseMetadata={assignedExercises}
               />
             )}
 
             {textMode && textDocument?.data?.text_content && (
               <section className="my-routine-panel my-routine-notes">
                 <h2>Rutina</h2>
-                <p>{renderRoutineText(textDocument.data.text_content, (textDocument.data.mentions ?? []) as RoutineMention[], mentionedExercisesById)}</p>
+                <div className="my-routine-text-content">{renderRoutineText(textDocument.data.text_content, (textDocument.data.mentions ?? []) as RoutineMention[], mentionedExercisesById, publication.id)}</div>
               </section>
             )}
             {!textMode && publication.content && (
               <section className="my-routine-panel my-routine-notes">
                 <h2>Observaciones</h2>
                 <p>{publication.content}</p>
-              </section>
-            )}
-
-            {mentionedExercises.length > 0 && (
-              <section className="my-routine-panel" aria-labelledby="mentioned-exercises-title">
-                <h2 id="mentioned-exercises-title">Ejercicios mencionados</h2>
-                <ul>
-                  {mentionedExercises.map(exercise => (
-                    <li key={exercise.id}>
-                      <strong>{exercise.name}</strong>
-                      {exercise.description && <p>{exercise.description}</p>}
-                    </li>
-                  ))}
-                </ul>
               </section>
             )}
 
@@ -185,23 +172,7 @@ export default async function MyRoutine() {
               </p>
             )}
 
-            {describedExercises.length > 0 && (
-              <section className="my-routine-panel" aria-labelledby="exercise-descriptions-title">
-                <h2 id="exercise-descriptions-title">
-                  Descripciones de ejercicios
-                </h2>
-                <ul>
-                  {describedExercises.map(exercise => (
-                    <li key={exercise.id}>
-                      <strong>{exercise.name}</strong>
-                      <p>{exercise.description}</p>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            {(textMode ? !textDocument?.data?.text_content : !plan && !publication.content) && describedExercises.length === 0 && mentionedExercises.length === 0 && (
+            {(textMode ? !textDocument?.data?.text_content : !plan && !publication.content) && (
               <p>La publicación todavía no tiene ejercicios ni observaciones.</p>
             )}
           </>

@@ -1,4 +1,4 @@
-export type Exercise = { id: string; name: string; revision: number; active: boolean; description: string; video_url: string | null; video_path: string | null };
+export type Exercise = { id: string; name: string; revision: number; active: boolean; description: string; video_url: string | null; video_path: string | null; tracking_mode?: "weight" | "time" };
 export type LegacyTarget = { id: string; exercise_id: string; name: string; sets: number; reps: string; weight_kg: number | null; note: string };
 export type LegacyBlock = { id: string; name: string; exercises: LegacyTarget[] };
 export type Target = { id: string; exercise_id: string; name: string; note: string } & (
