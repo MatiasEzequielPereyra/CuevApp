@@ -77,7 +77,8 @@ for (const mode of ["weight", "time"] as const) {
       await page.goto(origin + "/mi-rutina");
       const logger = page.getByRole("region", { name: "Registro de Sentadilla" });
       await logger.getByRole("button", { name: mode === "weight" ? "Registrar peso" : "Registrar duración", exact: true }).click();
-      const input = logger.getByLabel(mode === "weight" ? "Peso utilizado (kg)" : "Duración (segundos)", { exact: true });
+      const panel = page.getByRole("dialog", { name: "Registro de Sentadilla" });
+      const input = panel.getByLabel(mode === "weight" ? "Peso utilizado (kg)" : "Duración (segundos)", { exact: true });
       await input.fill("80");
       if (source === "summary-after-save" || source === "history-after-save") {
         await logger.getByRole("button", { name: "Guardar resultado", exact: true }).click();
