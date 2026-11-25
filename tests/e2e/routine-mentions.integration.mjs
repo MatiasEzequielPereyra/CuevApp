@@ -244,6 +244,14 @@ try {
     [studentId,exerciseId]
   )).rows[0].count).toBe(2);
   await expect(logger.getByText("REALIZADO")).toBeVisible();
+  await loggerPanel.getByRole("button", {name:"Rápido"}).click();
+  await loggerPanel.getByLabel("Peso utilizado (kg)").fill("47.5");
+  await loggerPanel.getByRole("button", {name:"Guardar resultado"}).click();
+  await expect(loggerPanel.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
+  await expect.poll(async () => (await db.query(
+    "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
+    [studentId,exerciseId]
+  )).rows[0].count).toBe(4);
   await loggerPanel.getByRole("button", {name:"Ver historial"}).click();
   // Select the multi-set entry by its recorded reps, not by history position:
   // the two earlier quick entries are also editable and appear in the same list.
@@ -264,8 +272,8 @@ try {
   await expect.poll(async () => (await db.query(
     "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
     [studentId,exerciseId]
-  )).rows[0].count).toBe(2);
-  await expect(loggerPanel.locator(".student-workout-history > ol > li")).toHaveCount(2);
+  )).rows[0].count).toBe(3);
+  await expect(loggerPanel.locator(".student-workout-history > ol > li")).toHaveCount(3);
   await expect(loggerPanel.getByRole("status").filter({hasText:"Registro eliminado."})).toBeVisible();
   await pupil.locator("h1").click();
   await expect(preview).toHaveCount(0);
