@@ -87,13 +87,13 @@ begin
         'weight_kg',s.weight_kg,'duration_seconds',s.duration_seconds) order by s.set_number)
         from public.cueva_workout_sets s where s.entry_id=e.id),'[]'::jsonb)
     ) as entry_json
-    from ranked_entries e where e.entry_rank<=30
+    from ranked_entries e where e.entry_rank=1
   ),
   assembled as (
     select r.exercise_id,m.last_weight_kg,m.last_duration_seconds,
       coalesce(jsonb_agg(e.entry_json order by e.performed_at desc,e.created_at desc,e.entry_id desc)
         filter(where e.entry_json is not null),'[]'::jsonb) as entries,
-      coalesce(bool_or(e.entry_count>30),false) as has_more
+      coalesce(bool_or(e.entry_count>1),false) as has_more
     from requested r left join mode_summaries m on m.exercise_id=r.exercise_id
       left join latest_entries e on e.exercise_id=r.exercise_id
     group by r.exercise_id,m.last_weight_kg,m.last_duration_seconds
