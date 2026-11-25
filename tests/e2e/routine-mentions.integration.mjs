@@ -74,7 +74,8 @@ try {
   // Highlight styling must not change inline text metrics: the textarea owns the native caret.
   await expect(highlightedMention).toHaveCSS("font-weight", "400");
   await expect(highlightedMention).toHaveCSS("padding-left", "0px");
-  await expect(highlightedMention).not.toHaveCSS("text-shadow", "none");
+  const mentionBoxShadow = await highlightedMention.evaluate(element => getComputedStyle(element).boxShadow);
+  assert.notEqual(mentionBoxShadow, "none", "linked mention must retain its visual highlight");
   await expect(highlightedMention).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   const mentionClickPoint = await adminTextarea.evaluate((element, name) => {
     const start = element.value.indexOf(name);
