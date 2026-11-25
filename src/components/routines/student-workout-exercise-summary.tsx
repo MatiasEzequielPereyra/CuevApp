@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { requestWorkoutSummary, type WorkoutHistorySummary } from "@/lib/routines/workout-summary-batch";
 
 function latestValue(history: WorkoutHistorySummary) {
@@ -18,31 +18,25 @@ function latestValue(history: WorkoutHistorySummary) {
 
 export function StudentWorkoutExerciseSummary({ exerciseId, exerciseName }: { exerciseId: string; exerciseName: string }) {
   const [value, setValue] = useState("");
-  const refresh = useCallback(() => {
-    let active = true;
-    void requestWorkoutSummary(exerciseId).then(history => {
-      if (active) setValue(latestValue(history));
-    }).catch(() => {
-      if (active) setValue("");
-    });
-    return () => { active = false; };
-  }, [exerciseId]);
-
   useEffect(() => {
-    const cancel = refresh();
+    let active = true;
+    const load = () => {
+      void requestWorkoutSummary(exerciseId).then(history => {
+        if (active) setValue(latestValue(history));
+      }).catch(() => {
+        if (active) setValue("");
+      });
+    };
+    load();
     const onUpdated = (event: Event) => {
-      if ((event as CustomEvent<{ exerciseId?: string }>).detail?.exerciseId === exerciseId) {
-        const cleanup = refresh();
-        // The request is allowed to settle; a subsequent event supersedes it.
-        void cleanup;
-      }
+      if ((event as CustomEvent<{ exerciseId?: string }>).detail?.exerciseId === exerciseId) load();
     };
     window.addEventListener("cueva-workout-updated", onUpdated);
     return () => {
-      cancel();
+      active = false;
       window.removeEventListener("cueva-workout-updated", onUpdated);
     };
-  }, [exerciseId, refresh]);
+  }, [exerciseId]);
 
   if (!value) return null;
   return <span className="student-workout-exercise-summary" aria-label={`Último registro de ${exerciseName}: ${value}`}>{value}</span>;
