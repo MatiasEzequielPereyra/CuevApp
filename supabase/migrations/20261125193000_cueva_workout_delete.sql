@@ -22,7 +22,10 @@ begin
   where id = p_id
   for update;
 
-  if not found or not cueva_private.routine_owner(v_entry.student_id) then
+  if not found then
+    raise exception 'No tenés permiso para eliminar este registro' using errcode = '42501';
+  end if;
+  if not cueva_private.routine_owner(v_entry.student_id) then
     raise exception 'No tenés permiso para eliminar este registro' using errcode = '42501';
   end if;
   if v_entry.revision <> p_revision then
