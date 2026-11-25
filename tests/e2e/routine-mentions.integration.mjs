@@ -337,7 +337,36 @@ try {
   await touchPage.touchscreen.tap(5, 5);
   await expect(touchPreview).toHaveCount(0);
   await touchContext.close();
-  console.log("PASS: authenticated text mention preview, no-video state, inline video playback, keyboard dismissal and no navigation.");
+
+  // A single source line with two linked UUIDs exposes the exercise picker
+  // inside the floating logger; changing to a time-based exercise must reset
+  // the draft and switch the available input without closing or shifting rows.
+  await adminTextarea.fill(`🙂 @${exerciseName}`);
+  await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:exerciseName, exact:true})).toBeVisible();
+  await page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:exerciseName, exact:true}).click();
+  await adminTextarea.press("End");
+  await adminTextarea.pressSequentially(" @");
+  await adminTextarea.pressSequentially(inlineExerciseName);
+  await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:inlineExerciseName, exact:true})).toBeVisible();
+  await page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:inlineExerciseName, exact:true}).click();
+  await editor.getByRole("button", {name:"Publicar rutina"}).click();
+  await expect(editor.getByText("Rutina publicada.", {exact:true})).toBeVisible();
+  const {rows:[inlineExercise]} = await db.query("select id from public.cueva_exercises where name=$1", [inlineExerciseName]);
+  assert.ok(inlineExercise?.id, "inline-created exercise must retain its catalog UUID");
+  await pupil.reload();
+  const rowLogger = pupil.locator(".student-workout-row .student-workout").first();
+  const rowTrigger = rowLogger.getByRole("button", {name:"Registrar peso"});
+  await rowTrigger.click();
+  const selectionPanel = pupil.locator(".student-workout-floating-panel");
+  await expect(selectionPanel.getByLabel("Ejercicio")).toHaveValue(exerciseId);
+  await selectionPanel.getByLabel("Ejercicio").selectOption(inlineExercise.id);
+  await expect(selectionPanel.getByLabel("Ejercicio")).toHaveValue(inlineExercise.id);
+  await expect(selectionPanel.getByLabel("Duración (segundos)")).toBeVisible();
+  await expect(selectionPanel.getByLabel("Peso utilizado (kg)")).toHaveCount(0);
+  await selectionPanel.getByRole("button", {name:"Cerrar registro"}).click();
+  await expect(selectionPanel).toHaveCount(0);
+
+  console.log("PASS: authenticated text mention preview, floating logger layout, UUID exercise selection, time tracking, inline video playback, keyboard dismissal and no navigation.");
 } finally {
   await browser?.close();
   // Immutable synthetic publications are removed with this disposable stack.
