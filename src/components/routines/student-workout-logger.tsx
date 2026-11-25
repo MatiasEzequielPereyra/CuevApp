@@ -76,6 +76,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const id = useId();
   const trigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
+  const historyRequestExercise = useRef<string | null>(null);
   const [panelPosition, setPanelPosition] = useState<PanelPosition | null>(null);
   const [expanded, setExpanded] = useState(false);
   const positionPanel = useCallback(() => {
@@ -277,8 +278,14 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   }
 
   useEffect(() => {
-    if (expanded && !history && !loadingHistory) void loadHistory(0);
-  }, [expanded, exerciseId, history, loadingHistory, loadHistory]);
+    if (!expanded) {
+      historyRequestExercise.current = null;
+      return;
+    }
+    if (historyRequestExercise.current === exerciseId) return;
+    historyRequestExercise.current = exerciseId;
+    void loadHistory(0);
+  }, [expanded, exerciseId, loadHistory]);
 
   useEffect(() => {
     if (!expanded) { setPanelPosition(null); return; }
@@ -325,7 +332,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
           style={{ position: "fixed", left: panelPosition.left, top: panelPosition.top, width: panelPosition.width, maxHeight: panelPosition.maxHeight, overflow: "auto", zIndex: 2147483000 }}>
           <header>
             <strong>{exerciseName}</strong>
-            <button type="button" className="student-workout-close" aria-label="Cerrar registro" onClick={() => setExpanded(false)}>×</button>
+            <button type="button" className="student-workout-close" aria-label="Cerrar registro" onClick={() => { setExpanded(false); trigger.current?.focus({ preventScroll: true }); }}>×</button>
             <button type="button" onClick={() => setHistoryOpen(value => !value)} aria-expanded={historyOpen}>
               {historyOpen ? "Ocultar historial" : "Ver historial"}
             </button>
