@@ -263,7 +263,12 @@ try {
   await loggerPanel.getByRole("button", {name:"Guardar cambios"}).click();
   await expect(loggerPanel.getByRole("status").filter({hasText:"Cambios guardados."})).toBeVisible();
   await expect(logger.getByText("45 kg", { exact: true })).toBeVisible();
-  await expect(loggerPanel.locator(".student-workout-history > ol > li")).toHaveCount(3);
+  const visibleHistoryRows = loggerPanel.locator(".student-workout-history > ol > li");
+  await expect(visibleHistoryRows).toHaveCount(3);
+  for (let index = 0; index < 3; index++) {
+    await expect(visibleHistoryRows.nth(index)).toHaveCSS("white-space", "nowrap");
+    expect((await visibleHistoryRows.nth(index).boundingBox()).height).toBeLessThanOrEqual(30);
+  }
   const reusableEntry = loggerPanel.locator(".student-workout-history > ol > li").filter({hasText:"8 rep."});
   await reusableEntry.getByRole("button", {name:"Usar"}).click();
   await expect(loggerPanel.getByLabel("Peso utilizado (kg)")).toHaveValue("45");
@@ -401,7 +406,7 @@ try {
   await expect(selectionPanel.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
   const firstExerciseSummary = pupil.locator(".my-routine-exercise-with-summary").filter({hasText:exerciseName}).locator(".student-workout-exercise-summary").first();
   const secondExerciseSummary = pupil.locator(".my-routine-exercise-with-summary").filter({hasText:secondExerciseName}).locator(".student-workout-exercise-summary").first();
-  await expect(firstExerciseSummary).toContainText("kg");
+  await expect(firstExerciseSummary).toContainText("47,5 kg");
   await expect(secondExerciseSummary).toContainText("22,5 kg");
   await selectionPanel.getByRole("button", {name:"Cerrar registro"}).click();
   await expect(selectionPanel).toHaveCount(0);
