@@ -249,9 +249,6 @@ try {
     const adminContext = await studentContext(browser, admin);
     const learnerContext = await studentContext(browser, learner);
     const otherContext = await studentContext(browser, second);
-    const foreignWorkoutResponse = await otherContext.request.get(`${origin}/api/entrenamientos?exercise_id=${press.id}`);
-    assert.equal(foreignWorkoutResponse.status(), 403,
-      "Un alumno no puede consultar el historial de un ejercicio que sólo pertenece a la rutina de otro alumno.");
     const videoUrl = exercise => `${origin}/api/ejercicios/video?id=${exercise.id}&player=1`;
     for (const [context, exercise] of [[learnerContext, other], [learnerContext, old], [otherContext, press]]) {
       assert.equal((await context.request.get(videoUrl(exercise))).status(), 403);
@@ -345,6 +342,20 @@ try {
     await weightedRow.getByRole("button", { name: "Guardar cambios", exact: true }).click();
     await expect(weightedRow.getByRole("status").filter({ hasText: "Cambios guardados." })).toBeVisible();
     await expect(workoutHistory.locator("ol > li").first()).toContainText("33 kg");
+
+    // A valid foreign exercise UUID may return HTTP 200, but its history must remain empty.
+    // First prove the owner has records for this UUID, then verify another student sees none.
+    const ownerWorkoutResponse = await learnerContext.request.get(`${origin}/api/entrenamientos?exercise_id=${press.id}`);
+    assert.equal(ownerWorkoutResponse.status(), 200, "El alumno propietario debe poder consultar su historial.");
+    const ownerWorkoutPayload = await ownerWorkoutResponse.json();
+    assert.ok(ownerWorkoutPayload.history?.entries?.length > 0,
+      "La prueba debe partir de registros reales del alumno propietario.");
+    const foreignWorkoutResponse = await otherContext.request.get(`${origin}/api/entrenamientos?exercise_id=${press.id}`);
+    assert.equal(foreignWorkoutResponse.status(), 200,
+      "Una consulta válida por UUID puede responder correctamente sin revelar registros ajenos.");
+    const foreignWorkoutPayload = await foreignWorkoutResponse.json();
+    assert.deepEqual(foreignWorkoutPayload.history?.entries ?? [], [],
+      "El historial de otro alumno no debe exponer ninguna entrada del propietario.");
 
     await weightedRow.locator(".my-routine-mention").click();
     const exercisePreview = pupil.getByRole("dialog", { name: "Ejercicio: Press militar" });
