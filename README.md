@@ -2,16 +2,21 @@
 
 Fundación de la aplicación del gimnasio. CUEVA-001A fue aceptada e integrada en el PR #1. La página está publicada en [cueva-gym.vercel.app](https://cueva-gym.vercel.app). Ver el checkpoint para la evidencia y el siguiente encargo.
 
-## Estado actual del producto
+## Estado del repositorio — 24/11/2026
 
-El portal del alumno incluye Inicio, Mi Membresía, Entrenamiento,
-Notificaciones y Mi perfil. La base de Notificaciones ya se aplicó en
-Supabase. La activación de los envíos automáticos, la entrega Push y la RPC
-alojada de ejercicios asignados siguen pendientes.
+La [reconciliación del 24/11](docs/engineering/REPO-STATUS-2026-11-24.md)
+prevalece sobre las fotos históricas. Main verificado:
+`425e23aa3e5d28a1d2ba08c41084e5bba021f297`. CUEVA-006E (#82) y los
+ajustes de menciones (#84–#87) ya están integrados. El portal conserva cuentas,
+correo, alumnos, cuotas, pagos, vencimientos, comprobantes, rutinas y videos.
 
-El código publicado incluye rutinas por días y bloques, biblioteca de ejercicios
-y videos, comprobantes, vencimientos y gestión de pagos. Consultar el
-[estado del repositorio y los servicios](docs/engineering/checkpoint.md).
+Quedan abiertos #75 (documentación/limpieza segura), #83 (registro personal,
+apagado por defecto) y #88 (entrenamiento). Código integrado, configuración,
+SQL aplicado y aceptación alojada son estados distintos. Producción READY y
+33 migraciones fueron reportados por el Orchestrator el 24/11; este ejecutor
+no repitió consultas alojadas. Cron, entrega Push y offline no se declaran
+operativos. La [foto del 19/11](docs/engineering/REPO-STATUS-2026-11-19.md)
+se conserva como evidencia histórica, sin autoridad sobre el estado actual.
 
 ## Orden de lectura
 
