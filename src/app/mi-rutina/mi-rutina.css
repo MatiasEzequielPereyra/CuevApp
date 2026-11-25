@@ -407,12 +407,19 @@
   color: var(--dash-accent);
 }
 .student-workout-floating-panel {
+  --workout-border: var(--dash-border, var(--line, #c9c9c6));
+  --workout-surface: var(--dash-panel, var(--surface, #ffffff));
+  --workout-text: var(--dash-text, var(--text, #181819));
+  --workout-muted: var(--dash-muted, #6b7280);
+  --workout-bg: var(--dash-bg, var(--surface, #f7f7f5));
+  --workout-accent: var(--dash-accent, #5865a8);
+  --workout-accent-soft: var(--dash-accent-soft, color-mix(in srgb, var(--workout-accent) 10%, transparent));
   display: grid;
   align-content: start;
   gap: 9px;
   min-width: 0;
   padding: 12px;
-  border: 1px solid var(--dash-border);
+  border: 1px solid var(--workout-border);
   border-radius: 12px;
   background: var(--dash-panel, var(--surface, #ededeb));
   background-color: var(--dash-panel, var(--surface, #ededeb));
@@ -427,7 +434,7 @@
   gap: 8px;
   min-width: 0;
   padding-bottom: 7px;
-  border-bottom: 1px solid var(--dash-border);
+  border-bottom: 1px solid var(--workout-border);
 }
 .student-workout-floating-panel > header > strong {
   flex: 1;
@@ -444,13 +451,13 @@
   padding: 0;
   border-color: transparent;
   background: transparent;
-  color: var(--dash-muted);
+  color: var(--workout-muted);
   font-size: 1.1rem;
 }
 .student-workout-exercise-picker {
   display: grid;
   gap: 4px;
-  color: var(--dash-muted);
+  color: var(--workout-muted);
   font-size: .8rem;
   font-weight: 600;
 }
@@ -459,10 +466,10 @@
   min-width: 0;
   min-height: 36px;
   padding: 6px 9px;
-  border: 1px solid var(--dash-border);
+  border: 1px solid var(--workout-border);
   border-radius: 8px;
-  background: var(--dash-panel);
-  color: var(--dash-text);
+  background: var(--workout-surface);
+  color: var(--workout-text);
   font: inherit;
 }
 .student-workout-modes {
@@ -470,9 +477,9 @@
   flex-wrap: wrap;
   gap: 5px;
   padding: 3px;
-  border: 1px solid var(--dash-border);
+  border: 1px solid var(--workout-border);
   border-radius: 9px;
-  background: color-mix(in srgb, var(--dash-bg) 55%, transparent);
+  background: color-mix(in srgb, var(--workout-bg) 55%, transparent);
 }
 .student-workout-modes button {
   flex: 1;
@@ -480,12 +487,12 @@
   padding: 4px 9px;
   border-color: transparent;
   background: transparent;
-  color: var(--dash-muted);
+  color: var(--workout-muted);
 }
 .student-workout-modes button[aria-pressed="true"] {
-  border-color: var(--dash-border);
-  background: var(--dash-panel);
-  color: var(--dash-accent);
+  border-color: var(--workout-border);
+  background: var(--workout-surface);
+  color: var(--workout-accent);
   font-weight: 650;
   box-shadow: 0 1px 3px rgb(0 0 0 / .08);
 }
@@ -493,7 +500,7 @@
   display: grid;
   gap: 4px;
   min-width: 0;
-  color: var(--dash-text);
+  color: var(--workout-text);
   font-size: .8125rem;
   font-weight: 600;
 }
@@ -502,10 +509,10 @@
   min-width: 0;
   min-height: 36px;
   padding: 6px 9px;
-  border: 1px solid var(--dash-border);
+  border: 1px solid var(--workout-border);
   border-radius: 8px;
-  background: var(--dash-panel);
-  color: var(--dash-text);
+  background: var(--workout-surface);
+  color: var(--workout-text);
   font: inherit;
 }
 .student-workout-last {
@@ -514,7 +521,7 @@
   flex-wrap: wrap;
   gap: 6px;
   margin: 0;
-  color: var(--dash-muted);
+  color: var(--workout-muted);
   font-size: .8rem;
 }
 .student-workout-sets {
@@ -527,14 +534,14 @@
   align-items: end;
   gap: 6px;
   padding: 7px;
-  border: 1px solid var(--dash-border);
+  border: 1px solid var(--workout-border);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--dash-bg) 35%, transparent);
+  background: color-mix(in srgb, var(--workout-bg) 35%, transparent);
 }
 .student-workout-set > strong {
   align-self: center;
   grid-column: auto;
-  color: var(--dash-muted);
+  color: var(--workout-muted);
   font-size: .8rem;
 }
 .student-workout-set > button {
@@ -543,8 +550,8 @@
 }
 .student-workout-floating-panel .student-workout-save {
   min-height: 38px;
-  border-color: var(--dash-accent);
-  background: var(--dash-accent);
+  border-color: var(--workout-accent);
+  background: var(--workout-accent);
   color: white;
   font-weight: 650;
 }
@@ -552,7 +559,7 @@
   display: grid;
   gap: 6px;
   padding-top: 8px;
-  border-top: 1px solid var(--dash-border);
+  border-top: 1px solid var(--workout-border);
 }
 .student-workout-history h4,
 .student-workout-history p { margin: 0; }
@@ -567,7 +574,7 @@
   gap: 3px;
   font-size: .8125rem;
 }
-.student-workout-history time { color: var(--dash-muted); }
+.student-workout-history time { color: var(--workout-muted); }
 .student-workout-history ul { margin: 0; padding-inline-start: 18px; }
 .student-workout-row {
   display: inline-flex;
