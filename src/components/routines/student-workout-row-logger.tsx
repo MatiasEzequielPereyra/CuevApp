@@ -22,16 +22,9 @@ export function StudentWorkoutRowLogger({ exercises, publicationId }: {
 
   return (
     <div className="student-workout-row">
-      {unique.length > 1 && (
-        <label className="student-workout-row-select">
-          Registrar ejercicio
-          <select value={selected.id} onChange={event => setSelectedId(event.target.value)}>
-            {unique.map(exercise => <option key={exercise.id} value={exercise.id}>{exercise.name}</option>)}
-          </select>
-        </label>
-      )}
       <StudentWorkoutLogger publicationId={publicationId} exerciseId={selected.id}
-        exerciseName={selected.name} trackingMode={selected.tracking_mode} />
+        exerciseName={selected.name} trackingMode={selected.tracking_mode}
+        availableExercises={unique} onExerciseChange={exercise => setSelectedId(exercise.id)} />
     </div>
   );
 }

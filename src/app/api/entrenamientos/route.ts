@@ -40,10 +40,10 @@ export async function GET(req: Request) {
   }
   const exerciseId = exerciseIds[0] ?? "";
   const offset = Number(params.get("offset") ?? 0);
-  const limit = Number(params.get("limit") ?? 30);
+  const limit = Number(params.get("limit") ?? 3);
   if (!uuid.test(exerciseId)) return reply({ message: "Ejercicio inválido." }, 400);
   if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000
-    || !Number.isSafeInteger(limit) || limit < 1 || limit > 50) {
+    || !Number.isSafeInteger(limit) || limit < 1 || limit > 3) {
     return reply({ message: "Página de historial inválida." }, 400);
   }
   const { data, error } = await client.rpc("cueva_workout_history", {
@@ -163,6 +163,31 @@ export async function PATCH(req: Request) {
     if (error.code === "40001") return reply({ message: "El registro cambió desde que abriste el historial. Actualizalo e intentá nuevamente." }, 409);
     if (error.code === "22023" || error.code === "23514") return reply({ message: "Revisá el peso, la duración y las series." }, 400);
     return reply({ message: "No pudimos actualizar el registro." }, 503);
+  }
+  return reply({ result: data });
+}
+
+
+export async function DELETE(req: Request) {
+  const cfg = productConfig();
+  if (!cfg) return reply({ message: "Acceso no disponible." }, 404);
+  if (req.headers.get("origin") !== cfg.origin) return reply({ message: "Solicitud no permitida." }, 403);
+  const { client, status } = await studentClient();
+  if (!client) return reply({ message: "Acceso restringido." }, status);
+  const p = await readRoutineJson(req, 2000);
+  if (!p || typeof p.entry_id !== "string" || !uuid.test(p.entry_id)
+    || !Number.isSafeInteger(p.revision) || p.revision < 1 || p.revision > 2147483647) {
+    return reply({ message: "Revisá el registro que querés eliminar." }, 400);
+  }
+  const { data, error } = await client.rpc("cueva_workout_delete", {
+    p_id: p.entry_id,
+    p_revision: p.revision,
+  });
+  if (error) {
+    if (error.code === "42501") return reply({ message: "No tenés permiso para eliminar este registro." }, 403);
+    if (error.code === "40001") return reply({ message: "El registro cambió. Actualizá el historial e intentá nuevamente." }, 409);
+    if (error.code === "22023") return reply({ message: "El registro seleccionado no es válido." }, 400);
+    return reply({ message: "No pudimos eliminar el registro." }, 503);
   }
   return reply({ result: data });
 }

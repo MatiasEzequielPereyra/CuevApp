@@ -77,11 +77,12 @@ for (const mode of ["weight", "time"] as const) {
       await page.goto(origin + "/mi-rutina");
       const logger = page.getByRole("region", { name: "Registro de Sentadilla" });
       await logger.getByRole("button", { name: mode === "weight" ? "Registrar peso" : "Registrar duración", exact: true }).click();
-      const input = logger.getByLabel(mode === "weight" ? "Peso utilizado (kg)" : "Duración (segundos)", { exact: true });
+      const panel = page.getByRole("dialog", { name: "Registro de Sentadilla" });
+      const input = panel.getByLabel(mode === "weight" ? "Peso utilizado (kg)" : "Duración (segundos)", { exact: true });
       await input.fill("80");
       if (source === "summary-after-save" || source === "history-after-save") {
-        await logger.getByRole("button", { name: "Guardar resultado", exact: true }).click();
-        await expect(logger.getByText("Resultado guardado.", { exact: true })).toBeVisible();
+        await panel.getByRole("button", { name: "Guardar resultado", exact: true }).click();
+        await expect(panel.getByText("Resultado guardado.", { exact: true })).toBeVisible();
         expect(submitted?.[mode === "weight" ? "weight_kg" : "duration_seconds"]).toBe(80);
         if (source === "summary-after-save") {
           await expect(logger.locator(".student-workout-summary")).toContainText(mode === "weight" ? "80 kg" : "1 min 20 s");

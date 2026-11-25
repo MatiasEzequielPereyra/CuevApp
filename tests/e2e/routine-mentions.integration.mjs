@@ -1,3 +1,4 @@
+// CUEVA-007: floating panels, per-exercise summaries, and compact editable history (current contract).
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { chromium, expect } from "@playwright/test";
@@ -13,6 +14,8 @@ const service = createClient(API_URL, CUEVA_SERVICE_KEY, { auth: { persistSessio
 const db = new pg.Client({ connectionString: DB_URL });
 const studentId = randomUUID(), exerciseId = randomUUID();
 const exerciseName = `Sentadilla emoji ${randomUUID().slice(0,8)}`;
+const secondExerciseId = randomUUID();
+const secondExerciseName = `Press de hombros ${randomUUID().slice(0,8)}`;
 const password = `CuevA-${randomUUID()}-9!`;
 async function checked(operation) {
   const { data, error } = await operation;
@@ -41,6 +44,7 @@ try {
   await db.query("insert into public.cueva_students(id,first_name,last_name,email,joined_on) values($1,'Mention','Local',$2,current_date)", [studentId,learner.email]);
   await db.query("insert into public.cueva_student_invitations(student_id,email,user_id,state,lease,requested_by) values($1,$2,$3,'sent',$4,$5)", [studentId,learner.email,learner.id,randomUUID(),admin.id]);
   await db.query("insert into public.cueva_exercises(id,name,revision,active,updated_by) values($1,$2,1,true,$3)", [exerciseId,exerciseName,admin.id]);
+  await db.query("insert into public.cueva_exercises(id,name,revision,active,updated_by) values($1,$2,1,true,$3)", [secondExerciseId,secondExerciseName,admin.id]);
   browser = await chromium.launch();
   const context = await browser.newContext();
   await context.addCookies(admin.cookies);
@@ -50,12 +54,15 @@ try {
   await editor.getByRole("button", {name:"Texto libre"}).click();
   const adminTextarea = editor.getByRole("textbox", {name:"Rutina en texto libre"});
   const inlineExerciseName = `${exerciseName} temporal 007`;
+  const adminEditorBeforeSuggestions = await adminTextarea.boundingBox();
   await adminTextarea.fill(`@${inlineExerciseName}`);
   await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"})).toBeVisible();
   const suggestions = page.getByRole("listbox", {name:"Ejercicios sugeridos"});
   await expect(suggestions).toHaveCSS("opacity", "1");
   await expect(suggestions).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(suggestions).toHaveCSS("z-index", "2147483000");
+  await expect(suggestions).toHaveCSS("position", "fixed");
+  expect((await adminTextarea.boundingBox()).height).toBe(adminEditorBeforeSuggestions.height);
   await page.getByLabel("Registro").selectOption("time");
   await page.getByRole("button", {name: new RegExp(`Crear .* en Ejercicios`)}).click();
   await expect.poll(async () => (await db.query(
@@ -177,6 +184,7 @@ try {
   // A linked mention never opens a preview from proximity, hover or focus.
   const preview = pupil.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`});
   const logger = pupil.locator(".student-workout-row .student-workout").first();
+  const loggerPanel = pupil.locator(".student-workout-floating-panel");
   await mention.hover();
   await expect(preview).toHaveCount(0);
   await mention.focus();
@@ -193,48 +201,91 @@ try {
   await preview.hover(); // moving from the mention to the panel must not dismiss it.
   await expect(preview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
   await expect(preview.getByRole("link")).toHaveCount(0);
-  await logger.getByRole("button", {name:"Registrar peso"}).click();
-  await logger.getByLabel("Peso utilizado (kg)").fill("37.5");
-  await logger.getByRole("button", {name:"Guardar resultado"}).click();
-  await expect(logger.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
+  const rowBeforePanel = await logger.boundingBox();
+  const loggerTrigger = logger.getByRole("button", {name:"Registrar peso"});
+  const panelControlId = await loggerTrigger.getAttribute("aria-controls");
+  await loggerTrigger.click();
+  await expect(loggerPanel).toBeVisible();
+  expect(await loggerPanel.getAttribute("id")).toBe(panelControlId);
+  await expect(loggerPanel).toHaveCSS("position", "fixed");
+  const panelBox = await loggerPanel.boundingBox();
+  const viewport = pupil.viewportSize();
+  expect(panelBox.x).toBeGreaterThanOrEqual(0);
+  expect(panelBox.y).toBeGreaterThanOrEqual(0);
+  expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(viewport.width);
+  expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(viewport.height);
+  const rowAfterPanel = await logger.boundingBox();
+  expect(rowAfterPanel.height).toBe(rowBeforePanel.height);
+  await loggerPanel.getByLabel("Peso utilizado (kg)").fill("37.5");
+  await loggerPanel.getByRole("button", {name:"Guardar resultado"}).click();
+  await expect(loggerPanel.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
   await expect(logger.getByText("REALIZADO")).toBeVisible();
   await expect.poll(async () => (await db.query(
     "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
     [studentId,exerciseId]
   )).rows[0].count).toBe(1);
-  await logger.getByRole("button", {name:"Guardar último peso"}).click();
+  await loggerPanel.getByRole("button", {name:"Guardar último peso"}).click();
   await expect.poll(async () => (await db.query(
     "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
     [studentId,exerciseId]
   )).rows[0].count).toBe(2);
-  await logger.getByRole("button", {name:"Por series"}).click();
-  const setRows = logger.locator(".student-workout-set");
+  const rowHeightBeforeSets = (await logger.boundingBox()).height;
+  await loggerPanel.getByRole("button", {name:"Por series"}).click();
+  expect((await logger.boundingBox()).height).toBe(rowHeightBeforeSets);
+  const setRows = loggerPanel.locator(".student-workout-set");
   await setRows.nth(0).getByLabel("Repeticiones").fill("10");
   await setRows.nth(0).getByLabel("Peso (kg)").fill("40");
-  await logger.getByRole("button", {name:"Agregar serie"}).click();
+  await loggerPanel.getByRole("button", {name:"Agregar serie"}).click();
   await setRows.nth(1).getByLabel("Repeticiones").fill("8");
   await setRows.nth(1).getByLabel("Peso (kg)").fill("42.5");
-  await logger.getByRole("button", {name:"Guardar resultado"}).click();
-  await expect(logger.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
+  await loggerPanel.getByRole("button", {name:"Guardar resultado"}).click();
+  await expect(loggerPanel.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
   await expect.poll(async () => (await db.query(
     "select count(*)::int as count from public.cueva_workout_sets s join public.cueva_workout_entries e on e.id=s.entry_id where e.student_id=$1 and e.exercise_id=$2",
     [studentId,exerciseId]
   )).rows[0].count).toBe(2);
   await expect(logger.getByText("REALIZADO")).toBeVisible();
-  await logger.getByRole("button", {name:"Ver historial"}).click();
+  await loggerPanel.getByRole("button", {name:"Rápido"}).click();
+  await loggerPanel.getByLabel("Peso utilizado (kg)").fill("47.5");
+  await loggerPanel.getByRole("button", {name:"Guardar resultado"}).click();
+  await expect(loggerPanel.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
+  await expect.poll(async () => (await db.query(
+    "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
+    [studentId,exerciseId]
+  )).rows[0].count).toBe(4);
+  await loggerPanel.getByRole("button", {name:"Ver historial"}).click();
   // Select the multi-set entry by its recorded reps, not by history position:
   // the two earlier quick entries are also editable and appear in the same list.
-  const setsHistoryEntry = logger.locator(".student-workout-history > ol > li").filter({hasText:"8 rep."});
+  const setsHistoryEntry = loggerPanel.locator(".student-workout-history > ol > li").filter({hasText:"8 rep."});
   await expect(setsHistoryEntry).toHaveCount(1);
   await setsHistoryEntry.getByRole("button", {name:"Editar"}).click();
-  await expect(logger.locator(".student-workout-set")).toHaveCount(2);
-  await logger.locator(".student-workout-set").nth(1).getByLabel("Peso (kg)").fill("45");
-  await logger.getByRole("button", {name:"Guardar cambios"}).click();
-  await expect(logger.getByRole("status").filter({hasText:"Cambios guardados."})).toBeVisible();
-  await expect(logger.getByText("45 kg", { exact: true })).toBeVisible();
+  await expect(loggerPanel.locator(".student-workout-set")).toHaveCount(2);
+  await loggerPanel.locator(".student-workout-set").nth(1).getByLabel("Peso (kg)").fill("45");
+  await loggerPanel.getByRole("button", {name:"Guardar cambios"}).click();
+  await expect(loggerPanel.getByRole("status").filter({hasText:"Cambios guardados."})).toBeVisible();
+  await expect(setsHistoryEntry).toContainText("45 kg");
+  const visibleHistoryRows = loggerPanel.locator(".student-workout-history > ol > li");
+  await expect(visibleHistoryRows).toHaveCount(3);
+  for (let index = 0; index < 3; index++) {
+    await expect(visibleHistoryRows.nth(index)).toHaveCSS("white-space", "nowrap");
+    expect((await visibleHistoryRows.nth(index).boundingBox()).height).toBeLessThanOrEqual(30);
+  }
+  const reusableEntry = loggerPanel.locator(".student-workout-history > ol > li").filter({hasText:"8 rep."});
+  await reusableEntry.getByRole("button", {name:"Usar"}).click();
+  await expect(loggerPanel.getByLabel("Peso utilizado (kg)")).toHaveValue("45");
+  pupil.once("dialog", dialog => dialog.accept());
+  await reusableEntry.getByRole("button", {name:"Eliminar"}).click();
+  await expect.poll(async () => (await db.query(
+    "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
+    [studentId,exerciseId]
+  )).rows[0].count).toBe(3);
+  await expect(loggerPanel.locator(".student-workout-history > ol > li")).toHaveCount(3);
+  await expect(loggerPanel.getByRole("status").filter({hasText:"Registro eliminado."})).toBeVisible();
   await pupil.locator("h1").click();
   await expect(preview).toHaveCount(0);
   await expect(logger.getByText("REALIZADO")).toBeVisible();
+  // The outside click above dismisses the floating panel; its trigger is already closed.
+  await expect(loggerPanel).toHaveCount(0);
   await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
 
   // A linked exercise with a confirmed video opens the player from an explicit
@@ -318,7 +369,50 @@ try {
   await touchPage.touchscreen.tap(5, 5);
   await expect(touchPreview).toHaveCount(0);
   await touchContext.close();
-  console.log("PASS: authenticated text mention preview, no-video state, inline video playback, keyboard dismissal and no navigation.");
+
+  // A single source line with two linked UUIDs exposes the exercise picker
+  // inside the floating logger; changing to a time-based exercise must reset
+  // the draft and switch the available input without closing or shifting rows.
+  await adminTextarea.fill(`🙂 @${exerciseName}`);
+  await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:exerciseName, exact:true})).toBeVisible();
+  await page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:exerciseName, exact:true}).click();
+  await adminTextarea.press("End");
+  await adminTextarea.pressSequentially(" @");
+  await adminTextarea.pressSequentially(inlineExerciseName);
+  await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:inlineExerciseName, exact:true})).toBeVisible();
+  await page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:inlineExerciseName, exact:true}).click();
+  await adminTextarea.press("End");
+  await adminTextarea.pressSequentially(" @");
+  await adminTextarea.pressSequentially(secondExerciseName);
+  await expect(page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:secondExerciseName, exact:true})).toBeVisible();
+  await page.getByRole("listbox", {name:"Ejercicios sugeridos"}).getByRole("option", {name:secondExerciseName, exact:true}).click();
+  await editor.getByRole("button", {name:"Publicar rutina"}).click();
+  await expect(editor.getByText("Rutina publicada.", {exact:true})).toBeVisible();
+  const {rows:[inlineExercise]} = await db.query("select id from public.cueva_exercises where name=$1", [inlineExerciseName]);
+  assert.ok(inlineExercise?.id, "inline-created exercise must retain its catalog UUID");
+  await pupil.reload();
+  const rowLogger = pupil.locator(".student-workout-row .student-workout").first();
+  const rowTrigger = rowLogger.getByRole("button", {name:"Registrar peso"});
+  await rowTrigger.click();
+  const selectionPanel = pupil.locator(".student-workout-floating-panel");
+  await expect(selectionPanel.getByLabel("Ejercicio")).toHaveValue(exerciseId);
+  await selectionPanel.getByLabel("Ejercicio").selectOption(inlineExercise.id);
+  await expect(selectionPanel.getByLabel("Ejercicio")).toHaveValue(inlineExercise.id);
+  await expect(selectionPanel.getByLabel("Duración (segundos)")).toBeVisible();
+  await expect(selectionPanel.getByLabel("Peso utilizado (kg)")).toHaveCount(0);
+  await selectionPanel.getByLabel("Ejercicio").selectOption(secondExerciseId);
+  await expect(selectionPanel.getByLabel("Peso utilizado (kg)")).toBeVisible();
+  await selectionPanel.getByLabel("Peso utilizado (kg)").fill("22.5");
+  await selectionPanel.getByRole("button", {name:"Guardar resultado"}).click();
+  await expect(selectionPanel.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
+  const firstExerciseSummary = pupil.locator(".my-routine-exercise-with-summary").filter({hasText:exerciseName}).locator(".student-workout-exercise-summary").first();
+  const secondExerciseSummary = pupil.locator(".my-routine-exercise-with-summary").filter({hasText:secondExerciseName}).locator(".student-workout-exercise-summary").first();
+  await expect(firstExerciseSummary).toContainText("47,5 kg");
+  await expect(secondExerciseSummary).toContainText("22,5 kg");
+  await selectionPanel.getByRole("button", {name:"Cerrar registro"}).click();
+  await expect(selectionPanel).toHaveCount(0);
+
+  console.log("PASS: authenticated text mention preview, per-exercise workout summaries, floating logger layout, history reuse/deletion and three-entry limit, UUID exercise selection, time tracking, inline video playback, keyboard dismissal and no navigation.");
 } finally {
   await browser?.close();
   // Immutable synthetic publications are removed with this disposable stack.

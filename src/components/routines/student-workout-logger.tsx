@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { requestWorkoutSummary } from "@/lib/routines/workout-summary-batch";
 
 type WorkoutSet = { reps: string; weight: string; duration: string };
@@ -60,15 +61,36 @@ function entrySummary(entry: HistoryEntry) {
   return entry.sets.map((set, index) => `Serie ${index + 1}: ${set.duration_seconds === null ? "—" : formatDuration(set.duration_seconds)}`).join(" · ");
 }
 
-export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, targetId, trackingMode }: {
+type AvailableExercise = { id: string; name: string; tracking_mode: "weight" | "time" };
+type PanelPosition = { left: number; top: number; width: number; maxHeight: number };
+
+export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, targetId, trackingMode, availableExercises = [], onExerciseChange }: {
   publicationId: string;
   exerciseId: string;
   exerciseName: string;
   targetId?: string;
   trackingMode: "weight" | "time";
+  availableExercises?: AvailableExercise[];
+  onExerciseChange?: (exercise: AvailableExercise) => void;
 }) {
   const id = useId();
+  const trigger = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const historyRequestExercise = useRef<string | null>(null);
+  const [panelPosition, setPanelPosition] = useState<PanelPosition | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const positionPanel = useCallback(() => {
+    const rect = trigger.current?.getBoundingClientRect();
+    if (!rect) return;
+    const width = Math.min(380, window.innerWidth - 24);
+    const left = Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12));
+    const below = window.innerHeight - rect.bottom - 12;
+    const above = rect.top - 12;
+    const placeBelow = below >= 280 || below >= above;
+    const maxHeight = Math.max(160, Math.min(520, placeBelow ? below : above));
+    const top = placeBelow ? rect.bottom + 8 : Math.max(12, rect.top - maxHeight - 8);
+    setPanelPosition({ left, top, width, maxHeight });
+  }, []);
   const [mode, setMode] = useState<"quick" | "sets">("quick");
   const [weightState, setWeightState] = useState({ exerciseId, value: "", dirty: false });
   const [durationState, setDurationState] = useState({ exerciseId, value: "", dirty: false });
@@ -106,7 +128,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     if (showLoading) setLoadingHistory(true);
     try {
       const response = await fetch("/api/entrenamientos?exercise_id=" + encodeURIComponent(exerciseId)
-        + "&offset=" + offset + "&limit=30", { cache: "no-store" });
+        + "&offset=" + offset + "&limit=3", { cache: "no-store" });
       const data = await response.json();
       if (version !== readVersion.current) return;
       if (!response.ok) throw new Error(data.message || "No pudimos cargar el historial.");
@@ -222,6 +244,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       if (!response.ok) throw new Error(data.message || "No pudimos guardar el registro.");
       operation.current = null;
       setMessage(editingEntry ? "Cambios guardados." : "Resultado guardado.");
+      window.dispatchEvent(new CustomEvent("cueva-workout-updated", { detail: { exerciseId } }));
       setEditingEntry(null);
       await loadHistory(0);
     } catch (cause) {
@@ -255,29 +278,128 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     setError("");
   }
 
+  function applyHistoryEntry(entry: HistoryEntry) {
+    setEditingEntry(null);
+    setMode("quick");
+    if (trackingMode === "weight") {
+      const value = entry.mode === "quick" ? entry.weight_kg : entry.sets.at(-1)?.weight_kg;
+      if (value === null || value === undefined) return;
+      setWeight(String(value));
+    } else {
+      const value = entry.mode === "quick" ? entry.duration_seconds : entry.sets.at(-1)?.duration_seconds;
+      if (value === null || value === undefined) return;
+      setDuration(String(value));
+    }
+    setMessage("Valor del historial listo para usar.");
+    setError("");
+  }
+
+  async function deleteHistoryEntry(entry: HistoryEntry) {
+    if (busy.current || saving) return;
+    if (!window.confirm("¿Eliminar este registro del historial?")) return;
+    busy.current = true;
+    setSaving(true);
+    setMessage("");
+    setError("");
+    try {
+      const response = await fetch("/api/entrenamientos", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ entry_id: entry.id, revision: entry.revision }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "No pudimos eliminar el registro.");
+      if (editingEntry?.id === entry.id) setEditingEntry(null);
+      setMessage("Registro eliminado.");
+      await loadHistory(0);
+      window.dispatchEvent(new CustomEvent("cueva-workout-updated", { detail: { exerciseId } }));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No pudimos eliminar el registro.");
+    } finally {
+      setSaving(false);
+      busy.current = false;
+    }
+  }
+
+  useEffect(() => {
+    if (!expanded) {
+      historyRequestExercise.current = null;
+      return;
+    }
+    if (historyRequestExercise.current === exerciseId) return;
+    historyRequestExercise.current = exerciseId;
+    void loadHistory(0);
+  }, [expanded, exerciseId, loadHistory]);
+
+  useEffect(() => {
+    if (!expanded) return;
+    function onPointerDown(event: PointerEvent) {
+      if (event.target instanceof Node
+        && !trigger.current?.contains(event.target)
+        && !panel.current?.contains(event.target)) setExpanded(false);
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setExpanded(false);
+        trigger.current?.focus({ preventScroll: true });
+      }
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    window.addEventListener("resize", positionPanel);
+    window.addEventListener("scroll", positionPanel, true);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("resize", positionPanel);
+      window.removeEventListener("scroll", positionPanel, true);
+    };
+  }, [expanded, positionPanel, exerciseId, mode, historyOpen]);
+
   const summaryEntry = summaryState.exerciseId === exerciseId ? summaryState.entry : null;
   const summary = summaryEntry?.tracking_mode === trackingMode ? entrySummary(summaryEntry) : "";
 
   return (
     <section className="student-workout" aria-label={"Registro de " + exerciseName} data-tracking-mode={trackingMode}>
       {summary && <p className="student-workout-summary"><strong>REALIZADO</strong><span>{summary}</span></p>}
-      <button type="button" className="student-workout-toggle" aria-label={expanded ? (trackingMode === "weight" ? "Cerrar registro de peso" : "Cerrar registro de duración") : (trackingMode === "weight" ? "Registrar peso" : "Registrar duración")} aria-expanded={expanded} onClick={() => {
+      <button ref={trigger} type="button" className="student-workout-toggle" aria-haspopup="dialog" aria-controls={id + "-panel"} aria-label={expanded ? (trackingMode === "weight" ? "Cerrar registro de peso" : "Cerrar registro de duración") : (trackingMode === "weight" ? "Registrar peso" : "Registrar duración")} aria-expanded={expanded} onClick={() => {
         const nextExpanded = !expanded;
+        if (nextExpanded) positionPanel();
         setExpanded(nextExpanded);
         setMessage("");
         setError("");
-        if (nextExpanded && !history && !loadingHistory) void loadHistory(0);
       }}>
-        {expanded ? "Cerrar" : "Cargar"}
+        {expanded ? <><span aria-hidden="true">×</span><span>Cerrar</span></> : <><span aria-hidden="true">{trackingMode === "weight" ? "⚖" : "◷"}</span><span>{trackingMode === "weight" ? "kg" : "seg"}</span></>}
       </button>
-      {expanded && (
-        <div className="student-workout-panel">
+      {expanded && panelPosition && typeof document !== "undefined" && createPortal(
+        <div ref={panel} id={id + "-panel"} className="student-workout-panel student-workout-floating-panel" role="dialog" aria-label={"Registro de " + exerciseName}
+          style={{ position: "fixed", left: panelPosition.left, top: panelPosition.top, width: panelPosition.width, maxHeight: panelPosition.maxHeight, overflow: "auto", zIndex: 2147483000 }}>
           <header>
             <strong>{exerciseName}</strong>
+            <button type="button" className="student-workout-close" aria-label="Cerrar registro" onClick={() => { setExpanded(false); trigger.current?.focus({ preventScroll: true }); }}>×</button>
             <button type="button" onClick={() => setHistoryOpen(value => !value)} aria-expanded={historyOpen}>
               {historyOpen ? "Ocultar historial" : "Ver historial"}
             </button>
           </header>
+          {availableExercises.length > 1 && (
+            <label className="student-workout-exercise-picker">Ejercicio
+              <select value={exerciseId} disabled={saving} onChange={event => {
+                const selected = availableExercises.find(item => item.id === event.target.value);
+                if (!selected) return;
+                // Never carry one exercise's series draft or edit target into another UUID.
+                setMode("quick");
+                setSets([{ reps: "", weight: "", duration: "" }]);
+                setEditingEntry(null);
+                setHistoryOpen(false);
+                setMessage("");
+                setError("");
+                onExerciseChange?.(selected);
+              }}>
+                {availableExercises.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            </label>
+          )}
           {loadingHistory && <p role="status">Consultando tus últimos registros…</p>}
           {trackingMode === "weight" && history?.last_weight_kg !== null && history?.last_weight_kg !== undefined && (
             <p className="student-workout-last">
@@ -350,23 +472,24 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
                 <ol>
                   {history.entries.map(entry => (
                     <li key={entry.id}>
-                      <time dateTime={entry.performed_at}>{new Date(entry.performed_at).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })}</time>
-                      {entry.mode === "quick"
-                        ? <strong>{entry.tracking_mode === "weight"
-                          ? (entry.weight_kg === null ? "—" : formatWeight(entry.weight_kg))
-                          : (entry.duration_seconds === null ? "—" : formatDuration(entry.duration_seconds))}</strong>
-                        : <ul>{entry.sets.map(set => <li key={set.set_number}>{entry.tracking_mode === "weight"
-                          ? `${set.reps} rep. · ${set.weight_kg === null ? "—" : formatWeight(set.weight_kg)}`
-                          : (set.duration_seconds === null ? "—" : formatDuration(set.duration_seconds))}</li>)}</ul>}
-                      {entry.tracking_mode === trackingMode && <button type="button" onClick={() => beginEdit(entry)}>Editar</button> }
+                      <time dateTime={entry.performed_at}>{new Date(entry.performed_at).toLocaleDateString("es-AR", { dateStyle: "short" })}</time>
+                      <strong className="student-workout-history-value">{entrySummary(entry) || "—"}</strong>
+                      <div className="student-workout-history-actions">
+                        {entry.tracking_mode === trackingMode && <>
+                          <button type="button" disabled={saving} onClick={() => applyHistoryEntry(entry)}>Usar</button>
+                          <button type="button" disabled={saving} onClick={() => beginEdit(entry)}>Editar</button>
+                        </>}
+                        <button type="button" className="student-workout-history-delete" disabled={saving} onClick={() => void deleteHistoryEntry(entry)}>Eliminar</button>
+                      </div>
                     </li>
                   ))}
                 </ol>
               )}
-              {history?.has_more && <button type="button" disabled={loadingHistory} onClick={() => void loadHistory(history.entries.length)}>{loadingHistory ? "Cargando…" : "Cargar registros anteriores"}</button>}
+
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </section>
   );
