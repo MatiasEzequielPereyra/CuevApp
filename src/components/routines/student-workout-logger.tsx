@@ -278,7 +278,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     setError("");
   }
 
-  function useHistoryEntry(entry: HistoryEntry) {
+  function applyHistoryEntry(entry: HistoryEntry) {
     setEditingEntry(null);
     setMode("quick");
     if (trackingMode === "weight") {
@@ -476,7 +476,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
                       <strong className="student-workout-history-value">{entrySummary(entry) || "—"}</strong>
                       <div className="student-workout-history-actions">
                         {entry.tracking_mode === trackingMode && <>
-                          <button type="button" disabled={saving} onClick={() => useHistoryEntry(entry)}>Usar</button>
+                          <button type="button" disabled={saving} onClick={() => applyHistoryEntry(entry)}>Usar</button>
                           <button type="button" disabled={saving} onClick={() => beginEdit(entry)}>Editar</button>
                         </>}
                         <button type="button" className="student-workout-history-delete" disabled={saving} onClick={() => void deleteHistoryEntry(entry)}>Eliminar</button>
