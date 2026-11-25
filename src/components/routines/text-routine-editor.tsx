@@ -147,8 +147,8 @@ export function TextRoutineEditor({ value, mentions, disabled, onChange }: {
   const [previewPending, setPreviewPending] = useState(false);
   const [previewError, setPreviewError] = useState("");
   const [playerOpen, setPlayerOpen] = useState(false);
-  const [suggestionPosition, setSuggestionPosition] = useState<{ left: number; top: number; width: number } | null>(null);
-  const [previewPosition, setPreviewPosition] = useState<{ left: number; top: number; width: number } | null>(null);
+  const [suggestionPosition, setSuggestionPosition] = useState<{ left: number; top: number; width: number; maxHeight: number } | null>(null);
+  const [previewPosition, setPreviewPosition] = useState<{ left: number; top: number; width: number; maxHeight: number } | null>(null);
   const [creatingExercise, setCreatingExercise] = useState(false);
   const [creationTrackingMode, setCreationTrackingMode] = useState<"weight" | "time">("weight");
   const [createError, setCreateError] = useState("");
