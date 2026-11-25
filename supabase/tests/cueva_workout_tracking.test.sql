@@ -203,10 +203,10 @@ select is((select count(*)::integer from public.cueva_workout_sets
  'deleting a history entry cascades to its workout sets');
 set local role authenticated;
 
-select throws_ok($select public.cueva_workout_record(
+select throws_ok($test$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000003','c7600000-0000-4000-8000-000000000004',
  'c7500000-0000-4000-8000-000000000002','c7900000-0000-4000-8000-000000000005',
- 'quick','weight',20,null,'[]'::jsonb)$$,'22023',null,'time-based exercises reject kilogram entries');
+ 'quick','weight',20,null,'[]'::jsonb)$test$,'22023',null,'time-based exercises reject kilogram entries');
 select throws_ok($$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000004','c7600000-0000-4000-8000-000000000001',
  'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000001',
