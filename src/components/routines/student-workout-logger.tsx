@@ -261,7 +261,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   return (
     <section className="student-workout" aria-label={"Registro de " + exerciseName} data-tracking-mode={trackingMode}>
       {summary && <p className="student-workout-summary"><strong>REALIZADO</strong><span>{summary}</span></p>}
-      <button type="button" className="student-workout-toggle" aria-expanded={expanded} onClick={() => {
+      <button type="button" className="student-workout-toggle" aria-label={trackingMode === "weight" ? "Registrar peso" : "Registrar duración"} aria-expanded={expanded} onClick={() => {
         const nextExpanded = !expanded;
         setExpanded(nextExpanded);
         setMessage("");
