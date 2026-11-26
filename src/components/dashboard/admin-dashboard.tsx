@@ -30,7 +30,7 @@ const navigationAreas: { id: AdminSection; href: string; name: string; descripti
 ];
 
 type AdminProps = { displayName: string; email: string; role: string; logo: ReactNode; themePicker: ReactNode; accountActions?: ReactNode };
-export function AdminShell({ displayName, email, role, logo, themePicker, accountActions, active = "inicio", children, }: AdminProps & { active?: "inicio" | "cuenta" | AdminSection; children: ReactNode;}) {
+export function AdminShell({ displayName, email, role, logo, accountActions, active = "inicio", children, }: AdminProps & { active?: "inicio" | "cuenta" | AdminSection; children: ReactNode;}) {
 
   const isHome = active === "inicio";
   const isAccount = active === "cuenta";
@@ -49,7 +49,7 @@ export function AdminShell({ displayName, email, role, logo, themePicker, accoun
       <div className="dash-sidebar-bottom"><span className="dash-avatar" aria-hidden="true">{displayName.charAt(0).toUpperCase()}</span><div><strong>{displayName}</strong><small>{role}</small></div></div>
     </aside>
     <div className="dash-content">
-      <header className="dash-header dash-admin-header"><div className="dash-mobile-brand">{logo}<span>CUEVA</span></div><div className="dash-breadcrumb">CUEVA <span>/</span> {isAccount ? "Mi cuenta" : navigationAreas.find(area => area.id === active)?.name ?? "Panel de administración"}</div><div className="dash-header-actions">{themePicker}<AdminProfileMenu accountLink={accountLink}><Icon name="user"/></AdminProfileMenu></div></header>
+      <header className="dash-header dash-admin-header"><div className="dash-mobile-brand">{logo}<span>CUEVA</span></div><div className="dash-breadcrumb">CUEVA <span>/</span> {isAccount ? "Mi cuenta" : navigationAreas.find(area => area.id === active)?.name ?? "Panel de administración"}</div><div className="dash-header-actions"><AdminProfileMenu accountLink={accountLink} profileActive={isAccount}><Icon name="user"/></AdminProfileMenu></div></header>
       <main className="dash-main" id="panel" tabIndex={-1}>
         {children}
         {isAccount && <section className="dash-account dash-home-profile" id="cuenta" aria-labelledby="dash-profile-heading" tabIndex={-1}><div><p className="dash-kicker">TU CUENTA</p><h2 id="dash-profile-heading">Tu perfil</h2><p>Sesión iniciada como <strong>{email}</strong></p><span className="dash-account-role">{role}</span></div><form method="post" action="/api/acceso/salir"><button type="submit" className="dash-signout">Cerrar sesión <Icon name="arrow"/></button></form>{accountActions && <div className="dash-account-actions">{accountActions}</div>}</section>}

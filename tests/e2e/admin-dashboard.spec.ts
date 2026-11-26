@@ -13,9 +13,21 @@ const transpile = (path: string) => ts.transpileModule(readFileSync(path, "utf8"
   compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
 }).outputText;
 const requireFixture = createRequire(__filename);
+const iconModule = { exports: {} };
+new Function("require", "module", "exports", transpile("src/components/routines/student-icon.tsx"))(
+  (id: string) => requireFixture(id), iconModule, iconModule.exports,
+);
+const themeFixture = {
+  getPreference: () => "system",
+  subscribeToPreference: () => () => {},
+  setPreference: () => {},
+};
 const menuModule = { exports: {} };
 new Function("require", "module", "exports", transpile("src/components/dashboard/admin-profile-menu.tsx"))(
-  (id: string) => id === "./admin-profile-menu.css" ? {} : requireFixture(id), menuModule, menuModule.exports,
+  (id: string) => id === "./admin-profile-menu.css" ? {}
+    : id === "@/components/routines/student-icon" ? iconModule.exports
+      : id === "@/lib/theme" ? themeFixture : requireFixture(id),
+  menuModule, menuModule.exports,
 );
 const componentModule = { exports: {} as { AdminDashboard: React.ComponentType<Record<string, unknown>>; AdminShell: React.ComponentType<Record<string, unknown>> } };
 new Function("require", "module", "exports", transpile("src/components/dashboard/admin-dashboard.tsx"))(
@@ -243,19 +255,27 @@ for (const { width, theme } of [{ width: 360, theme: "light" }, { width: 390, th
     await page.setViewportSize({ width, height: 840 });
     await loadDashboard(page, theme, routinesFixture);
     await expect(page.getByRole("heading", { name: "Tu perfil" })).toHaveCount(0);
+    await expect(page.locator(".dash-header-actions .theme-picker")).toHaveCount(0);
     const navigation = page.getByRole("navigation", { name: width < 681 ? "Navegación móvil" : "Navegación principal" });
     await expect(navigation.getByRole("link", { name: width < 681 ? "Cuenta" : "Mi cuenta", exact: true }))
       .toHaveAttribute("href", "/mi-cuenta");
 
     const trigger = page.getByRole("button", { name: "Opciones de cuenta" });
     const popover = page.locator("#admin-profile-menu");
-    const account = popover.getByRole("link", { name: "Ir a tu cuenta" });
+    const account = popover.getByRole("link", { name: "Mi cuenta" });
     const signOut = popover.getByRole("button", { name: "Cerrar sesión" });
+    const appearance = popover.getByRole("group", { name: "Apariencia" });
     await expect(popover).toBeHidden();
     await trigger.focus();
     await page.keyboard.press("Enter");
     await expect(popover).toBeVisible();
     await expect(account).toHaveAttribute("href", "/mi-cuenta");
+    await expect(popover.getByRole("navigation", { name: "Cuenta y sesión" })).toBeVisible();
+    await expect(appearance.getByRole("button")).toHaveCount(3);
+    for (const label of ["Tema claro", "Tema oscuro"]) {
+      await expect(appearance.getByRole("button", { name: label })).toHaveAttribute("aria-pressed", "false");
+    }
+    await expect(appearance.getByRole("button", { name: "Tema del sistema" })).toHaveAttribute("aria-pressed", "true");
     await page.keyboard.press("Tab");
     await expect(account).toBeFocused();
     await page.keyboard.press("Tab");
@@ -264,6 +284,9 @@ for (const { width, theme } of [{ width: 360, theme: "light" }, { width: 390, th
       const form = (button as HTMLButtonElement).form;
       return [form?.method, form?.getAttribute("action")];
     })).toEqual(["post", "/api/acceso/salir"]);
+    await signOut.hover();
+    await expect(signOut).toHaveCSS("color", theme === "dark" ? "rgb(255, 169, 182)" : "rgb(185, 28, 28)");
+    await expect(signOut).toHaveCSS("background-color", theme === "dark" ? "rgb(71, 36, 43)" : "rgb(254, 231, 231)");
     expect(await popover.evaluate(menu => {
       const rect = menu.getBoundingClientRect();
       const button = document.querySelector(".dash-profile-trigger")!.getBoundingClientRect();
@@ -294,7 +317,7 @@ for (const width of [360, 390]) {
     await page.route(routinesUrl, route => route.fulfill({ contentType: "text/html", body: dashboardHtml("dark", routinesFixture) }));
     await page.goto(routinesUrl);
     await page.getByRole("button", { name: "Opciones de cuenta" }).tap();
-    await page.getByRole("link", { name: "Ir a tu cuenta" }).tap();
+    await page.getByRole("link", { name: "Mi cuenta" }).tap();
     await expect(page).toHaveURL(accountUrl);
     const profile = page.getByRole("region", { name: "Tu perfil" });
     await expect(profile).toBeInViewport({ ratio: 1 });
