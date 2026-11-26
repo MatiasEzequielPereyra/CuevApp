@@ -219,7 +219,7 @@ try {
   await loggerPanel.getByLabel("Peso utilizado (kg)").fill("37.5");
   await loggerPanel.getByRole("button", {name:"Guardar resultado"}).click();
   await expect(loggerPanel.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
-  await expect(pupil.locator(".my-routine-exercise-with-summary").filter({hasText:exerciseName}).locator(".student-workout-exercise-summary")).toHaveCount(0);
+  await expect(pupil.locator(".my-routine-exercise-with-summary").filter({hasText:exerciseName}).locator(".student-workout-exercise-summary")).toContainText("37,5 kg");
   await expect(logger.getByRole("button", {name:"Registrar peso"})).toContainText("Editar peso");
   await expect(logger.locator("svg.student-workout-kettlebell")).toBeVisible();
   await expect(logger.locator("svg.student-workout-kettlebell text")).toHaveText("KG");
