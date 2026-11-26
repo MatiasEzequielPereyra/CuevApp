@@ -316,7 +316,9 @@ try {
     await timedPanel.getByLabel("Duración (segundos)").fill("75");
     await timedPanel.getByRole("button", { name: "Guardar resultado" }).click();
     await expect(timedPanel.getByRole("status").filter({ hasText: "Resultado guardado." })).toBeVisible();
-    await expect(timedLogger.locator(".student-workout-summary > span")).toHaveText("1 min 15 s");
+    await timedPanel.getByRole("button", { name: "Cerrar registro" }).click();
+    await expect(timedPanel).toHaveCount(0);
+    await expect(timedRow.locator(".student-workout-exercise-summary-value")).toHaveText(["75 seg", "75 seg"]);
     await weightedRow.getByRole("button", { name: "Registrar peso" }).click();
     const weightedPanel = pupil.getByRole("dialog", { name: "Registro de Press militar" });
     await weightedPanel.getByLabel("Peso utilizado (kg)").fill("32.5");
