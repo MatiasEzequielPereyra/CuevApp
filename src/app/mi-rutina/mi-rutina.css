@@ -663,9 +663,18 @@
 }
 .student-workout-toggle-icon {
   display: inline-grid;
+  flex: none;
   place-items: center;
-  font-size: 1.15rem;
   line-height: 1;
+}
+.student-workout-kettlebell {
+  width: 29px;
+  height: 31px;
+  color: var(--dash-accent);
+  overflow: visible;
+}
+.student-workout-toggle {
+  gap: 6px;
 }
 .student-workout[data-tracking-mode="time"] .student-workout-set {
   grid-template-columns: minmax(0, 1fr);
@@ -709,10 +718,12 @@
   line-height: 1.25;
 }
 .student-workout-exercise-summary {
+  position: relative;
+  display: inline-block;
   max-width: 100%;
-  margin: 2px 0 0 2px;
-  padding: 1px 5px;
-  overflow: hidden;
+  margin: 4px 0 5px 10px;
+  padding: 2px 6px;
+  overflow: visible;
   border-radius: 4px;
   background: var(--dash-accent-soft);
   color: var(--dash-text);
@@ -721,6 +732,18 @@
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.student-workout-exercise-summary::before {
+  position: absolute;
+  inset-inline-end: 100%;
+  inset-block-start: -5px;
+  width: 8px;
+  height: calc(100% + 5px);
+  border-inline-start: 1px solid var(--dash-border);
+  border-block-end: 1px solid var(--dash-border);
+  border-end-start-radius: 3px;
+  content: "";
+  pointer-events: none;
 }
 .student-workout-row {
   display: inline-flex;

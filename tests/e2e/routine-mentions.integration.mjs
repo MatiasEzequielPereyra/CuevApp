@@ -219,8 +219,10 @@ try {
   await loggerPanel.getByLabel("Peso utilizado (kg)").fill("37.5");
   await loggerPanel.getByRole("button", {name:"Guardar resultado"}).click();
   await expect(loggerPanel.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
-  await expect(logger.locator(".student-workout-summary")).toBeVisible();
-  await expect(logger.locator(".student-workout-summary")).toContainText("37,5 kg");
+  await expect(logger.locator(".student-workout-summary")).toHaveCount(0);
+  await expect(logger.getByRole("button", {name:"Registrar peso"})).toContainText("Editar peso");
+  await expect(logger.locator("svg.student-workout-kettlebell")).toBeVisible();
+  await expect(logger.locator("svg.student-workout-kettlebell text")).toHaveText("KG");
   // The floating panel replaces the row action while open. Close it before
   // asserting the row's "Editar peso" label, then reopen it for history actions.
   await loggerPanel.getByRole("button", {name:"Cerrar registro"}).click();
@@ -417,6 +419,10 @@ try {
   const secondExerciseSummary = pupil.locator(".my-routine-exercise-with-summary").filter({hasText:secondExerciseName}).locator(".student-workout-exercise-summary").first();
   await expect(firstExerciseSummary).toContainText("47,5 kg");
   await expect(secondExerciseSummary).toContainText("22,5 kg");
+  await expect(firstExerciseSummary).toHaveCSS("margin-bottom", "5px");
+  await expect(firstExerciseSummary).toHaveCSS("margin-left", "10px");
+  const connector = await firstExerciseSummary.evaluate(element => getComputedStyle(element, "::before").borderInlineStartWidth);
+  expect(connector).toBe("1px");
   await expect(firstExerciseSummary).toHaveCSS("font-weight", "650");
   await expect(firstExerciseSummary).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await selectionPanel.getByRole("button", {name:"Cerrar registro"}).click();

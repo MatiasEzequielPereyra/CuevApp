@@ -362,7 +362,6 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
 
   return (
     <section className="student-workout" aria-label={"Registro de " + exerciseName} data-tracking-mode={trackingMode}>
-      {summary && <p className="student-workout-summary" aria-label={"Último registro: " + summary}><span>{summary}</span></p>}
       <button ref={trigger} type="button" className="student-workout-toggle" aria-haspopup="dialog" aria-controls={id + "-panel"} aria-label={expanded ? (trackingMode === "weight" ? "Cerrar registro de peso" : "Cerrar registro de duración") : (trackingMode === "weight" ? "Registrar peso" : "Registrar duración")} aria-expanded={expanded} onClick={() => {
         const nextExpanded = !expanded;
         if (nextExpanded) positionPanel();
@@ -372,7 +371,13 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       }}>
         {expanded
           ? <><span aria-hidden="true">×</span><span>Cerrar</span></>
-          : <><span className="student-workout-toggle-icon" aria-hidden="true">{trackingMode === "weight" ? "⚖" : "◷"}</span><span>{summary ? (trackingMode === "weight" ? "Editar peso" : "Editar duración") : (trackingMode === "weight" ? "Cargar peso" : "Cargar duración")}</span></>}
+          : <>{trackingMode === "weight" ? (
+            <svg className="student-workout-toggle-icon student-workout-kettlebell" viewBox="0 0 32 34" aria-hidden="true" focusable="false">
+              <path d="M11 11V8c0-3.4 1.8-5 5-5s5 1.6 5 5v3" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" />
+              <path d="M9 11c-3.6 0-5.4 3.4-4.5 8.2l2.2 8.1C7.5 31 10.5 32 16 32s8.5-1 9.3-4.7l2.2-8.1C28.4 14.4 26.6 11 23 11Z" fill="currentColor" />
+              <text x="16" y="23.5" textAnchor="middle" fontSize="8.2" fontWeight="800" letterSpacing=".1" fill="var(--dash-panel)">KG</text>
+            </svg>
+          ) : <span className="student-workout-toggle-icon" aria-hidden="true">◷</span>}<span>{summary ? (trackingMode === "weight" ? "Editar peso" : "Editar duración") : (trackingMode === "weight" ? "Cargar peso" : "Cargar duración")}</span></>}
       </button>
       {expanded && panelPosition && typeof document !== "undefined" && createPortal(
         <div ref={panel} id={id + "-panel"} className="student-workout-panel student-workout-floating-panel" role="dialog" aria-label={"Registro de " + exerciseName}
