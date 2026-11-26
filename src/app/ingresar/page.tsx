@@ -37,8 +37,9 @@ export default function SignInPage() {
           <p className={styles.subtitle}>Usá tu correo y tu contraseña para continuar.</p>
           <SignInForm enabled={enabled} />
           <div className={styles.help}>
-            <h3>¿Olvidaste tu contraseña?</h3>
-            <p>Contactá al gimnasio para recibir ayuda con tu acceso. La recuperación por correo para alumnos todavía no está habilitada.</p>
+            {enabled && !cfg?.ownerOnly
+              ? <Link href="/recuperar-contrasena">¿Olvidaste tu contraseña?</Link>
+              : <p>Contactá al gimnasio para recibir ayuda con tu acceso.</p>}
           </div>
           <p className={styles.invitation}>{canRegister
             ? <>¿Todavía no tenés una cuenta? <Link href="/registrarse">Registrarse</Link></>

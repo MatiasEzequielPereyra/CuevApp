@@ -88,6 +88,47 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
       });
     } catch { return fail(503); }
   }
+  if (operation === "recuperar" || operation === "restablecer") {
+    if (cfg.ownerOnly) return fail(404);
+    const json = (body: object, status: number) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
+    if (operation === "recuperar") {
+      const email = String(form.get("email") ?? "").trim().toLowerCase();
+      if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail(400);
+      try {
+        const publicAuth = createClient(cfg.url, cfg.key, {
+          ...(cfg.local ? { global: { fetch: localFetch(cfg) } } : {}),
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+        });
+        await publicAuth.auth.resetPasswordForEmail(email, { redirectTo: new URL("/recuperar-contrasena", cfg.origin).href });
+      } catch { /* Same acknowledgement for unknown accounts, rate limits and SMTP failures. */ }
+      // No identity lookup, service role, gate mutation or claim of delivery.
+      return json({ ok: true }, 202);
+    }
+    const token = String(form.get("token_hash") ?? "");
+    const password = String(form.get("password") ?? "");
+    if (!/^[a-zA-Z0-9_-]{24,256}$/.test(token)) return json({ error: "enlace" }, 400);
+    if (password.length < 8 || password.length > 1024 || password !== form.get("confirm_password")) return json({ error: "contrasena" }, 400);
+    const pending = await pendingUserClient();
+    let verified = false;
+    try {
+      const result = await pending.auth.auth.verifyOtp({ token_hash: token, type: "recovery" });
+      verified = !result.error && !!result.data.session;
+      if (result.error || !result.data.session || !result.data.user?.email_confirmed_at) return json({ error: "enlace" }, 400);
+      const user = await pending.auth.auth.getUser();
+      if (user.error || user.data.user?.id !== result.data.user.id) return json({ error: "enlace" }, 400);
+      // RLS checks the existing session gate. Pending/locked accounts stay pending;
+      // recovery cannot create a profile, activate an invitation or change roles.
+      const own = await pending.auth.from("cueva_profiles").select("role").eq("user_id", user.data.user.id).maybeSingle();
+      if (own.error || (own.data?.role !== "admin" && own.data?.role !== "alumno")) return json({ error: "cuenta" }, 403);
+      const changed = await pending.auth.auth.updateUser({ password });
+      if (changed.error || changed.data.user?.id !== user.data.user.id) return json({ error: "actualizacion" }, 503);
+      return json({ ok: true }, 200);
+    } catch { return json({ error: "actualizacion" }, 503); }
+    finally {
+      // Never publish recovery-session cookies, including on partial failure.
+      if (verified) await pending.auth.auth.signOut({ scope: "local" }).catch(() => {});
+    }
+  }
   const auth = await userClient();
   const redirect = (path: string) => NextResponse.redirect(new URL(path, cfg.origin), { status: 303, headers: { "Cache-Control": "no-store" } });
   if (operation === "ingresar") {
