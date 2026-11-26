@@ -222,13 +222,13 @@ try {
   await expect(pupil.locator(".my-routine-exercise-with-summary").filter({hasText:exerciseName}).locator(".student-workout-exercise-summary")).toContainText("37,5 kg");
   // While the floating panel is open, its trigger correctly exposes "Cerrar".
   await expect(loggerTrigger).toHaveAttribute("aria-expanded", "true");
-  await expect(logger.locator("svg.student-workout-kettlebell")).toBeVisible();
-  await expect(logger.locator("svg.student-workout-kettlebell text")).toHaveText("KG");
-  // The floating panel replaces the row action while open. Close it before
-  // asserting the row's "Editar peso" label, then reopen it for history actions.
+  // The floating panel replaces the row action and kettlebell while open.
+  // Close it before asserting the restored row control and its KG icon.
   await loggerPanel.getByRole("button", {name:"Cerrar registro"}).click();
   await expect(loggerPanel).toHaveCount(0);
   await expect(loggerTrigger).toContainText("Editar peso");
+  await expect(logger.locator("svg.student-workout-kettlebell")).toBeVisible();
+  await expect(logger.locator("svg.student-workout-kettlebell text")).toHaveText("KG");
   await loggerTrigger.click();
   await expect(loggerPanel).toBeVisible();
   await expect.poll(async () => (await db.query(
