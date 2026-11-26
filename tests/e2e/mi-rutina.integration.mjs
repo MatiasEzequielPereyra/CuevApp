@@ -52,10 +52,14 @@ async function createAccount(role) {
   return { id: user.id, email, client, cookies: [...cookies].map(([name, value]) => ({ name, value, url: origin })) };
 }
 
+function trackingMode(index) {
+  return index === 2 ? "time" : "weight";
+}
+
 function target(index) {
   const { id, name } = exercises[index];
   return { id: randomUUID(), exercise_id: id, name, note: index === 1 ? "Controlá el movimiento." : "",
-    ...(index === 2 ? { mode: "time", duration: 45, unit: "seconds" } : { mode: "weight", reps: "8-12", weight_kg: 25 }) };
+    ...(trackingMode(index) === "time" ? { mode: "time", duration: 45, unit: "seconds" } : { mode: "weight", reps: "8-12", weight_kg: 25 }) };
 }
 
 const emBlocks = [[0, 2], [3, 4, 5], [2, 5], [1, 0, 3]];
@@ -211,11 +215,11 @@ try {
   }
 
   await checked(bucket.upload(path, await readFile(CUEVA_TEST_VIDEO), { contentType: "video/webm" }));
-  for (const exercise of exercises) {
+  for (const [index, exercise] of exercises.entries()) {
     await checked(admin.client.rpc("cueva_exercise_write", {
       p_id: exercise.id, p_name: `${exercise.name} ${suffix}`, p_active: true, p_revision: 0, p_description: "",
       p_video_path: exercise === press ? path : null, p_video_url: [other, old].includes(exercise) ? youtube : null,
-      p_tracking_mode: "weight",
+      p_tracking_mode: trackingMode(index),
     }));
   }
   const previous = await publish(admin.client, students[0], 0, "Publicación histórica",
