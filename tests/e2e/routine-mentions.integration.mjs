@@ -220,6 +220,8 @@ try {
   await loggerPanel.getByRole("button", {name:"Guardar resultado"}).click();
   await expect(loggerPanel.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
   await expect(logger.locator(".student-workout-summary")).toBeVisible();
+  await expect(logger.locator(".student-workout-summary")).toContainText("37,5 kg");
+  await expect(logger.getByRole("button", {name:"Registrar peso"})).toContainText("Editar peso");
   await expect.poll(async () => (await db.query(
     "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
     [studentId,exerciseId]
@@ -409,6 +411,8 @@ try {
   const secondExerciseSummary = pupil.locator(".my-routine-exercise-with-summary").filter({hasText:secondExerciseName}).locator(".student-workout-exercise-summary").first();
   await expect(firstExerciseSummary).toContainText("47,5 kg");
   await expect(secondExerciseSummary).toContainText("22,5 kg");
+  await expect(firstExerciseSummary).toHaveCSS("font-weight", "650");
+  await expect(firstExerciseSummary).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await selectionPanel.getByRole("button", {name:"Cerrar registro"}).click();
   await expect(selectionPanel).toHaveCount(0);
 
