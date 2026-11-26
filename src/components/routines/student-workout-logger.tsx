@@ -148,7 +148,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     }
   }, [exerciseId, seedInputs, advanceReadVersion]);
 
-  // Keep the visible "REALIZADO" state in sync on first render/reload without
+  // Keep the latest workout summary in sync on first render/reload without
   // eagerly downloading the full editable history for every exercise.
   useEffect(() => {
     let cancelled = false;
