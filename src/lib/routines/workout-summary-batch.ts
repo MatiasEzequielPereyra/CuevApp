@@ -16,6 +16,7 @@ export type WorkoutHistorySummary = {
 };
 
 type PendingRequest = {
+  promise: Promise<WorkoutHistorySummary>;
   resolve: (history: WorkoutHistorySummary) => void;
   reject: (error: Error) => void;
 };
@@ -57,13 +58,20 @@ function sendBatch(batch: [string, PendingRequest][]) {
       for (const [, request] of batch) request.reject(error);
     })
     .finally(() => {
-      for (const [exerciseId] of batch) inFlight.delete(exerciseId);
+      // A forced refresh may have replaced this request while the older
+      // network response was still pending. Never clear the newer promise.
+      for (const [exerciseId, request] of batch) {
+        if (inFlight.get(exerciseId) === request.promise) inFlight.delete(exerciseId);
+      }
     });
 }
 
-export function requestWorkoutSummary(exerciseId: string): Promise<WorkoutHistorySummary> {
+export function requestWorkoutSummary(exerciseId: string, refresh = false): Promise<WorkoutHistorySummary> {
+  const queued = pending.get(exerciseId);
+  if (queued) return queued.promise;
   const existing = inFlight.get(exerciseId);
-  if (existing) return existing;
+  if (existing && !refresh) return existing;
+  if (refresh) inFlight.delete(exerciseId);
   let resolveRequest!: (history: WorkoutHistorySummary) => void;
   let rejectRequest!: (error: Error) => void;
   const promise = new Promise<WorkoutHistorySummary>((resolve, reject) => {
@@ -71,7 +79,7 @@ export function requestWorkoutSummary(exerciseId: string): Promise<WorkoutHistor
     rejectRequest = reject;
   });
   inFlight.set(exerciseId, promise);
-  pending.set(exerciseId, { resolve: resolveRequest, reject: rejectRequest });
+  pending.set(exerciseId, { promise, resolve: resolveRequest, reject: rejectRequest });
   if (!scheduled) {
     scheduled = true;
     queueMicrotask(flush);
