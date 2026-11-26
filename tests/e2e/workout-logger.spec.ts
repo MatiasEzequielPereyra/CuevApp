@@ -58,12 +58,14 @@ for (const mode of ["weight", "time"] as const) {
       let held: Route | undefined;
       let submitted: Record<string, unknown> | undefined;
       let reads = 0;
+      let summaryReads = 0;
       await page.route("**/api/entrenamientos?*", async route => {
         const summary = new URL(route.request().url()).searchParams.get("summary") === "1";
-        if (!summary) reads++;
+        if (summary) summaryReads++;
+        else reads++;
         if ((source === "history" && !summary && reads === 1)
           || (source === "history-after-save" && !summary && reads === 2)
-          || ((source === "summary" || source === "summary-after-save") && summary)) {
+          || ((source === "summary" || source === "summary-after-save") && summary && summaryReads === 1)) {
           held = route;
           return;
         }
