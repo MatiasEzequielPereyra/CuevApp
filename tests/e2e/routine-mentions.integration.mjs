@@ -221,7 +221,13 @@ try {
   await expect(loggerPanel.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
   await expect(logger.locator(".student-workout-summary")).toBeVisible();
   await expect(logger.locator(".student-workout-summary")).toContainText("37,5 kg");
+  // The floating panel replaces the row action while open. Close it before
+  // asserting the row's "Editar peso" label, then reopen it for history actions.
+  await loggerPanel.getByRole("button", {name:"Cerrar registro"}).click();
+  await expect(loggerPanel).toHaveCount(0);
   await expect(logger.getByRole("button", {name:"Registrar peso"})).toContainText("Editar peso");
+  await logger.getByRole("button", {name:"Registrar peso"}).click();
+  await expect(loggerPanel).toBeVisible();
   await expect.poll(async () => (await db.query(
     "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
     [studentId,exerciseId]
