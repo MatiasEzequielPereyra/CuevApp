@@ -17,5 +17,15 @@
 .empty h2 { margin:0; font-size:17px; }
 .empty p { margin:0; color:var(--dash-muted); font-size:13px; line-height:1.5; }
 .emptyIcon { display:grid; place-items:center; width:42px; height:42px; border-radius:50%; color:var(--dash-accent); background:var(--dash-accent-soft); font-size:21px; font-weight:700; }
+.broadcast { margin-block-end: 16px; }
+.broadcast p { margin-block: 8px; color: var(--dash-muted); overflow-wrap: anywhere; }
+.broadcast form { display: grid; gap: 8px; max-width: 600px; }
+.broadcast label { font-weight: 650; }
+.broadcast input, .broadcast textarea { width: 100%; min-height: 44px; padding: 10px; border: 1px solid var(--dash-border); border-radius: 8px; background: var(--dash-bg); color: var(--dash-text); font: inherit; }
+.broadcast textarea { resize: vertical; }
+.broadcastActions { display: flex; flex-wrap: wrap; gap: 8px; }
+.broadcastActions button { min-height: 44px; padding: 8px 14px; border: 1px solid var(--dash-border); border-radius: 8px; background: var(--dash-panel); color: var(--dash-text); font: inherit; cursor: pointer; }
+.broadcastActions button[type="submit"] { background: var(--dash-text); color: var(--dash-panel); }
+.broadcastActions button:disabled { cursor: wait; opacity: .6; }
 @media(max-width:760px) { .heading { align-items:flex-start; flex-direction:column; gap:15px; } .details { grid-template-columns:repeat(2,minmax(0,1fr)); } .card { padding:18px; } }
 @media(max-width:380px) { .cardTop { flex-direction:column; } .details { gap:12px; } }

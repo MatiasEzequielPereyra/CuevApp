@@ -5,6 +5,7 @@ import { BrandMark } from "@/components/brand/brand-mark";
 import { ThemePicker } from "@/components/theme/theme-picker";
 import styles from "./admin-alerts.module.css";
 import { NotificationScheduleSettings } from "@/components/notifications/notification-schedule-settings";
+import { StudentBroadcastForm } from "./student-broadcast-form";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +76,7 @@ export default async function AdminAlertsPage() {
       logo={<BrandMark size={42} />}
       themePicker={<ThemePicker />}
     >
+      <StudentBroadcastForm />
       <NotificationScheduleSettings initialTime={initialSendTime} />
 
       <div className={styles.heading}>

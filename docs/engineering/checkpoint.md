@@ -1,5 +1,13 @@
 # Checkpoint CUEVA
 
+## Avisos de rutinas y comunicados — 2026-11-26
+
+Desde `3320fc711513b2aac493e166264bf146115a0b21`. Publicar una rutina crea un
+aviso para su alumno. Alertas permite revisar y enviar un comunicado a todas las
+cuentas de alumno habilitadas. Ambos aparecen en la bandeja y preparan Push con
+las preferencias y suscripciones existentes. [Operación y pruebas alojadas](../operations/CUEVA-STUDENT-NOTICES.md).
+La activación alojada del job y la prueba del celular se hacen por separado.
+
 ## CUEVA-AUTH-RECOVERY-001 — Implementación para REVIEW — 2026-11-26
 
 Desde main `ec33fa7a629db49f7a1b614e99e92f44d70122ff`, sin PR abiertos al

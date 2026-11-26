@@ -141,6 +141,28 @@ export function encryptWebPushPayload(
   ]);
 }
 
+export function postWebPush(
+  configuration: WebPushConfiguration,
+  subscription: Pick<PushSubscriptionRow, "endpoint" | "p256dh" | "auth_secret">,
+  payload: Uint8Array,
+) {
+  const body = encryptWebPushPayload(payload, subscription);
+  return (configuration.fetchImpl ?? fetch)(subscription.endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: createVapidAuthorization(subscription.endpoint, configuration, (configuration.now ?? Date.now)()),
+      "Content-Encoding": "aes128gcm",
+      "Content-Type": "application/octet-stream",
+      TTL: "86400",
+      Urgency: "normal",
+    },
+    body: new Uint8Array(body),
+    cache: "no-store",
+    redirect: "error",
+    signal: AbortSignal.timeout(10000),
+  });
+}
+
 function buildPushPayload(context: NotificationDeliveryContext): Buffer {
   const content = formatReminderContent({
     dueOn: context.dueOn,
@@ -184,7 +206,6 @@ export function createWebPushProvider(
   db: SupabaseClient,
   configuration: WebPushConfiguration,
 ) {
-  const fetchImpl = configuration.fetchImpl ?? fetch;
   const now = configuration.now ?? Date.now;
 
   return async (context: NotificationDeliveryContext): Promise<ProviderResult> => {
@@ -256,21 +277,7 @@ export function createWebPushProvider(
               outcome = "failed";
               errorCode = "push_endpoint_rejected";
             } else {
-              const body = encryptWebPushPayload(payload, subscription);
-              const response = await fetchImpl(subscription.endpoint, {
-                method: "POST",
-                headers: {
-                  "Authorization": createVapidAuthorization(subscription.endpoint, configuration, now()),
-                  "Content-Encoding": "aes128gcm",
-                  "Content-Type": "application/octet-stream",
-                  "TTL": "86400",
-                  "Urgency": "normal",
-                },
-                body: new Uint8Array(body),
-                cache: "no-store",
-                redirect: "error",
-                signal: AbortSignal.timeout(10000),
-              });
+              const response = await postWebPush(configuration, subscription, payload);
               providerReference = `http:${response.status}`;
               if (response.status === 404 || response.status === 410) {
                 outcome = "expired";
