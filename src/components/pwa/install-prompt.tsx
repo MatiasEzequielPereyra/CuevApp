@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { installedMode, isAppleMobile } from "@/lib/pwa/browser";
 import styles from "./install-prompt.module.css";
 
 type Platform = "android" | "ios-chrome" | "ios-safari";
@@ -17,16 +18,9 @@ function setStored(key: string, value: string) {
   try { window.localStorage.setItem(key, value); } catch { /* Modo privado / storage deshabilitado. */ }
 }
 
-function installedMode() {
-  return window.matchMedia("(display-mode: standalone)").matches
-    || window.matchMedia("(display-mode: fullscreen)").matches
-    || (navigator as Navigator & { standalone?: boolean }).standalone === true;
-}
-
 function phonePlatform(): Platform | null {
   const ua = navigator.userAgent;
-  const ios = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-  if (ios) return /CriOS/i.test(ua) ? "ios-chrome" : "ios-safari";
+  if (isAppleMobile()) return /CriOS/i.test(ua) ? "ios-chrome" : "ios-safari";
   return /Android/i.test(ua) ? "android" : null;
 }
 

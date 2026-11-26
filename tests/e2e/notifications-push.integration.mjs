@@ -161,7 +161,7 @@ async function exerciseNativePush(jar, otherJar, studentId) {
     await context.addCookies(browserCookies(jar));
     await page.goto(`${origin}/notificaciones`);
     const enable = page.getByRole("button", { name: "Activar en este dispositivo" });
-    const enabled = page.getByText("Push habilitado", { exact: true });
+    const enabled = page.getByText("Notificaciones activadas", { exact: true });
     const registrationUrl = `${origin}/api/notifications/push`;
     const waitForRegistration = () => page.waitForResponse(response =>
       response.url() === registrationUrl && response.request().method() === "POST", { timeout: 60_000 });

@@ -6,6 +6,7 @@ import { BrandMark } from "@/components/brand/brand-mark";
 import { ThemePicker } from "@/components/theme/theme-picker";
 import { StudentShell } from "@/components/routines/student-shell";
 import { StudentHome } from "@/components/routines/student-home";
+import { PushNotificationSettings } from "@/components/notifications/push-notification-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,7 @@ export default async function AccountPage() {
     ]);
     const name = user.user_metadata?.full_name;
     return <StudentShell active="cuenta">
+      <PushNotificationSettings onboarding />
       <StudentHome name={typeof name === "string" ? name.trim().split(/\s+/)[0] : undefined}
         membership={membershipError ? null : membership as StudentMembershipSummary | null}
         unread={inboxCount.error ? null : inboxCount.count ?? 0} />
