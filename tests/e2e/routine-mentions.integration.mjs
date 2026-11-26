@@ -202,7 +202,7 @@ try {
   await expect(preview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
   await expect(preview.getByRole("link")).toHaveCount(0);
   const rowBeforePanel = await logger.boundingBox();
-  const loggerTrigger = logger.getByRole("button", {name:"Registrar peso"});
+  const loggerTrigger = logger.locator("button.student-workout-toggle");
   const panelControlId = await loggerTrigger.getAttribute("aria-controls");
   await loggerTrigger.click();
   await expect(loggerPanel).toBeVisible();
@@ -220,15 +220,15 @@ try {
   await loggerPanel.getByRole("button", {name:"Guardar resultado"}).click();
   await expect(loggerPanel.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
   await expect(pupil.locator(".my-routine-exercise-with-summary").filter({hasText:exerciseName}).locator(".student-workout-exercise-summary")).toContainText("37,5 kg");
-  await expect(logger.getByRole("button", {name:"Registrar peso"})).toContainText("Editar peso");
+  await expect(loggerTrigger).toContainText("Editar peso");
   await expect(logger.locator("svg.student-workout-kettlebell")).toBeVisible();
   await expect(logger.locator("svg.student-workout-kettlebell text")).toHaveText("KG");
   // The floating panel replaces the row action while open. Close it before
   // asserting the row's "Editar peso" label, then reopen it for history actions.
   await loggerPanel.getByRole("button", {name:"Cerrar registro"}).click();
   await expect(loggerPanel).toHaveCount(0);
-  await expect(logger.getByRole("button", {name:"Registrar peso"})).toContainText("Editar peso");
-  await logger.getByRole("button", {name:"Registrar peso"}).click();
+  await expect(loggerTrigger).toContainText("Editar peso");
+  await loggerTrigger.click();
   await expect(loggerPanel).toBeVisible();
   await expect.poll(async () => (await db.query(
     "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
