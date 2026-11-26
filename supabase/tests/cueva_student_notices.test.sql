@@ -73,5 +73,60 @@ select is((select status from cueva_private.student_notice_push where notice_id=
 select is((select count(*) from cueva_private.student_notice_push where status='cancelled'),1::bigint,'later opt-out cancels the pending push');
 select is((select count(*) from public.cueva_notification_inbox where student_notice_id='aa600000-0000-4000-8000-000000000001'),
  2::bigint,'idempotency and opt-out preserve inbox copies');
+
+update public.cueva_notification_preferences set push_enabled=true where student_id='aa300000-0000-4000-8000-000000000002';
+insert into public.cueva_push_subscriptions(student_id,endpoint,p256dh,auth_secret)
+select 'aa300000-0000-4000-8000-000000000002','https://fcm.googleapis.com/fcm/send/cap-'||i,repeat('a',65),repeat('b',22)
+from generate_series(1,9) i;
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+select is((select outcome from public.cueva_register_push_subscription('aa300000-0000-4000-8000-000000000002',
+ 'https://fcm.googleapis.com/fcm/send/replacement',repeat('a',65),repeat('b',22),null)),
+ 'limit_reached','ten devices fill the real registration cap');
+
+insert into public.cueva_routine_publications(id,student_id,draft_revision,content,published_by) values
+ ('aa500000-0000-4000-8000-000000000003','aa300000-0000-4000-8000-000000000002',2,'Rutina para comprobar vencimientos','aa100000-0000-4000-8000-000000000001');
+create temporary table expiration_claims as select * from public.cueva_claim_student_notice_push();
+select is((select count(*) from expiration_claims),10::bigint,'all ten devices without an expiry date were initially eligible');
+select ok((select not public.cueva_finish_student_notice_push(job_id,gen_random_uuid(),'expired') from expiration_claims where endpoint like '%/synthetic-2'),
+ 'a wrong lease cannot finalize an expired response');
+select ok((select revoked_at is null from public.cueva_push_subscriptions where endpoint like '%/synthetic-2'),
+ 'a wrong lease leaves the subscription active');
+
+update cueva_private.student_notice_push j set lease_until=clock_timestamp()-interval '1 second'
+from expiration_claims c where c.job_id=j.id and c.endpoint like '%/cap-2';
+select ok((select not public.cueva_finish_student_notice_push(job_id,job_lease,'expired') from expiration_claims where endpoint like '%/cap-2'),
+ 'an expired lease cannot finalize an expired response');
+select ok((select revoked_at is null from public.cueva_push_subscriptions where endpoint like '%/cap-2'),
+ 'an expired lease leaves the subscription active');
+
+-- The real registration path refreshes an existing endpoint even with identical keys.
+select is((select outcome from public.cueva_register_push_subscription('aa300000-0000-4000-8000-000000000002',
+ 'https://fcm.googleapis.com/fcm/send/cap-1',repeat('a',65),repeat('b',22),null)),
+ 'updated','re-registering the same endpoint renews its version');
+select ok((select public.cueva_finish_student_notice_push(job_id,job_lease,'expired') from expiration_claims where endpoint like '%/cap-1'),
+ 'the old delivery result is still recorded after renewal');
+select ok((select revoked_at is null from public.cueva_push_subscriptions where endpoint like '%/cap-1'),
+ 'the old response cannot revoke the renewed subscription');
+select ok((select not public.cueva_finish_student_notice_push(job_id,job_lease,'expired') from expiration_claims where endpoint like '%/cap-1'),
+ 'a consumed lease cannot finalize again');
+select ok((select revoked_at is null from public.cueva_push_subscriptions where endpoint like '%/cap-1'),
+ 'a replay cannot revoke the renewed subscription');
+
+select ok((select public.cueva_finish_student_notice_push(job_id,job_lease,'expired') from expiration_claims where endpoint like '%/synthetic-2'),
+ 'a valid lease records confirmed device expiration');
+select ok((select revoked_at is not null from public.cueva_push_subscriptions where endpoint like '%/synthetic-2'),
+ 'the expired version is revoked even without an expiration date');
+select is((select j.status from cueva_private.student_notice_push j join expiration_claims c on c.job_id=j.id where c.endpoint like '%/synthetic-2'),
+ 'expired','revocation preserves the expired delivery history');
+
+insert into public.cueva_routine_publications(id,student_id,draft_revision,content,published_by) values
+ ('aa500000-0000-4000-8000-000000000004','aa300000-0000-4000-8000-000000000002',3,'Rutina posterior','aa100000-0000-4000-8000-000000000001');
+select is((select count(*) from cueva_private.student_notice_push j join cueva_private.student_notices n on n.id=j.notice_id
+ join public.cueva_push_subscriptions s on s.id=j.subscription_id
+ where n.publication_id='aa500000-0000-4000-8000-000000000004' and s.endpoint like '%/synthetic-2'),
+ 0::bigint,'the next notice does not queue the revoked endpoint');
+select is((select outcome from public.cueva_register_push_subscription('aa300000-0000-4000-8000-000000000002',
+ 'https://fcm.googleapis.com/fcm/send/replacement',repeat('a',65),repeat('b',22),null)),
+ 'registered','the replacement device uses the released slot');
 select * from finish();
 rollback;

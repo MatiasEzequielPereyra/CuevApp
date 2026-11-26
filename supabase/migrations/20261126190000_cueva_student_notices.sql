@@ -21,9 +21,12 @@ create table cueva_private.student_notice_push (
   next_attempt_at timestamptz not null default now(),
   lease uuid,
   lease_until timestamptz,
+  subscription_xmin xid,
+  subscription_ctid tid,
   finished_at timestamptz,
   unique (notice_id, subscription_id),
-  check ((status = 'sending') = (lease is not null and lease_until is not null))
+  check ((status = 'sending') = (lease is not null and lease_until is not null)),
+  check (status <> 'sending' or (subscription_xmin is not null and subscription_ctid is not null))
 );
 create index student_notice_push_pending on cueva_private.student_notice_push(next_attempt_at,id) where status='pending';
 create index student_notice_push_leases on cueva_private.student_notice_push(lease_until) where status='sending';
@@ -156,7 +159,8 @@ begin
   );
   return query
   with candidates as (
-    select j.id from cueva_private.student_notice_push j
+    -- Snapshot the actual row used for this attempt, including renewals with identical credentials.
+    select j.id,s.xmin as device_xmin,s.ctid as device_ctid from cueva_private.student_notice_push j
     join cueva_private.student_notice_recipients r on r.student_id=j.student_id and r.user_id=j.user_id
     join public.cueva_notification_preferences p on p.student_id=r.student_id and p.push_enabled
     join public.cueva_push_subscriptions s on s.id=j.subscription_id and s.student_id=r.student_id
@@ -165,7 +169,8 @@ begin
     order by j.next_attempt_at,j.id limit 16 for update of j skip locked
   ), claimed as (
     update cueva_private.student_notice_push j
-      set status='sending',lease=gen_random_uuid(),lease_until=now()+interval '2 minutes',attempt_count=j.attempt_count+1
+      set status='sending',lease=gen_random_uuid(),lease_until=now()+interval '2 minutes',attempt_count=j.attempt_count+1,
+          subscription_xmin=c.device_xmin,subscription_ctid=c.device_ctid
       from candidates c where j.id=c.id returning j.*
   )
   select j.id,j.lease,n.id,n.title,n.body,n.publication_id is not null,s.endpoint,s.p256dh,s.auth_secret
@@ -176,18 +181,34 @@ $$;
 
 create function public.cueva_finish_student_notice_push(p_job uuid, p_lease uuid, p_result text)
 returns boolean language plpgsql security definer set search_path = '' as $$
-declare changed uuid;
+declare
+  job cueva_private.student_notice_push%rowtype;
+  finalized_at timestamptz;
 begin
   if p_result is null or p_result not in ('accepted','failed','unknown','expired','rate_limited') then
     raise exception 'Resultado no admitido' using errcode='22023';
   end if;
+  select * into job from cueva_private.student_notice_push
+  where id=p_job and lease=p_lease and status='sending' for update;
+  finalized_at := clock_timestamp();
+  if not found or job.lease_until<=finalized_at then return false; end if;
+
   update cueva_private.student_notice_push
   set status=case when p_result='rate_limited' and attempt_count<3 then 'pending'
                   when p_result='rate_limited' then 'failed' else p_result end,
-      next_attempt_at=now()+interval '2 minutes',lease=null,lease_until=null,
-      finished_at=case when p_result='rate_limited' and attempt_count<3 then null else now() end
-  where id=p_job and lease=p_lease and status='sending' and lease_until>now() returning id into changed;
-  return changed is not null;
+      next_attempt_at=finalized_at+interval '2 minutes',lease=null,lease_until=null,
+      finished_at=case when p_result='rate_limited' and attempt_count<3 then null else finalized_at end
+  where id=job.id;
+
+  if p_result='expired' then
+    -- Recheck the sent row version in the UPDATE itself. PostgreSQL re-evaluates
+    -- these predicates after waiting for a concurrent registration to commit.
+    update public.cueva_push_subscriptions s
+      set revoked_at=finalized_at,updated_at=finalized_at
+      where s.id=job.subscription_id and s.student_id=job.student_id and s.revoked_at is null
+        and s.xmin=job.subscription_xmin and s.ctid=job.subscription_ctid;
+  end if;
+  return true;
 end;
 $$;
 
