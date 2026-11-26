@@ -220,7 +220,8 @@ try {
   await loggerPanel.getByRole("button", {name:"Guardar resultado"}).click();
   await expect(loggerPanel.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
   await expect(pupil.locator(".my-routine-exercise-with-summary").filter({hasText:exerciseName}).locator(".student-workout-exercise-summary")).toContainText("37,5 kg");
-  await expect(loggerTrigger).toContainText("Editar peso");
+  // While the floating panel is open, its trigger correctly exposes "Cerrar".
+  await expect(loggerTrigger).toHaveAttribute("aria-expanded", "true");
   await expect(logger.locator("svg.student-workout-kettlebell")).toBeVisible();
   await expect(logger.locator("svg.student-workout-kettlebell text")).toHaveText("KG");
   // The floating panel replaces the row action while open. Close it before
