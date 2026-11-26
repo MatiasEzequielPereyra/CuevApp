@@ -16,7 +16,7 @@ type Dependencies = {
 const headers = { "Cache-Control": "private, no-store" };
 const reply = (data: object, status = 200) => Response.json(data, { status, headers });
 
-async function readJson(request: Request, maxBytes: number): Promise<unknown | null> {
+export async function readJson(request: Request, maxBytes: number): Promise<unknown | null> {
   if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) return null;
   const declared = request.headers.get("content-length");
   if (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > maxBytes)) return null;

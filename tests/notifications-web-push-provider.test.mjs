@@ -2,6 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createECDH, generateKeyPairSync, hkdfSync, createDecipheriv, randomBytes } from "node:crypto";
 import { encryptWebPushPayload, createWebPushProvider, isWebPushConfigurationAvailable } from "../src/lib/notifications/web-push-provider.ts";
+import { runStudentNoticeWorker } from "../src/lib/notifications/student-notice-worker.ts";
+import { readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
 
 function subscriptionKeys() {
   const ecdh = createECDH("prime256v1");
@@ -47,6 +50,67 @@ function vapidKeys() {
     privateKey: Buffer.from(jwk.d, "base64url").toString("base64url"),
   };
 }
+
+test("push de rutinas y comunicados: contenido, destino y resultado individual", async () => {
+  const keys = subscriptionKeys();
+  const jobs = ["routine", "broadcast", "expired", "unknown", "invalid"].map(id => ({
+    ...keys, job_id: id, job_lease: `lease-${id}`, message_id: id,
+    title: "Novedad", body: "Este es el mensaje <texto plano>", routine: id === "routine",
+    endpoint: id === "invalid" ? "https://untrusted.example.test/device" : `https://fcm.googleapis.com/fcm/send/${id}`,
+  }));
+  const finished = new Map();
+  const calls = [];
+  let claims = 0;
+  const db = { async rpc(name, args) {
+    if (name === "cueva_claim_student_notice_push") return { data: claims++ ? [] : jobs };
+    assert.equal(name, "cueva_finish_student_notice_push");
+    assert.equal(args.p_lease, `lease-${args.p_job}`);
+    finished.set(args.p_job, args.p_result);
+    return { data: true };
+  } };
+  const summary = await runStudentNoticeWorker(db, {
+    ...vapidKeys(), subject: "mailto:admin@example.test",
+    fetchImpl: async (url, init) => {
+      const id = url.split("/").at(-1);
+      calls.push(id);
+      assert.equal(init.method, "POST");
+      assert.equal(init.redirect, "error");
+      const message = JSON.parse(decryptWebPushPayload(init.body, keys));
+      assert.equal(message.title, "Novedad");
+      assert.equal(message.body, "Este es el mensaje <texto plano>");
+      assert.equal(message.destination, id === "routine" ? "/mi-rutina" : "/notificaciones");
+      if (id === "unknown") throw new Error("simulated timeout");
+      return new Response(null, { status: { routine: 201, broadcast: 429, expired: 410 }[id] });
+    },
+  });
+  assert.deepEqual(calls.sort(), ["broadcast", "expired", "routine", "unknown"]);
+  assert.deepEqual(Object.fromEntries(finished), { routine: "accepted", broadcast: "rate_limited", expired: "expired", unknown: "unknown", invalid: "failed" });
+  assert.deepEqual(summary, { processed: 5, accepted: 1, failed: 1, unknown: 1, expired: 1, rateLimited: 1 });
+});
+
+test("service worker solo navega a destinos locales conocidos y conserva los avisos de cuota", async () => {
+  const listeners = new Map();
+  const visited = [];
+  let shown;
+  const origin = "https://cueva.example.test";
+  const self = {
+    location: { origin },
+    addEventListener: (event, fn) => listeners.set(event, fn),
+    clients: { matchAll: async () => [], openWindow: async url => visited.push(url) },
+    registration: { showNotification: async (_title, options) => { shown = options; } },
+  };
+  runInNewContext(readFileSync(new URL("../public/sw.js", import.meta.url), "utf8"), { self, URL });
+  for (const [input, expected] of [["/mi-rutina", "/mi-rutina"], ["/notificaciones", "/notificaciones"], [undefined, "/mi-membresia"], ["https://external.example.test", "/mi-membresia"]]) {
+    let completed;
+    const waitUntil = promise => { completed = promise; };
+    listeners.get("push")({ data: { json: () => ({ title: "Prueba", destination: input }) }, waitUntil });
+    await completed;
+    assert.equal(shown.data.destination, expected);
+    listeners.get("notificationclick")({ notification: { data: { destination: input }, close() {} }, waitUntil });
+    await completed;
+    assert.equal(visited.at(-1), origin + expected);
+  }
+});
 
 test("cifra el payload Web Push con el formato aes128gcm y permite descifrarlo", () => {
   const keys = subscriptionKeys();
