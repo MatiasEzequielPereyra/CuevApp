@@ -444,3 +444,53 @@
   color: var(--dash-text);
   font: inherit;
 }
+
+
+/* Dense mobile overview keeps exercise identity and target readable on one compact row. */
+@media (max-width: 600px) {
+  .routine-editor-compact { gap: 8px; }
+  .routine-editor-compact .routine-workspace { margin-top: 0; }
+  .routine-editor-compact .routine-day-picker { gap: 4px; }
+  .routine-editor-compact .routine-day-picker button {
+    min-height: 36px;
+    padding: 5px 9px;
+    font-size: .82rem;
+  }
+  .routine-editor-compact .routine-day-active { margin-top: 6px; }
+  .routine-editor-compact .routine-block-list { gap: 5px; }
+  .routine-editor-compact .routine-block-card { padding: 3px 7px 5px; }
+  .routine-block-heading { gap: 0 4px; }
+  .routine-block-heading h4 { min-width: 0; font-size: .88rem; }
+  .routine-rounds { font-size: .72rem; }
+  .routine-editor-compact .routine-options > summary {
+    min-width: 34px;
+    min-height: 34px;
+    font-size: 19px;
+  }
+  .routine-editor-compact .routine-exercise-row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 4px;
+    min-height: 40px;
+    padding: 5px 3px;
+    line-height: 1.2;
+  }
+  .routine-exercise-row::before,
+  .routine-exercise-row > span { font-size: .72rem; }
+  .routine-exercise-row > span {
+    max-width: 34vw;
+    white-space: nowrap;
+  }
+  .routine-editor-compact .routine-exercise-row strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: .82rem;
+  }
+}
+
+@media (max-width: 600px) and (max-height: 760px) {
+  .routine-editor-compact .routine-block-list { gap: 4px; }
+  .routine-editor-compact .routine-exercise-row { min-height: 36px; padding-block: 3px; }
+}
