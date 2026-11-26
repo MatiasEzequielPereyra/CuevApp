@@ -31,6 +31,76 @@ async function fill(page: Page) {
   await page.getByLabel("Contraseña", { exact: true }).fill("Synthetic-only-123");
 }
 
+test("recuperación: enlace visible, envío único y respuesta genérica", async ({ page }) => {
+  let calls = 0;
+  let release!: () => void;
+  const waiting = new Promise<void>(resolve => { release = resolve; });
+  await page.route("**/api/acceso/recuperar", async route => {
+    calls++;
+    await waiting;
+    await route.fulfill({ status: 202, contentType: "application/json", body: '{"ok":true}' });
+  });
+  await page.goto("/ingresar");
+  await page.getByRole("link", { name: "¿Olvidaste tu contraseña?" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/recuperar-contrasena$/);
+  await page.getByLabel("Correo electrónico").fill("persona@example.test");
+  await page.getByRole("button", { name: "Enviar enlace", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Procesando…" })).toBeDisabled();
+  await page.keyboard.press("Enter");
+  release();
+  await expect(page.getByRole("status")).toContainText("Si existe una cuenta");
+  await expect(page.getByRole("button", { name: "Solicitud procesada" })).toBeDisabled();
+  expect(calls).toBe(1);
+  for (const [width, theme] of [[390, "Claro"], [1440, "Oscuro"]] as const) {
+    await page.setViewportSize({ width, height: 850 });
+    await page.getByRole("button", { name: theme, exact: true }).click();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+});
+
+test("recuperación: token en memoria, coincidencia y confirmación antes del retorno al ingreso", async ({ page }) => {
+  const token = "a".repeat(64);
+  let calls = 0;
+  await page.route("**/api/acceso/restablecer", route => {
+    calls++;
+    const body = route.request().postDataBuffer()!.toString();
+    expect(body).toContain(token);
+    return route.fulfill({ status: 200, contentType: "application/json", body: '{"ok":true}' });
+  });
+  await page.goto(`/recuperar-contrasena#token_hash=${token}&type=recovery`);
+  await expect(page).toHaveURL(/\/recuperar-contrasena$/);
+  const password = page.getByLabel("Contraseña nueva", { exact: true });
+  const confirmation = page.getByLabel("Confirmar contraseña");
+  await password.fill("Synthetic-next-123");
+  await confirmation.fill("Synthetic-different-456");
+  await page.getByRole("button", { name: "Guardar contraseña", exact: true }).click();
+  const feedback = page.getByRole("region", { name: "Recuperación de contraseña" }).getByRole("alert");
+  await expect(feedback).toHaveText("Las contraseñas no coinciden.");
+  await expect(feedback).toBeFocused();
+  expect(calls).toBe(0);
+  await confirmation.fill("Synthetic-next-123");
+  await page.getByRole("button", { name: "Guardar contraseña", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Contraseña actualizada" })).toBeVisible();
+  await expect(page).toHaveURL(/\/ingresar$/);
+  expect(calls).toBe(1);
+  expect(await page.context().cookies()).toEqual([]);
+});
+
+test("recuperación: enlace rechazado o actualización incierta nunca muestra éxito", async ({ page }) => {
+  for (const status of [400, 503]) {
+    await page.route("**/api/acceso/restablecer", route => route.fulfill({ status, contentType: "application/json", body: '{"error":"enlace"}' }));
+    await page.goto(`/recuperar-contrasena#token_hash=${"b".repeat(64)}&type=recovery`);
+    await page.getByLabel("Contraseña nueva", { exact: true }).fill("Synthetic-next-123");
+    await page.getByLabel("Confirmar contraseña").fill("Synthetic-next-123");
+    await page.getByRole("button", { name: "Guardar contraseña", exact: true }).click();
+    await expect(page.getByRole("region", { name: "Recuperación de contraseña" }).getByRole("alert")).toContainText("Solicitá uno nuevo");
+    await expect(page.getByLabel("Correo electrónico")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Contraseña actualizada" })).toHaveCount(0);
+    await page.unroute("**/api/acceso/restablecer");
+  }
+});
+
 test("formulario activo: identidad, temas, teclado y accesibilidad", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/ingresar$/);

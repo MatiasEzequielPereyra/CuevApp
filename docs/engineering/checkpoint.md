@@ -1,5 +1,14 @@
 # Checkpoint CUEVA
 
+## CUEVA-AUTH-RECOVERY-001 — Implementación para REVIEW — 2026-11-26
+
+Desde main `ec33fa7a629db49f7a1b614e99e92f44d70122ff`, sin PR abiertos al
+iniciar. [Recuperación autónoma y operación pendiente](CUEVA-AUTH-RECOVERY-001.md):
+correo genérico, token Auth, contraseña propia y regreso al ingreso. Conserva
+RLS, roles y gates; sin migraciones ni cambios alojados. Resultados/HEAD/CI en
+el PR. Plantilla Reset Password, Redirect URL y entrega alojada requieren la
+operación posterior indicada; no se declaran verificadas por esta implementación.
+
 ## PR #88 — Compatibilidad de catálogo — 2026-11-25
 
 Main incorporado `545374cb8017f8c894dfd605fb91935c61f86107`, incluidos #83/#75.
