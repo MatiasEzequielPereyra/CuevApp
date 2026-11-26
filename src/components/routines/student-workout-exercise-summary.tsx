@@ -39,5 +39,5 @@ export function StudentWorkoutExerciseSummary({ exerciseId, exerciseName }: { ex
   }, [exerciseId]);
 
   if (!value) return null;
-  return <span className="student-workout-exercise-summary" aria-label={`Último registro de ${exerciseName}: ${value}`}>{value}</span>;
+  return <span className="student-workout-exercise-summary" aria-label={`Último registro de ${exerciseName}: ${value}`}><span className="student-workout-exercise-summary-value">{value}</span></span>;
 }

@@ -423,8 +423,9 @@ try {
   await expect(firstExerciseSummary).toHaveCSS("margin-left", "10px");
   const connector = await firstExerciseSummary.evaluate(element => getComputedStyle(element, "::before").borderInlineStartWidth);
   expect(connector).toBe("1px");
-  await expect(firstExerciseSummary).toHaveCSS("font-weight", "650");
-  await expect(firstExerciseSummary).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  const summaryValue = firstExerciseSummary.locator(".student-workout-exercise-summary-value");
+  await expect(summaryValue).toHaveCSS("font-weight", "650");
+  await expect(summaryValue).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await selectionPanel.getByRole("button", {name:"Cerrar registro"}).click();
   await expect(selectionPanel).toHaveCount(0);
 

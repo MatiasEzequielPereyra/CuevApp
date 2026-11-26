@@ -722,14 +722,19 @@
   display: inline-block;
   max-width: 100%;
   margin: 4px 0 5px 10px;
-  padding: 2px 6px;
   overflow: visible;
-  border-radius: 4px;
-  background: var(--dash-accent-soft);
   color: var(--dash-text);
   font-size: .78rem;
   font-weight: 650;
   line-height: 1.2;
+}
+.student-workout-exercise-summary-value {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--dash-accent-soft);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
