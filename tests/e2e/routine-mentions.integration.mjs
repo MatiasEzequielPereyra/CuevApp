@@ -219,7 +219,15 @@ try {
   await loggerPanel.getByLabel("Peso utilizado (kg)").fill("37.5");
   await loggerPanel.getByRole("button", {name:"Guardar resultado"}).click();
   await expect(loggerPanel.getByRole("status").filter({hasText:"Resultado guardado."})).toBeVisible();
-  await expect(logger.getByText("REALIZADO")).toBeVisible();
+  await expect(logger.locator(".student-workout-summary")).toBeVisible();
+  await expect(logger.locator(".student-workout-summary")).toContainText("37,5 kg");
+  // The floating panel replaces the row action while open. Close it before
+  // asserting the row's "Editar peso" label, then reopen it for history actions.
+  await loggerPanel.getByRole("button", {name:"Cerrar registro"}).click();
+  await expect(loggerPanel).toHaveCount(0);
+  await expect(logger.getByRole("button", {name:"Registrar peso"})).toContainText("Editar peso");
+  await logger.getByRole("button", {name:"Registrar peso"}).click();
+  await expect(loggerPanel).toBeVisible();
   await expect.poll(async () => (await db.query(
     "select count(*)::int as count from public.cueva_workout_entries where student_id=$1 and exercise_id=$2",
     [studentId,exerciseId]
@@ -244,7 +252,7 @@ try {
     "select count(*)::int as count from public.cueva_workout_sets s join public.cueva_workout_entries e on e.id=s.entry_id where e.student_id=$1 and e.exercise_id=$2",
     [studentId,exerciseId]
   )).rows[0].count).toBe(2);
-  await expect(logger.getByText("REALIZADO")).toBeVisible();
+  await expect(logger.locator(".student-workout-summary")).toBeVisible();
   await loggerPanel.getByRole("button", {name:"Rápido"}).click();
   await loggerPanel.getByLabel("Peso utilizado (kg)").fill("47.5");
   await loggerPanel.getByRole("button", {name:"Guardar resultado"}).click();
@@ -283,7 +291,7 @@ try {
   await expect(loggerPanel.getByRole("status").filter({hasText:"Registro eliminado."})).toBeVisible();
   await pupil.locator("h1").click();
   await expect(preview).toHaveCount(0);
-  await expect(logger.getByText("REALIZADO")).toBeVisible();
+  await expect(logger.locator(".student-workout-summary")).toBeVisible();
   // The outside click above dismisses the floating panel; its trigger is already closed.
   await expect(loggerPanel).toHaveCount(0);
   await expect(pupil).toHaveURL(`${origin}/mi-rutina`);
@@ -302,7 +310,7 @@ try {
   await adminPlayer.getByRole("button", {name:"Cerrar"}).click();
   await expect(adminPlayer).toHaveCount(0);
   await pupil.reload();
-  await expect(logger.getByText("REALIZADO")).toBeVisible();
+  await expect(logger.locator(".student-workout-summary")).toBeVisible();
   await mention.click();
   await expect(preview.getByRole("button", {name:"Ver video"})).toBeVisible();
   const videoApi = url => url.pathname === "/api/ejercicios/video" && url.searchParams.get("id") === exerciseId && url.searchParams.get("player") === "1";
@@ -409,6 +417,8 @@ try {
   const secondExerciseSummary = pupil.locator(".my-routine-exercise-with-summary").filter({hasText:secondExerciseName}).locator(".student-workout-exercise-summary").first();
   await expect(firstExerciseSummary).toContainText("47,5 kg");
   await expect(secondExerciseSummary).toContainText("22,5 kg");
+  await expect(firstExerciseSummary).toHaveCSS("font-weight", "650");
+  await expect(firstExerciseSummary).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await selectionPanel.getByRole("button", {name:"Cerrar registro"}).click();
   await expect(selectionPanel).toHaveCount(0);
 
