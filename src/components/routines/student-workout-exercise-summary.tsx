@@ -20,20 +20,23 @@ export function StudentWorkoutExerciseSummary({ exerciseId, exerciseName }: { ex
   const [value, setValue] = useState("");
   useEffect(() => {
     let active = true;
-    const load = () => {
-      void requestWorkoutSummary(exerciseId).then(history => {
-        if (active) setValue(latestValue(history));
+    let latestRequest = 0;
+    const load = (refresh = false) => {
+      const request = ++latestRequest;
+      void requestWorkoutSummary(exerciseId, refresh).then(history => {
+        if (active && request === latestRequest) setValue(latestValue(history));
       }).catch(() => {
-        if (active) setValue("");
+        if (active && request === latestRequest) setValue("");
       });
     };
     load();
     const onUpdated = (event: Event) => {
-      if ((event as CustomEvent<{ exerciseId?: string }>).detail?.exerciseId === exerciseId) load();
+      if ((event as CustomEvent<{ exerciseId?: string }>).detail?.exerciseId === exerciseId) load(true);
     };
     window.addEventListener("cueva-workout-updated", onUpdated);
     return () => {
       active = false;
+      latestRequest++;
       window.removeEventListener("cueva-workout-updated", onUpdated);
     };
   }, [exerciseId]);
