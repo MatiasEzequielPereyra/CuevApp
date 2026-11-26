@@ -88,7 +88,7 @@ for (const mode of ["weight", "time"] as const) {
         await expect(panel.getByText("Resultado guardado.", { exact: true })).toBeVisible();
         expect(submitted?.[mode === "weight" ? "weight_kg" : "duration_seconds"]).toBe(80);
         if (source === "summary-after-save") {
-          await expect(exerciseSummary).toContainText(mode === "weight" ? "80 kg" : "1 min 20 s");
+          await expect(exerciseSummary).toContainText(mode === "weight" ? "80 kg" : "80 seg");
         } else {
           // Inputs stay editable while the post-save GET is in flight.
           await input.fill("90");
@@ -104,7 +104,7 @@ for (const mode of ["weight", "time"] as const) {
       await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
       await expect(input).toHaveValue(source === "history-after-save" ? "90" : "80");
       if (source === "summary-after-save") {
-        await expect(exerciseSummary).toContainText(mode === "weight" ? "80 kg" : "1 min 20 s");
+        await expect(exerciseSummary).toContainText(mode === "weight" ? "80 kg" : "80 seg");
       }
     });
   }
