@@ -78,7 +78,7 @@ export function requestWorkoutSummary(exerciseId: string, refresh = false, stude
         return history;
       });
   }
-  const requestKey = studentId ? `${studentId}:${exerciseId}` : exerciseId;
+  const requestKey = exerciseId;
   const queued = pending.get(requestKey);
   if (queued) return queued.promise;
   const existing = inFlight.get(requestKey);
