@@ -207,6 +207,7 @@ begin
     revision=revision+1,updated_at=clock_timestamp()
   where id=p_id returning * into v_entry;
   delete from public.cueva_workout_sets where entry_id=p_id;
+  v_n:=0;
   if p_mode='sets' then
     for v_set in select value from jsonb_array_elements(p_sets) loop
       v_n:=v_n+1;
