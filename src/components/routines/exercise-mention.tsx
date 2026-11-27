@@ -67,7 +67,6 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
   useEffect(() => {
     if (!open || videoAvailability !== "unknown") return;
     const controller = new AbortController();
-    setCheckingVideo(true);
     void fetch(`/api/ejercicios/video?id=${encodeURIComponent(exerciseId)}&check=1`, {
       cache: "no-store", signal: controller.signal,
     }).then(async response => {
