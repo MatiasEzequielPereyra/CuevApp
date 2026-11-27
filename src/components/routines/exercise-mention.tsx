@@ -93,12 +93,14 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
   useEffect(() => {
     if (!open) return;
     function onPointerDown(event: PointerEvent) {
+      if (playerOpen && event.target instanceof Element && event.target.closest("dialog")) return;
       if (event.target instanceof Node
         && !root.current?.contains(event.target)
         && !panel.current?.contains(event.target)) setOpen(false);
     }
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        if (playerOpen) return;
         setOpen(false);
         trigger.current?.focus({ preventScroll: true });
       }
@@ -113,7 +115,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
       window.removeEventListener("scroll", positionPanel, true);
       window.removeEventListener("resize", positionPanel);
     };
-  }, [open, positionPanel]);
+  }, [open, playerOpen, positionPanel]);
 
   return (
     <div
