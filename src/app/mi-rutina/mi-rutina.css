@@ -428,6 +428,17 @@
   isolation: isolate;
   overscroll-behavior: contain;
 }
+.student-workout-embedded-panel {
+  box-shadow: none;
+  border: 0;
+  border-top: 1px solid var(--workout-border);
+  border-radius: 0;
+  padding: 10px 0 0;
+  background: transparent;
+}
+.student-workout-embedded-panel > header {
+  padding-bottom: 7px;
+}
 .student-workout-floating-panel > header {
   display: flex;
   align-items: center;
