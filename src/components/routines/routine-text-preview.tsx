@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { ExerciseMention } from "@/components/routines/exercise-mention";
 import { StudentWorkoutExerciseSummary } from "@/components/routines/student-workout-exercise-summary";
 import type { RoutineMention } from "@/lib/routines/mentions";
@@ -11,7 +12,7 @@ export function RoutineTextPreview({ value, mentions, studentId }: {
 }) {
   const points = Array.from(value);
   const ordered = [...mentions].sort((a,b)=>a.start-b.start);
-  const parts: React.ReactNode[] = [];
+  const parts: ReactNode[] = [];
   let cursor = 0;
   for (const [index, mention] of ordered.entries()) {
     if (mention.start < cursor || mention.start < 0 || mention.end > points.length
