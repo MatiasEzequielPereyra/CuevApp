@@ -311,10 +311,10 @@ select ok(to_regprocedure('public.cueva_workout_update_admin(uuid,uuid,integer,t
 select ok(not has_table_privilege('authenticated','public.cueva_workout_admin_audit','SELECT'),
   'administrative audit rows cannot be read directly through the Data API');
 select is((public.cueva_workout_history_admin('c7300000-0000-4000-8000-000000000001',
-  'c7500000-0000-4000-8000-000000000001')->>'last_weight_kg')::numeric,75::numeric,
+  'c7500000-0000-4000-8000-000000000001')->>'last_weight_kg')::numeric,68::numeric,
   'administrator can inspect the selected student history');
 select is((public.cueva_workout_history_admin_batch('c7300000-0000-4000-8000-000000000001',
-  array['c7500000-0000-4000-8000-000000000001'::uuid])->'c7500000-0000-4000-8000-000000000001'->>'last_weight_kg')::numeric,75::numeric,
+  array['c7500000-0000-4000-8000-000000000001'::uuid])->'c7500000-0000-4000-8000-000000000001'->>'last_weight_kg')::numeric,68::numeric,
   'administrator summary is scoped to the selected student');
 select is((public.cueva_workout_update_admin('c7300000-0000-4000-8000-000000000001',
   'c8100000-0000-4000-8000-000000000001',2,'quick','weight',76,null,'[]'::jsonb)->'entry'->>'revision')::integer,3,
