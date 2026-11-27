@@ -667,7 +667,22 @@
   font-size: .8rem;
   font-weight: 550;
 }
-.my-routine-mention-preview .student-workout { padding: 0; }
+.my-routine-mention-preview .student-workout {
+  display: grid;
+  width: 100%;
+  padding: 0;
+}
+.my-routine-mention-preview .student-workout-row {
+  display: grid;
+  width: 100%;
+  max-width: 100%;
+  margin-inline-start: 0;
+}
+.my-routine-mention-preview .student-workout-panel {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
 @media (max-width: 480px) {
   .student-workout-set { grid-template-columns: minmax(0, 1fr); }
   .student-workout-set > strong,
