@@ -482,7 +482,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
 
             </div>
           )}
-        </div>,
+        </div>
       );
 
   return (
