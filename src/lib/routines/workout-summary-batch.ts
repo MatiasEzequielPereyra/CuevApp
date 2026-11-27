@@ -68,6 +68,17 @@ function sendBatch(batch: [string, PendingRequest][], studentId?: string) {
 }
 
 export function requestWorkoutSummary(exerciseId: string, refresh = false, studentId?: string): Promise<WorkoutHistorySummary> {
+  if (studentId) {
+    const params = new URLSearchParams({ summary: "1", student_id: studentId, exercise_id: exerciseId });
+    return fetch("/api/entrenamientos?" + params.toString(), { cache: "no-store" })
+      .then(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "No pudimos cargar los últimos registros.");
+        const history = data.histories?.[exerciseId] as WorkoutHistorySummary | undefined;
+        if (!history) throw new Error("No recibimos el resumen del ejercicio.");
+        return history;
+      });
+  }
   const requestKey = studentId ? `${studentId}:${exerciseId}` : exerciseId;
   const queued = pending.get(requestKey);
   if (queued) return queued.promise;
