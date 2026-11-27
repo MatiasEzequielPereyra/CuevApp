@@ -7,11 +7,13 @@ import { StudentWorkoutExerciseSummary } from "@/components/routines/student-wor
 
 type ExerciseMetadata = { id: string; name: string; description: string | null; has_video: boolean; video_kind?: "youtube" | "file" | null };
 
-function ExerciseDetails({ exercise, publicationId, description, videoAvailability }: {
+function ExerciseDetails({ exercise, publicationId, description, videoAvailability, videoKind, availableExercises }: {
   exercise: Target | LegacyTarget;
   publicationId: string;
   description: string | null;
   videoAvailability: "available" | "unavailable" | "unknown";
+  videoKind: "youtube" | "file" | null;
+  availableExercises: { id: string; name: string; tracking_mode: "weight" | "time" }[];
 }) {
   const trackingMode = "mode" in exercise ? exercise.mode : "weight";
   return (
@@ -24,7 +26,8 @@ function ExerciseDetails({ exercise, publicationId, description, videoAvailabili
         text={exercise.name}
         publicationId={publicationId}
         trackingMode={trackingMode}
-        videoKind={detail?.video_kind}
+        videoKind={videoKind}
+        availableExercises={availableExercises}
         targetId={exercise.id}
       />
       <span className="my-routine-targets">
@@ -84,7 +87,12 @@ export function StudentPlan({ plan, publicationId, videoIds, videosAvailable = t
                       <div className="my-routine-exercise">
                         <span className="my-routine-exercise-order" aria-hidden="true">{exerciseIndex + 1}</span>
                         <ExerciseDetails exercise={exercise} publicationId={publicationId}
-                          description={detail?.description ?? null} videoAvailability={videoAvailability} />
+                          description={detail?.description ?? null} videoAvailability={videoAvailability}
+                        videoKind={detail?.video_kind ?? null}
+                        availableExercises={block.exercises.map(candidate => ({
+                          id: candidate.exercise_id, name: candidate.name,
+                          tracking_mode: "mode" in candidate && candidate.mode === "time" ? "time" : "weight",
+                        }))} />
                       </div>
                     </li>
                   );
