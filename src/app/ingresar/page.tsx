@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { ThemePicker } from "@/components/theme/theme-picker";
 import { SignInForm } from "@/components/access/sign-in-form";
-import { productConfig } from "@/lib/product-auth/server";
+import { productConfig, userClient } from "@/lib/product-auth/server";
+import { hasSessionCookie } from "@/lib/product-auth/session-cookies";
 import styles from "@/components/access/access.module.css";
 
 export const dynamic = "force-dynamic";
@@ -12,9 +15,18 @@ export const metadata: Metadata = {
   description: "Ingresá a tu cuenta de CUEVA con tu correo y contraseña.",
 };
 
-export default function SignInPage() {
+export default async function SignInPage() {
   const cfg = productConfig();
   const enabled = process.env.VERCEL_ENV === "production" && !!cfg;
+  if (enabled && hasSessionCookie((await cookies()).getAll(), cfg.url)) {
+    const auth = await userClient(true);
+    const { data: { user }, error } = await auth.auth.getUser();
+    if (!error && user) {
+      // The existing own-profile policy also checks the live session and access gate.
+      const profile = await auth.from("cueva_profiles").select("role").eq("user_id", user.id).maybeSingle();
+      if (!profile.error && (profile.data?.role === "admin" || profile.data?.role === "alumno")) redirect("/cuenta");
+    }
+  }
   const canRegister = enabled && cfg?.selfRegistrationEnabled;
   return (
     <div className={styles.page}>
