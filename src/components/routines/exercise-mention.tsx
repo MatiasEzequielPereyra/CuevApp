@@ -32,7 +32,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
   const [checkingVideo, setCheckingVideo] = useState(false);
   const [position, setPosition] = useState<FloatingPosition | null>(null);
   const instanceId = useId();
-  const root = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLSpanElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const panelId = `${instanceId}-exercise-mention`;
@@ -120,7 +120,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
   const effectiveVideoKind = videoKind ?? resolvedVideoKind;
 
   return (
-    <div
+    <span
       className="my-routine-mention-wrap"
       ref={root}
       data-exercise-id={exerciseId}
@@ -175,6 +175,6 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
           trigger.current?.focus({ preventScroll: true });
         }
       }} />}
-    </div>
+    </span>
   );
 }
