@@ -8,7 +8,7 @@ import type { RoutineMention } from "@/lib/routines/mentions";
 export function RoutineTextPreview({ value, mentions, studentId }: {
   value: string;
   mentions: RoutineMention[];
-  studentId: string;
+  studentId?: string;
 }) {
   const points = Array.from(value);
   const ordered = [...mentions].sort((a,b)=>a.start-b.start);
@@ -22,8 +22,8 @@ export function RoutineTextPreview({ value, mentions, studentId }: {
       <span className="routine-text-preview-mention" key={`${mention.exercise_id}-${mention.start}-${index}`}>
         <ExerciseMention exerciseId={mention.exercise_id} name={mention.text} description={null}
           videoAvailability="unknown" text={mention.text} publicationId="" trackingMode="weight"
-          studentId={studentId} />
-        <StudentWorkoutExerciseSummary exerciseId={mention.exercise_id} exerciseName={mention.text} studentId={studentId} />
+          studentId={studentId} showWorkoutLogger={Boolean(studentId)} />
+        {studentId && <StudentWorkoutExerciseSummary exerciseId={mention.exercise_id} exerciseName={mention.text} studentId={studentId} />}
       </span>
     );
     cursor=mention.end;
