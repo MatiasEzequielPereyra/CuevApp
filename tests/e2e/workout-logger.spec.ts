@@ -77,9 +77,9 @@ for (const mode of ["weight", "time"] as const) {
         await respond(route, { saved: true });
       });
       await page.goto(origin + "/mi-rutina");
-      const logger = page.getByRole("region", { name: "Registro de Sentadilla" });
       const exerciseSummary = page.locator(".my-routine-exercise-with-summary").filter({ hasText: "Sentadilla" }).locator(".student-workout-exercise-summary");
-      await logger.getByRole("button", { name: mode === "weight" ? "Registrar peso" : "Registrar duración", exact: true }).click();
+      await page.getByRole("button", { name: "Sentadilla", exact: true }).click();
+      const logger = page.getByRole("region", { name: "Registro de Sentadilla" });
       const panel = page.getByRole("dialog", { name: "Registro de Sentadilla" });
       const input = panel.getByLabel(mode === "weight" ? "Peso utilizado (kg)" : "Duración (segundos)", { exact: true });
       await input.fill("80");
