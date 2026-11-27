@@ -455,7 +455,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   }, [expanded, exerciseId, loadHistory]);
 
   useEffect(() => {
-    if (!expanded) return;
+    if (!expanded || embedded) return;
     function onPointerDown(event: PointerEvent) {
       if (event.target instanceof Node
         && !trigger.current?.contains(event.target)
@@ -477,7 +477,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       window.removeEventListener("resize", positionPanel);
       window.removeEventListener("scroll", positionPanel, true);
     };
-  }, [expanded, positionPanel, exerciseId, mode, historyOpen]);
+  }, [expanded, embedded, positionPanel, exerciseId, mode, historyOpen]);
 
   const summaryEntry = summaryState.exerciseId === exerciseId ? summaryState.entry : null;
   const summary = summaryEntry?.tracking_mode === trackingMode ? entrySummary(summaryEntry) : "";
