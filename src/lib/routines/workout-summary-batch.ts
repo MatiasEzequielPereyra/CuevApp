@@ -36,10 +36,9 @@ function flush() {
   }
 }
 
-function sendBatch(batch: [string, PendingRequest][], studentId?: string) {
+function sendBatch(batch: [string, PendingRequest][]) {
   const params = new URLSearchParams();
   params.set("summary", "1");
-  if (studentId) params.set("student_id", studentId);
   for (const [exerciseId] of batch) params.append("exercise_id", exerciseId);
   void fetch("/api/entrenamientos?" + params.toString(), { cache: "no-store" })
     .then(async response => {
