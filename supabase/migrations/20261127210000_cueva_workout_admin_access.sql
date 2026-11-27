@@ -193,6 +193,21 @@ begin
     end loop;
   end if;
 
+  select coalesce(jsonb_agg(
+    case when v_entry.tracking_mode='weight'
+      then jsonb_build_object('reps',s.reps,'weight_kg',s.weight_kg)
+      else jsonb_build_object('duration_seconds',s.duration_seconds) end order by s.set_number
+  ),'[]'::jsonb) into v_sets
+  from public.cueva_workout_sets s where s.entry_id=p_id;
+
+  -- An HTTP retry after a committed edit is safe and does not create a second audit event.
+  if v_entry.revision=p_revision+1 and v_entry.entry_mode=p_mode
+    and v_entry.quick_weight_kg is not distinct from p_weight_kg
+    and v_entry.quick_duration_seconds is not distinct from p_duration_seconds
+    and (p_mode<>'sets' or v_sets=p_sets) then
+    return jsonb_build_object('entry',to_jsonb(v_entry),'sets',v_sets);
+  end if;
+
   select jsonb_build_object('entry',to_jsonb(e),'sets',coalesce((
     select jsonb_agg(to_jsonb(s) order by s.set_number) from public.cueva_workout_sets s where s.entry_id=e.id
   ),'[]'::jsonb)) into v_before from public.cueva_workout_entries e where e.id=p_id;
