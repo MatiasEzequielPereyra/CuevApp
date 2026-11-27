@@ -107,6 +107,8 @@ test("cerrar el video conserva el foco de Tab entre Empuje y Tirón", async ({ p
       await row.press("Enter");
       const preview = page.getByRole("dialog", { name: "Ejercicio: Press militar" });
       await expect(preview).toBeVisible();
+      const weightDraft = preview.getByLabel("Peso utilizado (kg)", { exact: true });
+      await weightDraft.fill("37.5");
       await preview.getByRole("button", { name: "Ver video" }).click();
       const player = page.getByRole("dialog", { name: "Press militar" });
       await expect(player.getByRole("button", { name: "Cerrar" })).toBeFocused();
@@ -126,6 +128,7 @@ test("cerrar el video conserva el foco de Tab entre Empuje y Tirón", async ({ p
       // The exercise action panel stays mounted behind the player so its
       // weight draft and history survive; closing the panel is a separate action.
       await expect(preview).toBeVisible();
+      await expect(weightDraft).toHaveValue("37.5");
       await push.click();
       await expect(preview).toHaveCount(0);
       await page.keyboard.press("Tab");
