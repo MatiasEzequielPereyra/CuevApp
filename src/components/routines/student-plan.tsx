@@ -90,7 +90,7 @@ export function StudentPlan({ plan, publicationId, videoIds, videosAvailable = t
                           description={detail?.description ?? null} videoAvailability={videoAvailability}
                         videoKind={detail?.video_kind ?? null}
                         availableExercises={block.exercises.map(candidate => ({
-                          id: candidate.exercise_id, name: candidate.name,
+                          id: candidate.exercise_id, targetId: candidate.id, name: candidate.name,
                           tracking_mode: "mode" in candidate && candidate.mode === "time" ? "time" : "weight",
                         }))} />
                       </div>
