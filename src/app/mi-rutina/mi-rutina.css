@@ -355,6 +355,15 @@
   cursor: pointer;
 }
 
+.my-routine-mention-play-youtube {
+  border-color: #d90024 !important;
+  background: #e62117 !important;
+  color: #fff !important;
+}
+.my-routine-mention-play-youtube:hover {
+  background: #c91d15 !important;
+  color: #fff !important;
+}
 .my-routine-dialog > header > button {
   min-height: 40px;
   padding: 7px 12px;
