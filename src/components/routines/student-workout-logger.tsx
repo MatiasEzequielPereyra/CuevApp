@@ -385,7 +385,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
                 setMode("quick");
                 setSets([{ reps: "", weight: "", duration: "" }]);
                 setEditingEntry(null);
-                setHistoryOpen(false);
+                setHistoryOpen(true);
                 setMessage("");
                 setError("");
                 onExerciseChange?.(selected);
