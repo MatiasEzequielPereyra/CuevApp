@@ -16,11 +16,12 @@ type ExerciseMentionProps = {
   targetId?: string;
   hue?: number;
   showWorkoutLogger?: boolean;
+  studentId?: string;
 };
 
 type FloatingPosition = { left: number; top: number; width: number };
 
-export function ExerciseMention({ exerciseId, name, description, videoAvailability, text, publicationId, trackingMode, targetId, hue = 250, showWorkoutLogger = true }: ExerciseMentionProps) {
+export function ExerciseMention({ exerciseId, name, description, videoAvailability, text, publicationId, trackingMode, targetId, hue = 250, showWorkoutLogger = true, studentId }: ExerciseMentionProps) {
   const [open, setOpen] = useState(false);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [position, setPosition] = useState<FloatingPosition | null>(null);
@@ -99,7 +100,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
       >
         {text}
       </button>
-      {showWorkoutLogger && <StudentWorkoutLogger publicationId={publicationId} exerciseId={exerciseId} exerciseName={name} trackingMode={trackingMode} {...(targetId ? { targetId } : {})} />}
+      {showWorkoutLogger && <StudentWorkoutLogger publicationId={publicationId} exerciseId={exerciseId} exerciseName={name} trackingMode={trackingMode} {...(targetId ? { targetId } : {})} {...(studentId ? { studentId } : {})} />}
       {open && position && typeof document !== "undefined" && createPortal(
         <div ref={panel} id={panelId} className="my-routine-mention-preview" role="dialog"
           tabIndex={-1} aria-label={`Ejercicio: ${name}`}
