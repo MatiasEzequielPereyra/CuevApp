@@ -106,7 +106,11 @@ test("formulario activo: identidad, temas, teclado y accesibilidad", async ({ pa
   await expect(page).toHaveURL(/\/ingresar$/);
   await expect(page.getByLabel("Correo electrónico")).toBeEnabled();
   await expect(page.getByLabel("Correo electrónico")).toHaveAttribute("autocomplete", "username");
+  await expect(page.getByLabel("Correo electrónico")).toHaveAttribute("type", "email");
   await expect(page.getByLabel("Contraseña", { exact: true })).toHaveAttribute("autocomplete", "current-password");
+  await expect(page.getByLabel("Contraseña", { exact: true })).toHaveAttribute("type", "password");
+  const remember = page.getByRole("checkbox", { name: "Mantener sesión iniciada" });
+  await expect(remember).not.toBeChecked();
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Saltar al contenido" })).toBeFocused();
   await page.keyboard.press("Enter");
@@ -124,6 +128,10 @@ test("formulario activo: identidad, temas, teclado y accesibilidad", async ({ pa
   await page.getByLabel("Correo electrónico").focus();
   await page.keyboard.press("Tab");
   await expect(page.getByLabel("Contraseña", { exact: true })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(remember).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(remember).toBeChecked();
   await page.keyboard.press("Tab");
   await expect(page.getByRole("button", { name: "Ingresar", exact: true })).toBeFocused();
 });
@@ -167,11 +175,13 @@ test("un solo POST, estado pendiente y error genérico sin guardar contraseña",
     expect(route.request().url()).not.toContain("?");
     expect(route.request().postData()).toContain('name="email"');
     expect(route.request().postData()).toContain('name="password"');
+    expect(route.request().postData()).toContain('name="remember"\r\n\r\n1');
     await gate;
     await route.fulfill({ status: 401, body: "INTERNAL_ACCOUNT_DETAIL" });
   });
   await page.goto("/ingresar");
   await fill(page);
+  await page.getByRole("checkbox", { name: "Mantener sesión iniciada" }).check();
   await page.getByRole("button", { name: "Ingresar", exact: true }).click();
   await expect(page.getByRole("button", { name: "Ingresando…" })).toBeDisabled();
   await expect(page.getByRole("status")).toHaveText("Estamos procesando tu ingreso.");

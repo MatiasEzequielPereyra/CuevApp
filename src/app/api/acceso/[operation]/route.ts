@@ -2,7 +2,7 @@ import { inviteStudent } from "@/lib/student-invitation/server";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { emailChangeCookie, emailChangeMaxAge, localFetch, pendingUserClient, productConfig, serviceClient, signEmailChange, userClient } from "@/lib/product-auth/server";
+import { clearProductSession, emailChangeCookie, emailChangeMaxAge, localFetch, pendingUserClient, productConfig, serviceClient, signEmailChange, userClient } from "@/lib/product-auth/server";
 
 export const dynamic = "force-dynamic";
 const fail = (status: number) => new Response("No se pudo completar la solicitud", { status, headers: { "Cache-Control": "no-store" } });
@@ -129,13 +129,21 @@ export async function POST(req: Request, { params }: { params: Promise<{operatio
       if (verified) await pending.auth.auth.signOut({ scope: "local" }).catch(() => {});
     }
   }
-  const auth = await userClient();
   const redirect = (path: string) => NextResponse.redirect(new URL(path, cfg.origin), { status: 303, headers: { "Cache-Control": "no-store" } });
   if (operation === "ingresar") {
-    const { error } = await auth.auth.signInWithPassword({ email: String(form.get("email") ?? ""), password: String(form.get("password") ?? "") });
-    return error ? fail(401) : redirect("/cuenta");
+    const pending = await pendingUserClient();
+    const { data, error } = await pending.auth.auth.signInWithPassword({ email: String(form.get("email") ?? ""), password: String(form.get("password") ?? "") });
+    if (error || !data.session) return fail(401);
+    pending.commit(form.get("remember") === "1" ? "remembered" : "session");
+    return redirect("/cuenta");
   }
-  if (operation === "salir") { const { error } = await auth.auth.signOut(); return error ? fail(503) : redirect("/ingresar"); }
+  const auth = await userClient();
+  if (operation === "salir") {
+    const { error } = await auth.auth.signOut();
+    if (error) return fail(503);
+    await clearProductSession(cfg);
+    return redirect("/ingresar");
+  }
   if (operation === "cambiar-correo") {
     const email = String(form.get("email") ?? "").trim().toLowerCase();
     if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail(400);

@@ -25,6 +25,9 @@
 .form label { font-size: 12px; font-weight: 700; margin-bottom: 9px; }
 .form input { width: 100%; min-width: 0; min-height: 49px; margin-bottom: 20px; padding: 12px 14px; border: 1px solid var(--access-line); border-radius: 8px; background: var(--access-input); color: var(--access-text); font: inherit; font-size: 16px; }
 .form input::placeholder { color: var(--access-muted); opacity: 1; }
+.form .remember { display: flex; align-items: center; gap: 10px; align-self: flex-start; min-height: 32px; cursor: pointer; }
+.form .remember input { width: 18px; height: 18px; min-height: 0; margin: 0; padding: 0; accent-color: #5955ed; }
+.form fieldset:disabled .remember { cursor: default; }
 .form button { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 49px; border: 1px solid transparent; border-radius: 8px; padding: 12px 16px; background: #5955ed; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; }
 .form button:hover:enabled { background: #4540cf; }
 .form button:disabled, .form fieldset:disabled button { cursor: default; background: var(--access-soft); color: var(--access-muted); border-color: var(--access-line); }

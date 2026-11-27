@@ -43,9 +43,9 @@ export function SignInForm({ enabled }: { enabled: boolean }) {
     } finally {
       clearTimeout(timeout);
       body.delete("password");
-      const password = form.elements.namedItem("password");
-      if (password instanceof HTMLInputElement) password.value = "";
       if (!continuing) {
+        const password = form.elements.namedItem("password");
+        if (password instanceof HTMLInputElement) password.value = "";
         inFlight.current = false;
         setPending(false);
         requestAnimationFrame(() => errorRef.current?.focus());
@@ -61,6 +61,10 @@ export function SignInForm({ enabled }: { enabled: boolean }) {
         <input id="access-email" name="email" type="email" required autoComplete="username" inputMode="email" autoCapitalize="none" spellCheck={false} placeholder="tu@correo.com" readOnly={pending} />
         <label htmlFor="access-password">Contraseña</label>
         <input id="access-password" name="password" type="password" required autoComplete="current-password" readOnly={pending} />
+        <label className={styles.remember}>
+          <input name="remember" type="checkbox" value="1" autoComplete="off" disabled={pending} />
+          Mantener sesión iniciada
+        </label>
         <p ref={errorRef} role="alert" tabIndex={-1} className={error ? styles.error : styles.emptyError}>{error}</p>
         <button type="submit" disabled={pending}>{pending ? "Ingresando…" : "Ingresar"}<span aria-hidden="true">→</span></button>
       </fieldset>

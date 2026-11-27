@@ -231,7 +231,7 @@ jobs:
           export CUEVA_REST_URL="$API_URL/rest/v1"
           export CUEVA_LAB_STORAGE_ORIGIN="$API_URL"
           export NEXT_TELEMETRY_DISABLED=1
-          npm run dev -- --port 3000 > /tmp/cueva-next.log 2>&1 &
+          VERCEL_ENV=production npm run dev -- --port 3000 > /tmp/cueva-next.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
           set -o pipefail
@@ -245,6 +245,7 @@ jobs:
           }
 
           if [[ "$MIGRATION_PATH" == fresh ]]; then
+            node tests/e2e/session-retention.integration.mjs | tee "$MIGRATION_EVIDENCE/session-retention.txt"
             node tests/e2e/password-recovery.integration.mjs | tee "$MIGRATION_EVIDENCE/password-recovery.txt"
             node tests/e2e/routine-mentions.integration.mjs | tee "$MIGRATION_EVIDENCE/routine-mentions.txt"
             node tests/e2e/mi-rutina.integration.mjs | tee "$MIGRATION_EVIDENCE/mi-rutina.txt" || {

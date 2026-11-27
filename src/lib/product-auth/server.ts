@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { clearSessionCookies, writeSessionCookies, type SessionRetention } from "./session-cookies";
 
 export const emailChangeCookie = "cueva-email-change";
 export const emailChangeMaxAge = 24 * 60 * 60;
@@ -70,8 +71,12 @@ export async function userClient(readOnly = false) {
   const jar = await cookies();
   return createServerClient(cfg.url, cfg.key, { ...(cfg.local ? { global: { fetch: localFetch(cfg) } } : {}), cookies: {
     getAll: () => jar.getAll(),
-    setAll: (items) => { if (!readOnly) for (const { name, value, options } of items) jar.set(name, value, { ...options, httpOnly: true, sameSite: "lax", secure: !cfg.local, path: "/" }); },
+    setAll: items => { if (!readOnly) writeSessionCookies(jar, items, cfg); },
   } });
+}
+
+export async function clearProductSession(cfg: NonNullable<ReturnType<typeof productConfig>>) {
+  clearSessionCookies(await cookies(), cfg);
 }
 
 export function serviceClient() {
@@ -95,8 +100,8 @@ export async function pendingUserClient() {
     },
     setAll: items => { for (const { name, value, options } of items) pending.set(name, { value, options }); },
   } });
-  return { auth, commit: () => {
-    for (const [name, { value, options }] of pending) jar.set(name, value, { ...options, httpOnly: true, sameSite: "lax", secure: !cfg.local, path: "/" });
+  return { auth, commit: (retention?: SessionRetention) => {
+    writeSessionCookies(jar, Array.from(pending, ([name, item]) => ({ name, ...item })), cfg, retention);
     pending.clear();
   } };
 }
