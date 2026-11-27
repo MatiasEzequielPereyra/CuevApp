@@ -90,7 +90,7 @@ async function studentContext(browser, account, options) {
 async function layoutAndPlayback(browserType, learner) {
   const browser = await browserType.launch();
   try {
-    for (const width of [360, 390, 1440]) {
+    for (const width of [320, 360, 390, 1440]) {
       for (const theme of ["light", "dark"]) {
         const context = await studentContext(browser, learner, { viewport: { width, height: 740 }, hasTouch: width === 360, colorScheme: theme });
         try {
@@ -110,9 +110,32 @@ async function layoutAndPlayback(browserType, learner) {
             await expect(blocks.nth(index).getByText(`${index + 2} vueltas`, { exact: true })).toHaveCount(1);
           }
           if (width < 600) {
-            const lastBlockBottom = await blocks.last().evaluate(node => node.getBoundingClientRect().bottom);
-            assert.ok(lastBlockBottom <= 740, `El día completo debe quedar visible en mobile sin scroll vertical (último bloque: ${lastBlockBottom}px).`);
-            assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+            assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true,
+              `La vista mobile no debe generar scroll horizontal en ${width}px.`);
+            await expect(blocks).toHaveCount(emBlocks.length);
+            for (const [blockIndex, entries] of emBlocks.entries()) {
+              const currentBlock = blocks.nth(blockIndex);
+              await expect(currentBlock.getByRole("listitem")).toHaveCount(entries.length);
+              for (const row of await currentBlock.locator(".my-routine-exercise").all()) {
+                const geometry = await row.evaluate(node => {
+                  const rect = node.getBoundingClientRect();
+                  const detail = node.querySelector(".my-routine-exercise-detail");
+                  return {
+                    left: rect.left, right: rect.right,
+                    detailClientWidth: detail?.clientWidth ?? 0,
+                    detailScrollWidth: detail?.scrollWidth ?? 0,
+                    name: node.querySelector(".my-routine-mention")?.textContent?.trim() ?? "",
+                    nameOverflow: getComputedStyle(node.querySelector(".my-routine-mention")).textOverflow,
+                  };
+                });
+                assert.ok(geometry.left >= 0 && geometry.right <= innerWidth + 1,
+                  `La fila de ejercicio debe permanecer dentro del viewport de ${width}px: ${JSON.stringify(geometry)}`);
+                assert.ok(geometry.detailClientWidth > 0 && geometry.detailScrollWidth <= geometry.detailClientWidth + 1,
+                  `El detalle del ejercicio no debe desbordarse horizontalmente: ${JSON.stringify(geometry)}`);
+                assert.notEqual(geometry.nameOverflow, "ellipsis", "El nombre del ejercicio no debe truncarse.");
+                assert.ok(geometry.name.length > 0, "Cada ejercicio debe conservar su nombre visible.");
+              }
+            }
           }
           await expect(routine.getByText("45 segundos", { exact: true }).first()).toBeVisible();
           await expect(routine.getByText("25 kg", { exact: true }).first()).toBeVisible();
