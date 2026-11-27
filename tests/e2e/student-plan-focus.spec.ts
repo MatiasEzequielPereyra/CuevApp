@@ -123,7 +123,11 @@ test("cerrar el video conserva el foco de Tab entre Empuje y Tirón", async ({ p
       });
       expect(focus.nativeRestore).toMatch(/Press militar/);
       expect(focus.requested).toBe("Empuje");
-      await expect(page.getByRole("dialog")).toHaveCount(0);
+      // The exercise action panel stays mounted behind the player so its
+      // weight draft and history survive; closing the panel is a separate action.
+      await expect(preview).toBeVisible();
+      await push.click();
+      await expect(preview).toHaveCount(0);
       await page.keyboard.press("Tab");
       await expect(pull).toBeFocused();
       await page.keyboard.press("Enter");
