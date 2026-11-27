@@ -427,6 +427,35 @@ try {
 
     const editor = await adminContext.newPage();
     await editor.goto(`${origin}/rutinas?alumno=${students[0]}`);
+    for (const width of [320, 360, 390, 1440]) {
+      await editor.setViewportSize({ width, height: 740 });
+      const editorRows = editor.locator(".routine-exercise-row");
+      await expect(editor.locator(".routine-block-card")).toHaveCount(4);
+      assert.ok(await editorRows.count() > 4, "El editor debe conservar varios ejercicios distribuidos en sus bloques.");
+      assert.equal(await editor.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true,
+        `El editor admin no debe generar scroll horizontal en ${width}px.`);
+      for (const row of await editorRows.all()) {
+        const geometry = await row.evaluate(node => {
+          const rect = node.getBoundingClientRect();
+          const name = node.querySelector("strong");
+          const target = node.querySelector("span");
+          return {
+            left: rect.left, right: rect.right,
+            width: rect.width, scrollWidth: node.scrollWidth,
+            name: name?.textContent?.trim() ?? "",
+            nameOverflow: name ? getComputedStyle(name).textOverflow : "",
+            target: target?.textContent?.trim() ?? "",
+          };
+        });
+        assert.ok(geometry.left >= 0 && geometry.right <= width + 1 && geometry.scrollWidth <= geometry.width + 1,
+          `La fila del editor debe permanecer dentro del viewport de ${width}px: ${JSON.stringify(geometry)}`);
+        assert.ok(geometry.name.length > 0 && geometry.nameOverflow !== "ellipsis",
+          `El nombre del ejercicio no debe truncarse en ${width}px: ${JSON.stringify(geometry)}`);
+        assert.ok(geometry.target.length > 0,
+          `El objetivo del ejercicio debe seguir visible en ${width}px: ${JSON.stringify(geometry)}`);
+      }
+    }
+    await editor.setViewportSize({ width: 1280, height: 720 });
     const previewToggle = editor.getByText("Vista previa del borrador", { exact: true });
     await previewToggle.click();
     const preview = editor.locator("details[open]").filter({ has: previewToggle });
