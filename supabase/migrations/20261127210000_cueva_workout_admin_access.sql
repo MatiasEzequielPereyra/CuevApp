@@ -270,4 +270,60 @@ revoke all on function public.cueva_workout_update_admin(uuid,uuid,integer,text,
 grant execute on function public.cueva_workout_update_admin(uuid,uuid,integer,text,text,numeric,integer,jsonb)
   to authenticated;
 
+
+-- Expose only the media kind (not storage paths or private URLs) so the UI can
+-- distinguish YouTube actions from uploaded exercise videos.
+drop function public.cueva_student_assigned_exercises();
+drop function cueva_private.student_assigned_exercises();
+create function cueva_private.student_assigned_exercises()
+returns table(id uuid,name text,description text,has_video boolean,video_kind text)
+language sql stable security definer set search_path=''
+as $assigned$
+  select distinct on (e.id) e.id,e.name,e.description,
+    (e.video_url is not null or e.video_path is not null) as has_video,
+    case when e.video_url is not null then 'youtube'
+         when e.video_path is not null then 'file' else null end as video_kind
+  from public.cueva_routine_publications p
+  cross join lateral jsonb_array_elements(cueva_private.plan_blocks(p.plan)) b
+  cross join lateral jsonb_array_elements(b->'exercises') item
+  join public.cueva_exercises e on e.id=(item->>'exercise_id')::uuid
+  where cueva_private.routine_owner(p.student_id)
+    and p.draft_revision=cueva_private.routine_latest(p.student_id)
+  order by e.id,e.name
+$assigned$;
+revoke all on function cueva_private.student_assigned_exercises() from public,anon,authenticated,service_role;
+grant execute on function cueva_private.student_assigned_exercises() to authenticated;
+create function public.cueva_student_assigned_exercises()
+returns table(id uuid,name text,description text,has_video boolean,video_kind text)
+language sql stable security invoker set search_path=''
+as $assigned_public$ select * from cueva_private.student_assigned_exercises() $assigned_public$;
+revoke all on function public.cueva_student_assigned_exercises() from public,anon,authenticated,service_role;
+grant execute on function public.cueva_student_assigned_exercises() to authenticated;
+
+drop function public.cueva_student_mentioned_exercises_with_tracking_mode();
+drop function cueva_private.student_mentioned_exercises_with_tracking_mode();
+create function cueva_private.student_mentioned_exercises_with_tracking_mode()
+returns table(id uuid,name text,description text,tracking_mode text,video_kind text)
+language sql stable security definer set search_path=''
+as $mentions$
+  select distinct e.id,e.name,e.description,e.tracking_mode,
+    case when e.video_url is not null then 'youtube'
+         when e.video_path is not null then 'file' else null end as video_kind
+  from public.cueva_routine_text_publications document
+  join public.cueva_routine_publications publication on publication.id=document.publication_id
+  cross join lateral jsonb_array_elements(document.mentions) mention
+  join public.cueva_exercises e on e.id=(mention->>'exercise_id')::uuid
+  where document.format='text'
+    and cueva_private.routine_owner(document.student_id)
+    and publication.draft_revision=cueva_private.routine_latest(document.student_id)
+$mentions$;
+revoke all on function cueva_private.student_mentioned_exercises_with_tracking_mode() from public,anon,authenticated,service_role;
+grant execute on function cueva_private.student_mentioned_exercises_with_tracking_mode() to authenticated;
+create function public.cueva_student_mentioned_exercises_with_tracking_mode()
+returns table(id uuid,name text,description text,tracking_mode text,video_kind text)
+language sql stable security invoker set search_path=''
+as $mentions_public$ select * from cueva_private.student_mentioned_exercises_with_tracking_mode() $mentions_public$;
+revoke all on function public.cueva_student_mentioned_exercises_with_tracking_mode() from public,anon,authenticated,service_role;
+grant execute on function public.cueva_student_mentioned_exercises_with_tracking_mode() to authenticated;
+
 commit;
