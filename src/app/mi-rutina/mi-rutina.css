@@ -325,8 +325,21 @@
   line-height: 1.4;
 }
 
-.my-routine-mention-preview > strong {
+.my-routine-mention-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+.my-routine-mention-heading > strong {
+  min-width: 0;
   color: var(--dash-text);
+}
+.my-routine-mention-heading > span {
+  flex: none;
+  color: var(--dash-muted);
+  font-size: .8rem;
 }
 
 .my-routine-mention-preview > a {
@@ -340,7 +353,7 @@
 }
 
 
-.my-routine-mention-preview > button.my-routine-mention-play {
+.my-routine-mention-preview .my-routine-mention-play {
   justify-self: start;
   display: inline-flex;
   align-items: center;
