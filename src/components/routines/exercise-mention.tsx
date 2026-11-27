@@ -108,20 +108,20 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
           tabIndex={-1} aria-label={`Ejercicio: ${name}`}
           style={{ position: "fixed", left: position.left, top: position.top, width: position.width,
             maxHeight: "min(720px, calc(100dvh - 16px))", overflow: "auto", zIndex: 10000 }}>
-          <strong>{name}</strong>
+          <header className="my-routine-mention-heading">
+            <strong>{name}</strong>
+            {videoAvailability === "available" || videoAvailability === "unknown"
+              ? <button type="button" className={`my-routine-mention-play${videoKind === "youtube" ? " my-routine-mention-play-youtube" : ""}`} onClick={() => {
+                // Keep the workout form mounted while the video dialog is shown.
+                trigger.current?.focus({ preventScroll: true });
+                setPlayerOpen(true);
+              }}><span aria-hidden="true">▶</span> Ver video</button>
+              : <span role="status">No se cuenta con video disponible.</span>}
+          </header>
           {description && <span>{description}</span>}
           {showWorkoutLogger && (availableExercises.length > 1
             ? <StudentWorkoutRowLogger exercises={availableExercises} publicationId={publicationId} embedded {...(studentId ? { studentId } : {})} />
             : <StudentWorkoutLogger publicationId={publicationId} exerciseId={exerciseId} exerciseName={name} trackingMode={trackingMode} embedded {...(targetId ? { targetId } : {})} {...(studentId ? { studentId } : {})} />)}
-          {videoAvailability === "available" || videoAvailability === "unknown"
-            ? <button type="button" className={`my-routine-mention-play${videoKind === "youtube" ? " my-routine-mention-play-youtube" : ""}`} onClick={() => {
-              // Preserve the exercise trigger as the dialog's native return-focus target.
-              trigger.current?.focus({ preventScroll: true });
-              setPlayerOpen(true);
-            }}><span aria-hidden="true">▶</span> Ver video</button>
-            : videoAvailability === "unavailable"
-              ? <span role="status">No se cuenta con video disponible.</span>
-              : <span role="status">No se cuenta con video disponible.</span>}
         </div>,
         document.body
       )}
