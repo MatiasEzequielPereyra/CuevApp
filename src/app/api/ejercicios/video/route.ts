@@ -23,11 +23,11 @@ export async function GET(req: Request) {
     })().catch(() => null);
     if (!signed) return reply("Video temporalmente no disponible.", 503);
     if (player) return json({ kind: "storage", src: signed.signedUrl });
-    if (params.get("check") === "1") return json({ available: true });
+    if (params.get("check") === "1") return json({ available: true, kind: "file" });
     const response = NextResponse.redirect(signed.signedUrl, 307); response.headers.set("Cache-Control", "no-store"); response.headers.set("Referrer-Policy", "no-referrer"); return response;
   }
   if (!data?.video_url || !youtubeUrl(data.video_url)) return reply("Sin video disponible.", 404);
-  if (params.get("check") === "1") return json({ available: true });
+  if (params.get("check") === "1") return json({ available: true, kind: "youtube" });
   if (player) return json({ kind: "youtube", id: data.video_url.slice(-11), url: data.video_url });
   const response = NextResponse.redirect(data.video_url, 307);
   response.headers.set("Cache-Control", "no-store"); response.headers.set("Referrer-Policy", "no-referrer"); return response;
