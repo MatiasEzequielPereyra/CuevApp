@@ -109,6 +109,11 @@ async function layoutAndPlayback(browserType, learner) {
             await expect(rows.locator(".my-routine-mention")).toHaveText(entries.map(exercise => exercises[exercise].name));
             await expect(blocks.nth(index).getByText(`${index + 2} vueltas`, { exact: true })).toHaveCount(1);
           }
+          if (width < 600) {
+            const lastBlockBottom = await blocks.last().evaluate(node => node.getBoundingClientRect().bottom);
+            assert.ok(lastBlockBottom <= 740, `El día completo debe quedar visible en mobile sin scroll vertical (último bloque: ${lastBlockBottom}px).`);
+            assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+          }
           await expect(routine.getByText("45 segundos", { exact: true }).first()).toBeVisible();
           await expect(routine.getByText("25 kg", { exact: true }).first()).toBeVisible();
           await expect(routine.getByText("8-12 repeticiones", { exact: true }).first()).toBeVisible();
