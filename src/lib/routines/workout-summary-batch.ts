@@ -92,7 +92,7 @@ export function requestWorkoutSummary(exerciseId: string, refresh = false, stude
     rejectRequest = reject;
   });
   inFlight.set(requestKey, promise);
-  pending.set(requestKey, { exerciseId, studentId, promise, resolve: resolveRequest, reject: rejectRequest });
+  pending.set(requestKey, { exerciseId, ...(studentId ? { studentId } : {}), promise, resolve: resolveRequest, reject: rejectRequest });
   if (!scheduled) {
     scheduled = true;
     queueMicrotask(flush);
