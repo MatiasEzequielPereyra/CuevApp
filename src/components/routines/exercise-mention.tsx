@@ -52,7 +52,11 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
 
   function showPreview() {
     positionPanel();
-    if (videoAvailability === "unknown") setCheckingVideo(true);
+    if (videoAvailability === "unknown") {
+      setResolvedVideoAvailability("unknown");
+      setResolvedVideoKind(videoKind ?? null);
+      setCheckingVideo(true);
+    }
     setOpen(true);
   }
 
