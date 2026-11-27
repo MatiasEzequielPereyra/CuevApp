@@ -446,21 +446,21 @@
 }
 
 
-/* Dense mobile overview keeps exercise identity and target readable on one compact row. */
+/* Mobile editor overview: keep exercise identity and target readable without truncation. */
 @media (max-width: 600px) {
-  .routine-editor-compact { gap: 8px; }
+  .routine-editor-compact { gap: 9px; }
   .routine-editor-compact .routine-workspace { margin-top: 0; }
   .routine-editor-compact .routine-day-picker { gap: 4px; }
   .routine-editor-compact .routine-day-picker button {
     min-height: 36px;
     padding: 5px 9px;
-    font-size: .82rem;
+    font-size: .88rem;
   }
   .routine-editor-compact .routine-day-active { margin-top: 6px; }
-  .routine-editor-compact .routine-block-list { gap: 5px; }
-  .routine-editor-compact .routine-block-card { padding: 3px 7px 5px; }
+  .routine-editor-compact .routine-block-list { gap: 7px; }
+  .routine-editor-compact .routine-block-card { padding: 5px 8px 7px; }
   .routine-block-heading { gap: 0 4px; }
-  .routine-block-heading h4 { min-width: 0; font-size: .88rem; }
+  .routine-block-heading h4 { min-width: 0; font-size: .92rem; line-height: 1.25; }
   .routine-rounds { font-size: .72rem; }
   .routine-editor-compact .routine-options > summary {
     min-width: 34px;
@@ -471,11 +471,11 @@
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     gap: 2px 6px;
-    min-height: 40px;
-    padding: 5px 3px;
-    line-height: 1.2;
+    min-height: 44px;
+    padding: 7px 4px;
+    line-height: 1.25;
   }
-  .routine-exercise-row::before { font-size: .72rem; }
+  .routine-exercise-row::before { font-size: .76rem; }
   .routine-editor-compact .routine-exercise-row strong {
     min-width: 0;
     overflow-wrap: anywhere;
@@ -487,8 +487,8 @@
     overflow-wrap: anywhere;
     text-align: start;
     white-space: normal;
-    font-size: .7rem;
-    line-height: 1.15;
+    font-size: .76rem;
+    line-height: 1.25;
   }
   .routine-editor-compact .routine-options > summary {
     min-width: 32px;
@@ -496,7 +496,3 @@
   }
 }
 
-@media (max-width: 600px) and (max-height: 760px) {
-  .routine-editor-compact .routine-block-list { gap: 4px; }
-  .routine-editor-compact .routine-exercise-row { min-height: 36px; padding-block: 3px; }
-}
