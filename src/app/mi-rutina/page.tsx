@@ -13,7 +13,7 @@ import "./mi-rutina.css";
 
 export const dynamic = "force-dynamic";
 
-type MentionedExercise = { id: string; name: string; description: string | null; tracking_mode: "weight" | "time"; videoAvailability: "available" | "unavailable" | "unknown" };
+type MentionedExercise = { id: string; name: string; description: string | null; tracking_mode: "weight" | "time"; video_kind?: "youtube" | "file" | null; videoAvailability: "available" | "unavailable" | "unknown" };
 type RoutineMention = { exercise_id: string; start: number; end: number; text: string };
 
 function renderRoutineText(text: string, mentions: RoutineMention[], exercisesById: Map<string, MentionedExercise>, publicationId: string) {
@@ -45,6 +45,7 @@ function renderRoutineText(text: string, mentions: RoutineMention[], exercisesBy
             exerciseId={exercise.id} name={exercise.name} description={exercise.description}
             videoAvailability={exercise.videoAvailability} text={mention.text}
             publicationId={publicationId} trackingMode={exercise.tracking_mode}
+            videoKind={exercise.video_kind}
             hue={hues.get(`${mention.exercise_id}:${mention.start}:${mention.end}`) ?? 250}
             availableExercises={lineExercises.map(({ id, name, tracking_mode }) => ({ id, name, tracking_mode }))} />
           <StudentWorkoutExerciseSummary exerciseId={exercise.id} exerciseName={exercise.name} />
@@ -69,6 +70,7 @@ type AssignedExercise = {
   name: string;
   description: string | null;
   has_video: boolean;
+  video_kind?: "youtube" | "file" | null;
 };
 
 export default async function MyRoutine() {
