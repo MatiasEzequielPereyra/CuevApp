@@ -129,6 +129,7 @@ test("cerrar el video conserva el foco de Tab entre Empuje y Tirón", async ({ p
       // weight draft and history survive; closing the panel is a separate action.
       await expect(preview).toBeVisible();
       await expect(weightDraft).toHaveValue("37.5");
+      await expect(preview.getByRole("heading", { name: "Historial de este ejercicio" })).toBeVisible();
       await push.click();
       await expect(preview).toHaveCount(0);
       await page.keyboard.press("Tab");
