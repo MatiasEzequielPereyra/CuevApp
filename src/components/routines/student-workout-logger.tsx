@@ -113,7 +113,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const [sets, setSets] = useState<WorkoutSet[]>([{ reps: "", weight: "", duration: "" }]);
   const [historyState, setHistoryState] = useState<{ exerciseId: string; history: WorkoutHistory | null }>({ exerciseId, history: null });
   const history = historyState.exerciseId === exerciseId ? historyState.history : null;
-  const activeTrackingMode = studentId && history?.entries[0] ? history.entries[0].tracking_mode : activeTrackingMode;
+  const activeTrackingMode = studentId && history?.entries[0] ? history.entries[0].tracking_mode : trackingMode;
   const [summaryState, setSummaryState] = useState<{ exerciseId: string; entry: HistoryEntry | null }>({ exerciseId, entry: null });
   const [editingEntry, setEditingEntry] = useState<HistoryEntry | null>(null);
   const [historyOpen, setHistoryOpen] = useState(embedded);
