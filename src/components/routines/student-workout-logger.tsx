@@ -64,8 +64,9 @@ function entrySummary(entry: HistoryEntry) {
 type AvailableExercise = { id: string; name: string; tracking_mode: "weight" | "time" };
 type PanelPosition = { left: number; top: number; width: number; maxHeight: number };
 
-export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, targetId, trackingMode, availableExercises = [], onExerciseChange }: {
+export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, targetId, trackingMode, availableExercises = [], onExerciseChange, studentId }: {
   publicationId: string;
+  studentId?: string;
   exerciseId: string;
   exerciseName: string;
   targetId?: string;
@@ -127,8 +128,9 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     const version = advanceReadVersion();
     if (showLoading) setLoadingHistory(true);
     try {
-      const response = await fetch("/api/entrenamientos?exercise_id=" + encodeURIComponent(exerciseId)
-        + "&offset=" + offset + "&limit=3", { cache: "no-store" });
+      const params = new URLSearchParams({ exercise_id: exerciseId, offset: String(offset), limit: "3" });
+      if (studentId) params.set("student_id", studentId);
+      const response = await fetch("/api/entrenamientos?" + params.toString(), { cache: "no-store" });
       const data = await response.json();
       if (version !== readVersion.current) return;
       if (!response.ok) throw new Error(data.message || "No pudimos cargar el historial.");
@@ -146,7 +148,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     } finally {
       if (showLoading && version === readVersion.current) setLoadingHistory(false);
     }
-  }, [exerciseId, seedInputs, advanceReadVersion]);
+  }, [exerciseId, seedInputs, advanceReadVersion, studentId]);
 
   // Keep the latest workout summary in sync on first render/reload without
   // eagerly downloading the full editable history for every exercise.
@@ -155,7 +157,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     const version = readVersion.current;
     void (async () => {
       try {
-        const next = await requestWorkoutSummary(exerciseId);
+        const next = await requestWorkoutSummary(exerciseId, false, studentId);
         if (cancelled || version !== readVersion.current) return;
         setSummaryState({ exerciseId, entry: next.entries?.[0] ?? null });
         seedInputs(next);
@@ -164,7 +166,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       }
     })();
     return () => { cancelled = true; advanceReadVersion(); };
-  }, [exerciseId, publicationId, seedInputs, advanceReadVersion]);
+  }, [exerciseId, publicationId, studentId, seedInputs, advanceReadVersion]);
 
   async function save(modeOverride?: "quick" | "sets", quickValueOverride?: number) {
     if (busy.current) return;
@@ -236,7 +238,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
         body: JSON.stringify(editingEntry
-          ? { entry_id: editingEntry.id, revision: editingEntry.revision, ...payload }
+          ? { entry_id: editingEntry.id, revision: editingEntry.revision, ...(studentId ? { student_id: studentId } : {}), ...payload }
           : { id: operationId, publication_id: publicationId, exercise_id: exerciseId, target_id: targetId ?? null, ...payload }),
       });
       const data = await response.json();
@@ -426,7 +428,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
             <button type="button" aria-pressed={mode === "quick"} onClick={() => setMode("quick")}>Rápido</button>
             <button type="button" aria-pressed={mode === "sets"} onClick={() => setMode("sets")}>Por series</button>
           </div>
-          {mode === "quick" ? (
+          {studentId && !editingEntry ? <p className="student-workout-editing">Como administrador podés consultar el historial y editar registros existentes.</p> : mode === "quick" ? (
             trackingMode === "weight" ? (
               <label htmlFor={id + "-weight"}>Peso utilizado (kg)
                 <input id={id + "-weight"} inputMode="decimal" value={weight} maxLength={10}
@@ -467,9 +469,9 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
             </div>
           )}
           {editingEntry && <p className="student-workout-editing">Editando un registro anterior <button type="button" onClick={cancelEdit}>Cancelar edición</button></p>}
-          <button type="button" className="student-workout-save" disabled={saving || loadingHistory} onClick={() => void save()}>
+          {(!studentId || editingEntry) && <button type="button" className="student-workout-save" disabled={saving || loadingHistory} onClick={() => void save()}>
             {saving ? "Guardando…" : editingEntry ? "Guardar cambios" : "Guardar resultado"}
-          </button>
+          </button>}
           {message && <p role="status">{message}</p>}
           {error && <p role="alert">{error}</p>}
           {historyOpen && (
@@ -486,7 +488,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
                           <button type="button" disabled={saving} onClick={() => applyHistoryEntry(entry)}>Usar</button>
                           <button type="button" disabled={saving} onClick={() => beginEdit(entry)}>Editar</button>
                         </>}
-                        <button type="button" className="student-workout-history-delete" disabled={saving} onClick={() => void deleteHistoryEntry(entry)}>Eliminar</button>
+                        {!studentId && <button type="button" className="student-workout-history-delete" disabled={saving} onClick={() => void deleteHistoryEntry(entry)}>Eliminar</button>}
                       </div>
                     </li>
                   ))}
