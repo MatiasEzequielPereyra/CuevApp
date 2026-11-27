@@ -109,7 +109,10 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
             maxHeight: "min(720px, calc(100dvh - 16px))", overflow: "auto", zIndex: 10000 }}>
           <strong>{name}</strong>
           {description && <span>{description}</span>}
-          {videoAvailability === "available"
+          {showWorkoutLogger && (availableExercises.length > 1
+            ? <StudentWorkoutRowLogger exercises={availableExercises} publicationId={publicationId} embedded {...(studentId ? { studentId } : {})} />
+            : <StudentWorkoutLogger publicationId={publicationId} exerciseId={exerciseId} exerciseName={name} trackingMode={trackingMode} embedded {...(targetId ? { targetId } : {})} {...(studentId ? { studentId } : {})} />)}
+          {videoAvailability === "available" || videoAvailability === "unknown"
             ? <button type="button" className="my-routine-mention-play" onClick={() => {
               // Preserve the exercise trigger as the dialog's native return-focus target.
               trigger.current?.focus({ preventScroll: true });
