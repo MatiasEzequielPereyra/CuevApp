@@ -279,9 +279,11 @@ for (const width of [360, 390, 1440]) {
           await squat.locator("xpath=..").click();
           await expect(squat).toBeChecked();
           await expect(squatWeight).toHaveValue("");
-          await squatWeight.fill("42,5");
+          await squatWeight.pressSequentially("42,5");
+          await expect(squatWeight).toHaveValue("42,5");
           await picker.getByRole("searchbox", { name: "Buscar ejercicio" }).fill("Press militar");
-          await expect(picker.getByRole("list", { name: "Seleccionados fuera de la búsqueda" }).getByRole("textbox")).toHaveValue("42,5");
+          const selectedOutsideSearch = picker.getByRole("list", { name: "Seleccionados fuera de la búsqueda" });
+          await expect(selectedOutsideSearch.getByRole("textbox", { name: "Peso (kg) de Sentadilla" })).toHaveValue("42,5");
           await picker.getByRole("checkbox", { name: "Press militar", exact: true }).check();
           await rounds.fill("0");
           await expect(submit).toBeDisabled();
