@@ -7,6 +7,7 @@ type RowExercise = {
   id: string;
   name: string;
   tracking_mode: "weight" | "time";
+  targetId?: string;
 };
 
 export function StudentWorkoutRowLogger({ exercises, publicationId, embedded = false, studentId }: {
@@ -25,7 +26,7 @@ export function StudentWorkoutRowLogger({ exercises, publicationId, embedded = f
   return (
     <div className="student-workout-row">
       <StudentWorkoutLogger publicationId={publicationId} exerciseId={selected.id}
-        exerciseName={selected.name} trackingMode={selected.tracking_mode}
+        exerciseName={selected.name} trackingMode={selected.tracking_mode} {...(selected.targetId ? { targetId: selected.targetId } : {})}
         availableExercises={unique} onExerciseChange={exercise => setSelectedId(exercise.id)} embedded={embedded} {...(studentId ? { studentId } : {})} />
     </div>
   );
