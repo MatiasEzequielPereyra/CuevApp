@@ -34,10 +34,10 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
   const positionPanel = useCallback(() => {
     const rect = trigger.current?.getBoundingClientRect();
     if (!rect) return;
-    const width = Math.min(320, window.innerWidth - 16);
+    const width = Math.min(420, window.innerWidth - 16);
     const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
     const below = window.innerHeight - rect.bottom;
-    const maxHeight = Math.min(260, window.innerHeight - 16);
+    const maxHeight = Math.min(720, window.innerHeight - 16);
     const top = below >= maxHeight + 8 || rect.top < maxHeight
       ? Math.min(rect.bottom + 8, window.innerHeight - maxHeight - 8)
       : Math.max(8, rect.top - maxHeight - 8);
@@ -104,14 +104,13 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
         <div ref={panel} id={panelId} className="my-routine-mention-preview" role="dialog"
           tabIndex={-1} aria-label={`Ejercicio: ${name}`}
           style={{ position: "fixed", left: position.left, top: position.top, width: position.width,
-            maxHeight: "min(260px, calc(100dvh - 16px))", overflow: "auto", zIndex: 10000 }}>
+            maxHeight: "min(720px, calc(100dvh - 16px))", overflow: "auto", zIndex: 10000 }}>
           <strong>{name}</strong>
           {description && <span>{description}</span>}
           {videoAvailability === "available"
             ? <button type="button" className="my-routine-mention-play" onClick={() => {
               // Preserve the exercise trigger as the dialog's native return-focus target.
               trigger.current?.focus({ preventScroll: true });
-              setOpen(false);
               setPlayerOpen(true);
             }}>Ver video</button>
             : videoAvailability === "unavailable"
