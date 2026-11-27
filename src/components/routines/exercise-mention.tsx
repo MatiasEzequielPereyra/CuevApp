@@ -18,7 +18,7 @@ type ExerciseMentionProps = {
   hue?: number;
   showWorkoutLogger?: boolean;
   studentId?: string;
-  availableExercises?: { id: string; name: string; tracking_mode: "weight" | "time" }[];
+  availableExercises?: { id: string; name: string; tracking_mode: "weight" | "time"; targetId?: string }[];
   videoKind?: "youtube" | "file" | null;
 };
 
