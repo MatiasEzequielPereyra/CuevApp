@@ -6,14 +6,23 @@ import { uuid } from "@/lib/routines/types";
 const reply = (data: object, status = 200) =>
   NextResponse.json(data, { status, headers: { "Cache-Control": "no-store" } });
 
-async function studentClient() {
-  if (!productConfig()) return { client: null, status: 404 };
+async function sessionClient() {
+  if (!productConfig()) return { client: null, status: 404, role: null as string | null };
   const client = await userClient(true);
   const { data: { user }, error } = await client.auth.getUser();
-  if (error || !user) return { client: null, status: 401 };
+  if (error || !user) return { client: null, status: 401, role: null as string | null };
   const profile = await client.from("cueva_profiles").select("role").maybeSingle();
-  if (profile.error || profile.data?.role !== "alumno") return { client: null, status: 403 };
-  return { client, status: 200 };
+  if (profile.error || !["alumno", "admin"].includes(profile.data?.role ?? "")) {
+    return { client: null, status: 403, role: null as string | null };
+  }
+  return { client, status: 200, role: profile.data!.role };
+}
+
+async function studentClient() {
+  const session = await sessionClient();
+  if (!session.client) return { client: null, status: session.status };
+  if (session.role !== "alumno") return { client: null, status: 403 };
+  return { client: session.client, status: 200 };
 }
 
 function validWeight(value: unknown): value is number {
@@ -26,29 +35,28 @@ function validDuration(value: unknown): value is number {
 }
 
 export async function GET(req: Request) {
-  const { client, status } = await studentClient();
+  const { client, status, role } = await sessionClient();
   if (!client) return reply({ message: "Acceso restringido." }, status);
   const params = new URL(req.url).searchParams;
+  const studentId = params.get("student_id");
+  if ((role === "admin" && (!studentId || !uuid.test(studentId)))
+    || (role === "alumno" && studentId)) return reply({ message: "Alumno inválido o fuera del alcance de acceso." }, 400);
   const exerciseIds = [...new Set(params.getAll("exercise_id").flatMap(value => value.split(",")).filter(Boolean))];
   if (params.get("summary") === "1") {
-    if (exerciseIds.length < 1 || exerciseIds.length > 100 || exerciseIds.some(id => !uuid.test(id))) {
-      return reply({ message: "Lista de ejercicios inválida." }, 400);
-    }
-    const { data, error } = await client.rpc("cueva_workout_history_batch", { p_exercise_ids: exerciseIds });
+    if (exerciseIds.length < 1 || exerciseIds.length > 100 || exerciseIds.some(id => !uuid.test(id))) return reply({ message: "Lista de ejercicios inválida." }, 400);
+    const { data, error } = role === "admin"
+      ? await client.rpc("cueva_workout_history_admin_batch", { p_student_id: studentId, p_exercise_ids: exerciseIds })
+      : await client.rpc("cueva_workout_history_batch", { p_exercise_ids: exerciseIds });
     if (error) return reply({ message: "No pudimos cargar los últimos registros." }, error.code === "42501" ? 403 : 503);
     return reply({ histories: data });
   }
   const exerciseId = exerciseIds[0] ?? "";
-  const offset = Number(params.get("offset") ?? 0);
-  const limit = Number(params.get("limit") ?? 3);
+  const offset = Number(params.get("offset") ?? 0), limit = Number(params.get("limit") ?? 3);
   if (!uuid.test(exerciseId)) return reply({ message: "Ejercicio inválido." }, 400);
-  if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000
-    || !Number.isSafeInteger(limit) || limit < 1 || limit > 3) {
-    return reply({ message: "Página de historial inválida." }, 400);
-  }
-  const { data, error } = await client.rpc("cueva_workout_history", {
-    p_exercise_id: exerciseId, p_limit: limit, p_offset: offset,
-  });
+  if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000 || !Number.isSafeInteger(limit) || limit < 1 || limit > 3) return reply({ message: "Página de historial inválida." }, 400);
+  const { data, error } = role === "admin"
+    ? await client.rpc("cueva_workout_history_admin", { p_student_id: studentId, p_exercise_id: exerciseId, p_limit: limit, p_offset: offset })
+    : await client.rpc("cueva_workout_history", { p_exercise_id: exerciseId, p_limit: limit, p_offset: offset });
   if (error) return reply({ message: "No pudimos cargar el historial del ejercicio." }, error.code === "42501" ? 403 : 503);
   return reply({ history: data });
 }
@@ -118,9 +126,12 @@ export async function PATCH(req: Request) {
   const cfg = productConfig();
   if (!cfg) return reply({ message: "Acceso no disponible." }, 404);
   if (req.headers.get("origin") !== cfg.origin) return reply({ message: "Solicitud no permitida." }, 403);
-  const { client, status } = await studentClient();
+  const { client, status, role } = await sessionClient();
   if (!client) return reply({ message: "Acceso restringido." }, status);
   const p = await readRoutineJson(req, 12000);
+  const studentId = p?.student_id;
+  if ((role === "admin" && (typeof studentId !== "string" || !uuid.test(studentId)))
+    || (role === "alumno" && studentId !== undefined)) return reply({ message: "Alumno inválido o fuera del alcance de acceso." }, 400);
   if (!p || typeof p.entry_id !== "string" || !uuid.test(p.entry_id)
     || !Number.isSafeInteger(p.revision) || p.revision < 1 || p.revision > 2147483646
     || !["quick", "sets"].includes(p.mode)
@@ -149,7 +160,15 @@ export async function PATCH(req: Request) {
       return reply({ message: "Revisá los valores de cada serie." }, 400);
     }
   }
-  const { data, error } = await client.rpc("cueva_workout_update", {
+  const { data, error } = role === "admin"
+    ? await client.rpc("cueva_workout_update_admin", {
+        p_student_id: studentId, p_id: p.entry_id, p_revision: p.revision,
+        p_mode: p.mode, p_tracking_mode: trackingMode,
+        p_weight_kg: trackingMode === "weight" && p.mode === "quick" ? p.weight_kg : null,
+        p_duration_seconds: trackingMode === "time" && p.mode === "quick" ? p.duration_seconds : null,
+        p_sets: p.sets,
+      })
+    : await client.rpc("cueva_workout_update", {
     p_id: p.entry_id,
     p_revision: p.revision,
     p_mode: p.mode,
