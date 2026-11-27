@@ -102,7 +102,8 @@ as $history_admin_batch$
 declare v_result jsonb := '{}'::jsonb; v_id uuid;
 begin
   if not cueva_private.routine_admin() then raise exception 'Acceso restringido' using errcode='42501'; end if;
-  if p_student_id is null or cardinality(p_exercise_ids) not between 1 and 100
+  if p_student_id is null or p_exercise_ids is null
+    or cardinality(p_exercise_ids) not between 1 and 100
     or array_position(p_exercise_ids,null) is not null then
     raise exception 'Lista de ejercicios inválida' using errcode='22023';
   end if;
@@ -144,7 +145,8 @@ declare
 begin
   if not cueva_private.routine_admin() then raise exception 'Acceso restringido' using errcode='42501'; end if;
   if p_student_id is null or p_id is null or p_revision is null or p_revision < 1 or p_revision >= 2147483647
-    or p_mode not in ('quick','sets') or p_tracking_mode not in ('weight','time')
+    or p_mode is null or p_mode not in ('quick','sets')
+    or p_tracking_mode is null or p_tracking_mode not in ('weight','time')
     or p_sets is null or jsonb_typeof(p_sets) is distinct from 'array'
   then raise exception 'Actualización inválida' using errcode='22023'; end if;
 
