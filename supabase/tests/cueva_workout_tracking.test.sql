@@ -322,6 +322,7 @@ select is((public.cueva_workout_update_admin('c7300000-0000-4000-8000-0000000000
 select is((public.cueva_workout_update_admin('c7300000-0000-4000-8000-000000000001',
   'c8100000-0000-4000-8000-000000000001',2,'quick','weight',76,null,'[]'::jsonb)->'entry'->>'quick_weight_kg')::numeric,76::numeric,
   'administrator edit retry is idempotent');
+reset role;
 select is((select count(*)::integer from public.cueva_workout_admin_audit
   where entry_id='c8100000-0000-4000-8000-000000000001' and student_id='c7300000-0000-4000-8000-000000000001'
     and actor_user_id='c7100000-0000-4000-8000-000000000001' and action='update'),1,
@@ -332,6 +333,7 @@ select is((select before_state->'entry'->>'quick_weight_kg' from public.cueva_wo
 select is((select after_state->'entry'->>'quick_weight_kg' from public.cueva_workout_admin_audit
   where entry_id='c8100000-0000-4000-8000-000000000001'),'76.00',
   'audit preserves the updated entry values');
+set local role authenticated;
 select throws_ok($admin_scope$select public.cueva_workout_update_admin(
   'c7300000-0000-4000-8000-000000000002','c8100000-0000-4000-8000-000000000001',
   3,'quick','weight',77,null,'[]'::jsonb)$admin_scope$,
