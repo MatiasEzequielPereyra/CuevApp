@@ -9,6 +9,7 @@ import { RoutineTextPreview } from "@/components/routines/routine-text-preview";
 import { planKey, hasExercises, copyPlan } from "@/lib/routines/types";
 import type { Note, Publication, Template } from "@/lib/routines/types";
 import "./routine-editor.css";
+import "@/app/mi-rutina/mi-rutina.css";
 
 type Status = "clean" | "dirty" | "saving" | "saved" | "error" | "conflict";
 const same = (a: Note, b: Note) => a.content === b.content && a.title === b.title
