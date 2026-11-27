@@ -36,9 +36,10 @@ function flush() {
   }
 }
 
-function sendBatch(batch: [string, PendingRequest][]) {
+function sendBatch(batch: [string, PendingRequest][], studentId?: string) {
   const params = new URLSearchParams();
   params.set("summary", "1");
+  if (studentId) params.set("student_id", studentId);
   for (const [exerciseId] of batch) params.append("exercise_id", exerciseId);
   void fetch("/api/entrenamientos?" + params.toString(), { cache: "no-store" })
     .then(async response => {
@@ -66,20 +67,21 @@ function sendBatch(batch: [string, PendingRequest][]) {
     });
 }
 
-export function requestWorkoutSummary(exerciseId: string, refresh = false): Promise<WorkoutHistorySummary> {
-  const queued = pending.get(exerciseId);
+export function requestWorkoutSummary(exerciseId: string, refresh = false, studentId?: string): Promise<WorkoutHistorySummary> {
+  const requestKey = studentId ? `${studentId}:${exerciseId}` : exerciseId;
+  const queued = pending.get(requestKey);
   if (queued) return queued.promise;
-  const existing = inFlight.get(exerciseId);
+  const existing = inFlight.get(requestKey);
   if (existing && !refresh) return existing;
-  if (refresh) inFlight.delete(exerciseId);
+  if (refresh) inFlight.delete(requestKey);
   let resolveRequest!: (history: WorkoutHistorySummary) => void;
   let rejectRequest!: (error: Error) => void;
   const promise = new Promise<WorkoutHistorySummary>((resolve, reject) => {
     resolveRequest = resolve;
     rejectRequest = reject;
   });
-  inFlight.set(exerciseId, promise);
-  pending.set(exerciseId, { promise, resolve: resolveRequest, reject: rejectRequest });
+  inFlight.set(requestKey, promise);
+  pending.set(requestKey, { promise, resolve: resolveRequest, reject: rejectRequest });
   if (!scheduled) {
     scheduled = true;
     queueMicrotask(flush);
