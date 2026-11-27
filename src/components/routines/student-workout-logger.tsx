@@ -168,7 +168,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       }
     })();
         const panelContent = (
-        <div ref={panel} id={id + "-panel"} className="student-workout-panel student-workout-floating-panel" role="dialog" aria-label={"Registro de " + exerciseName}
+        <div ref={panel} id={id + "-panel"} className={`student-workout-panel student-workout-floating-panel${embedded ? " student-workout-embedded-panel" : ""}`} role="dialog" aria-label={"Registro de " + exerciseName}
           style={embedded ? undefined : { position: "fixed", left: panelPosition?.left, top: panelPosition?.top, width: panelPosition?.width, maxHeight: panelPosition?.maxHeight, overflow: "auto", zIndex: 2147483000 }}>
           <header>
             <strong>{exerciseName}</strong>
