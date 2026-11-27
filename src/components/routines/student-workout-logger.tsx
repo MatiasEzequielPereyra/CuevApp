@@ -367,7 +367,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const summary = summaryEntry?.tracking_mode === activeTrackingMode ? entrySummary(summaryEntry) : "";
 
       const panelContent = (
-        <div ref={panel} id={id + "-panel"} className={`student-workout-panel student-workout-floating-panel${embedded ? " student-workout-embedded-panel" : ""}`} role="dialog" aria-label={"Registro de " + exerciseName}
+        <div ref={panel} id={id + "-panel"} className={`student-workout-panel student-workout-floating-panel${embedded ? " student-workout-embedded-panel" : ""}`} role={embedded ? "region" : "dialog"} aria-label={"Registro de " + exerciseName}
           style={embedded ? undefined : { position: "fixed", left: panelPosition?.left, top: panelPosition?.top, width: panelPosition?.width, maxHeight: panelPosition?.maxHeight, overflow: "auto", zIndex: 2147483000 }}>
           <header>
             <strong>{exerciseName}</strong>
@@ -486,7 +486,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       );
 
   return (
-    <section className="student-workout" aria-label={"Registro de " + exerciseName} data-tracking-mode={activeTrackingMode}>
+    <section className="student-workout" aria-label={embedded ? undefined : "Registro de " + exerciseName} data-tracking-mode={activeTrackingMode}>
       {!embedded && (
       <button ref={trigger} type="button" className="student-workout-toggle" aria-haspopup="dialog" aria-controls={id + "-panel"} aria-label={expanded ? (activeTrackingMode === "weight" ? "Cerrar registro de peso" : "Cerrar registro de duración") : (activeTrackingMode === "weight" ? "Registrar peso" : "Registrar duración")} aria-expanded={expanded} onClick={() => {
         const nextExpanded = !expanded;
