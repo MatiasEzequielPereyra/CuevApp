@@ -52,10 +52,14 @@ async function createAccount(role) {
   return { id: user.id, email, client, cookies: [...cookies].map(([name, value]) => ({ name, value, url: origin })) };
 }
 
+function trackingMode(index) {
+  return index === 2 ? "time" : "weight";
+}
+
 function target(index) {
   const { id, name } = exercises[index];
   return { id: randomUUID(), exercise_id: id, name, note: index === 1 ? "Controlá el movimiento." : "",
-    ...(index === 2 ? { mode: "time", duration: 45, unit: "seconds" } : { mode: "weight", reps: "8-12", weight_kg: 25 }) };
+    ...(trackingMode(index) === "time" ? { mode: "time", duration: 45, unit: "seconds" } : { mode: "weight", reps: "8-12", weight_kg: 25 }) };
 }
 
 const emBlocks = [[0, 2], [3, 4, 5], [2, 5], [1, 0, 3]];
@@ -86,7 +90,7 @@ async function studentContext(browser, account, options) {
 async function layoutAndPlayback(browserType, learner) {
   const browser = await browserType.launch();
   try {
-    for (const width of [360, 390, 1440]) {
+    for (const width of [320, 360, 390, 1440]) {
       for (const theme of ["light", "dark"]) {
         const context = await studentContext(browser, learner, { viewport: { width, height: 740 }, hasTouch: width === 360, colorScheme: theme });
         try {
@@ -104,6 +108,34 @@ async function layoutAndPlayback(browserType, learner) {
             const rows = blocks.nth(index).getByRole("listitem");
             await expect(rows.locator(".my-routine-mention")).toHaveText(entries.map(exercise => exercises[exercise].name));
             await expect(blocks.nth(index).getByText(`${index + 2} vueltas`, { exact: true })).toHaveCount(1);
+          }
+          if (width < 600) {
+            assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true,
+              `La vista mobile no debe generar scroll horizontal en ${width}px.`);
+            await expect(blocks).toHaveCount(emBlocks.length);
+            for (const [blockIndex, entries] of emBlocks.entries()) {
+              const currentBlock = blocks.nth(blockIndex);
+              await expect(currentBlock.getByRole("listitem")).toHaveCount(entries.length);
+              for (const row of await currentBlock.locator(".my-routine-exercise").all()) {
+                const geometry = await row.evaluate(node => {
+                  const rect = node.getBoundingClientRect();
+                  const detail = node.querySelector(".my-routine-exercise-detail");
+                  return {
+                    left: rect.left, right: rect.right,
+                    detailClientWidth: detail?.clientWidth ?? 0,
+                    detailScrollWidth: detail?.scrollWidth ?? 0,
+                    name: node.querySelector(".my-routine-mention")?.textContent?.trim() ?? "",
+                    nameOverflow: getComputedStyle(node.querySelector(".my-routine-mention")).textOverflow,
+                  };
+                });
+                assert.ok(geometry.left >= 0 && geometry.right <= width + 1,
+                  `La fila de ejercicio debe permanecer dentro del viewport de ${width}px: ${JSON.stringify(geometry)}`);
+                assert.ok(geometry.detailClientWidth > 0 && geometry.detailScrollWidth <= geometry.detailClientWidth + 1,
+                  `El detalle del ejercicio no debe desbordarse horizontalmente: ${JSON.stringify(geometry)}`);
+                assert.notEqual(geometry.nameOverflow, "ellipsis", "El nombre del ejercicio no debe truncarse.");
+                assert.ok(geometry.name.length > 0, "Cada ejercicio debe conservar su nombre visible.");
+              }
+            }
           }
           await expect(routine.getByText("45 segundos", { exact: true }).first()).toBeVisible();
           await expect(routine.getByText("25 kg", { exact: true }).first()).toBeVisible();
@@ -211,11 +243,11 @@ try {
   }
 
   await checked(bucket.upload(path, await readFile(CUEVA_TEST_VIDEO), { contentType: "video/webm" }));
-  for (const exercise of exercises) {
+  for (const [index, exercise] of exercises.entries()) {
     await checked(admin.client.rpc("cueva_exercise_write", {
       p_id: exercise.id, p_name: `${exercise.name} ${suffix}`, p_active: true, p_revision: 0, p_description: "",
       p_video_path: exercise === press ? path : null, p_video_url: [other, old].includes(exercise) ? youtube : null,
-      p_tracking_mode: "weight",
+      p_tracking_mode: trackingMode(index),
     }));
   }
   const previous = await publish(admin.client, students[0], 0, "Publicación histórica",
@@ -316,7 +348,9 @@ try {
     await timedPanel.getByLabel("Duración (segundos)").fill("75");
     await timedPanel.getByRole("button", { name: "Guardar resultado" }).click();
     await expect(timedPanel.getByRole("status").filter({ hasText: "Resultado guardado." })).toBeVisible();
-    await expect(timedLogger.locator(".student-workout-summary > span")).toHaveText("1 min 15 s");
+    await timedPanel.getByRole("button", { name: "Cerrar registro" }).click();
+    await expect(timedPanel).toHaveCount(0);
+    await expect(timedRow.locator(".student-workout-exercise-summary-value")).toHaveText(["75 seg", "75 seg"]);
     await weightedRow.getByRole("button", { name: "Registrar peso" }).click();
     const weightedPanel = pupil.getByRole("dialog", { name: "Registro de Press militar" });
     await weightedPanel.getByLabel("Peso utilizado (kg)").fill("32.5");
@@ -393,6 +427,35 @@ try {
 
     const editor = await adminContext.newPage();
     await editor.goto(`${origin}/rutinas?alumno=${students[0]}`);
+    for (const width of [320, 360, 390, 1440]) {
+      await editor.setViewportSize({ width, height: 740 });
+      const editorRows = editor.locator(".routine-exercise-row");
+      await expect(editor.locator(".routine-block-card")).toHaveCount(4);
+      assert.ok(await editorRows.count() > 4, "El editor debe conservar varios ejercicios distribuidos en sus bloques.");
+      assert.equal(await editor.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true,
+        `El editor admin no debe generar scroll horizontal en ${width}px.`);
+      for (const row of await editorRows.all()) {
+        const geometry = await row.evaluate(node => {
+          const rect = node.getBoundingClientRect();
+          const name = node.querySelector("strong");
+          const target = node.querySelector("span");
+          return {
+            left: rect.left, right: rect.right,
+            width: rect.width, scrollWidth: node.scrollWidth,
+            name: name?.textContent?.trim() ?? "",
+            nameOverflow: name ? getComputedStyle(name).textOverflow : "",
+            target: target?.textContent?.trim() ?? "",
+          };
+        });
+        assert.ok(geometry.left >= 0 && geometry.right <= width + 1 && geometry.scrollWidth <= geometry.width + 1,
+          `La fila del editor debe permanecer dentro del viewport de ${width}px: ${JSON.stringify(geometry)}`);
+        assert.ok(geometry.name.length > 0 && geometry.nameOverflow !== "ellipsis",
+          `El nombre del ejercicio no debe truncarse en ${width}px: ${JSON.stringify(geometry)}`);
+        assert.ok(geometry.target.length > 0,
+          `El objetivo del ejercicio debe seguir visible en ${width}px: ${JSON.stringify(geometry)}`);
+      }
+    }
+    await editor.setViewportSize({ width: 1280, height: 720 });
     const previewToggle = editor.getByText("Vista previa del borrador", { exact: true });
     await previewToggle.click();
     const preview = editor.locator("details[open]").filter({ has: previewToggle });

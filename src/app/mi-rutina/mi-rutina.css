@@ -663,9 +663,18 @@
 }
 .student-workout-toggle-icon {
   display: inline-grid;
+  flex: none;
   place-items: center;
-  font-size: 1.15rem;
   line-height: 1;
+}
+.student-workout-kettlebell {
+  width: 29px;
+  height: 31px;
+  color: var(--dash-accent);
+  overflow: visible;
+}
+.student-workout-toggle {
+  gap: 6px;
 }
 .student-workout[data-tracking-mode="time"] .student-workout-set {
   grid-template-columns: minmax(0, 1fr);
@@ -709,18 +718,37 @@
   line-height: 1.25;
 }
 .student-workout-exercise-summary {
+  position: relative;
+  display: inline-block;
   max-width: 100%;
-  margin: 2px 0 0 2px;
-  padding: 1px 5px;
-  overflow: hidden;
-  border-radius: 4px;
-  background: var(--dash-accent-soft);
+  margin: 4px 0 5px 10px;
+  overflow: visible;
   color: var(--dash-text);
   font-size: .78rem;
   font-weight: 650;
   line-height: 1.2;
+}
+.student-workout-exercise-summary-value {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--dash-accent-soft);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.student-workout-exercise-summary::before {
+  position: absolute;
+  inset-inline-end: 100%;
+  inset-block-start: -5px;
+  width: 8px;
+  height: calc(100% + 5px);
+  border-inline-start: 1px solid var(--dash-border);
+  border-block-end: 1px solid var(--dash-border);
+  border-end-start-radius: 3px;
+  content: "";
+  pointer-events: none;
 }
 .student-workout-row {
   display: inline-flex;
@@ -774,4 +802,42 @@
 }
 @media (max-width: 600px) {
   .student-workout-row { margin-inline-start: 0; }
+}
+
+
+/* Mobile day overview: prioritize readable content density over a fixed viewport height. */
+@media (max-width: 600px) {
+  .my-routine { gap: 9px; line-height: 1.3; }
+  .my-routine-days { gap: 5px; padding: 5px; border-radius: 9px; }
+  .my-routine-days button {
+    flex: 1 1 auto;
+    min-height: 36px;
+    padding: 5px 9px;
+    border-radius: 7px;
+    font-size: .84rem;
+    text-align: center;
+  }
+  .my-routine-blocks { gap: 7px; }
+  .my-routine-block { border-radius: 9px; }
+  .my-routine-block > header {
+    gap: 6px;
+    padding: 7px 9px;
+    border-radius: 8px 8px 0 0;
+  }
+  .my-routine-block h3 { font-size: .9rem; line-height: 1.2; }
+  .my-routine-block > header span { padding: 2px 6px; font-size: .74rem; }
+  .my-routine-exercise {
+    min-height: 44px;
+    align-items: flex-start;
+    gap: 7px;
+    padding: 7px 8px;
+    line-height: 1.25;
+  }
+  .my-routine-exercise-order { min-width: 1.2rem; padding-top: 1px; font-size: .74rem; }
+  .my-routine-exercise-detail { gap: 3px; line-height: 1.25; font-size: .86rem; }
+  .my-routine-targets { gap: 3px 5px; font-size: .76rem; }
+  .my-routine-targets > span { padding: 2px 5px; line-height: 1.25; }
+  .my-routine-exercise-note { font-size: .76rem; line-height: 1.3; }
+  .student-workout-exercise-summary { margin: 2px 0 3px 8px; font-size: .74rem; }
+  .student-workout-exercise-summary-value { padding: 2px 5px; }
 }

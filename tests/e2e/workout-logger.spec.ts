@@ -58,12 +58,14 @@ for (const mode of ["weight", "time"] as const) {
       let held: Route | undefined;
       let submitted: Record<string, unknown> | undefined;
       let reads = 0;
+      let summaryReads = 0;
       await page.route("**/api/entrenamientos?*", async route => {
         const summary = new URL(route.request().url()).searchParams.get("summary") === "1";
-        if (!summary) reads++;
+        if (summary) summaryReads++;
+        else reads++;
         if ((source === "history" && !summary && reads === 1)
           || (source === "history-after-save" && !summary && reads === 2)
-          || ((source === "summary" || source === "summary-after-save") && summary)) {
+          || ((source === "summary" || source === "summary-after-save") && summary && summaryReads === 1)) {
           held = route;
           return;
         }
@@ -76,6 +78,7 @@ for (const mode of ["weight", "time"] as const) {
       });
       await page.goto(origin + "/mi-rutina");
       const logger = page.getByRole("region", { name: "Registro de Sentadilla" });
+      const exerciseSummary = page.locator(".my-routine-exercise-with-summary").filter({ hasText: "Sentadilla" }).locator(".student-workout-exercise-summary");
       await logger.getByRole("button", { name: mode === "weight" ? "Registrar peso" : "Registrar duración", exact: true }).click();
       const panel = page.getByRole("dialog", { name: "Registro de Sentadilla" });
       const input = panel.getByLabel(mode === "weight" ? "Peso utilizado (kg)" : "Duración (segundos)", { exact: true });
@@ -85,7 +88,7 @@ for (const mode of ["weight", "time"] as const) {
         await expect(panel.getByText("Resultado guardado.", { exact: true })).toBeVisible();
         expect(submitted?.[mode === "weight" ? "weight_kg" : "duration_seconds"]).toBe(80);
         if (source === "summary-after-save") {
-          await expect(logger.locator(".student-workout-summary")).toContainText(mode === "weight" ? "80 kg" : "1 min 20 s");
+          await expect(exerciseSummary).toContainText(mode === "weight" ? "80 kg" : "80 seg");
         } else {
           // Inputs stay editable while the post-save GET is in flight.
           await input.fill("90");
@@ -101,7 +104,7 @@ for (const mode of ["weight", "time"] as const) {
       await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
       await expect(input).toHaveValue(source === "history-after-save" ? "90" : "80");
       if (source === "summary-after-save") {
-        await expect(logger.locator(".student-workout-summary")).toContainText(mode === "weight" ? "80 kg" : "1 min 20 s");
+        await expect(exerciseSummary).toContainText(mode === "weight" ? "80 kg" : "80 seg");
       }
     });
   }

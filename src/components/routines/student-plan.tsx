@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import type { LegacyTarget, Plan, Target } from "@/lib/routines/types";
 import { ExerciseMention } from "@/components/routines/exercise-mention";
+import { StudentWorkoutExerciseSummary } from "@/components/routines/student-workout-exercise-summary";
 
 type ExerciseMetadata = { id: string; name: string; description: string | null; has_video: boolean };
 
@@ -32,6 +33,7 @@ function ExerciseDetails({ exercise, publicationId, description, videoAvailabili
           : <span>{exercise.duration} {exercise.unit === "seconds" ? (exercise.duration === 1 ? "segundo" : "segundos") : (exercise.duration === 1 ? "minuto" : "minutos")}</span>}
       </span>
       {exercise.note && <span className="my-routine-exercise-note">{exercise.note}</span>}
+      <StudentWorkoutExerciseSummary exerciseId={exercise.exercise_id} exerciseName={exercise.name} />
     </span>
   );
 }
