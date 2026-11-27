@@ -257,6 +257,9 @@ select throws_ok($owner_update$select public.cueva_workout_update(
 select throws_ok($owner_delete$select public.cueva_workout_delete(
  'c8100000-0000-4000-8000-000000000001',2)$owner_delete$,
  '42501',null,'student B cannot delete student A workout history');
+select throws_ok($admin_denied$select public.cueva_workout_history_admin(
+ 'c7300000-0000-4000-8000-000000000001','c7500000-0000-4000-8000-000000000001')$admin_denied$,
+ '42501',null,'students cannot use administrator history RPCs');
 select is(public.cueva_workout_history('c7500000-0000-4000-8000-000000000001')->>'last_weight_kg',null,
  'history is isolated by authenticated student');
 select is((public.cueva_workout_history('c7500000-0000-4000-8000-000000000003')->>'last_weight_kg')::numeric,45::numeric,
@@ -277,6 +280,12 @@ update public.cueva_profiles set role='admin'
 select set_config('request.jwt.claim.sub','c7100000-0000-4000-8000-000000000001',true);
 select set_config('request.jwt.claims',jsonb_build_object('sub','c7100000-0000-4000-8000-000000000001','role','authenticated','session_id','c7200000-0000-4000-8000-000000000001')::text,true);
 set local role authenticated;
+select throws_ok($admin_no_create$select public.cueva_workout_record(
+ 'c8100000-0000-4000-8000-000000000016','c7600000-0000-4000-8000-000000000002',
+ 'c7500000-0000-4000-8000-000000000001','c7900000-0000-4000-8000-000000000002',
+ 'quick','weight',40,null,'[]'::jsonb)$admin_no_create$,
+ '42501',null,'administrators cannot create workout records on behalf of students');
+
 select ok(to_regprocedure('public.cueva_workout_history_admin(uuid,uuid,integer,integer)') is not null,
   'admin history RPC is installed');
 select ok(has_function_privilege('authenticated','public.cueva_workout_history_admin(uuid,uuid,integer,integer)','EXECUTE'),
