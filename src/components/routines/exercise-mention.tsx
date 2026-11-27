@@ -19,11 +19,12 @@ type ExerciseMentionProps = {
   showWorkoutLogger?: boolean;
   studentId?: string;
   availableExercises?: { id: string; name: string; tracking_mode: "weight" | "time" }[];
+  videoKind?: "youtube" | "file" | null;
 };
 
 type FloatingPosition = { left: number; top: number; width: number };
 
-export function ExerciseMention({ exerciseId, name, description, videoAvailability, text, publicationId, trackingMode, targetId, hue = 250, showWorkoutLogger = true, studentId, availableExercises = [] }: ExerciseMentionProps) {
+export function ExerciseMention({ exerciseId, name, description, videoAvailability, text, publicationId, trackingMode, targetId, hue = 250, showWorkoutLogger = true, studentId, availableExercises = [], videoKind }: ExerciseMentionProps) {
   const [open, setOpen] = useState(false);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [position, setPosition] = useState<FloatingPosition | null>(null);
@@ -113,13 +114,13 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
             ? <StudentWorkoutRowLogger exercises={availableExercises} publicationId={publicationId} embedded {...(studentId ? { studentId } : {})} />
             : <StudentWorkoutLogger publicationId={publicationId} exerciseId={exerciseId} exerciseName={name} trackingMode={trackingMode} embedded {...(targetId ? { targetId } : {})} {...(studentId ? { studentId } : {})} />)}
           {videoAvailability === "available" || videoAvailability === "unknown"
-            ? <button type="button" className="my-routine-mention-play" onClick={() => {
+            ? <button type="button" className={`my-routine-mention-play${videoKind === "youtube" ? " my-routine-mention-play-youtube" : ""}`} onClick={() => {
               // Preserve the exercise trigger as the dialog's native return-focus target.
               trigger.current?.focus({ preventScroll: true });
               setPlayerOpen(true);
             }}><span aria-hidden="true">▶</span> Ver video</button>
             : videoAvailability === "unavailable"
-              ? <span role="status">Aún no se encuentra con video disponible</span>
+              ? <span role="status">No se cuenta con video disponible.</span>
               : <span role="status">No se cuenta con video disponible.</span>}
         </div>,
         document.body
