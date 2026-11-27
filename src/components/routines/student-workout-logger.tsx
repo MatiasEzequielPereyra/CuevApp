@@ -113,6 +113,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const [sets, setSets] = useState<WorkoutSet[]>([{ reps: "", weight: "", duration: "" }]);
   const [historyState, setHistoryState] = useState<{ exerciseId: string; history: WorkoutHistory | null }>({ exerciseId, history: null });
   const history = historyState.exerciseId === exerciseId ? historyState.history : null;
+  const activeTrackingMode = studentId && history?.entries[0] ? history.entries[0].tracking_mode : activeTrackingMode;
   const [summaryState, setSummaryState] = useState<{ exerciseId: string; entry: HistoryEntry | null }>({ exerciseId, entry: null });
   const [editingEntry, setEditingEntry] = useState<HistoryEntry | null>(null);
   const [historyOpen, setHistoryOpen] = useState(embedded);
@@ -195,14 +196,14 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
             </label>
           )}
           {loadingHistory && <p role="status">Consultando tus últimos registros…</p>}
-          {trackingMode === "weight" && history?.last_weight_kg !== null && history?.last_weight_kg !== undefined && (
+          {activeTrackingMode === "weight" && history?.last_weight_kg !== null && history?.last_weight_kg !== undefined && (
             <p className="student-workout-last">
               Último peso: <strong>{formatWeight(history.last_weight_kg)}</strong>
               <button type="button" onClick={() => { setMode("quick"); setWeight(String(history.last_weight_kg)); }}>Usar</button>
               {!studentId && <button type="button" disabled={saving || loadingHistory} onClick={() => void save("quick", history.last_weight_kg ?? undefined)}>Guardar último peso</button>}
             </p>
           )}
-          {trackingMode === "time" && history?.last_duration_seconds !== null && history?.last_duration_seconds !== undefined && (
+          {activeTrackingMode === "time" && history?.last_duration_seconds !== null && history?.last_duration_seconds !== undefined && (
             <p className="student-workout-last">
               Última duración: <strong>{formatDuration(history.last_duration_seconds)}</strong>
               <button type="button" onClick={() => { setMode("quick"); setDuration(String(history.last_duration_seconds)); }}>Usar</button>
@@ -214,7 +215,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
             <button type="button" aria-pressed={mode === "sets"} onClick={() => setMode("sets")}>Por series</button>
           </div>
           {studentId && !editingEntry ? <p className="student-workout-editing">Como administrador podés consultar el historial y editar registros existentes.</p> : mode === "quick" ? (
-            trackingMode === "weight" ? (
+            activeTrackingMode === "weight" ? (
               <label htmlFor={id + "-weight"}>Peso utilizado (kg)
                 <input id={id + "-weight"} inputMode="decimal" value={weight} maxLength={10}
                   onChange={event => setWeight(event.target.value)} placeholder="Ej. 40" />
@@ -230,7 +231,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
               {sets.map((item, index) => (
                 <div className="student-workout-set" key={index}>
                   <strong>Serie {index + 1}</strong>
-                  {trackingMode === "weight" ? (
+                  {activeTrackingMode === "weight" ? (
                     <>
                       <label>Repeticiones
                         <input inputMode="numeric" value={item.reps} maxLength={4}
@@ -269,7 +270,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
                       <time dateTime={entry.performed_at}>{new Date(entry.performed_at).toLocaleDateString("es-AR", { dateStyle: "short" })}</time>
                       <strong className="student-workout-history-value">{entrySummary(entry) || "—"}</strong>
                       <div className="student-workout-history-actions">
-                        {entry.tracking_mode === trackingMode && <>
+                        {entry.tracking_mode === activeTrackingMode && <>
                           <button type="button" disabled={saving} onClick={() => applyHistoryEntry(entry)}>Usar</button>
                           <button type="button" disabled={saving} onClick={() => beginEdit(entry)}>Editar</button>
                         </>}
@@ -300,7 +301,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     let quickDuration: number | null = null;
 
     if (selectedMode === "quick") {
-      if (trackingMode === "weight") {
+      if (activeTrackingMode === "weight") {
         quickWeight = quickValueOverride ?? parseWeight(weight);
         if (quickWeight === null) {
           setError("Ingresá un peso entre 0 y 2000 kg, con hasta dos decimales.");
@@ -317,7 +318,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
           return;
         }
       }
-    } else if (trackingMode === "weight") {
+    } else if (activeTrackingMode === "weight") {
       const weightSets = sets.map(item => ({ reps: Number(item.reps), weight_kg: parseWeight(item.weight) ?? Number.NaN }));
       if (!weightSets.length || weightSets.some(item => !Number.isInteger(item.reps)
         || item.reps < 1 || item.reps > 1000 || !Number.isFinite(item.weight_kg))) {
@@ -340,7 +341,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
 
     const payload = {
       mode: selectedMode,
-      tracking_mode: trackingMode,
+      tracking_mode: activeTrackingMode,
       weight_kg: quickWeight,
       duration_seconds: quickDuration,
       sets: payloadSets,
@@ -378,7 +379,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   }
 
   function beginEdit(entry: HistoryEntry) {
-    if (entry.tracking_mode !== trackingMode) return;
+    if (entry.tracking_mode !== activeTrackingMode) return;
     setEditingEntry(entry);
     setExpanded(true);
     setMode(entry.mode);
@@ -403,7 +404,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   function applyHistoryEntry(entry: HistoryEntry) {
     setEditingEntry(null);
     setMode("quick");
-    if (trackingMode === "weight") {
+    if (activeTrackingMode === "weight") {
       const value = entry.mode === "quick" ? entry.weight_kg : entry.sets.at(-1)?.weight_kg;
       if (value === null || value === undefined) return;
       setWeight(String(value));
@@ -480,12 +481,12 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   }, [expanded, embedded, positionPanel, exerciseId, mode, historyOpen]);
 
   const summaryEntry = summaryState.exerciseId === exerciseId ? summaryState.entry : null;
-  const summary = summaryEntry?.tracking_mode === trackingMode ? entrySummary(summaryEntry) : "";
+  const summary = summaryEntry?.tracking_mode === activeTrackingMode ? entrySummary(summaryEntry) : "";
 
   return (
-    <section className="student-workout" aria-label={"Registro de " + exerciseName} data-tracking-mode={trackingMode}>
+    <section className="student-workout" aria-label={"Registro de " + exerciseName} data-tracking-mode={activeTrackingMode}>
       {!embedded && (
-      <button ref={trigger} type="button" className="student-workout-toggle" aria-haspopup="dialog" aria-controls={id + "-panel"} aria-label={expanded ? (trackingMode === "weight" ? "Cerrar registro de peso" : "Cerrar registro de duración") : (trackingMode === "weight" ? "Registrar peso" : "Registrar duración")} aria-expanded={expanded} onClick={() => {
+      <button ref={trigger} type="button" className="student-workout-toggle" aria-haspopup="dialog" aria-controls={id + "-panel"} aria-label={expanded ? (activeTrackingMode === "weight" ? "Cerrar registro de peso" : "Cerrar registro de duración") : (activeTrackingMode === "weight" ? "Registrar peso" : "Registrar duración")} aria-expanded={expanded} onClick={() => {
         const nextExpanded = !expanded;
         if (nextExpanded) positionPanel();
         setExpanded(nextExpanded);
@@ -494,13 +495,13 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
       }}>
         {expanded
           ? <><span aria-hidden="true">×</span><span>Cerrar</span></>
-          : <>{trackingMode === "weight" ? (
+          : <>{activeTrackingMode === "weight" ? (
             <svg className="student-workout-toggle-icon student-workout-kettlebell" viewBox="0 0 32 34" aria-hidden="true" focusable="false">
               <path d="M11 11V8c0-3.4 1.8-5 5-5s5 1.6 5 5v3" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" />
               <path d="M9 11c-3.6 0-5.4 3.4-4.5 8.2l2.2 8.1C7.5 31 10.5 32 16 32s8.5-1 9.3-4.7l2.2-8.1C28.4 14.4 26.6 11 23 11Z" fill="currentColor" />
               <text x="16" y="23.5" textAnchor="middle" fontSize="8.2" fontWeight="800" letterSpacing=".1" fill="var(--dash-panel)">KG</text>
             </svg>
-          ) : <span className="student-workout-toggle-icon" aria-hidden="true">◷</span>}<span>{summary ? (trackingMode === "weight" ? "Editar peso" : "Editar duración") : (trackingMode === "weight" ? "Cargar peso" : "Cargar duración")}</span></>}
+          ) : <span className="student-workout-toggle-icon" aria-hidden="true">◷</span>}<span>{summary ? (activeTrackingMode === "weight" ? "Editar peso" : "Editar duración") : (activeTrackingMode === "weight" ? "Cargar peso" : "Cargar duración")}</span></>}
       </button>
       )}
       {embedded ? panelContent : expanded && panelPosition && typeof document !== "undefined" ? createPortal(panelContent, document.body) : null}
