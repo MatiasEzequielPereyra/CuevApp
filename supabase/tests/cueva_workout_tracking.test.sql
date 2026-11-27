@@ -69,6 +69,11 @@ insert into public.cueva_exercises(id,name,revision,updated_by,description,activ
  ('c7500000-0000-4000-8000-000000000002','Plancha',1,'c7100000-0000-4000-8000-000000000001','',true,'weight'),
  ('c7500000-0000-4000-8000-000000000003','Remo',1,'c7100000-0000-4000-8000-000000000001','',true,'weight'),
  ('c7500000-0000-4000-8000-000000000004','Cardio',1,'c7100000-0000-4000-8000-000000000001','',true,'time');
+update public.cueva_exercises set video_url='https://youtu.be/dQw4w9WgXcQ'
+  where id='c7500000-0000-4000-8000-000000000001';
+update public.cueva_exercises set video_path='c7500000-0000-4000-8000-000000000004/00000000-0000-4000-8000-000000000004.mp4'
+  where id='c7500000-0000-4000-8000-000000000004';
+
 insert into public.cueva_routine_publications(id,student_id,draft_revision,content,published_by,plan) values
  ('c7600000-0000-4000-8000-000000000001','c7300000-0000-4000-8000-000000000001',1,'Rutina vieja','c7100000-0000-4000-8000-000000000001',
   '{"version":2,"days":[{"id":"c7700000-0000-4000-8000-000000000001","name":"Día","blocks":[{"id":"c7800000-0000-4000-8000-000000000001","name":"Bloque","rounds":3,"exercises":[{"id":"c7900000-0000-4000-8000-000000000001","exercise_id":"c7500000-0000-4000-8000-000000000001","name":"Press banca","note":"","mode":"weight","reps":"8","weight_kg":50}]}]}]}'::jsonb),
@@ -92,6 +97,9 @@ select ok(not has_table_privilege('authenticated','public.cueva_workout_sets','S
 select set_config('request.jwt.claim.sub','c7100000-0000-4000-8000-000000000001',true);
 select set_config('request.jwt.claims',jsonb_build_object('sub','c7100000-0000-4000-8000-000000000001','role','authenticated','session_id','c7200000-0000-4000-8000-000000000001')::text,true);
 set local role authenticated;
+select is((select video_kind from public.cueva_student_assigned_exercises()
+  where id='c7500000-0000-4000-8000-000000000001'),'youtube',
+  'structured routine metadata identifies YouTube videos without exposing URLs');
 
 select is((public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000001','c7600000-0000-4000-8000-000000000002',
@@ -243,6 +251,12 @@ select throws_ok($text_target$select public.cueva_workout_record(
 select is((select tracking_mode from public.cueva_student_mentioned_exercises_with_tracking_mode()
  where id='c7500000-0000-4000-8000-000000000004'),'time',
  'text mentions expose the catalog time mode');
+select is((select video_kind from public.cueva_student_mentioned_exercises_with_tracking_mode()
+ where id='c7500000-0000-4000-8000-000000000003'),'youtube',
+ 'text mentions identify YouTube video actions');
+select is((select video_kind from public.cueva_student_mentioned_exercises_with_tracking_mode()
+ where id='c7500000-0000-4000-8000-000000000004'),'file',
+ 'text mentions identify uploaded video actions');
 select throws_ok($time_text$select public.cueva_workout_record(
  'c8100000-0000-4000-8000-000000000009','c7600000-0000-4000-8000-000000000003',
  'c7500000-0000-4000-8000-000000000004',null,
