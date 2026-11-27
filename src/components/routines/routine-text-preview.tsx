@@ -10,7 +10,7 @@ export function RoutineTextPreview({ value, mentions, studentId }: {
   mentions: RoutineMention[];
   studentId?: string;
 }) {
-  const points = Array.from(value);
+  const points = value.split("");
   const ordered = [...mentions].sort((a,b)=>a.start-b.start);
   const parts: ReactNode[] = [];
   let cursor = 0;
