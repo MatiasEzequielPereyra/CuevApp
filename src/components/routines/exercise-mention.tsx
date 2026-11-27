@@ -52,6 +52,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
 
   function showPreview() {
     positionPanel();
+    if (videoAvailability === "unknown") setCheckingVideo(true);
     setOpen(true);
   }
 
@@ -60,12 +61,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
-    if (videoAvailability !== "unknown") {
-      setResolvedVideoAvailability(videoAvailability);
-      setResolvedVideoKind(videoKind ?? null);
-      return;
-    }
+    if (!open || videoAvailability !== "unknown") return;
     const controller = new AbortController();
     setCheckingVideo(true);
     void fetch(`/api/ejercicios/video?id=${encodeURIComponent(exerciseId)}&check=1`, {
@@ -88,7 +84,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
       if (!controller.signal.aborted) setCheckingVideo(false);
     });
     return () => controller.abort();
-  }, [open, exerciseId, videoAvailability, videoKind]);
+  }, [open, exerciseId, videoAvailability]);
 
   useEffect(() => {
     if (!open) return;
@@ -116,6 +112,9 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
       window.removeEventListener("resize", positionPanel);
     };
   }, [open, playerOpen, positionPanel]);
+
+  const effectiveVideoAvailability = videoAvailability === "unknown" ? resolvedVideoAvailability : videoAvailability;
+  const effectiveVideoKind = videoKind ?? resolvedVideoKind;
 
   return (
     <div
@@ -146,13 +145,13 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
             maxHeight: "min(720px, calc(100dvh - 16px))", overflow: "auto", zIndex: 10000 }}>
           <header className="my-routine-mention-heading">
             <strong>{name}</strong>
-            {resolvedVideoAvailability === "available"
-              ? <button type="button" className={`my-routine-mention-play${resolvedVideoKind === "youtube" ? " my-routine-mention-play-youtube" : ""}`} onClick={() => {
+            {effectiveVideoAvailability === "available"
+              ? <button type="button" className={`my-routine-mention-play${effectiveVideoKind === "youtube" ? " my-routine-mention-play-youtube" : ""}`} onClick={() => {
                 // Keep the workout form mounted while the video dialog is shown.
                 trigger.current?.focus({ preventScroll: true });
                 setPlayerOpen(true);
               }}><span aria-hidden="true">▶</span> Ver video</button>
-              : resolvedVideoAvailability === "unavailable"
+              : effectiveVideoAvailability === "unavailable"
                 ? <span role="status">No se cuenta con video disponible.</span>
                 : <span role="status">{checkingVideo ? "Comprobando video…" : "No pudimos comprobar si hay un video disponible."}</span>}
           </header>
