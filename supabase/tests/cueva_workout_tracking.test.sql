@@ -277,6 +277,43 @@ update public.cueva_profiles set role='admin'
 select set_config('request.jwt.claim.sub','c7100000-0000-4000-8000-000000000001',true);
 select set_config('request.jwt.claims',jsonb_build_object('sub','c7100000-0000-4000-8000-000000000001','role','authenticated','session_id','c7200000-0000-4000-8000-000000000001')::text,true);
 set local role authenticated;
+select ok(to_regprocedure('public.cueva_workout_history_admin(uuid,uuid,integer,integer)') is not null,
+  'admin history RPC is installed');
+select ok(has_function_privilege('authenticated','public.cueva_workout_history_admin(uuid,uuid,integer,integer)','EXECUTE'),
+  'authenticated users can reach the admin history RPC subject to its role guard');
+select ok(to_regprocedure('public.cueva_workout_history_admin_batch(uuid,uuid[])') is not null,
+  'admin summary batch RPC is installed');
+select ok(to_regprocedure('public.cueva_workout_update_admin(uuid,uuid,integer,text,text,numeric,integer,jsonb)') is not null,
+  'audited admin update RPC is installed');
+select ok(not has_table_privilege('authenticated','public.cueva_workout_admin_audit','SELECT'),
+  'administrative audit rows cannot be read directly through the Data API');
+select is((public.cueva_workout_history_admin('c7300000-0000-4000-8000-000000000001',
+  'c7500000-0000-4000-8000-000000000001')->>'last_weight_kg')::numeric,75::numeric,
+  'administrator can inspect the selected student history');
+select is((public.cueva_workout_history_admin_batch('c7300000-0000-4000-8000-000000000001',
+  array['c7500000-0000-4000-8000-000000000001'::uuid])->'c7500000-0000-4000-8000-000000000001'->>'last_weight_kg')::numeric,75::numeric,
+  'administrator summary is scoped to the selected student');
+select is((public.cueva_workout_update_admin('c7300000-0000-4000-8000-000000000001',
+  'c8100000-0000-4000-8000-000000000001',2,'quick','weight',76,null,'[]'::jsonb)->'entry'->>'revision')::integer,3,
+  'administrator can edit an existing student record with optimistic revision');
+select is((public.cueva_workout_update_admin('c7300000-0000-4000-8000-000000000001',
+  'c8100000-0000-4000-8000-000000000001',2,'quick','weight',76,null,'[]'::jsonb)->'entry'->>'quick_weight_kg')::numeric,76::numeric,
+  'administrator edit retry is idempotent');
+select is((select count(*)::integer from public.cueva_workout_admin_audit
+  where entry_id='c8100000-0000-4000-8000-000000000001' and student_id='c7300000-0000-4000-8000-000000000001'
+    and actor_user_id='c7100000-0000-4000-8000-000000000001' and action='update'),1,
+  'admin edit writes exactly one audit event with actor and student identity');
+select is((select before_state->'entry'->>'quick_weight_kg' from public.cueva_workout_admin_audit
+  where entry_id='c8100000-0000-4000-8000-000000000001'),'74.00',
+  'audit preserves the previous entry values');
+select is((select after_state->'entry'->>'quick_weight_kg' from public.cueva_workout_admin_audit
+  where entry_id='c8100000-0000-4000-8000-000000000001'),'76.00',
+  'audit preserves the updated entry values');
+select throws_ok($admin_scope$select public.cueva_workout_update_admin(
+  'c7300000-0000-4000-8000-000000000002','c8100000-0000-4000-8000-000000000001',
+  3,'quick','weight',77,null,'[]'::jsonb)$admin_scope$,
+  '42501',null,'administrator cannot edit a record under the wrong student identity');
+
 select is(public.cueva_exercise_write('c7500000-0000-4000-8000-000000000099',
   'Legacy compatibility',true,0,'',null,null)->>'tracking_mode','weight',
   'old API creates weight exercises against migrated schema');
