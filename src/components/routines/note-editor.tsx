@@ -166,7 +166,7 @@ export function NoteEditor({ id, initial, template = false, templates = [], publ
           <summary>Vista previa del borrador</summary>
           {(local.format ?? "blocks") === "text"
             ? <pre>{local.text_content}</pre>
-            : <><PlanView plan={local.plan} />{local.content && <pre>{local.content}</pre>}</>}
+            : <><PlanView plan={local.plan} studentId={id} />{local.content && <pre>{local.content}</pre>}</>}
           {!local.plan && !local.content && <p>Agregá ejercicios u observaciones para verlos acá.</p>}
         </details>
         {published && <details className="routine-preview">
@@ -174,7 +174,7 @@ export function NoteEditor({ id, initial, template = false, templates = [], publ
           <p>Publicada el {new Date(published.published_at).toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" })}</p>
           {(published.format ?? "blocks") === "text"
             ? <pre>{published.text_content}</pre>
-            : <><PlanView plan={published.plan} />{published.content && <pre>{published.content}</pre>}</>}
+            : <><PlanView plan={published.plan} studentId={id} />{published.content && <pre>{published.content}</pre>}</>}
         </details>}
         <details className="routine-template-picker" ref={templatePicker}>
           <summary>Usar plantilla</summary>
@@ -197,7 +197,7 @@ export function NoteEditor({ id, initial, template = false, templates = [], publ
     </div>
     {remote && <section className="routine-conflict"><h3>Versión guardada en el servidor</h3>{template && <p>{remote.title}</p>}{(remote.format ?? "blocks") === "text"
         ? <pre>{remote.text_content}</pre>
-        : <><PlanView plan={remote.plan}/><pre>{remote.content || "Sin observaciones"}</pre></>}<p>Tu borrador sigue arriba. Compará y combiná manualmente antes de elegir.</p><div className="routine-actions"><button type="button" onClick={() => { setSaved(remote); setRemote(null); setStatus(same(local, remote) ? "saved" : "dirty"); setMessage("Se guardará tu borrador sobre la revisión que acabás de comparar."); }}>Guardar mi borrador sobre esta revisión</button><button type="button" onClick={() => { if (!window.confirm("¿Descartar tu borrador local y usar la versión guardada?")) return; current.current = remote; setLocal(remote); setSaved(remote); setRemote(null); setStatus("clean"); setMessage(""); }}>Usar versión del servidor</button></div></section>}
+        : <><PlanView plan={remote.plan} studentId={id}/><pre>{remote.content || "Sin observaciones"}</pre></>}<p>Tu borrador sigue arriba. Compará y combiná manualmente antes de elegir.</p><div className="routine-actions"><button type="button" onClick={() => { setSaved(remote); setRemote(null); setStatus(same(local, remote) ? "saved" : "dirty"); setMessage("Se guardará tu borrador sobre la revisión que acabás de comparar."); }}>Guardar mi borrador sobre esta revisión</button><button type="button" onClick={() => { if (!window.confirm("¿Descartar tu borrador local y usar la versión guardada?")) return; current.current = remote; setLocal(remote); setSaved(remote); setRemote(null); setStatus("clean"); setMessage(""); }}>Usar versión del servidor</button></div></section>}
     {template && <label>Título de la plantilla<input maxLength={100} value={local.title ?? ""} disabled={publishing} onChange={event => edit({ ...local, title: event.target.value })} /></label>}
     <div className="routine-format-tabs" role="group" aria-label="Formato de rutina">
       <button type="button" aria-pressed={(local.format ?? "blocks") === "blocks"} disabled={publishing}
