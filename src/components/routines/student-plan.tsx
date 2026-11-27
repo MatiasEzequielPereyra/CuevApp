@@ -13,7 +13,7 @@ function ExerciseDetails({ exercise, publicationId, description, videoAvailabili
   description: string | null;
   videoAvailability: "available" | "unavailable" | "unknown";
   videoKind: "youtube" | "file" | null;
-  availableExercises: { id: string; name: string; tracking_mode: "weight" | "time" }[];
+  availableExercises: { id: string; name: string; tracking_mode: "weight" | "time"; targetId?: string }[];
 }) {
   const trackingMode = "mode" in exercise ? exercise.mode : "weight";
   return (
