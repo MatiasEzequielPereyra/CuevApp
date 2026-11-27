@@ -1,6 +1,5 @@
 import { StudentPlan } from "@/components/routines/student-plan";
 import { ExerciseMention } from "@/components/routines/exercise-mention";
-import { StudentWorkoutRowLogger } from "@/components/routines/student-workout-row-logger";
 import { StudentWorkoutExerciseSummary } from "@/components/routines/student-workout-exercise-summary";
 import { resolveMentionVideoAvailability } from "@/lib/routines/mention-video-availability";
 import type { ReactNode } from "react";
@@ -31,7 +30,9 @@ function renderRoutineText(text: string, mentions: RoutineMention[], exercisesBy
     );
     const content: ReactNode[] = [];
     let cursor = lineStart;
-    const lineExercises: MentionedExercise[] = [];
+    const lineExercises = lineMentions
+      .map(mention => exercisesById.get(mention.exercise_id))
+      .filter((exercise): exercise is MentionedExercise => !!exercise);
 
     lineMentions.forEach((mention, index) => {
       const exercise = exercisesById.get(mention.exercise_id);
@@ -45,11 +46,10 @@ function renderRoutineText(text: string, mentions: RoutineMention[], exercisesBy
             videoAvailability={exercise.videoAvailability} text={mention.text}
             publicationId={publicationId} trackingMode={exercise.tracking_mode}
             hue={hues.get(`${mention.exercise_id}:${mention.start}:${mention.end}`) ?? 250}
-            showWorkoutLogger={false} />
+            availableExercises={lineExercises.map(({ id, name, tracking_mode }) => ({ id, name, tracking_mode }))} />
           <StudentWorkoutExerciseSummary exerciseId={exercise.id} exerciseName={exercise.name} />
         </span>
       );
-      lineExercises.push(exercise);
       cursor = mention.end;
     });
 
@@ -57,7 +57,6 @@ function renderRoutineText(text: string, mentions: RoutineMention[], exercisesBy
     lines.push(
       <div className="my-routine-text-line" key={`line-${lineIndex}`}>
         <span>{content.length ? content : "\u00a0"}</span>
-        {lineExercises.length > 0 && <StudentWorkoutRowLogger exercises={lineExercises} publicationId={publicationId} />}
       </div>
     );
     lineStart = lineEnd + 1;
