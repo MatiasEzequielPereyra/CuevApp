@@ -414,14 +414,14 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
             <p className="student-workout-last">
               Último peso: <strong>{formatWeight(history.last_weight_kg)}</strong>
               <button type="button" onClick={() => { setMode("quick"); setWeight(String(history.last_weight_kg)); }}>Usar</button>
-              <button type="button" disabled={saving || loadingHistory} onClick={() => void save("quick", history.last_weight_kg ?? undefined)}>Guardar último peso</button>
+              {!studentId && <button type="button" disabled={saving || loadingHistory} onClick={() => void save("quick", history.last_weight_kg ?? undefined)}>Guardar último peso</button>}
             </p>
           )}
           {trackingMode === "time" && history?.last_duration_seconds !== null && history?.last_duration_seconds !== undefined && (
             <p className="student-workout-last">
               Última duración: <strong>{formatDuration(history.last_duration_seconds)}</strong>
               <button type="button" onClick={() => { setMode("quick"); setDuration(String(history.last_duration_seconds)); }}>Usar</button>
-              <button type="button" disabled={saving || loadingHistory} onClick={() => void save("quick", history.last_duration_seconds ?? undefined)}>Guardar última duración</button>
+              {!studentId && <button type="button" disabled={saving || loadingHistory} onClick={() => void save("quick", history.last_duration_seconds ?? undefined)}>Guardar última duración</button>}
             </p>
           )}
           <div className="student-workout-modes" role="group" aria-label="Tipo de registro">
