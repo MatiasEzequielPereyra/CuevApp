@@ -3,6 +3,7 @@
 import { createPortal } from "react-dom";
 import { ExerciseVideoDialog } from "@/components/routines/exercise-video-dialog";
 import { StudentWorkoutLogger } from "@/components/routines/student-workout-logger";
+import { StudentWorkoutRowLogger } from "@/components/routines/student-workout-row-logger";
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } from "react";
 
 type ExerciseMentionProps = {
@@ -17,11 +18,12 @@ type ExerciseMentionProps = {
   hue?: number;
   showWorkoutLogger?: boolean;
   studentId?: string;
+  availableExercises?: { id: string; name: string; tracking_mode: "weight" | "time" }[];
 };
 
 type FloatingPosition = { left: number; top: number; width: number };
 
-export function ExerciseMention({ exerciseId, name, description, videoAvailability, text, publicationId, trackingMode, targetId, hue = 250, showWorkoutLogger = true, studentId }: ExerciseMentionProps) {
+export function ExerciseMention({ exerciseId, name, description, videoAvailability, text, publicationId, trackingMode, targetId, hue = 250, showWorkoutLogger = true, studentId, availableExercises = [] }: ExerciseMentionProps) {
   const [open, setOpen] = useState(false);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [position, setPosition] = useState<FloatingPosition | null>(null);
