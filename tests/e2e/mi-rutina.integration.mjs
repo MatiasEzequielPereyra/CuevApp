@@ -128,7 +128,7 @@ async function layoutAndPlayback(browserType, learner) {
                     nameOverflow: getComputedStyle(node.querySelector(".my-routine-mention")).textOverflow,
                   };
                 });
-                assert.ok(geometry.left >= 0 && geometry.right <= innerWidth + 1,
+                assert.ok(geometry.left >= 0 && geometry.right <= width + 1,
                   `La fila de ejercicio debe permanecer dentro del viewport de ${width}px: ${JSON.stringify(geometry)}`);
                 assert.ok(geometry.detailClientWidth > 0 && geometry.detailScrollWidth <= geometry.detailClientWidth + 1,
                   `El detalle del ejercicio no debe desbordarse horizontalmente: ${JSON.stringify(geometry)}`);
