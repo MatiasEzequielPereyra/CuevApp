@@ -117,7 +117,7 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
               // Preserve the exercise trigger as the dialog's native return-focus target.
               trigger.current?.focus({ preventScroll: true });
               setPlayerOpen(true);
-            }}>Ver video</button>
+            }}><span aria-hidden="true">▶</span> Ver video</button>
             : videoAvailability === "unavailable"
               ? <span role="status">Aún no se encuentra con video disponible</span>
               : <span role="status">No se cuenta con video disponible.</span>}
