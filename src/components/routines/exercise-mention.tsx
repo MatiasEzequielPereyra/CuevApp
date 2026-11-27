@@ -27,6 +27,9 @@ type FloatingPosition = { left: number; top: number; width: number };
 export function ExerciseMention({ exerciseId, name, description, videoAvailability, text, publicationId, trackingMode, targetId, hue = 250, showWorkoutLogger = true, studentId, availableExercises = [], videoKind }: ExerciseMentionProps) {
   const [open, setOpen] = useState(false);
   const [playerOpen, setPlayerOpen] = useState(false);
+  const [resolvedVideoAvailability, setResolvedVideoAvailability] = useState(videoAvailability);
+  const [resolvedVideoKind, setResolvedVideoKind] = useState(videoKind ?? null);
+  const [checkingVideo, setCheckingVideo] = useState(false);
   const [position, setPosition] = useState<FloatingPosition | null>(null);
   const instanceId = useId();
   const root = useRef<HTMLDivElement>(null);
@@ -55,6 +58,37 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
   useEffect(() => {
     if (open) panel.current?.focus({ preventScroll: true });
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (videoAvailability !== "unknown") {
+      setResolvedVideoAvailability(videoAvailability);
+      setResolvedVideoKind(videoKind ?? null);
+      return;
+    }
+    const controller = new AbortController();
+    setCheckingVideo(true);
+    void fetch(`/api/ejercicios/video?id=${encodeURIComponent(exerciseId)}&check=1`, {
+      cache: "no-store", signal: controller.signal,
+    }).then(async response => {
+      const data = await response.json().catch(() => ({}));
+      if (controller.signal.aborted) return;
+      if (response.ok) {
+        setResolvedVideoAvailability("available");
+        setResolvedVideoKind(data.kind === "youtube" || data.kind === "file" ? data.kind : null);
+      } else if (response.status === 404) {
+        setResolvedVideoAvailability("unavailable");
+        setResolvedVideoKind(null);
+      } else {
+        setResolvedVideoAvailability("unknown");
+      }
+    }).catch(() => {
+      if (!controller.signal.aborted) setResolvedVideoAvailability("unknown");
+    }).finally(() => {
+      if (!controller.signal.aborted) setCheckingVideo(false);
+    });
+    return () => controller.abort();
+  }, [open, exerciseId, videoAvailability, videoKind]);
 
   useEffect(() => {
     if (!open) return;
@@ -110,13 +144,15 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
             maxHeight: "min(720px, calc(100dvh - 16px))", overflow: "auto", zIndex: 10000 }}>
           <header className="my-routine-mention-heading">
             <strong>{name}</strong>
-            {videoAvailability === "available" || videoAvailability === "unknown"
-              ? <button type="button" className={`my-routine-mention-play${videoKind === "youtube" ? " my-routine-mention-play-youtube" : ""}`} onClick={() => {
+            {resolvedVideoAvailability === "available"
+              ? <button type="button" className={`my-routine-mention-play${resolvedVideoKind === "youtube" ? " my-routine-mention-play-youtube" : ""}`} onClick={() => {
                 // Keep the workout form mounted while the video dialog is shown.
                 trigger.current?.focus({ preventScroll: true });
                 setPlayerOpen(true);
               }}><span aria-hidden="true">▶</span> Ver video</button>
-              : <span role="status">No se cuenta con video disponible.</span>}
+              : resolvedVideoAvailability === "unavailable"
+                ? <span role="status">No se cuenta con video disponible.</span>
+                : <span role="status">{checkingVideo ? "Comprobando video…" : "No pudimos comprobar si hay un video disponible."}</span>}
           </header>
           {description && <span>{description}</span>}
           {showWorkoutLogger && (availableExercises.length > 1
