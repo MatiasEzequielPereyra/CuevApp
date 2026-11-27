@@ -64,9 +64,10 @@ function entrySummary(entry: HistoryEntry) {
 type AvailableExercise = { id: string; name: string; tracking_mode: "weight" | "time" };
 type PanelPosition = { left: number; top: number; width: number; maxHeight: number };
 
-export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, targetId, trackingMode, availableExercises = [], onExerciseChange, studentId }: {
+export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, targetId, trackingMode, availableExercises = [], onExerciseChange, studentId, embedded = false }: {
   publicationId: string;
   studentId?: string;
+  embedded?: boolean;
   exerciseId: string;
   exerciseName: string;
   targetId?: string;
@@ -79,7 +80,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const panel = useRef<HTMLDivElement>(null);
   const historyRequestExercise = useRef<string | null>(null);
   const [panelPosition, setPanelPosition] = useState<PanelPosition | null>(null);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(embedded);
   const positionPanel = useCallback(() => {
     const rect = trigger.current?.getBoundingClientRect();
     if (!rect) return;
@@ -114,7 +115,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const history = historyState.exerciseId === exerciseId ? historyState.history : null;
   const [summaryState, setSummaryState] = useState<{ exerciseId: string; entry: HistoryEntry | null }>({ exerciseId, entry: null });
   const [editingEntry, setEditingEntry] = useState<HistoryEntry | null>(null);
-  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(embedded);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -165,7 +166,126 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
         // The logger and full history remain available if the summary request fails.
       }
     })();
-    return () => { cancelled = true; advanceReadVersion(); };
+        const panelContent = (
+        <div ref={panel} id={id + "-panel"} className="student-workout-panel student-workout-floating-panel" role="dialog" aria-label={"Registro de " + exerciseName}
+          style={embedded ? undefined : { position: "fixed", left: panelPosition?.left, top: panelPosition?.top, width: panelPosition?.width, maxHeight: panelPosition?.maxHeight, overflow: "auto", zIndex: 2147483000 }}>
+          <header>
+            <strong>{exerciseName}</strong>
+            {!embedded && <button type="button" className="student-workout-close" aria-label="Cerrar registro" onClick={() => { setExpanded(false); trigger.current?.focus({ preventScroll: true }); }}>×</button>}
+            <button type="button" onClick={() => setHistoryOpen(value => !value)} aria-expanded={historyOpen}>
+              {historyOpen ? "Ocultar historial" : "Ver historial"}
+            </button>
+          </header>
+          {availableExercises.length > 1 && (
+            <label className="student-workout-exercise-picker">Ejercicio
+              <select value={exerciseId} disabled={saving} onChange={event => {
+                const selected = availableExercises.find(item => item.id === event.target.value);
+                if (!selected) return;
+                // Never carry one exercise's series draft or edit target into another UUID.
+                setMode("quick");
+                setSets([{ reps: "", weight: "", duration: "" }]);
+                setEditingEntry(null);
+                setHistoryOpen(false);
+                setMessage("");
+                setError("");
+                onExerciseChange?.(selected);
+              }}>
+                {availableExercises.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            </label>
+          )}
+          {loadingHistory && <p role="status">Consultando tus últimos registros…</p>}
+          {trackingMode === "weight" && history?.last_weight_kg !== null && history?.last_weight_kg !== undefined && (
+            <p className="student-workout-last">
+              Último peso: <strong>{formatWeight(history.last_weight_kg)}</strong>
+              <button type="button" onClick={() => { setMode("quick"); setWeight(String(history.last_weight_kg)); }}>Usar</button>
+              {!studentId && <button type="button" disabled={saving || loadingHistory} onClick={() => void save("quick", history.last_weight_kg ?? undefined)}>Guardar último peso</button>}
+            </p>
+          )}
+          {trackingMode === "time" && history?.last_duration_seconds !== null && history?.last_duration_seconds !== undefined && (
+            <p className="student-workout-last">
+              Última duración: <strong>{formatDuration(history.last_duration_seconds)}</strong>
+              <button type="button" onClick={() => { setMode("quick"); setDuration(String(history.last_duration_seconds)); }}>Usar</button>
+              {!studentId && <button type="button" disabled={saving || loadingHistory} onClick={() => void save("quick", history.last_duration_seconds ?? undefined)}>Guardar última duración</button>}
+            </p>
+          )}
+          <div className="student-workout-modes" role="group" aria-label="Tipo de registro">
+            <button type="button" aria-pressed={mode === "quick"} onClick={() => setMode("quick")}>Rápido</button>
+            <button type="button" aria-pressed={mode === "sets"} onClick={() => setMode("sets")}>Por series</button>
+          </div>
+          {studentId && !editingEntry ? <p className="student-workout-editing">Como administrador podés consultar el historial y editar registros existentes.</p> : mode === "quick" ? (
+            trackingMode === "weight" ? (
+              <label htmlFor={id + "-weight"}>Peso utilizado (kg)
+                <input id={id + "-weight"} inputMode="decimal" value={weight} maxLength={10}
+                  onChange={event => setWeight(event.target.value)} placeholder="Ej. 40" />
+              </label>
+            ) : (
+              <label htmlFor={id + "-duration"}>Duración (segundos)
+                <input id={id + "-duration"} inputMode="numeric" value={duration} maxLength={5}
+                  onChange={event => setDuration(event.target.value)} placeholder="Ej. 60" />
+              </label>
+            )
+          ) : (
+            <div className="student-workout-sets">
+              {sets.map((item, index) => (
+                <div className="student-workout-set" key={index}>
+                  <strong>Serie {index + 1}</strong>
+                  {trackingMode === "weight" ? (
+                    <>
+                      <label>Repeticiones
+                        <input inputMode="numeric" value={item.reps} maxLength={4}
+                          onChange={event => setSets(current => current.map((row, i) => i === index ? { ...row, reps: event.target.value } : row))} />
+                      </label>
+                      <label>Peso (kg)
+                        <input inputMode="decimal" value={item.weight} maxLength={10}
+                          onChange={event => setSets(current => current.map((row, i) => i === index ? { ...row, weight: event.target.value } : row))} />
+                      </label>
+                    </>
+                  ) : (
+                    <label>Duración (segundos)
+                      <input inputMode="numeric" value={item.duration} maxLength={5}
+                        onChange={event => setSets(current => current.map((row, i) => i === index ? { ...row, duration: event.target.value } : row))} />
+                    </label>
+                  )}
+                  {sets.length > 1 && <button type="button" onClick={() => setSets(current => current.filter((_, i) => i !== index))}>Quitar</button>}
+                </div>
+              ))}
+              <button type="button" disabled={sets.length >= 30} onClick={() => setSets(current => [...current, { reps: "", weight: "", duration: "" }])}>Agregar serie</button>
+            </div>
+          )}
+          {editingEntry && <p className="student-workout-editing">Editando un registro anterior <button type="button" onClick={cancelEdit}>Cancelar edición</button></p>}
+          {(!studentId || editingEntry) && <button type="button" className="student-workout-save" disabled={saving || loadingHistory} onClick={() => void save()}>
+            {saving ? "Guardando…" : editingEntry ? "Guardar cambios" : "Guardar resultado"}
+          </button>}
+          {message && <p role="status">{message}</p>}
+          {error && <p role="alert">{error}</p>}
+          {historyOpen && (
+            <div className="student-workout-history">
+              <h4>Historial de este ejercicio</h4>
+              {!history?.entries.length ? <p>Todavía no hay registros.</p> : (
+                <ol>
+                  {history.entries.map(entry => (
+                    <li key={entry.id}>
+                      <time dateTime={entry.performed_at}>{new Date(entry.performed_at).toLocaleDateString("es-AR", { dateStyle: "short" })}</time>
+                      <strong className="student-workout-history-value">{entrySummary(entry) || "—"}</strong>
+                      <div className="student-workout-history-actions">
+                        {entry.tracking_mode === trackingMode && <>
+                          <button type="button" disabled={saving} onClick={() => applyHistoryEntry(entry)}>Usar</button>
+                          <button type="button" disabled={saving} onClick={() => beginEdit(entry)}>Editar</button>
+                        </>}
+                        {!studentId && <button type="button" className="student-workout-history-delete" disabled={saving} onClick={() => void deleteHistoryEntry(entry)}>Eliminar</button>}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+
+            </div>
+          )}
+        </div>,
+      );
+
+  return () => { cancelled = true; advanceReadVersion(); };
   }, [exerciseId, publicationId, studentId, seedInputs, advanceReadVersion]);
 
   async function save(modeOverride?: "quick" | "sets", quickValueOverride?: number) {
@@ -364,6 +484,7 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
 
   return (
     <section className="student-workout" aria-label={"Registro de " + exerciseName} data-tracking-mode={trackingMode}>
+      {!embedded && (
       <button ref={trigger} type="button" className="student-workout-toggle" aria-haspopup="dialog" aria-controls={id + "-panel"} aria-label={expanded ? (trackingMode === "weight" ? "Cerrar registro de peso" : "Cerrar registro de duración") : (trackingMode === "weight" ? "Registrar peso" : "Registrar duración")} aria-expanded={expanded} onClick={() => {
         const nextExpanded = !expanded;
         if (nextExpanded) positionPanel();
@@ -381,125 +502,8 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
             </svg>
           ) : <span className="student-workout-toggle-icon" aria-hidden="true">◷</span>}<span>{summary ? (trackingMode === "weight" ? "Editar peso" : "Editar duración") : (trackingMode === "weight" ? "Cargar peso" : "Cargar duración")}</span></>}
       </button>
-      {expanded && panelPosition && typeof document !== "undefined" && createPortal(
-        <div ref={panel} id={id + "-panel"} className="student-workout-panel student-workout-floating-panel" role="dialog" aria-label={"Registro de " + exerciseName}
-          style={{ position: "fixed", left: panelPosition.left, top: panelPosition.top, width: panelPosition.width, maxHeight: panelPosition.maxHeight, overflow: "auto", zIndex: 2147483000 }}>
-          <header>
-            <strong>{exerciseName}</strong>
-            <button type="button" className="student-workout-close" aria-label="Cerrar registro" onClick={() => { setExpanded(false); trigger.current?.focus({ preventScroll: true }); }}>×</button>
-            <button type="button" onClick={() => setHistoryOpen(value => !value)} aria-expanded={historyOpen}>
-              {historyOpen ? "Ocultar historial" : "Ver historial"}
-            </button>
-          </header>
-          {availableExercises.length > 1 && (
-            <label className="student-workout-exercise-picker">Ejercicio
-              <select value={exerciseId} disabled={saving} onChange={event => {
-                const selected = availableExercises.find(item => item.id === event.target.value);
-                if (!selected) return;
-                // Never carry one exercise's series draft or edit target into another UUID.
-                setMode("quick");
-                setSets([{ reps: "", weight: "", duration: "" }]);
-                setEditingEntry(null);
-                setHistoryOpen(false);
-                setMessage("");
-                setError("");
-                onExerciseChange?.(selected);
-              }}>
-                {availableExercises.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
-              </select>
-            </label>
-          )}
-          {loadingHistory && <p role="status">Consultando tus últimos registros…</p>}
-          {trackingMode === "weight" && history?.last_weight_kg !== null && history?.last_weight_kg !== undefined && (
-            <p className="student-workout-last">
-              Último peso: <strong>{formatWeight(history.last_weight_kg)}</strong>
-              <button type="button" onClick={() => { setMode("quick"); setWeight(String(history.last_weight_kg)); }}>Usar</button>
-              {!studentId && <button type="button" disabled={saving || loadingHistory} onClick={() => void save("quick", history.last_weight_kg ?? undefined)}>Guardar último peso</button>}
-            </p>
-          )}
-          {trackingMode === "time" && history?.last_duration_seconds !== null && history?.last_duration_seconds !== undefined && (
-            <p className="student-workout-last">
-              Última duración: <strong>{formatDuration(history.last_duration_seconds)}</strong>
-              <button type="button" onClick={() => { setMode("quick"); setDuration(String(history.last_duration_seconds)); }}>Usar</button>
-              {!studentId && <button type="button" disabled={saving || loadingHistory} onClick={() => void save("quick", history.last_duration_seconds ?? undefined)}>Guardar última duración</button>}
-            </p>
-          )}
-          <div className="student-workout-modes" role="group" aria-label="Tipo de registro">
-            <button type="button" aria-pressed={mode === "quick"} onClick={() => setMode("quick")}>Rápido</button>
-            <button type="button" aria-pressed={mode === "sets"} onClick={() => setMode("sets")}>Por series</button>
-          </div>
-          {studentId && !editingEntry ? <p className="student-workout-editing">Como administrador podés consultar el historial y editar registros existentes.</p> : mode === "quick" ? (
-            trackingMode === "weight" ? (
-              <label htmlFor={id + "-weight"}>Peso utilizado (kg)
-                <input id={id + "-weight"} inputMode="decimal" value={weight} maxLength={10}
-                  onChange={event => setWeight(event.target.value)} placeholder="Ej. 40" />
-              </label>
-            ) : (
-              <label htmlFor={id + "-duration"}>Duración (segundos)
-                <input id={id + "-duration"} inputMode="numeric" value={duration} maxLength={5}
-                  onChange={event => setDuration(event.target.value)} placeholder="Ej. 60" />
-              </label>
-            )
-          ) : (
-            <div className="student-workout-sets">
-              {sets.map((item, index) => (
-                <div className="student-workout-set" key={index}>
-                  <strong>Serie {index + 1}</strong>
-                  {trackingMode === "weight" ? (
-                    <>
-                      <label>Repeticiones
-                        <input inputMode="numeric" value={item.reps} maxLength={4}
-                          onChange={event => setSets(current => current.map((row, i) => i === index ? { ...row, reps: event.target.value } : row))} />
-                      </label>
-                      <label>Peso (kg)
-                        <input inputMode="decimal" value={item.weight} maxLength={10}
-                          onChange={event => setSets(current => current.map((row, i) => i === index ? { ...row, weight: event.target.value } : row))} />
-                      </label>
-                    </>
-                  ) : (
-                    <label>Duración (segundos)
-                      <input inputMode="numeric" value={item.duration} maxLength={5}
-                        onChange={event => setSets(current => current.map((row, i) => i === index ? { ...row, duration: event.target.value } : row))} />
-                    </label>
-                  )}
-                  {sets.length > 1 && <button type="button" onClick={() => setSets(current => current.filter((_, i) => i !== index))}>Quitar</button>}
-                </div>
-              ))}
-              <button type="button" disabled={sets.length >= 30} onClick={() => setSets(current => [...current, { reps: "", weight: "", duration: "" }])}>Agregar serie</button>
-            </div>
-          )}
-          {editingEntry && <p className="student-workout-editing">Editando un registro anterior <button type="button" onClick={cancelEdit}>Cancelar edición</button></p>}
-          {(!studentId || editingEntry) && <button type="button" className="student-workout-save" disabled={saving || loadingHistory} onClick={() => void save()}>
-            {saving ? "Guardando…" : editingEntry ? "Guardar cambios" : "Guardar resultado"}
-          </button>}
-          {message && <p role="status">{message}</p>}
-          {error && <p role="alert">{error}</p>}
-          {historyOpen && (
-            <div className="student-workout-history">
-              <h4>Historial de este ejercicio</h4>
-              {!history?.entries.length ? <p>Todavía no hay registros.</p> : (
-                <ol>
-                  {history.entries.map(entry => (
-                    <li key={entry.id}>
-                      <time dateTime={entry.performed_at}>{new Date(entry.performed_at).toLocaleDateString("es-AR", { dateStyle: "short" })}</time>
-                      <strong className="student-workout-history-value">{entrySummary(entry) || "—"}</strong>
-                      <div className="student-workout-history-actions">
-                        {entry.tracking_mode === trackingMode && <>
-                          <button type="button" disabled={saving} onClick={() => applyHistoryEntry(entry)}>Usar</button>
-                          <button type="button" disabled={saving} onClick={() => beginEdit(entry)}>Editar</button>
-                        </>}
-                        {!studentId && <button type="button" className="student-workout-history-delete" disabled={saving} onClick={() => void deleteHistoryEntry(entry)}>Eliminar</button>}
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              )}
-
-            </div>
-          )}
-        </div>,
-        document.body
       )}
+      {embedded ? panelContent : expanded && panelPosition && typeof document !== "undefined" ? createPortal(panelContent, document.body) : null}
     </section>
   );
 }
