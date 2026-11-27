@@ -16,14 +16,14 @@ function latestValue(history: WorkoutHistorySummary) {
   return lastSet.duration_seconds === null ? "" : `${lastSet.duration_seconds} seg`;
 }
 
-export function StudentWorkoutExerciseSummary({ exerciseId, exerciseName }: { exerciseId: string; exerciseName: string }) {
+export function StudentWorkoutExerciseSummary({ exerciseId, exerciseName, studentId }: { exerciseId: string; exerciseName: string; studentId?: string }) {
   const [value, setValue] = useState("");
   useEffect(() => {
     let active = true;
     let latestRequest = 0;
     const load = (refresh = false) => {
       const request = ++latestRequest;
-      void requestWorkoutSummary(exerciseId, refresh).then(history => {
+      void requestWorkoutSummary(exerciseId, refresh, studentId).then(history => {
         if (active && request === latestRequest) setValue(latestValue(history));
       }).catch(() => {
         if (active && request === latestRequest) setValue("");
@@ -39,7 +39,7 @@ export function StudentWorkoutExerciseSummary({ exerciseId, exerciseName }: { ex
       latestRequest++;
       window.removeEventListener("cueva-workout-updated", onUpdated);
     };
-  }, [exerciseId]);
+  }, [exerciseId, studentId]);
 
   if (!value) return null;
   return <span className="student-workout-exercise-summary" aria-label={`Último registro de ${exerciseName}: ${value}`}><span className="student-workout-exercise-summary-value">{value}</span></span>;
