@@ -336,6 +336,9 @@ select throws_ok($admin_scope$select public.cueva_workout_update_admin(
   'c7300000-0000-4000-8000-000000000002','c8100000-0000-4000-8000-000000000001',
   3,'quick','weight',77,null,'[]'::jsonb)$admin_scope$,
   '42501',null,'administrator cannot edit a record under the wrong student identity');
+select throws_ok($admin_no_delete$select public.cueva_workout_delete(
+  'c8100000-0000-4000-8000-000000000001',3)$admin_no_delete$,
+  '42501',null,'administrators cannot delete student workout records');
 
 select is(public.cueva_exercise_write('c7500000-0000-4000-8000-000000000099',
   'Legacy compatibility',true,0,'',null,null)->>'tracking_mode','weight',
