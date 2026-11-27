@@ -16,6 +16,8 @@ export type WorkoutHistorySummary = {
 };
 
 type PendingRequest = {
+  exerciseId: string;
+  studentId?: string;
   promise: Promise<WorkoutHistorySummary>;
   resolve: (history: WorkoutHistorySummary) => void;
   reject: (error: Error) => void;
@@ -29,17 +31,27 @@ function flush() {
   const batch = [...pending.entries()];
   pending.clear();
   if (!batch.length) return;
-  // The authenticated endpoint deliberately accepts at most 100 UUIDs. A
-  // valid routine can contain 300 mentions; each chunk settles independently.
-  for (let offset = 0; offset < batch.length; offset += 100) {
-    sendBatch(batch.slice(offset, offset + 100));
+  const groups = new Map<string, [string, PendingRequest][]>();
+  for (const entry of batch) {
+    const scope = entry[1].studentId ?? "";
+    const group = groups.get(scope) ?? [];
+    group.push(entry);
+    groups.set(scope, group);
+  }
+  for (const [scope, requests] of groups) {
+    // The authenticated endpoint deliberately accepts at most 100 UUIDs.
+    // A routine can contain hundreds of mentions; each chunk settles independently.
+    for (let offset = 0; offset < requests.length; offset += 100) {
+      sendBatch(requests.slice(offset, offset + 100), scope || undefined);
+    }
   }
 }
 
-function sendBatch(batch: [string, PendingRequest][]) {
+function sendBatch(batch: [string, PendingRequest][], studentId?: string) {
   const params = new URLSearchParams();
   params.set("summary", "1");
-  for (const [exerciseId] of batch) params.append("exercise_id", exerciseId);
+  if (studentId) params.set("student_id", studentId);
+  for (const [, request] of batch) params.append("exercise_id", request.exerciseId);
   void fetch("/api/entrenamientos?" + params.toString(), { cache: "no-store" })
     .then(async response => {
       const data = await response.json();
@@ -47,8 +59,8 @@ function sendBatch(batch: [string, PendingRequest][]) {
       return data.histories as Record<string, WorkoutHistorySummary>;
     })
     .then(histories => {
-      for (const [exerciseId, request] of batch) {
-        const history = histories[exerciseId];
+      for (const [, request] of batch) {
+        const history = histories[request.exerciseId];
         if (!history) request.reject(new Error("No recibimos el resumen del ejercicio."));
         else request.resolve(history);
       }
@@ -60,25 +72,14 @@ function sendBatch(batch: [string, PendingRequest][]) {
     .finally(() => {
       // A forced refresh may have replaced this request while the older
       // network response was still pending. Never clear the newer promise.
-      for (const [exerciseId, request] of batch) {
-        if (inFlight.get(exerciseId) === request.promise) inFlight.delete(exerciseId);
+      for (const [key, request] of batch) {
+        if (inFlight.get(key) === request.promise) inFlight.delete(key);
       }
     });
 }
 
 export function requestWorkoutSummary(exerciseId: string, refresh = false, studentId?: string): Promise<WorkoutHistorySummary> {
-  if (studentId) {
-    const params = new URLSearchParams({ summary: "1", student_id: studentId, exercise_id: exerciseId });
-    return fetch("/api/entrenamientos?" + params.toString(), { cache: "no-store" })
-      .then(async response => {
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || "No pudimos cargar los últimos registros.");
-        const history = data.histories?.[exerciseId] as WorkoutHistorySummary | undefined;
-        if (!history) throw new Error("No recibimos el resumen del ejercicio.");
-        return history;
-      });
-  }
-  const requestKey = exerciseId;
+  const requestKey = studentId ? `${studentId}:${exerciseId}` : exerciseId;
   const queued = pending.get(requestKey);
   if (queued) return queued.promise;
   const existing = inFlight.get(requestKey);
@@ -91,7 +92,7 @@ export function requestWorkoutSummary(exerciseId: string, refresh = false, stude
     rejectRequest = reject;
   });
   inFlight.set(requestKey, promise);
-  pending.set(requestKey, { promise, resolve: resolveRequest, reject: rejectRequest });
+  pending.set(requestKey, { exerciseId, studentId, promise, resolve: resolveRequest, reject: rejectRequest });
   if (!scheduled) {
     scheduled = true;
     queueMicrotask(flush);
