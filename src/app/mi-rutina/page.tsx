@@ -45,7 +45,7 @@ function renderRoutineText(text: string, mentions: RoutineMention[], exercisesBy
             exerciseId={exercise.id} name={exercise.name} description={exercise.description}
             videoAvailability={exercise.videoAvailability} text={mention.text}
             publicationId={publicationId} trackingMode={exercise.tracking_mode}
-            videoKind={exercise.video_kind}
+            videoKind={exercise.video_kind ?? null}
             hue={hues.get(`${mention.exercise_id}:${mention.start}:${mention.end}`) ?? 250}
             availableExercises={lineExercises.map(({ id, name, tracking_mode }) => ({ id, name, tracking_mode }))} />
           <StudentWorkoutExerciseSummary exerciseId={exercise.id} exerciseName={exercise.name} />
