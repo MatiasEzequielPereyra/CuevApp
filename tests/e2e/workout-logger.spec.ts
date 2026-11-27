@@ -79,8 +79,8 @@ for (const mode of ["weight", "time"] as const) {
       await page.goto(origin + "/mi-rutina");
       const exerciseSummary = page.locator(".my-routine-exercise-with-summary").filter({ hasText: "Sentadilla" }).locator(".student-workout-exercise-summary");
       await page.getByRole("button", { name: "Sentadilla", exact: true }).click();
-      const logger = page.getByRole("region", { name: "Registro de Sentadilla" });
-      const panel = page.getByRole("dialog", { name: "Registro de Sentadilla" });
+      const panel = page.getByRole("region", { name: "Registro de Sentadilla" });
+      const logger = panel;
       const input = panel.getByLabel(mode === "weight" ? "Peso utilizado (kg)" : "Duración (segundos)", { exact: true });
       await input.fill("80");
       if (source === "summary-after-save" || source === "history-after-save") {
