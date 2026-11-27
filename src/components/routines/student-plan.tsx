@@ -5,7 +5,7 @@ import type { LegacyTarget, Plan, Target } from "@/lib/routines/types";
 import { ExerciseMention } from "@/components/routines/exercise-mention";
 import { StudentWorkoutExerciseSummary } from "@/components/routines/student-workout-exercise-summary";
 
-type ExerciseMetadata = { id: string; name: string; description: string | null; has_video: boolean };
+type ExerciseMetadata = { id: string; name: string; description: string | null; has_video: boolean; video_kind?: "youtube" | "file" | null };
 
 function ExerciseDetails({ exercise, publicationId, description, videoAvailability }: {
   exercise: Target | LegacyTarget;
@@ -24,6 +24,7 @@ function ExerciseDetails({ exercise, publicationId, description, videoAvailabili
         text={exercise.name}
         publicationId={publicationId}
         trackingMode={trackingMode}
+        videoKind={detail?.video_kind}
         targetId={exercise.id}
       />
       <span className="my-routine-targets">
