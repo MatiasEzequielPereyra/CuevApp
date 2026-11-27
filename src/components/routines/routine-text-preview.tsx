@@ -22,7 +22,7 @@ export function RoutineTextPreview({ value, mentions, studentId }: {
       <span className="routine-text-preview-mention" key={`${mention.exercise_id}-${mention.start}-${index}`}>
         <ExerciseMention exerciseId={mention.exercise_id} name={mention.text} description={null}
           videoAvailability="unknown" text={mention.text} publicationId="" trackingMode="weight"
-          studentId={studentId} showWorkoutLogger={Boolean(studentId)} />
+          {...(studentId ? { studentId } : {})} showWorkoutLogger={Boolean(studentId)} />
         {studentId && <StudentWorkoutExerciseSummary exerciseId={mention.exercise_id} exerciseName={mention.text} studentId={studentId} />}
       </span>
     );
