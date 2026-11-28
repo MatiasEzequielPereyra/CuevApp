@@ -126,6 +126,9 @@ export function ExerciseMention({ exerciseId, name, description, videoAvailabili
       data-exercise-id={exerciseId}
       onBlur={event => {
         const next = event.relatedTarget;
+        // The native video dialog is portaled outside this inline mention.
+        // Moving focus into it is part of the same interaction, not dismissal.
+        if (playerOpen && next instanceof Element && next.closest("dialog")) return;
         if (!(next instanceof Node) || (!root.current?.contains(next) && !panel.current?.contains(next))) setOpen(false);
       }}
     >
