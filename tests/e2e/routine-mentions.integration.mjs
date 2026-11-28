@@ -183,7 +183,9 @@ try {
 
   // A linked mention never opens a preview from proximity, hover or focus.
   const preview = pupil.getByRole("dialog", {name:`Ejercicio: ${exerciseName}`});
-  const logger = pupil.locator(".student-workout-row .student-workout").first();
+  // This fixture has a single linked exercise, so the mention renders the
+  // direct embedded logger rather than the multi-exercise row selector.
+  const logger = preview.locator(".student-workout").first();
   const loggerPanel = pupil.locator(".student-workout-floating-panel");
   await mention.hover();
   await expect(preview).toHaveCount(0);
