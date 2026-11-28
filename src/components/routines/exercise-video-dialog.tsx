@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { parseVideoSource, type VideoSource } from "@/lib/routines/video-source";
 
 type Playback = { state: "loading" } | { state: "ready"; source: VideoSource } | { state: "error"; message: string; url?: string };
@@ -72,9 +73,9 @@ export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }:
     request.current?.abort();
     const element = dialog.current;
     if (element?.open) element.close();
-    // Update the owning React state synchronously. The native close event is
-    // retained as a fallback, but cannot invoke the callback twice.
-    onClose();
+    // Unmount the native dialog in the same interaction that closes it.
+    // This avoids leaving a closed <dialog> in the DOM while focus is restored.
+    flushSync(() => onClose());
   }
 
   function handleNativeClose() {
