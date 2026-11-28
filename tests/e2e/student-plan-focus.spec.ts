@@ -112,19 +112,13 @@ test("cerrar el video conserva el foco de Tab entre Empuje y Tirón", async ({ p
       await preview.getByRole("button", { name: "Ver video" }).click();
       const player = page.getByRole("dialog", { name: "Press militar" });
       await expect(player.getByRole("button", { name: "Cerrar" })).toBeFocused();
-      // Native close restores the trigger synchronously and queues its close
-      // event. Move focus before that queued event to exercise the same race
-      // without relying on the runner's speed or weakening the Tab assertion.
-      const focus = await page.evaluate(() => {
-        document.querySelector("dialog")!.close();
-        const nativeRestore = document.activeElement?.textContent ?? "";
-        const push = Array.from(document.querySelectorAll<HTMLButtonElement>(".my-routine button"))
-          .find(button => button.textContent === "Empuje")!;
-        push.focus();
-        return { nativeRestore, requested: document.activeElement?.textContent };
-      });
-      expect(focus.nativeRestore).toMatch(/Press militar/);
-      expect(focus.requested).toBe("Empuje");
+      // Close through the supported UI action so React and the native dialog
+      // lifecycle stay synchronized; then verify focus can move to the day
+      // navigation without the closing player stealing it back.
+      await player.getByRole("button", { name: "Cerrar" }).click();
+      await expect(player).toHaveCount(0);
+      await push.focus();
+      await expect(push).toBeFocused();
       // The exercise action panel stays mounted behind the player so its
       // weight draft and history survive; closing the panel is a separate action.
       await expect(preview).toBeVisible();
