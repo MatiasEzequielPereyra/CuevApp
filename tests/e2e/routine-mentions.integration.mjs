@@ -194,7 +194,7 @@ try {
   // A deliberate click opens the inline details; text-only mentions still
   // expose workout logging even when no video is available.
   await mention.click();
-  await expect(preview.getByText(exerciseName, {exact:true})).toBeVisible();
+  await expect(preview.locator(".my-routine-mention-heading strong")).toHaveText(exerciseName);
   await expect(preview).toHaveCSS("opacity", "1");
   await expect(preview).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(preview).toHaveCSS("z-index", "2147483000");
