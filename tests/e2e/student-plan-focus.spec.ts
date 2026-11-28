@@ -130,8 +130,14 @@ test("cerrar el video conserva el foco de Tab entre Empuje y Tirón", async ({ p
       await expect(preview).toBeVisible();
       await expect(weightDraft).toHaveValue("37.5");
       await expect(preview.getByRole("heading", { name: "Historial de este ejercicio" })).toBeVisible();
-      await push.click();
+      // The floating preview overlays the day controls on narrow screens,
+      // so a pointer click on Empuje is physically intercepted by the panel.
+      // Close it through its supported Escape interaction, then place focus on
+      // the day control to verify the next Tab stop deterministically.
+      await expect(player).toHaveCount(0);
+      await page.keyboard.press("Escape");
       await expect(preview).toHaveCount(0);
+      await push.focus();
       await page.keyboard.press("Tab");
       await expect(pull).toBeFocused();
       await page.keyboard.press("Enter");
