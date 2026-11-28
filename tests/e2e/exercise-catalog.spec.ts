@@ -18,6 +18,10 @@ const modules = {
   "react-dom": readFileSync("node_modules/react-dom/cjs/react-dom.development.js", "utf8"),
   "react-dom/client": readFileSync("node_modules/react-dom/cjs/react-dom-client.development.js", "utf8"),
   scheduler: readFileSync("node_modules/scheduler/cjs/scheduler.development.js", "utf8"),
+  // PlanView now imports student-only widgets; the catalog fixture exercises
+  // VideoLink, so keep those unrelated imports inert in this isolated mount.
+  "@/components/routines/exercise-mention": "exports.ExerciseMention = function ExerciseMention() { return null; };",
+  "@/components/routines/student-workout-exercise-summary": "exports.StudentWorkoutExerciseSummary = function StudentWorkoutExerciseSummary() { return null; };",
   "@/components/routines/plan-view": transpile("src/components/routines/plan-view.tsx"),
   catalog: transpile("src/components/routines/exercise-catalog.tsx"),
 };
