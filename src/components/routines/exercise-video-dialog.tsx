@@ -22,6 +22,7 @@ export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }:
     if (!element) return;
     if (open && !element.open) element.showModal();
     if (!open && element.open) element.close();
+    if (open) closing.current = false;
   }, [open]);
 
   useEffect(() => {
@@ -64,15 +65,23 @@ export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }:
     setRetry(value => value + 1);
   }
 
+  const closing = useRef(false);
+
   function close() {
+    if (closing.current) return;
+    closing.current = true;
     request.current?.abort();
     const element = dialog.current;
-    if (element?.open) {
-      // Let the native close event drive the React unmount. Calling onClose
-      // here as well can race the browser's queued close event.
-      element.close();
-      return;
-    }
+    if (element?.open) element.close();
+    // Update the owning React state synchronously. The native close event is
+    // retained as a fallback, but cannot invoke the callback twice.
+    onClose();
+  }
+
+  function handleNativeClose() {
+    request.current?.abort();
+    if (closing.current) return;
+    closing.current = true;
     onClose();
   }
 
@@ -93,7 +102,7 @@ export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }:
           <a href={playback.source.url} target="_blank" rel="noopener noreferrer">Abrir en YouTube</a></>;
 
   return (
-    <dialog ref={dialog} className="my-routine-dialog" aria-labelledby={titleId} onClick={event => { if (event.target === event.currentTarget) close(); }} onCancel={event => { event.preventDefault(); close(); }} onClose={() => { request.current?.abort(); onClose(); }}>
+    <dialog ref={dialog} className="my-routine-dialog" aria-labelledby={titleId} onClick={event => { if (event.target === event.currentTarget) close(); }} onCancel={event => { event.preventDefault(); close(); }} onClose={handleNativeClose}>
       <header>
         <h2 id={titleId}>{exerciseName}</h2>
         <button type="button" onClick={close}>Cerrar</button>
