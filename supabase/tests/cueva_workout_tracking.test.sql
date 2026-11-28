@@ -71,6 +71,8 @@ insert into public.cueva_exercises(id,name,revision,updated_by,description,activ
  ('c7500000-0000-4000-8000-000000000004','Cardio',1,'c7100000-0000-4000-8000-000000000001','',true,'time');
 update public.cueva_exercises set video_url='https://youtu.be/dQw4w9WgXcQ'
   where id='c7500000-0000-4000-8000-000000000001';
+update public.cueva_exercises set video_url='https://youtu.be/dQw4w9WgXcQ'
+  where id='c7500000-0000-4000-8000-000000000003';
 update public.cueva_exercises set video_path='c7500000-0000-4000-8000-000000000004/00000000-0000-4000-8000-000000000004.mp4'
   where id='c7500000-0000-4000-8000-000000000004';
 
