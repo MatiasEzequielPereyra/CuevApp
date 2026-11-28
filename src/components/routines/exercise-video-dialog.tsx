@@ -13,6 +13,7 @@ export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }:
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const request = useRef<AbortController | null>(null);
+  const closing = useRef(false);
   const titleId = useId();
   const [playback, setPlayback] = useState<Playback>({ state: "loading" });
   const [retry, setRetry] = useState(0);
@@ -64,8 +65,6 @@ export function ExerciseVideoDialog({ exerciseId, exerciseName, open, onClose }:
     setPlayback({ state: "loading" });
     setRetry(value => value + 1);
   }
-
-  const closing = useRef(false);
 
   function close() {
     if (closing.current) return;
