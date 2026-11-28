@@ -199,7 +199,7 @@ try {
   await expect(preview).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(preview).toHaveCSS("z-index", "2147483000");
   await preview.hover(); // moving from the mention to the panel must not dismiss it.
-  await expect(preview.getByRole("status")).toHaveText("Aún no se encuentra con video disponible");
+  await expect(preview.getByRole("status")).toHaveText("No se cuenta con video disponible.");
   await expect(preview.getByRole("link")).toHaveCount(0);
   const rowBeforePanel = await logger.boundingBox();
   const loggerTrigger = logger.locator("button.student-workout-toggle");
