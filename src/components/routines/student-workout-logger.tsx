@@ -124,10 +124,12 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
   const busy = useRef(false);
   const operation = useRef<{ fingerprint: string; id: string } | null>(null);
   const readVersion = useRef(0);
+  const loadingRequestVersion = useRef(0);
   const advanceReadVersion = useCallback(() => ++readVersion.current, []);
 
   const loadHistory = useCallback(async (offset = 0, showLoading = true) => {
     const version = advanceReadVersion();
+    const loadingVersion = showLoading ? ++loadingRequestVersion.current : null;
     if (showLoading) setLoadingHistory(true);
     try {
       const params = new URLSearchParams({ exercise_id: exerciseId, offset: String(offset), limit: "3" });
@@ -148,7 +150,10 @@ export function StudentWorkoutLogger({ publicationId, exerciseId, exerciseName, 
     } catch (cause) {
       if (version === readVersion.current) setError(cause instanceof Error ? cause.message : "No pudimos cargar el historial.");
     } finally {
-      if (showLoading && version === readVersion.current) setLoadingHistory(false);
+      // Loading state follows the latest history request, not the read-version
+      // token used to reject stale data. A newer write/summary may invalidate
+      // a response without being allowed to leave the spinner stuck forever.
+      if (loadingVersion !== null && loadingVersion === loadingRequestVersion.current) setLoadingHistory(false);
     }
   }, [exerciseId, seedInputs, advanceReadVersion, studentId]);
 
